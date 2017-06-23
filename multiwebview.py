@@ -86,6 +86,9 @@ class App(QtGui.QMainWindow):
         #self.url_lineedit.setFocus()
         self.setup_global_shortcuts()
 
+        #add menus
+        self.menuBar().addMenu("&File")
+
         widget.setLayout(grid)
         self.setCentralWidget(widget)
         self.centralWidget().layout().setContentsMargins(0,0,0,0)
