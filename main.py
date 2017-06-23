@@ -21,7 +21,7 @@ class Hub(QObject):
  
     @Slot(str)
     def connect(self, config):
-        print config
+        print '===> RECEVIED FROM JS:', config
         self.on_client_event.emit("Howdy!")
  
     @Slot(str)
@@ -45,6 +45,7 @@ class HTMLApplication(object):
  
         #This is basically a browser instance
         self.web = QWebView()
+        self.web.setWindowTitle("Hello, World!")
  
         #Unlikely to matter but prefer to be waiting for callback then try to catch
         # it in time.
