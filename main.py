@@ -50,7 +50,9 @@ class HTMLApplication(object):
         #Unlikely to matter but prefer to be waiting for callback then try to catch
         # it in time.
         self.web.loadFinished.connect(self.onLoad)
-        self.web.load(kickOffHTML)
+        #self.web.load(kickOffHTML)
+        self.web.load('https://material.angularjs.org')
+        #self.web.load('https://www.google.com')
  
         self.web.show()
  

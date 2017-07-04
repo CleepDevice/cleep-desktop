@@ -6,10 +6,12 @@ import sys
 import datetime
 import tempfile
 
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-from PyQt4 import QtWebKit
-from PyQt4 import QtNetwork
+from PyQt5 import QtCore
+from PyQt5 import QtGui
+from PyQt5 import QtWebKit
+from PyQt5 import QtWebKitWidgets
+from PyQt5 import QtNetwork
+from PyQt5 import QtWidgets
 
 fn = os.path.basename(os.path.splitext(__file__)[0])
 PATH_TEMP = os.path.join(tempfile.gettempdir(), fn)
@@ -37,7 +39,7 @@ def to_str(obj):
         return obj
 
 
-class App(QtGui.QMainWindow):
+class App(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super(App, self).__init__(parent)
 
@@ -45,20 +47,21 @@ class App(QtGui.QMainWindow):
         self.setGeometry(x, y, w, h)
         #self.setFixedSize(w, h)
 
-        widget = QtGui.QWidget()
+        widget = QtWidgets.QWidget()
 
-        grid = QtGui.QGridLayout()
+        grid = QtWidgets.QGridLayout()
 
-        self.webview = QtWebKit.QWebView(self)
+        self.webview = QtWebKitWidgets.QWebView(self)
 
         grid.addWidget(self.webview, 0, 0, 0, 10)
 
-        self.webview1 = QtWebKit.QWebView(self)
+        self.webview1 = QtWebKitWidgets.QWebView(self)
         grid.addWidget(self.webview1, 1, 0, 10, 10)
 
         cache =  QtNetwork.QNetworkDiskCache()
-        dir = QtGui.QDesktopServices.storageLocation(QtGui.QDesktopServices.CacheLocation)
-        cache.setCacheDirectory(dir)
+        #path = QtGui.QDesktopServices.storageLocation(QtWidgets.QDesktopServices.CacheLocation)
+        path = QtCore.QStandardPaths.standardLocations(QtCore.QStandardPaths.CacheLocation)[0]
+        cache.setCacheDirectory(path)
         self.am = self.webview.page().networkAccessManager()
         self.am.setCache(cache)
 
@@ -89,7 +92,7 @@ class App(QtGui.QMainWindow):
         show_debug_option_kseq = "Ctrl+L"
         key_seq = QtGui.QKeySequence(show_debug_option_kseq)
 
-        act = QtGui.QAction(self)
+        act = QtWidgets.QAction(self)
         act.setShortcut(key_seq)
 
         self.addAction(act)
@@ -100,7 +103,7 @@ class App(QtGui.QMainWindow):
 
 
 if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     demo = App()
     demo.show_and_raise()
     sys.exit(app.exec_())
