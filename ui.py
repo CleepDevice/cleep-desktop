@@ -146,12 +146,14 @@ class Cleep(QMainWindow):
         webLeft = QWebEngineView()
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
         webLeft.setSizePolicy(sizePolicy)
+        webLeft.setContextMenuPolicy(Qt.NoContextMenu)
         webLeft.setMaximumSize(QtCore.QSize(250, 16777215))
         box.addWidget(webLeft)
         webLeft.load(QUrl("http://localhost:9666/index.html"))
         
         #set right web panel
         webRight = QWebEngineView()
+        webRight.setContextMenuPolicy(Qt.NoContextMenu)
         box.addWidget(webRight)
         webRight.load(QUrl("http://192.168.1.81"))
 
