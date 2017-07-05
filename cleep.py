@@ -35,8 +35,6 @@ class Cleep(QMainWindow):
 
     def showHelp(self):
         logging.debug('--> showHelp')
-        dialog = QDialog()
-        dialog.exec()
 
     def handleSslErrors(self, reply, errors):
         logging.debug('handle sslerrors')
@@ -45,6 +43,31 @@ class Cleep(QMainWindow):
     def handleAuth(self):
         logging.debug('handle auth')
         dialog = QDialog()
+        dialog.resize(400, 128)
+        dialog.setModal(True)
+
+        grid = QtWidgets.QGridLayout(dialog)
+
+        loginLabel = QtWidgets.QLabel(dialog)
+        loginLabel.setText('Login')
+        grid.addWidget(loginLabel, 0, 0, 1, 1)
+
+        loginEdit = QtWidgets.QLineEdit(dialog)
+        grid.addWidget(loginEdit, 0, 1, 1, 1)
+
+        passwordLabel = QtWidgets.QLabel(dialog)
+        passwordLabel.setText('Password')
+        grid.addWidget(passwordLabel, 2, 0, 1, 1)
+
+        passwordEdit = QtWidgets.QLineEdit(dialog)
+        passwordEdit.setEchoMode(QtWidgets.QLineEdit.Password)
+        grid.addWidget(passwordEdit, 2, 1, 1, 1)
+
+        buttonBox = QtWidgets.QDialogButtonBox(dialog)
+        buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        grid.addWidget(buttonBox, 3, 0, 1, 2)
+
         dialog.exec()
 
     def initActions(self):
@@ -58,7 +81,8 @@ class Cleep(QMainWindow):
         self.helpAction = QAction(QIcon(''), 'Help', self)
         #self.helpAction.setShortcut('Ctrl+H')
         self.helpAction.setStatusTip('Help')
-        self.helpAction.triggered.connect(self.showHelp)
+        #self.helpAction.triggered.connect(self.showHelp)
+        self.helpAction.triggered.connect(self.handleAuth)
 
     def initUi(self):
         #configure main window
