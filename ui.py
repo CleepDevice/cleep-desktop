@@ -23,8 +23,12 @@ import requests
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
 
 class Cleep(QMainWindow):
-    def __init__(self):
+
+    def __init__(self, app):
         QWidget.__init__(self)
+
+        #init members
+        self.app = app
         self.logger = logging.getLogger(self.__class__.__name__)
 
         if platform.system()=='Windows':
@@ -102,6 +106,9 @@ class Cleep(QMainWindow):
         dialog.exec()
 
     def init_actions(self):
+        #close action
+        self.app.aboutToQuit.connect(self.handle_exit)
+
         #exit action
         self.exitAction = QAction(QIcon('exit24.png'), 'Exit', self)
         #self.exitAction.setShortcut('Ctrl+Q')
@@ -153,6 +160,6 @@ class Cleep(QMainWindow):
 
  
 app = QApplication(sys.argv)
-cleep = Cleep() 
+cleep = Cleep(app) 
 sys.exit(app.exec_())
 
