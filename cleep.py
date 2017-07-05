@@ -10,9 +10,11 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtWebEngineWidgets import *
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
 from PyQt5.QtWidgets import QGridLayout, QHBoxLayout
-from PyQt5.QtNetwork import QNetworkProxyFactory
+from PyQt5.QtNetwork import QNetworkProxyFactory, QNetworkAccessManager
 import platform
 from PyQt5.QtWidgets import QSizePolicy
+
+from PyQt5 import uic
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
 
@@ -24,11 +26,26 @@ class Cleep(QMainWindow):
             #disable system proxy for windows https://bugreports.qt.io/browse/QTBUG-44763
             QNetworkProxyFactory.setUseSystemConfiguration(False)
 
+        #self.networkAccessManager = QNetworkAccessManager()
+        #self.networkAccessManager.authenticationRequired.connectself.handleAuth)
+        #self.networkAccessManager.sslErrors(self.handleSslErrors)
+
         self.initActions()
         self.initUi()
 
     def showHelp(self):
         logging.debug('--> showHelp')
+        dialog = QDialog()
+        dialog.exec()
+
+    def handleSslErrors(self, reply, errors):
+        logging.debug('handle sslerrors')
+        logging.debug('\n'.join([str(error.errorString()) for error in errors]))
+
+    def handleAuth(self):
+        logging.debug('handle auth')
+        dialog = QDialog()
+        dialog.exec()
 
     def initActions(self):
         #exit action
@@ -75,7 +92,7 @@ class Cleep(QMainWindow):
         #set right web panel
         webRight = QWebEngineView()
         box.addWidget(webRight)
-        webRight.load(QUrl("https://www.google.com"))
+        webRight.load(QUrl("http://192.168.1.81"))
 
         #show window
         self.showMaximized()
