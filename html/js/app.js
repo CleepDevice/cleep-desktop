@@ -1,16 +1,16 @@
 /**
  * Main application
  */
-var RaspIot = angular.module(
-    'RaspIot',
-    ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute', 'base64', 'md.data.table', 'nvd3', 'blockUI', 'ui.codemirror']
+var Cleep = angular.module(
+    'Cleep',
+    ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute']
 );
 
 /**
  * Main application controller
  * It holds some generic stuff like polling request, loaded services...
  */
-var mainController = function($rootScope, $scope, $injector, rpcService, objectsService, raspiotService, systemService, blockUI, toast) {
+var mainController = function($rootScope, $scope, $injector) {
 
     var self = this;
     self.needRestart = false;
@@ -23,7 +23,7 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
     /**
      * Handle polling
      */
-    self.polling = function()
+    /*self.polling = function()
     {
          rpcService.poll()
             .then(function(response) {
@@ -89,14 +89,14 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 }
                 window.setTimeout(self.polling, self.nextPollingTimeout*1000);
             });
-    };
+    };*/
     //window.setTimeout(self.polling, 0);
 
     /**
      * Get server modules with their configs
      * And load devices
      */
-    self.loadConfig = function()
+    /*self.loadConfig = function()
     {
         //load modules and their configs
         rpcService.getModules()
@@ -136,28 +136,28 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 console.log("MODULES", raspiotService.modules);
                 console.log("RENDERERS", raspiotService.renderers);
             });
-    };
+    };*/
 
     /**
      * Restart raspiot
      */
-    self.restart = function()
+    /*self.restart = function()
     {
         systemService.restart();
-    };
+    };*/
 
     /**
      * Reboot raspberry
      */
-    self.reboot = function()
+    /*self.reboot = function()
     {
         systemService.reboot();
-    };
+    };*/
 
     /**
      * Init main controller
      */
-    self.init = function()
+    /*self.init = function()
     {
         //launch polling
         window.setTimeout(self.polling, 0);
@@ -165,12 +165,12 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
         //load config (modules, devices, renderers...)
         self.loadConfig();
     };
-    self.init();
+    self.init();*/
 
     /**
      * Watch for system config changes to add restart button if restart is needed
      */
-    $scope.$watchCollection(
+    /*$scope.$watchCollection(
         function() {
             return raspiotService.modules['system'];
         },
@@ -182,9 +182,9 @@ var mainController = function($rootScope, $scope, $injector, rpcService, objects
                 self.hostname = newValue.config.hostname;
             }
         }
-    );
+    );*/
 
 };
 
-RaspIot.controller('mainController', ['$rootScope', '$scope', '$injector', 'rpcService', 'objectsService', 'raspiotService', 'systemService', 'blockUI', 'toastService', mainController]);
+Cleep.controller('mainController', ['$rootScope', '$scope', '$injector', mainController]);
 

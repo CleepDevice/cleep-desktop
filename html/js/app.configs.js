@@ -6,12 +6,12 @@
  *  - fonts provider
  */
 
-var RaspIot = angular.module('RaspIot');
+var Cleep = angular.module('Cleep');
 
 /**
  * Routes configuration
  */
-RaspIot.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
+Cleep.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
     $locationProvider.hashPrefix('!');
     $routeProvider
         .when('/dashboard', {
@@ -40,7 +40,7 @@ RaspIot.config(['$routeProvider', '$locationProvider', function($routeProvider, 
 /**
  * Theme configuration
  */
-RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
+Cleep.config(['$mdThemingProvider', function($mdThemingProvider) {
     $mdThemingProvider
         .theme('default')
         .primaryPalette('blue-grey')
@@ -73,21 +73,4 @@ RaspIot.config(['$mdThemingProvider', function($mdThemingProvider) {
     $mdIconProvider
         .iconSet('typicons', 'fonts/typicons.svg', 24)
 }]);*/
-
-/**
- * Fix issue with md-datepicker with angular 1.6 and angular-material 1.1.1
- * @see https://github.com/angular/material/issues/10280
- */
-RaspIot.config(['$compileProvider', function($compileProvider) {
-    $compileProvider.preAssignBindingsEnabled(true);
-}]);
-
-
-/**
- * Blockui configuration
- */
-RaspIot.config(['blockUIConfig', function(blockUIConfig) {
-    blockUIConfig.message = 'Loading';
-    blockUIConfig.autoBlock = false;
-}]);
 

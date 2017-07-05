@@ -532,6 +532,7 @@ def index():
 
 if __name__ == u'__main__':
     #get rpc application
+    debug = True
     app = get_app(debug)
 
     #set message bus

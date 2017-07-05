@@ -44,9 +44,10 @@ class Cleep(QMainWindow):
     def send_command(self, command, params=None):
         url = 'http://localhost:9666/%s' % command
         raw = requests.post(url, params)
-        self.logger.debug('raw: %s' % raw.content)
+        self.logger.debug('response encoding %s' % raw.encoding)
+        self.logger.debug('response raw: %s' % raw.content)
         resp = json.loads(raw.content)
-        self.logger.debug('resp: %s' % resp)
+        self.logger.debug('response dict: %s' % resp)
 
         #handle errors
 
@@ -59,9 +60,11 @@ class Cleep(QMainWindow):
     def handle_exit(self):
         #kill rpcserver instance first
         resp = self.send_command('pid')
+        self.logger.debug('Kill rpcserver pid=%d' % resp['pid'])
         os.kill(resp['pid'], signal.SIGTERM)
 
         #finally close application
+        self.logger.debug('Close application')
         self.close()
 
     def handle_ssl_errors(self, reply, errors):
@@ -138,7 +141,7 @@ class Cleep(QMainWindow):
         webLeft.setSizePolicy(sizePolicy)
         webLeft.setMaximumSize(QtCore.QSize(250, 16777215))
         box.addWidget(webLeft)
-        webLeft.load(QUrl("https://www.google.com"))
+        webLeft.load(QUrl("http://localhost:9666/index.html"))
         
         #set right web panel
         webRight = QWebEngineView()
