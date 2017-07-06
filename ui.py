@@ -17,6 +17,7 @@ from PyQt5.QtNetwork import QNetworkProxyFactory, QNetworkAccessManager
 import platform
 from PyQt5.QtWidgets import QSizePolicy
 from comm import CleepCommand, CleepCommServer
+import requests
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
 
@@ -29,8 +30,9 @@ class Cleep(QMainWindow):
         #init members
         self.app = app
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.comm = CleepComServer()
+        self.comm = CleepCommServer()
         self.comm.connect()
+        self.comm.start()
 
         if platform.system()=='Windows':
             #disable system proxy for windows https://bugreports.qt.io/browse/QTBUG-44763
@@ -48,13 +50,13 @@ class Cleep(QMainWindow):
 
     def send_command(self, command, params=None):
         url = 'http://localhost:9666/%s' % command
-        raw = requests.post(url, params)
-        self.logger.debug('response encoding %s' % raw.encoding)
-        self.logger.debug('response raw: %s' % raw.content)
-        resp = json.loads(raw.content)
-        self.logger.debug('response dict: %s' % resp)
+        resp = requests.post(url, params).json()
+        #self.logger.debug('response encoding %s' % raw.encoding)
+        self.logger.debug('response: %s' % resp)
+        #resp = json.loads(raw)
+        #self.logger.debug('response dict: %s' % resp)
 
-        #handle errors
+        #TODO handle errors
 
         return resp['data']
 

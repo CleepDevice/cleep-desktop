@@ -31,6 +31,7 @@ from bottle import auth_basic
 from passlib.hash import sha256_crypt
 import functools
 #from .libs.raspiotconf import RaspiotConf
+from comm import CleepCommand, CleepCommClient
 
 __all__ = ['app']
 
@@ -190,34 +191,33 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
 #
 #    return decorator
 
-def send_command(command, to, params, timeout=None):
-    """
-    Send specified command
-
-    Args:
-        command (string): command to execute
-        to (string): command recipient
-        params (dict): command parameters
-        timeout (float): set new timeout (default no timeout)
-
-    Returns:
-        MessageResonse: command response (None if broadcasted message)
-    """
-    #get bus
-    bus = app.config['sys.bus']
-
-    #prepare and send command
-    request = MessageRequest()
-    request.command = command
-    request.to = to
-    request.from_ = 'rpcserver'
-    request.params = params
-
-    if timeout is not None:
-        return bus.push(request, timeout)
-    else:
-        return bus.push(request)
-
+#def send_command(command, to, params, timeout=None):
+#    """
+#    Send specified command
+#
+#    Args:
+#        command (string): command to execute
+#        to (string): command recipient
+#        params (dict): command parameters
+#        timeout (float): set new timeout (default no timeout)
+#
+#    Returns:
+#        MessageResonse: command response (None if broadcasted message)
+#    """
+#    #get bus
+#    bus = app.config['sys.bus']
+#
+#    #prepare and send command
+#    request = MessageRequest()
+#    request.command = command
+#    request.to = to
+#    request.from_ = 'rpcserver'
+#    request.params = params
+#
+#    if timeout is not None:
+#        return bus.push(request, timeout)
+#    else:
+#        return bus.push(request)
 
 #@app.route('/upload', method='POST')
 #@authenticate()
@@ -343,168 +343,168 @@ def send_command(command, to, params, timeout=None):
 #
 #    return resp
 
-@app.route('/command', method=['POST','GET'])
-def command():
-    """
-    Execute command on raspiot
+#@app.route('/command', method=['POST','GET'])
+#def command():
+#    """
+#    Execute command on raspiot
+#
+#    Args:
+#        command (string): command
+#        to (string): command recipient
+#        timeout (float): timeout
+#        params (dict): command parameters
+#
+#    Returns:
+#        MessageResponse: command response
+#    """
+#    logger.debug('COMMAND method=%s data=[%d]: %s' % (str(bottle.request.method), len(bottle.request.params), str(bottle.request.json)))
+#
+#    try:
+#        command = None
+#        to = None
+#        params = {}
+#        timeout = None
+#
+#        #prepare data to push
+#        if bottle.request.method=='GET':
+#            #GET request
+#            command = bottle.request.query.command
+#            to = bottle.request.query.to
+#            params = bottle.request.query.params
+#            timeout = bottle.request.query.timeout
+#            #handle params: 
+#            # - could be specified as params field with json 
+#            # - or not specified in which case parameters are directly specified in query string
+#            if len(params)==0:
+#                #no params value specified, use all query string
+#                params = dict(bottle.request.query)
+#                #remove useless parameters
+#                if params.has_key('command'):
+#                    del params['command']
+#                if params.has_key('to'):
+#                    del params['to']
+#            else:
+#                #params specified in query string, unjsonify it
+#                try:
+#                    params = json.loads(params)
+#                except:
+#                    params = None
+#
+#        else:
+#            #POST request (need json)
+#            tmp_params = bottle.request.json
+#            if tmp_params.has_key('to'):
+#                to = tmp_params['to']
+#                del tmp_params['to']
+#            if tmp_params.has_key('command'):
+#                command = tmp_params['command']
+#                del tmp_params['command']
+#            if tmp_params.has_key('timeout') and tmp_params['timeout'] is not None and type(tmp_params['timeout']).__name__ in ('float', 'int'):
+#                logger.debug(' ==> timeout=%d' % tmp_params['timeout'])
+#                timeout = float(tmp_params['timeout'])
+#                del tmp_params['timeout']
+#            if len(tmp_params)>0:
+#                params = tmp_params['params']
+#
+#        #execute command
+#        resp = send_command(command, to, params, timeout)
+#
+#    except Exception as e:
+#        logger.exception('Exception in command:')
+#        #something went wrong
+#        msg = MessageResponse()
+#        msg.message = str(e)
+#        msg.error = True
+#        resp = msg.to_dict()
+#
+#    return resp
 
-    Args:
-        command (string): command
-        to (string): command recipient
-        timeout (float): timeout
-        params (dict): command parameters
+#@app.route('/registerpoll', method='POST')
+#def registerpoll():
+#    """
+#    Register poll
+#
+#    Returns:
+#        dict: {'pollkey':''}
+#    """
+#    #subscribe to bus
+#    poll_key = str(uuid.uuid4())
+#    if app.config.has_key('sys.bus'):
+#        logger.debug('subscribe %s' % poll_key)
+#        app.config['sys.bus'].add_subscription('rpc-%s' % poll_key)
+#
+#    #return response
+#    bottle.response.content_type = 'application/json'
+#    return json.dumps({'pollKey':poll_key})
 
-    Returns:
-        MessageResponse: command response
-    """
-    logger.debug('COMMAND method=%s data=[%d]: %s' % (str(bottle.request.method), len(bottle.request.params), str(bottle.request.json)))
+#@contextmanager
+#def pollcounter():
+#    global polling
+#    polling += 1
+#    yield
+#    polling -= 1
 
-    try:
-        command = None
-        to = None
-        params = {}
-        timeout = None
-
-        #prepare data to push
-        if bottle.request.method=='GET':
-            #GET request
-            command = bottle.request.query.command
-            to = bottle.request.query.to
-            params = bottle.request.query.params
-            timeout = bottle.request.query.timeout
-            #handle params: 
-            # - could be specified as params field with json 
-            # - or not specified in which case parameters are directly specified in query string
-            if len(params)==0:
-                #no params value specified, use all query string
-                params = dict(bottle.request.query)
-                #remove useless parameters
-                if params.has_key('command'):
-                    del params['command']
-                if params.has_key('to'):
-                    del params['to']
-            else:
-                #params specified in query string, unjsonify it
-                try:
-                    params = json.loads(params)
-                except:
-                    params = None
-
-        else:
-            #POST request (need json)
-            tmp_params = bottle.request.json
-            if tmp_params.has_key('to'):
-                to = tmp_params['to']
-                del tmp_params['to']
-            if tmp_params.has_key('command'):
-                command = tmp_params['command']
-                del tmp_params['command']
-            if tmp_params.has_key('timeout') and tmp_params['timeout'] is not None and type(tmp_params['timeout']).__name__ in ('float', 'int'):
-                logger.debug(' ==> timeout=%d' % tmp_params['timeout'])
-                timeout = float(tmp_params['timeout'])
-                del tmp_params['timeout']
-            if len(tmp_params)>0:
-                params = tmp_params['params']
-
-        #execute command
-        resp = send_command(command, to, params, timeout)
-
-    except Exception as e:
-        logger.exception('Exception in command:')
-        #something went wrong
-        msg = MessageResponse()
-        msg.message = str(e)
-        msg.error = True
-        resp = msg.to_dict()
-
-    return resp
-
-@app.route('/registerpoll', method='POST')
-def registerpoll():
-    """
-    Register poll
-
-    Returns:
-        dict: {'pollkey':''}
-    """
-    #subscribe to bus
-    poll_key = str(uuid.uuid4())
-    if app.config.has_key('sys.bus'):
-        logger.debug('subscribe %s' % poll_key)
-        app.config['sys.bus'].add_subscription('rpc-%s' % poll_key)
-
-    #return response
-    bottle.response.content_type = 'application/json'
-    return json.dumps({'pollKey':poll_key})
-
-@contextmanager
-def pollcounter():
-    global polling
-    polling += 1
-    yield
-    polling -= 1
-
-@app.route('/poll', method='POST')
-def poll():
-    """
-    This is the endpoint for long poll clients.
-
-    Returns:
-        dict: map of received event
-    """
-    with pollcounter():
-        params = bottle.request.json
-        #response content type.
-        bottle.response.content_type = 'application/json'
-
-        #get message bus
-        bus = app.config['sys.bus']
-
-        #init message
-        message = {'error':True, 'data':None, 'message':''}
-
-        #process poll
-        if not bus:
-            #bus not available yet
-            logger.debug('polling: bus not available')
-            message['message'] = 'Bus not available'
-            time.sleep(1.0)
-
-        elif not params.has_key('pollKey'):
-            #rpc client no registered yet
-            logger.debug('polling: registration key must be sent to poll request')
-            message['message'] = 'Polling key is missing'
-            time.sleep(1.0)
-
-        elif not bus.is_subscribed('rpc-%s' % params['pollKey']):
-            #rpc client no registered yet
-            logger.debug('polling: rpc client must be registered before polling')
-            message['message'] = 'Client not registered'
-            time.sleep(1.0)
-
-        else:
-            #wait for event (blocking by default) until end of timeout
-            try:
-                #wait for message
-                poll_key = 'rpc-%s' % params['pollKey']
-                msg = bus.pull(poll_key, POLL_TIMEOUT)
-
-                #prepare output
-                message['error'] = False
-                message['data'] = msg['message']
-                logger.debug('polling received %s' % message)
-
-            except NoMessageAvailable:
-                message['message'] = 'No message available'
-                time.sleep(1.0)
-
-            except:
-                logger.exception('poll exception')
-                message['message'] = 'Internal error'
-                time.sleep(5.0)
-
-    #and return it
-    return json.dumps(message)
+#@app.route('/poll', method='POST')
+#def poll():
+#    """
+#    This is the endpoint for long poll clients.
+#
+#    Returns:
+#        dict: map of received event
+#    """
+#    with pollcounter():
+#        params = bottle.request.json
+#        #response content type.
+#        bottle.response.content_type = 'application/json'
+#
+#        #get message bus
+#        bus = app.config['sys.bus']
+#
+#        #init message
+#        message = {'error':True, 'data':None, 'message':''}
+#
+#        #process poll
+#        if not bus:
+#            #bus not available yet
+#            logger.debug('polling: bus not available')
+#            message['message'] = 'Bus not available'
+#            time.sleep(1.0)
+#
+#        elif not params.has_key('pollKey'):
+#            #rpc client no registered yet
+#            logger.debug('polling: registration key must be sent to poll request')
+#            message['message'] = 'Polling key is missing'
+#            time.sleep(1.0)
+#
+#        elif not bus.is_subscribed('rpc-%s' % params['pollKey']):
+#            #rpc client no registered yet
+#            logger.debug('polling: rpc client must be registered before polling')
+#            message['message'] = 'Client not registered'
+#            time.sleep(1.0)
+#
+#        else:
+#            #wait for event (blocking by default) until end of timeout
+#            try:
+#                #wait for message
+#                poll_key = 'rpc-%s' % params['pollKey']
+#                msg = bus.pull(poll_key, POLL_TIMEOUT)
+#
+#                #prepare output
+#                message['error'] = False
+#                message['data'] = msg['message']
+#                logger.debug('polling received %s' % message)
+#
+#            except NoMessageAvailable:
+#                message['message'] = 'No message available'
+#                time.sleep(1.0)
+#
+#            except:
+#                logger.exception('poll exception')
+#                message['message'] = 'Internal error'
+#                time.sleep(5.0)
+#
+#    #and return it
+#    return json.dumps(message)
 
 @app.route('/pid', method='POST')
 def pid():
@@ -514,6 +514,10 @@ def pid():
     }
 
     return resp.to_dict()
+
+@app.route('/ui', method='POST')
+def ui():
+    logger.debug('received command from ui')
 
 @app.route('/<path:path>')
 def default(path):
@@ -540,10 +544,17 @@ if __name__ == u'__main__':
     bus = bus.MessageBus(debug)
     app.config[u'sys.bus'] = bus
 
+    #connect to ui
+    comm = CleepCommClient()
+    if not comm.connect():
+        print('Failed to connect to ui, stop')
+
     #start rpc server
     logger.debug('Serving files from %s)' % HTML_DIR)
     #TODO get data from config file
     bus.app_configured()
     start(u'0.0.0.0', 9666, None, None)
+
+    comm.disconnect()
 
 

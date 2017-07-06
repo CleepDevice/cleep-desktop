@@ -10,7 +10,7 @@ var Cleep = angular.module(
  * Main application controller
  * It holds some generic stuff like polling request, loaded services...
  */
-var mainController = function($rootScope, $scope, $injector) {
+var mainController = function($rootScope, $scope, $injector, uiService) {
 
     var self = this;
     self.needRestart = false;
@@ -19,6 +19,12 @@ var mainController = function($rootScope, $scope, $injector) {
     self.hostname = '';
     self.pollingTimeout = 0;
     self.nextPollingTimeout = 1;
+
+    self.refresh = function()
+    {
+        console.log('refresh button clicked');
+        uiService.sendUi('coucou', null);
+    };
 
     /**
      * Handle polling
@@ -186,5 +192,5 @@ var mainController = function($rootScope, $scope, $injector) {
 
 };
 
-Cleep.controller('mainController', ['$rootScope', '$scope', '$injector', mainController]);
+Cleep.controller('mainController', ['$rootScope', '$scope', '$injector', 'uiService', mainController]);
 

@@ -20,7 +20,7 @@
                     My devices
                 </h2>
                 <span flex></span>
-                <md-button href="#!modules" class="md-icon-button" aria-label="Modules">
+                <md-button href="#!modules" class="md-icon-button" aria-label="Modules" ng-click="mainCtl.refresh()">
                     <md-tooltip md-direction="left">Search for new devices</md-tooltip>
                     <md-icon md-font-set="material-icons">refresh</md-icon>
                 </md-button>
@@ -51,6 +51,7 @@
     <script src="js/app.js"></script>
     <script src="js/app.configs.js"></script>
     <script src="js/app.filters.js"></script>
+    <script src="js/services/ui.js"></script>
 
 </body>
 </html>
