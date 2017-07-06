@@ -16,11 +16,10 @@ from PyQt5.QtWidgets import QGridLayout, QHBoxLayout
 from PyQt5.QtNetwork import QNetworkProxyFactory, QNetworkAccessManager
 import platform
 from PyQt5.QtWidgets import QSizePolicy
-from bus import MessageBus
-
-import requests
+from comm import CleepCommand, CleepCommServer
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
+
 
 class Cleep(QMainWindow):
 
@@ -30,6 +29,8 @@ class Cleep(QMainWindow):
         #init members
         self.app = app
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.comm = CleepComServer()
+        self.comm.connect()
 
         if platform.system()=='Windows':
             #disable system proxy for windows https://bugreports.qt.io/browse/QTBUG-44763
@@ -62,6 +63,10 @@ class Cleep(QMainWindow):
         self.send_command('pid')
 
     def handle_exit(self):
+        #stop comm
+        if self.comm:
+            self.comm.disconnect()
+
         #kill rpcserver instance first
         resp = self.send_command('pid')
         self.logger.debug('Kill rpcserver pid=%d' % resp['pid'])
