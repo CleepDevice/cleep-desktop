@@ -32,23 +32,24 @@ from passlib.hash import sha256_crypt
 import functools
 #from .libs.raspiotconf import RaspiotConf
 from comm import CleepCommand, CleepCommClient
+from PyQt5.QtCore import QSettings
 
 __all__ = ['app']
 
 #constants
 BASE_DIR = ''
 HTML_DIR = os.path.join(BASE_DIR, 'html')
-AUTH_FILE = '/etc/raspiot/auth.conf'
-POLL_TIMEOUT = 60
-SESSION_TIMEOUT = 900 #15mins
+#AUTH_FILE = '/etc/raspiot/auth.conf'
+#POLL_TIMEOUT = 60
+#SESSION_TIMEOUT = 900 #15mins
 
 
 #globals
-polling = 0
-subscribed = False
-sessions = {}
-auth_config = {}
-auth_enabled = False
+#polling = 0
+#subscribed = False
+#sessions = {}
+#auth_config = {}
+#auth_enabled = False
 logger = None
 app = bottle.app()
 server = None
@@ -143,19 +144,22 @@ def index():
 
 
 if __name__ == u'__main__':
+    #load config
+    config = QSettings('cleep', 'cleep-desktop')
+
     #get rpc application
     debug = True
     app = get_app(debug)
 
     #connect to ui
-    comm = CleepCommClient(logger)
+    comm = CleepCommClient(config.value('localhost'), config.value('comm_port'), logger)
     if not comm.connect():
         print('Failed to connect to ui, stop')
 
     #start rpc server
     logger.debug('Serving files from %s' % HTML_DIR)
     #TODO get data from config file
-    start(u'0.0.0.0', 9666, None, None)
+    start(u'0.0.0.0', config.value('rpc_port'), None, None)
 
     #clean everythng
     comm.disconnect()

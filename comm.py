@@ -8,14 +8,7 @@ import socket
 import requests
 from threading import Thread
 import time
-import platform
 
-#config
-if platform.system()=='Windows':
-    COMM_IP = u''
-else:
-    COMM_IP = u'0.0.0.0'
-COMM_PORT = 9667
 
 class CleepCommand():
     def __init__(self):
@@ -30,8 +23,10 @@ class CleepCommand():
         return json.dumps(data)
 
 class CleepCommClient():
-    def __init__(self, logger):
+    def __init__(self, ip, port, logger):
         self.socket = None
+        self.ip = ip
+        self.port = port
         self.logger = logger
 
     def __del__(self):
@@ -42,7 +37,7 @@ class CleepCommClient():
         for i in range(20):
             try:
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.socket.connect((COMM_IP, COMM_PORT))
+                self.socket.connect((self.ip, self.port))
                 self.logger.debug(u'Connected to comm server')
                 connected = True
                 break
@@ -65,10 +60,12 @@ class CleepCommClient():
         return False
 
 class CleepCommServer(Thread):
-    def __init__(self, logger):
+    def __init__(self, ip, port, logger):
         Thread.__init__(self)
         Thread.daemon = True
 
+        self.ip = ip
+        self.port = port
         self.logger = logger
         self.socket = None
         self.conn = None
@@ -83,7 +80,7 @@ class CleepCommServer(Thread):
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socket.bind((COMM_IP, COMM_PORT))
+            self.socket.bind((self.ip, self.port))
 
         except Exception as e:
             self.logger.exception('Exception occured:')
@@ -96,7 +93,7 @@ class CleepCommServer(Thread):
             self.socket.close()
 
     def run(self):
-        self.logger.debug('Starting CommServer on %s:%d' % (COMM_IP, COMM_PORT))
+        self.logger.debug('Starting CommServer on %s:%d' % (self.ip, self.port))
         self.socket.listen(1)
         self.conn, self.addr = self.socket.accept()
         self.logger.debug('CommClient connected')

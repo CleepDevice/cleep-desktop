@@ -6,9 +6,28 @@ import os
 import signal
 import time
 import logging
+import platform
+from PyQt5.QtCore import QSettings
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
 logger = logging.getLogger('Cleep-desktop')
+
+#default configuration values
+DEFAULT_RPC_PORT = 5610
+DEFAULT_COMM_PORT = 5611
+if platform.system()=='Windows':
+    DEFAULT_IP = u'' 
+else:
+    DEFAULT_IP = u'0.0.0.0'
+
+#handle default config
+config = QSettings('cleep', 'cleep-desktop')
+if 'localhost' not in config.allKeys():
+    config.setValue('localhost', DEFAULT_IP)
+if 'rpc_host' not in config.allKeys():
+    config.setValue('rpc_host', DEFAULT_RPC_PORT)
+if 'comm_host' not in config.allKeys():
+    config.setValue('rpc_host', DEFAULT_COMM_PORT)
 
 #launch processes
 logger.debug('Launch processes')

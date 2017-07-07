@@ -17,6 +17,7 @@ from PyQt5.QtNetwork import QNetworkProxyFactory, QNetworkAccessManager, QNetwor
 import platform
 from PyQt5.QtWidgets import QSizePolicy
 from comm import CleepCommand, CleepCommServer
+from PyQt5.QtCore import QSettings
 import requests
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
@@ -28,8 +29,14 @@ class Cleep(QMainWindow):
 
         #init members
         self.app = app
+        self.config = {}
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.comm = CleepCommServer(self.logger)
+
+        #load configuration
+        self.load_config()
+
+        #start communication server
+        self.comm = CleepCommServer(self.config.value('localhost'), self.config.value('comm_port'), self.logger)
         self.comm.connect()
         self.comm.start()
 
@@ -45,8 +52,17 @@ class Cleep(QMainWindow):
         self.init_actions()
         self.init_ui()
 
-    def load_configuration(self):
-        pass
+    def load_config(self):
+        #load conf
+        self.config = QSettings('cleep', 'cleep-desktop')
+        self.logger.debug('Config location: %s' % self.config.fileName())
+
+        #check conf
+        #if 'rpc_port' not in self.config.allKeys():
+        #    self.logger.debug('Init config value rpc_port')
+        #    self.config.setValue('rpc_port', 9610)
+        #if 'comm_port' not in self.config.allKeys():
+        #    self.config.setValue('comm_port', 9611)
 
     def send_command(self, command, params=None):
         url = 'http://localhost:9666/%s' % command
@@ -163,13 +179,14 @@ class Cleep(QMainWindow):
         webLeft.setContextMenuPolicy(Qt.NoContextMenu)
         webLeft.setMaximumSize(QtCore.QSize(250, 16777215))
         box.addWidget(webLeft)
-        webLeft.load(QUrl("http://localhost:9666/index.html"))
+        webLeft.load(QUrl('http://127.0.0.1:%d/index.html' % self.config.value('rpc_port')))
         
         #set right web panel
         webRight = QWebEngineView()
         webRight.setContextMenuPolicy(Qt.NoContextMenu)
         box.addWidget(webRight)
-        webRight.load(QUrl("http://192.168.1.81"))
+        #webRight.load(QUrl("http://192.168.1.81"))
+        webRight.load(QUrl('http://127.0.0.1:%d/welcome.html' % self.config.value('rpc_port')))
 
         #show window
         self.showMaximized()
