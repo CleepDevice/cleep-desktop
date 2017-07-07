@@ -30,7 +30,7 @@ class Cleep(QMainWindow):
         #init members
         self.app = app
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.comm = CleepCommServer()
+        self.comm = CleepCommServer(self.logger)
         self.comm.connect()
         self.comm.start()
 
@@ -39,7 +39,7 @@ class Cleep(QMainWindow):
             QNetworkProxyFactory.setUseSystemConfiguration(False)
 
         #self.networkAccessManager = QNetworkAccessManager()
-        #self.networkAccessManager.authenticationRequired.connectself.handle_auth)
+        #self.networkAccessManager.authenticationRequired.connect(self.handle_auth)
         #self.networkAccessManager.sslErrors(self.handle_ssl_errors)
 
         self.init_actions()
@@ -62,7 +62,7 @@ class Cleep(QMainWindow):
 
     def show_help(self):
         self.logger.debug('--> showHelp')
-        self.send_command('pid')
+        #self.send_command('pid')
 
     def handle_exit(self):
         #stop comm
@@ -70,9 +70,9 @@ class Cleep(QMainWindow):
             self.comm.disconnect()
 
         #kill rpcserver instance first
-        resp = self.send_command('pid')
-        self.logger.debug('Kill rpcserver pid=%d' % resp['pid'])
-        os.kill(resp['pid'], signal.SIGTERM)
+        #resp = self.send_command('pid')
+        #self.logger.debug('Kill rpcserver pid=%d' % resp['pid'])
+        #os.kill(resp['pid'], signal.SIGTERM)
 
         #finally close application
         self.logger.debug('Close application')
