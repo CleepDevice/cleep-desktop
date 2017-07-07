@@ -13,14 +13,13 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtWebEngineWidgets import *
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
 from PyQt5.QtWidgets import QGridLayout, QHBoxLayout
-from PyQt5.QtNetwork import QNetworkProxyFactory, QNetworkAccessManager
+from PyQt5.QtNetwork import QNetworkProxyFactory, QNetworkAccessManager, QNetworkProxy
 import platform
 from PyQt5.QtWidgets import QSizePolicy
 from comm import CleepCommand, CleepCommServer
 import requests
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
-
 
 class Cleep(QMainWindow):
 
@@ -42,6 +41,7 @@ class Cleep(QMainWindow):
         #self.networkAccessManager.authenticationRequired.connect(self.handle_auth)
         #self.networkAccessManager.sslErrors(self.handle_ssl_errors)
 
+        self.configure_proxy()
         self.init_actions()
         self.init_ui()
 
@@ -111,6 +111,13 @@ class Cleep(QMainWindow):
         grid.addWidget(buttonBox, 3, 0, 1, 2)
 
         dialog.exec()
+
+    def configure_proxy(self):
+        proxy = QNetworkProxy()
+        proxy.setType(QNetworkProxy.HttpProxy)
+        proxy.setHostName('localhost')
+        proxy.setPort(8080)
+        QNetworkProxy.setApplicationProxy(proxy)
 
     def init_actions(self):
         #close action
