@@ -31,12 +31,14 @@ class Cleep(QMainWindow):
         self.app = app
         self.config = {}
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.webLeft = None
+        self.webRight = None
 
         #load configuration
         self.load_config()
 
         #start communication server
-        self.comm = CleepCommServer(self.config.value('localhost'), self.config.value('comm_port'), self.logger)
+        self.comm = CleepCommServer(self.config.value('localhost'), self.config.value('comm_port'), self.command_handler, self.logger)
         self.comm.connect()
         self.comm.start()
 
@@ -51,6 +53,9 @@ class Cleep(QMainWindow):
         self.configure_proxy()
         self.init_actions()
         self.init_ui()
+
+    def command_handler(self, command, params):
+        self.logger.debug('Received command %s with params %s' % (command, params))
 
     def load_config(self):
         #load conf
@@ -98,7 +103,7 @@ class Cleep(QMainWindow):
         self.logger.debug('handle sslerrors')
         self.logger.debug('\n'.join([str(error.errorString()) for error in errors]))
 
-    def handle_auth(self):
+    def dialog_auth(self):
         self.logger.debug('handle auth')
         dialog = QDialog()
         dialog.resize(400, 128)
@@ -106,25 +111,61 @@ class Cleep(QMainWindow):
 
         grid = QtWidgets.QGridLayout(dialog)
 
-        loginLabel = QtWidgets.QLabel(dialog)
-        loginLabel.setText('Login')
-        grid.addWidget(loginLabel, 0, 0, 1, 1)
+        label_login = QtWidgets.QLabel(dialog)
+        label_login.setText('Login')
+        grid.addWidget(label_login, 0, 0, 1, 1)
 
-        loginEdit = QtWidgets.QLineEdit(dialog)
-        grid.addWidget(loginEdit, 0, 1, 1, 1)
+        edit_login = QtWidgets.QLineEdit(dialog)
+        grid.addWidget(edit_login, 0, 1, 1, 1)
 
-        passwordLabel = QtWidgets.QLabel(dialog)
-        passwordLabel.setText('Password')
-        grid.addWidget(passwordLabel, 2, 0, 1, 1)
+        label_password = QtWidgets.QLabel(dialog)
+        label_password.setText('Password')
+        grid.addWidget(label_password, 2, 0, 1, 1)
 
-        passwordEdit = QtWidgets.QLineEdit(dialog)
-        passwordEdit.setEchoMode(QtWidgets.QLineEdit.Password)
-        grid.addWidget(passwordEdit, 2, 1, 1, 1)
+        edit_password = QtWidgets.QLineEdit(dialog)
+        edit_password.setEchoMode(QtWidgets.QLineEdit.Password)
+        grid.addWidget(edit_password, 2, 1, 1, 1)
 
-        buttonBox = QtWidgets.QDialogButtonBox(dialog)
-        buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
-        grid.addWidget(buttonBox, 3, 0, 1, 2)
+        button_box = QtWidgets.QDialogButtonBox(dialog)
+        button_box.setOrientation(QtCore.Qt.Horizontal)
+        button_box.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        grid.addWidget(button_box, 3, 0, 1, 2)
+
+        dialog.exec()
+
+    def dialog_proxy(self):
+        dialog = QDialog()
+        dialog.resize(400, 190)
+        dialog.setModal(True)
+
+        grid = QtWidgets.QGridLayout(dialog)
+        
+        radio_noproxy = QtWidgets.QRadioButton(Dialog)
+        radio_noproxy.setText('Direct connection')
+        grid.addWidget(radio_noproxy, 0, 0, 1, 2)
+        
+        radio_manualproxy = QtWidgets.QRadioButton(Dialog)
+        radio_manulaproxy.setText('Manual proxy configuration')
+        grid.addWidget(radio_manualproxy, 1, 0, 1, 2)
+
+        label_proxyip = QtWidgets.QLabel(dialog)
+        label_proxyip.setText('Proxy ip')
+        grid.addWidget(label_proxyip, 2, 0, 1, 1)
+
+        edit_proxyip = QtWidgets.QLineEdit(dialog)
+        grid.addWidget(edit_proxyip, 2, 1, 1, 1)
+
+        label_proxyport = QtWidgets.QLabel(dialog)
+        label_proxyport.setText('Proxy port')
+        grid.addWidget(label_proxyport, 3, 0, 1, 1)
+
+        edit_proxyport = QtWidgets.QLineEdit(dialog)
+        grid.addWidget(edit_proxyport, 3, 1, 1, 1)
+
+        button_box = QtWidgets.QDialogButtonBox(dialog)
+        button_box.setOrientation(QtCore.Qt.Horizontal)
+        button_box.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        grid.addWidget(button_box, 4, 0, 1, 2)
 
         dialog.exec()
 
@@ -134,6 +175,13 @@ class Cleep(QMainWindow):
         proxy.setHostName('localhost')
         proxy.setPort(8080)
         QNetworkProxy.setApplicationProxy(proxy)
+
+    def show_preferences(self):
+        #cmd = CleepCommand()
+        #cmd.command = 'open'
+        #cmd.params = 'preferences'
+        #self.comm.send(cmd)
+        self.webRight.load(QUrl('http://127.0.0.1:%d/preferences.html' % self.config.value('rpc_port')))
 
     def init_actions(self):
         #close action
@@ -151,6 +199,11 @@ class Cleep(QMainWindow):
         self.helpAction.setStatusTip('Help')
         self.helpAction.triggered.connect(self.show_help)
 
+        #open preferences
+        self.prefAction = QAction(QIcon(''), 'Preferences', self)
+        self.prefAction.setStatusTip('Open preferences')
+        self.prefAction.triggered.connect(self.show_preferences)
+
     def init_ui(self):
         #configure main window
         self.setWindowTitle('Cleep')
@@ -158,6 +211,7 @@ class Cleep(QMainWindow):
         #add menus
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
+        fileMenu.addAction(self.prefAction)
         fileMenu.addAction(self.exitAction)
         helpMenu = menubar.addMenu('&Help')
         helpMenu.addAction(self.helpAction)
@@ -173,20 +227,20 @@ class Cleep(QMainWindow):
         container.setLayout(box)
 
         #set left web panel
-        webLeft = QWebEngineView()
+        self.webLeft = QWebEngineView()
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
-        webLeft.setSizePolicy(sizePolicy)
-        webLeft.setContextMenuPolicy(Qt.NoContextMenu)
-        webLeft.setMaximumSize(QtCore.QSize(250, 16777215))
-        box.addWidget(webLeft)
-        webLeft.load(QUrl('http://127.0.0.1:%d/index.html' % self.config.value('rpc_port')))
+        self.webLeft.setSizePolicy(sizePolicy)
+        self.webLeft.setContextMenuPolicy(Qt.NoContextMenu)
+        self.webLeft.setMaximumSize(QtCore.QSize(250, 16777215))
+        box.addWidget(self.webLeft)
+        self.webLeft.load(QUrl('http://127.0.0.1:%d/index.html' % self.config.value('rpc_port')))
         
         #set right web panel
-        webRight = QWebEngineView()
-        webRight.setContextMenuPolicy(Qt.NoContextMenu)
-        box.addWidget(webRight)
-        #webRight.load(QUrl("http://192.168.1.81"))
-        webRight.load(QUrl('http://127.0.0.1:%d/welcome.html' % self.config.value('rpc_port')))
+        self.webRight = QWebEngineView()
+        self.webRight.setContextMenuPolicy(Qt.NoContextMenu)
+        box.addWidget(self.webRight)
+        #self.webRight.load(QUrl("http://192.168.1.81"))
+        self.webRight.load(QUrl('http://127.0.0.1:%d/welcome.html' % self.config.value('rpc_port')))
 
         #show window
         self.showMaximized()

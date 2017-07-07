@@ -1,0 +1,42 @@
+<html>
+<head>
+    <title>Welcome</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/roboto-fonts.css">
+    <link rel="stylesheet" href="css/angular-material.min.css"/>
+    <link rel="stylesheet" href="css/materialicons.css"/>
+</head>
+<body ng-app="Cleep" layout-fill ng-cloak
+
+    <!-- only used to fix scrolling issue for toast: https://github.com/angular/material/issues/2936 -->
+    <md-content flex="100">
+
+    <div ng-controller="mainController as mainCtl" layout="column" layout-fill>
+
+        Welcome to Cleep desktop application. This application allows you to configure all your Cleep devices.
+
+    </div>
+
+    </md-content>
+
+    <!-- system -->
+    <script src="js/libs/jquery.min.js"></script>
+    <script src="js/libs/angular.min.js"></script>
+    <script src="js/libs/angular-route.min.js"></script>
+    <script src="js/libs/angular-animate.min.js"></script>
+    <script src="js/libs/angular-messages.min.js"></script>
+    <script src="js/libs/angular-aria.min.js"></script>
+    <script src="js/libs/angular-material.min.js"></script>
+
+    <!-- plugins -->
+
+    <!-- application -->
+    <script src="js/tools/helpers.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/app.configs.js"></script>
+    <script src="js/app.filters.js"></script>
+    <script src="js/services/ui.js"></script>
+
+</body>
+</html>
+

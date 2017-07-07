@@ -24,10 +24,14 @@ else:
 config = QSettings('cleep', 'cleep-desktop')
 if 'localhost' not in config.allKeys():
     config.setValue('localhost', DEFAULT_IP)
-if 'rpc_host' not in config.allKeys():
-    config.setValue('rpc_host', DEFAULT_RPC_PORT)
-if 'comm_host' not in config.allKeys():
-    config.setValue('rpc_host', DEFAULT_COMM_PORT)
+if 'rpc_port' not in config.allKeys():
+    config.setValue('rpc_port', DEFAULT_RPC_PORT)
+if 'comm_port' not in config.allKeys():
+    config.setValue('comm_port', DEFAULT_COMM_PORT)
+if 'proxy_host' not in config.allKeys():
+    config.setValue('proxy_host', '')
+if 'proxy_port' not in config.allKeys():
+    config.setValue('proxy_port', 8080)
 
 #launch processes
 logger.debug('Launch processes')

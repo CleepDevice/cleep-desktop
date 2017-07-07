@@ -22,14 +22,20 @@ class CleepCommand():
         }
         return json.dumps(data)
 
-class CleepCommClient():
-    def __init__(self, ip, port, logger):
+class CleepCommClient(Thread):
+    def __init__(self, ip, port, command_handler, logger):
+        Thread.__init__(self)
+        Thread.daemon = True
+
         self.socket = None
+        self.running = True
         self.ip = ip
         self.port = port
+        self.command_handler = command_handler
         self.logger = logger
 
     def __del__(self):
+        self.running = False
         self.disconnect()
 
     def connect(self):
@@ -59,21 +65,81 @@ class CleepCommClient():
 
         return False
 
+    def run(self):
+        self.logger.debug('CommClient running...')
+        while self.running:
+            try:
+                raw = self.socket.recv(1024)
+                #raw = raw.decode('utf-8')
+                if not raw or len(raw)==0:
+                    time.sleep(0.10)
+                    continue
+                self.logger.debug('CommClient receives: %s' % str(raw))
+                command = json.loads(raw)
+                #self.socket.send('ok'.encode('utf-8'))
+                self.command_handler(command['command'], command['params'])
+
+            except ConnectionResetError:
+                #server closed connection
+                self.running = False
+                self.logger.debug('Connection closed')
+
+            except:
+                self.logger.exception('Exception occured:')
+                
+
+class CleepCommServerClient(Thread):
+    def __init__(self, conn, command_handler, logger):
+        Thread.__init__(self)
+        Thread.daemon = True
+
+        self.logger = logger
+        self.conn = conn
+        self.command_handler = command_handler
+        self.running = True
+
+    def __del__(self):
+        self.running = False
+        self.conn.close()
+
+    def send(self, command):
+        self.conn.send(command.to_json().encode('utf-8'))
+
+    def stop(self):
+        self.running = False
+        self.conn.close()
+
+    def run(self):
+        while self.running:
+            raw = self.conn.recv(1024)
+            #raw = raw.decode('utf-8')
+            self.logger.debug('CommServerClient receives: %s' % str(raw))
+            if not raw:
+                continue
+            command = json.loads(raw)
+            #self.conn.send('ok'.encode('utf-8'))
+
+            self.command_handler(command.command, command.params)
+
+
 class CleepCommServer(Thread):
-    def __init__(self, ip, port, logger):
+    def __init__(self, ip, port, command_handler, logger):
         Thread.__init__(self)
         Thread.daemon = True
 
         self.ip = ip
         self.port = port
+        self.command_handler = command_handler
         self.logger = logger
         self.socket = None
-        self.conn = None
-        self.addr = None
         self.running = True
+        self.client_count = 0
+        self.client = None
 
     def __del__(self):
         self.running = False
+        if self.client:
+            self.client.stop()
         self.disconnect()
 
     def connect(self):
@@ -92,19 +158,28 @@ class CleepCommServer(Thread):
         if self.socket:
             self.socket.close()
 
+    def send(self, command):
+        if self.client:
+            self.client.send(command)
+            return True
+
+        return False
+
     def run(self):
         self.logger.debug('Starting CommServer on %s:%d' % (self.ip, self.port))
-        self.socket.listen(1)
-        self.conn, self.addr = self.socket.accept()
-        self.logger.debug('CommClient connected')
-
         while self.running:
-            raw = self.conn.recv(1024)
-            #raw = raw.devoce('utf-8')
-            self.logger.debug('CommServer received: %s' % str(raw))
-            if not raw:
-                continue
-            data = json.loads(raw)
-            self.conn.send('ok'.encode('utf-8'))
+            self.socket.listen(5)
+            conn, addr = self.socket.accept()
 
+            if self.client_count==0:
+                #accept client connection
+                self.logger.debug('CommClient connected')
+                self.client = CleepCommServerClient(conn, self.command_handler, self.logger)
+                self.client.start()
+
+            else:
+                #reject client connection, only one allowed
+                self.logger.debug('Max client reached, reject client')
+                conn.send('No more connection allowed')
+                conn.close()
 

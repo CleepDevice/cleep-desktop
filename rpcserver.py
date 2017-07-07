@@ -142,6 +142,9 @@ def index():
     """
     return bottle.static_file('index.html', HTML_DIR)
 
+def command_received(command, params):
+    logger.debug('Command %s received with params %s' % (command, params))
+
 
 if __name__ == u'__main__':
     #load config
@@ -152,9 +155,10 @@ if __name__ == u'__main__':
     app = get_app(debug)
 
     #connect to ui
-    comm = CleepCommClient(config.value('localhost'), config.value('comm_port'), logger)
+    comm = CleepCommClient(config.value('localhost'), config.value('comm_port'), command_received, logger)
     if not comm.connect():
         print('Failed to connect to ui, stop')
+    comm.start()
 
     #start rpc server
     logger.debug('Serving files from %s' % HTML_DIR)
