@@ -1,20 +1,62 @@
 <html>
 <head>
-    <title>Welcome</title>
+    <title>Preferences</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/roboto-fonts.css">
     <link rel="stylesheet" href="css/angular-material.min.css"/>
     <link rel="stylesheet" href="css/materialicons.css"/>
 </head>
-<body ng-app="Cleep" layout-fill ng-cloak
+<body ng-app="Cleep" layout-fill ng-cloak>
 
     <!-- only used to fix scrolling issue for toast: https://github.com/angular/material/issues/2936 -->
     <md-content flex="100">
 
-    <div ng-controller="mainController as mainCtl" layout="column" layout-fill>
+    <div ng-controller="prefsController as prefsCtl" layout="column" layout-fill ng-cloak>
 
-        Cleep-desktop settings
+        <!-- menu -->
+        <md-toolbar flex="initial">
+            <div class="md-toolbar-tools">
+                <h2 ng-if="!mainCtl.hostname">
+                    Preferences
+                </h2>
+                <span flex></span>
+                <md-button class="md-icon-button" aria-label="Save">
+                    <md-tooltip md-direction="bottom">Save</md-tooltip>
+                    <md-icon md-font-set="material-icons">save</md-icon>
+                </md-button>
+                <md-button class="md-icon-button" aria-label="Close">
+                    <md-tooltip md-direction="bottom">Close</md-tooltip>
+                    <md-icon md-font-set="material-icons">close</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
 
+
+        <!-- tabs -->
+        <md-nav-bar md-selected-nav-item="prefsCtl.pref" nav-bar-aria-label="Preferences">
+            <md-nav-item md-nav-click="goto('proxy')" name="proxy">Proxy</md-nav-item>
+            <md-nav-item md-nav-click="goto('advanced')" name="advanced">Advanced</md-nav-item>
+        </md-nav-bar>
+
+        <!-- proxy -->
+        <div ng-if="prefsCtl.pref=='proxy'" style="padding:20px;">
+            <md-radio-group ng-model="prefsCtl.proxyMode">
+                <md-radio-button value="noproxy" class="md-primary">Direct connection (no proxy)</md-radio-button>
+                <md-radio-button value="manualproxy" class="md-primary">Manual proxy</md-radio-button>
+            </md-radio-group>
+            <md-input-container class="md-block" style="margin-top:30px;" flex-gt-sm>
+                <label>Proxy ip</label>
+                <input ng-model="prefsCtl.proxyIp" ng-disabled="prefsCtl.proxyMode=='noproxy'">
+            </md-input-container>
+            <md-input-container class="md-block" flex-gt-sm>
+                <label>Proxy port</label>
+                <input type="number" ng-model="prefsCtl.proxyPort" ng-disabled="prefsCtl.proxyMode=='noproxy'">
+            </md-input-container>
+        </div>
+
+        <div ng-if="prefsCtl.pref=='advanced'">
+            
+        </div>
 
     </div>
 
@@ -28,8 +70,6 @@
     <script src="js/libs/angular-messages.min.js"></script>
     <script src="js/libs/angular-aria.min.js"></script>
     <script src="js/libs/angular-material.min.js"></script>
-
-    <!-- plugins -->
 
     <!-- application -->
     <script src="js/tools/helpers.js"></script>

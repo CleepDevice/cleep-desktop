@@ -14,26 +14,11 @@ var Cleep = angular.module('Cleep');
 Cleep.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
     $locationProvider.hashPrefix('!');
     $routeProvider
-        .when('/dashboard', {
-            template: '<div dashboard-directive></div>'
-        })
-        .when('/configuration', {
-            template: '<div configuration-directive></div>'
-        })
-        .when('/modules', {
-            template: '<div modules-directive></div>'
-        })
-        .when('/install', {
-            template: '<div install-directive></div>'
-        })
-        .when('/module/:name', {
-            template: '<div module-directive></div>'
-        })
-        .when('/module/actions/edit/:script', {
+        /*.when('/module/actions/edit/:script', {
             template: '<div codemirror-python-directive></div>'
-        })
+        })*/
         .otherwise({
-            redirectTo: '/dashboard'
+            redirectTo: '/'
         });
 }]);
 

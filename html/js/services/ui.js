@@ -1,8 +1,9 @@
 var uiService = function($http, $q, $rootScope) {
     var self = this;
-    self.uriUi = window.location.protocol + '//localhost:9666/ui';
+    self.uriUi = window.location.protocol + '//localhost:5610/ui';
+    self.uriConfig = window.location.protocol + '//localhost:5610/config';
 
-    self.sendUi = function(command, params) {
+    self.send = function(url, command, params) {
         var d = $q.defer();
         var data = {
             command: command,
@@ -11,7 +12,7 @@ var uiService = function($http, $q, $rootScope) {
 
 		$http({
             method: 'POST',
-            url: self.uriUi,
+            url: url,
             data: data,
             responseType:'json'
         })
@@ -23,6 +24,10 @@ var uiService = function($http, $q, $rootScope) {
         });
 
         return d.promise;
+    };
+
+    self.getConfig = function() {
+        return self.send(self.uriConfig);
     };
 };
 

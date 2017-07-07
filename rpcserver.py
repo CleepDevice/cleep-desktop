@@ -27,7 +27,7 @@ from gevent import pywsgi
 from gevent.pywsgi import LoggingLogAdapter
 from utils import NoMessageAvailable, MessageResponse, MessageRequest, CommandError
 import bottle
-from bottle import auth_basic
+from bottle import auth_basic, response
 from passlib.hash import sha256_crypt
 import functools
 #from .libs.raspiotconf import RaspiotConf
@@ -54,6 +54,7 @@ logger = None
 app = bottle.app()
 server = None
 comm = None
+config = None
 
 def bottle_logger(func):
     """
@@ -121,12 +122,34 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
         if not server.closed:
             server.close()
 
-@app.route('/ui', method='POST')
+@app.hook('after_request')
+def enable_cors():
+    """
+    You need to add some headers to each request.
+    Don't use the wildcard '*' for Access-Control-Allow-Origin in production.
+    """
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'PUT, GET, POST, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
+
+@app.route('/ui', method=['OPTIONS', 'POST'])
 def ui():
-    logger.debug('received command from ui')
+    logger.debug('Received command from ui')
     cmd = CleepCommand()
     cmd.command = 'coucou'
     comm.send(cmd)
+
+@app.route('/config', method=['OPTIONS', 'POST'])
+def config():
+    logger.debug('Get config')
+    conf = {}
+    if config is not None:
+        conf = {
+            'proxymode': config.value('proxy_mode', type=str),
+            'proxyip': config.value('proxy_host', type=str),
+            'proxyport': config.value('proxy_port', type=int)
+        }
+    return conf
 
 @app.route('/<path:path>')
 def default(path):
@@ -155,7 +178,7 @@ if __name__ == u'__main__':
     app = get_app(debug)
 
     #connect to ui
-    comm = CleepCommClient(config.value('localhost'), config.value('comm_port'), command_received, logger)
+    comm = CleepCommClient(config.value('localhost', type=str), config.value('comm_port', type=int), command_received, logger)
     if not comm.connect():
         print('Failed to connect to ui, stop')
     comm.start()
@@ -163,7 +186,7 @@ if __name__ == u'__main__':
     #start rpc server
     logger.debug('Serving files from %s' % HTML_DIR)
     #TODO get data from config file
-    start(u'0.0.0.0', config.value('rpc_port'), None, None)
+    start(u'0.0.0.0', config.value('rpc_port', type=int), None, None)
 
     #clean everythng
     comm.disconnect()

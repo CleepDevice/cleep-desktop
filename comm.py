@@ -75,7 +75,11 @@ class CleepCommClient(Thread):
                     time.sleep(0.10)
                     continue
                 self.logger.debug('CommClient receives: %s' % str(raw))
+
+                if isinstance(raw, bytes):
+                    raw = raw.decode('utf-8')
                 command = json.loads(raw)
+
                 #self.socket.send('ok'.encode('utf-8'))
                 self.command_handler(command['command'], command['params'])
 
@@ -113,13 +117,18 @@ class CleepCommServerClient(Thread):
         while self.running:
             raw = self.conn.recv(1024)
             #raw = raw.decode('utf-8')
-            self.logger.debug('CommServerClient receives: %s' % str(raw))
-            if not raw:
+            if not raw or len(raw)==0:
+                time.sleep(0.10)
                 continue
+
+            self.logger.debug('CommServerClient receives: %s' % str(raw))
+
+            if isinstance(raw, bytes):
+                raw = raw.decode('utf-8')
             command = json.loads(raw)
             #self.conn.send('ok'.encode('utf-8'))
 
-            self.command_handler(command.command, command.params)
+            self.command_handler(command['command'], command['params'])
 
 
 class CleepCommServer(Thread):

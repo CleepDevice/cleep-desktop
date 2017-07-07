@@ -38,7 +38,7 @@ class Cleep(QMainWindow):
         self.load_config()
 
         #start communication server
-        self.comm = CleepCommServer(self.config.value('localhost'), self.config.value('comm_port'), self.command_handler, self.logger)
+        self.comm = CleepCommServer(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.command_handler, self.logger)
         self.comm.connect()
         self.comm.start()
 
@@ -60,7 +60,6 @@ class Cleep(QMainWindow):
     def load_config(self):
         #load conf
         self.config = QSettings('cleep', 'cleep-desktop')
-        self.logger.debug('Config location: %s' % self.config.fileName())
 
         #check conf
         #if 'rpc_port' not in self.config.allKeys():
@@ -181,7 +180,7 @@ class Cleep(QMainWindow):
         #cmd.command = 'open'
         #cmd.params = 'preferences'
         #self.comm.send(cmd)
-        self.webRight.load(QUrl('http://127.0.0.1:%d/preferences.html' % self.config.value('rpc_port')))
+        self.webRight.load(QUrl('http://127.0.0.1:%d/preferences.html' % self.config.value('rpc_port', type=int)))
 
     def init_actions(self):
         #close action
@@ -233,14 +232,18 @@ class Cleep(QMainWindow):
         self.webLeft.setContextMenuPolicy(Qt.NoContextMenu)
         self.webLeft.setMaximumSize(QtCore.QSize(250, 16777215))
         box.addWidget(self.webLeft)
-        self.webLeft.load(QUrl('http://127.0.0.1:%d/index.html' % self.config.value('rpc_port')))
+        self.webLeft.load(QUrl('http://127.0.0.1:%d/index.html' % self.config.value('rpc_port', type=int)))
+        #disable cache
+        self.webLeft.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
         
         #set right web panel
         self.webRight = QWebEngineView()
         self.webRight.setContextMenuPolicy(Qt.NoContextMenu)
         box.addWidget(self.webRight)
         #self.webRight.load(QUrl("http://192.168.1.81"))
-        self.webRight.load(QUrl('http://127.0.0.1:%d/welcome.html' % self.config.value('rpc_port')))
+        self.webRight.load(QUrl('http://127.0.0.1:%d/welcome.html' % self.config.value('rpc_port', type=int)))
+        #disable cache
+        self.webRight.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
 
         #show window
         self.showMaximized()
