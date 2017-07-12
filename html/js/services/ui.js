@@ -2,6 +2,7 @@ var uiService = function($http, $q, $rootScope) {
     var self = this;
     self.uriUi = window.location.protocol + '//localhost:5610/ui';
     self.uriConfig = window.location.protocol + '//localhost:5610/config';
+    self.uriBack = window.location.protocol + '//localhost:5610/back';
 
     self.send = function(url, command, params) {
         var d = $q.defer();
@@ -28,6 +29,10 @@ var uiService = function($http, $q, $rootScope) {
 
     self.getConfig = function() {
         return self.send(self.uriConfig);
+    };
+
+    self.back = function() {
+        return self.send(self.uriBack);
     };
 };
 

@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import QGridLayout, QHBoxLayout
 from PyQt5.QtNetwork import QNetworkProxyFactory, QNetworkAccessManager, QNetworkProxy
 import platform
 from PyQt5.QtWidgets import QSizePolicy
-from comm import CleepCommand, CleepCommServer
+from comm import CleepCommand, CleepCommClient
 from PyQt5.QtCore import QSettings
 import requests
 
@@ -33,12 +33,15 @@ class Cleep(QMainWindow):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.webLeft = None
         self.webRight = None
+        self.last_page = None
+        self.current_page = None
 
         #load configuration
         self.load_config()
 
         #start communication server
-        self.comm = CleepCommServer(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.command_handler, self.logger)
+        #self.comm = CleepCommServer(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.command_handler, self.logger)
+        self.comm = CleepCommClient(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.command_handler, self.logger)
         self.comm.connect()
         self.comm.start()
 
@@ -54,19 +57,48 @@ class Cleep(QMainWindow):
         self.init_actions()
         self.init_ui()
 
-    def command_handler(self, command, params):
-        self.logger.debug('Received command %s with params %s' % (command, params))
-
     def load_config(self):
-        #load conf
+        """
+        Load configuration and fill config member
+        """
         self.config = QSettings('cleep', 'cleep-desktop')
 
-        #check conf
-        #if 'rpc_port' not in self.config.allKeys():
-        #    self.logger.debug('Init config value rpc_port')
-        #    self.config.setValue('rpc_port', 9610)
-        #if 'comm_port' not in self.config.allKeys():
-        #    self.config.setValue('comm_port', 9611)
+    #-----------
+    # UI
+    #-----------
+
+    #-----------
+    # NAVIGATION
+    #-----------
+    
+    def open_page(self, page):
+        """
+        Open page in right panel
+
+        Args:
+            page (string): page to open
+        """
+        self.logger.debug('Opening %s' % page)
+        self.webRight.load(QUrl('http://127.0.0.1:%d/%s' % (self.config.value('rpc_port', type=int), page)))
+        self.last_page = self.current_page
+        self.current_page = page
+
+    def back(self):
+        """
+        Return to last opened page
+        """
+        self.logger.debug('back function')
+        if self.last_page is not None:
+            self.logger.debug('before')
+            self.open_page(self.last_page)
+            self.logger.debug('after')
+        else:
+            self.logger.debug('Unable to go back because no last page available')
+
+    def command_handler(self, command, params):
+        self.logger.debug('Received command %s with params %s' % (command, params))
+        if command=='back':
+            self.back()
 
     def send_command(self, command, params=None):
         url = 'http://localhost:9666/%s' % command
@@ -88,11 +120,6 @@ class Cleep(QMainWindow):
         #stop comm
         if self.comm:
             self.comm.disconnect()
-
-        #kill rpcserver instance first
-        #resp = self.send_command('pid')
-        #self.logger.debug('Kill rpcserver pid=%d' % resp['pid'])
-        #os.kill(resp['pid'], signal.SIGTERM)
 
         #finally close application
         self.logger.debug('Close application')
@@ -132,42 +159,6 @@ class Cleep(QMainWindow):
 
         dialog.exec()
 
-    def dialog_proxy(self):
-        dialog = QDialog()
-        dialog.resize(400, 190)
-        dialog.setModal(True)
-
-        grid = QtWidgets.QGridLayout(dialog)
-        
-        radio_noproxy = QtWidgets.QRadioButton(Dialog)
-        radio_noproxy.setText('Direct connection')
-        grid.addWidget(radio_noproxy, 0, 0, 1, 2)
-        
-        radio_manualproxy = QtWidgets.QRadioButton(Dialog)
-        radio_manulaproxy.setText('Manual proxy configuration')
-        grid.addWidget(radio_manualproxy, 1, 0, 1, 2)
-
-        label_proxyip = QtWidgets.QLabel(dialog)
-        label_proxyip.setText('Proxy ip')
-        grid.addWidget(label_proxyip, 2, 0, 1, 1)
-
-        edit_proxyip = QtWidgets.QLineEdit(dialog)
-        grid.addWidget(edit_proxyip, 2, 1, 1, 1)
-
-        label_proxyport = QtWidgets.QLabel(dialog)
-        label_proxyport.setText('Proxy port')
-        grid.addWidget(label_proxyport, 3, 0, 1, 1)
-
-        edit_proxyport = QtWidgets.QLineEdit(dialog)
-        grid.addWidget(edit_proxyport, 3, 1, 1, 1)
-
-        button_box = QtWidgets.QDialogButtonBox(dialog)
-        button_box.setOrientation(QtCore.Qt.Horizontal)
-        button_box.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
-        grid.addWidget(button_box, 4, 0, 1, 2)
-
-        dialog.exec()
-
     def configure_proxy(self):
         proxy = QNetworkProxy()
         proxy.setType(QNetworkProxy.HttpProxy)
@@ -176,11 +167,10 @@ class Cleep(QMainWindow):
         QNetworkProxy.setApplicationProxy(proxy)
 
     def show_preferences(self):
-        #cmd = CleepCommand()
-        #cmd.command = 'open'
-        #cmd.params = 'preferences'
-        #self.comm.send(cmd)
-        self.webRight.load(QUrl('http://127.0.0.1:%d/preferences.html' % self.config.value('rpc_port', type=int)))
+        self.open_page('preferences.html')
+
+    def show_homepage(self):
+        self.open_page('homepage.html')
 
     def init_actions(self):
         #close action
@@ -203,6 +193,15 @@ class Cleep(QMainWindow):
         self.prefAction.setStatusTip('Open preferences')
         self.prefAction.triggered.connect(self.show_preferences)
 
+        #open homepage
+        self.homepageAction = QAction(QIcon(''), 'Homepage', self)
+        self.homepageAction.setStatusTip('Open homepage')
+        self.homepageAction.triggered.connect(self.show_homepage)
+
+        self.backAction = QAction(QIcon(''), 'Back', self)
+        self.backAction.setStatusTip('Back')
+        self.backAction.triggered.connect(self.back)
+
     def init_ui(self):
         #configure main window
         self.setWindowTitle('Cleep')
@@ -210,6 +209,8 @@ class Cleep(QMainWindow):
         #add menus
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
+        fileMenu.addAction(self.backAction)
+        fileMenu.addAction(self.homepageAction)
         fileMenu.addAction(self.prefAction)
         fileMenu.addAction(self.exitAction)
         helpMenu = menubar.addMenu('&Help')
@@ -241,15 +242,18 @@ class Cleep(QMainWindow):
         self.webRight.setContextMenuPolicy(Qt.NoContextMenu)
         box.addWidget(self.webRight)
         #self.webRight.load(QUrl("http://192.168.1.81"))
-        self.webRight.load(QUrl('http://127.0.0.1:%d/welcome.html' % self.config.value('rpc_port', type=int)))
+        #self.webRight.load(QUrl('http://127.0.0.1:%d/welcome.html' % self.config.value('rpc_port', type=int)))
+        self.open_page('homepage.html')
         #disable cache
         self.webRight.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
 
         #show window
         self.showMaximized()
 
- 
-app = QApplication(sys.argv)
-cleep = Cleep(app) 
-sys.exit(app.exec_())
+try: 
+    app = QApplication(sys.argv)
+    cleep = Cleep(app) 
+except:
+    logger.exception('Fatal exception')
 
+sys.exit(app.exec_())

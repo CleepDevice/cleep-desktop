@@ -31,7 +31,7 @@ from bottle import auth_basic, response
 from passlib.hash import sha256_crypt
 import functools
 #from .libs.raspiotconf import RaspiotConf
-from comm import CleepCommand, CleepCommClient
+from comm import CleepCommand, CleepCommServer
 from PyQt5.QtCore import QSettings
 
 __all__ = ['app']
@@ -151,6 +151,13 @@ def config():
         }
     return conf
 
+@app.route('/back', method=['OPTIONS', 'POST'])
+def back():
+    logger.debug('Back')
+    cmd = CleepCommand()
+    cmd.command = 'back'
+    comm.send(cmd)
+
 @app.route('/<path:path>')
 def default(path):
     """
@@ -178,7 +185,8 @@ if __name__ == u'__main__':
     app = get_app(debug)
 
     #connect to ui
-    comm = CleepCommClient(config.value('localhost', type=str), config.value('comm_port', type=int), command_received, logger)
+    #comm = CleepCommClient(config.value('localhost', type=str), config.value('comm_port', type=int), command_received, logger)
+    comm = CleepCommServer(config.value('localhost', type=str), config.value('comm_port', type=int), command_received, logger)
     if not comm.connect():
         print('Failed to connect to ui, stop')
     comm.start()

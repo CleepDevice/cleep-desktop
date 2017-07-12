@@ -43,6 +43,11 @@ var prefsController = function($rootScope, $scope, uiService)
     };
     self.getConfig();
 
+    self.back = function()
+    {
+        uiService.back();
+    }
+
 };
 Cleep.controller('prefsController', ['$rootScope', '$scope', 'uiService', prefsController]);
 

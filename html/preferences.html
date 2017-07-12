@@ -16,7 +16,7 @@
         <!-- menu -->
         <md-toolbar flex="initial">
             <div class="md-toolbar-tools">
-                <h2 ng-if="!mainCtl.hostname">
+                <h2>
                     Preferences
                 </h2>
                 <span flex></span>
@@ -24,7 +24,7 @@
                     <md-tooltip md-direction="bottom">Save</md-tooltip>
                     <md-icon md-font-set="material-icons">save</md-icon>
                 </md-button>
-                <md-button class="md-icon-button" aria-label="Close">
+                <md-button ng-click="prefsCtl.back()" class="md-icon-button" aria-label="Close">
                     <md-tooltip md-direction="bottom">Close</md-tooltip>
                     <md-icon md-font-set="material-icons">close</md-icon>
                 </md-button>
