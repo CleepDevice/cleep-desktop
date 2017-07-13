@@ -49,7 +49,7 @@ class CleepCommClient(Thread):
                 break
     
             except Exception as e:
-                self.logger.debug('Exception occured: %s' % str(e))
+                self.logger.debug('CleepCommClient: exception occured: %s' % str(e))
 
             time.sleep(0.250)
 
@@ -66,7 +66,7 @@ class CleepCommClient(Thread):
         return False
 
     def run(self):
-        self.logger.debug('CommClient running...')
+        self.logger.debug('CleepCommClient is running...')
         while self.running:
             try:
                 raw = self.socket.recv(1024)
@@ -74,7 +74,7 @@ class CleepCommClient(Thread):
                 if not raw or len(raw)==0:
                     time.sleep(0.10)
                     continue
-                self.logger.debug('CommClient receives: %s' % str(raw))
+                self.logger.debug('CleepCommClient receives: %s' % str(raw))
 
                 if isinstance(raw, bytes):
                     raw = raw.decode('utf-8')
@@ -85,6 +85,11 @@ class CleepCommClient(Thread):
 
             except ConnectionResetError:
                 #server closed connection
+                self.running = False
+                self.logger.debug('Connection closed')
+
+            except OSError:
+                #setver certainly closed connection
                 self.running = False
                 self.logger.debug('Connection closed')
 
@@ -115,20 +120,26 @@ class CleepCommServerClient(Thread):
 
     def run(self):
         while self.running:
-            raw = self.conn.recv(1024)
-            #raw = raw.decode('utf-8')
-            if not raw or len(raw)==0:
-                time.sleep(0.10)
-                continue
+            try:
+                raw = self.conn.recv(1024)
+                #raw = raw.decode('utf-8')
+                if not raw or len(raw)==0:
+                    time.sleep(0.10)
+                    continue
 
-            self.logger.debug('CommServerClient receives: %s' % str(raw))
+                self.logger.debug('CommServerClient receives: %s' % str(raw))
 
-            if isinstance(raw, bytes):
-                raw = raw.decode('utf-8')
-            command = json.loads(raw)
-            #self.conn.send('ok'.encode('utf-8'))
+                if isinstance(raw, bytes):
+                    raw = raw.decode('utf-8')
+                command = json.loads(raw)
+                #self.conn.send('ok'.encode('utf-8'))
 
-            self.command_handler(command['command'], command['params'])
+                self.command_handler(command['command'], command['params'])
+
+            except ConnectionResetError:
+                #connection closed by peer
+                self.logger.debug('Connection closed by peer')
+                self.running = False
 
 
 class CleepCommServer(Thread):
@@ -158,7 +169,7 @@ class CleepCommServer(Thread):
             self.socket.bind((self.ip, self.port))
 
         except Exception as e:
-            self.logger.exception('Exception occured:')
+            self.logger.exception('CleepCommServer: exception occured:')
             return False
 
         return True

@@ -42,8 +42,11 @@ class Cleep(QMainWindow):
         #start communication server
         #self.comm = CleepCommServer(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.command_handler, self.logger)
         self.comm = CleepCommClient(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.command_handler, self.logger)
-        self.comm.connect()
-        self.comm.start()
+        if not self.comm.connect():
+            self.logger.critical('Unable to connect to COMM socket. Stop application.')
+            raise Exception('Fatal exception: unable to connect to COMM')
+        else:
+            self.comm.start()
 
         if platform.system()=='Windows':
             #disable system proxy for windows https://bugreports.qt.io/browse/QTBUG-44763
@@ -250,10 +253,15 @@ class Cleep(QMainWindow):
         #show window
         self.showMaximized()
 
+app = None
 try: 
     app = QApplication(sys.argv)
     cleep = Cleep(app) 
-except:
-    logger.exception('Fatal exception')
+    sys.exit(app.exec_())
 
-sys.exit(app.exec_())
+except SystemExit:
+    logging.info('UI closed')
+
+except:
+    logging.exception('Fatal exception')
+

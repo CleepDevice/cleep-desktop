@@ -192,7 +192,7 @@ if __name__ == u'__main__':
     comm.start()
 
     #start rpc server
-    logger.debug('Serving files from %s' % HTML_DIR)
+    logger.debug('Serving files from "%s" folder.' % HTML_DIR)
     #TODO get data from config file
     start(u'0.0.0.0', config.value('rpc_port', type=int), None, None)
 

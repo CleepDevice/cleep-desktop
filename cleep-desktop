@@ -16,16 +16,16 @@ logger = logging.getLogger('Cleep-desktop')
 DEFAULT_RPC_PORT = 5610
 DEFAULT_COMM_PORT = 5611
 if platform.system()=='Windows':
-    DEFAULT_IP = u'' 
+    DEFAULT_HOST = u'localhost' 
 else:
-    DEFAULT_IP = u'0.0.0.0'
+    DEFAULT_HOST = u'0.0.0.0'
 DEFAULT_PROXY_MODE = 'noproxy'
 
 #handle default config
 config = QSettings('cleep', 'cleep-desktop')
 logger.info('Config file location: %s' % config.fileName)
 if 'localhost' not in config.allKeys():
-    config.setValue('localhost', DEFAULT_IP)
+    config.setValue('localhost', DEFAULT_HOST)
 if 'rpc_port' not in config.allKeys():
     config.setValue('rpc_port', DEFAULT_RPC_PORT)
 if 'comm_port' not in config.allKeys():
