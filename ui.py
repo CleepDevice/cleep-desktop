@@ -7,7 +7,7 @@ import logging
 import json 
 from OpenGL import GL
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, Qt, QUrl
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtWebEngineWidgets import *
@@ -16,13 +16,15 @@ from PyQt5.QtWidgets import QGridLayout, QHBoxLayout
 from PyQt5.QtNetwork import QNetworkProxyFactory, QNetworkAccessManager, QNetworkProxy
 import platform
 from PyQt5.QtWidgets import QSizePolicy
-from comm import CleepCommand, CleepCommClient
+from comm import CleepCommand, CleepCommClientQt, CleepCommClient
 from PyQt5.QtCore import QSettings
 import requests
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
 
 class Cleep(QMainWindow):
+
+    signal = pyqtSignal(str, dict)
 
     def __init__(self, app):
         QWidget.__init__(self)
@@ -33,23 +35,22 @@ class Cleep(QMainWindow):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.webLeft = None
         self.webRight = None
-        self.last_page = None
+        self.previous_page = None
         self.current_page = None
 
         #load configuration
         self.load_config()
 
         #start communication server
-        #self.comm = CleepCommServer(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.command_handler, self.logger)
-        self.comm = CleepCommClient(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.command_handler, self.logger)
+        self.signal.connect(self.command_handler)
+        self.comm = CleepCommClient(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.signal, self.logger)
         if not self.comm.connect():
-            self.logger.critical('Unable to connect to COMM socket. Stop application.')
-            raise Exception('Fatal exception: unable to connect to COMM')
-        else:
-            self.comm.start()
+            raise Exception('Unable to connect to comm. Stop application')
+        self.comm.start()
+        #self.start_comm_thread()
 
         if platform.system()=='Windows':
-            #disable system proxy for windows https://bugreports.qt.io/browse/QTBUG-44763
+            #disable system proxy on windows env https://bugreports.qt.io/browse/QTBUG-44763
             QNetworkProxyFactory.setUseSystemConfiguration(False)
 
         #self.networkAccessManager = QNetworkAccessManager()
@@ -65,6 +66,28 @@ class Cleep(QMainWindow):
         Load configuration and fill config member
         """
         self.config = QSettings('cleep', 'cleep-desktop')
+
+    def start_comm_thread(self):
+
+        self.signal.connect(self.command_handler)
+
+        self.comm = CleepCommClientQt(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.signal, self.logger)
+        if not self.comm.connect():
+            self.logger.critical('Unable to connect to COMM socket. Stop application.')
+            raise Exception('Fatal exception: unable to connect to COMM')
+        else:
+            #create thread
+            self.thread = QThread()
+            self.thread.start()
+        
+            #connect comm instance to thread
+            self.comm.moveToThread(self.thread)
+            self.comm.start.connect(self.comm.run)
+            #start "thread"
+            self.comm.start.emit()
+
+            #self.comm.start()
+        
 
     #-----------
     # UI
@@ -83,21 +106,20 @@ class Cleep(QMainWindow):
         """
         self.logger.debug('Opening %s' % page)
         self.webRight.load(QUrl('http://127.0.0.1:%d/%s' % (self.config.value('rpc_port', type=int), page)))
-        self.last_page = self.current_page
+        self.previous_page = self.current_page
         self.current_page = page
 
     def back(self):
         """
         Return to last opened page
         """
-        self.logger.debug('back function')
-        if self.last_page is not None:
-            self.logger.debug('before')
-            self.open_page(self.last_page)
-            self.logger.debug('after')
+        self.logger.debug('back function back to %s' % self.previous_page)
+        if self.previous_page is not None:
+            self.open_page(self.previous_page)
         else:
             self.logger.debug('Unable to go back because no last page available')
 
+    @pyqtSlot(str, dict)
     def command_handler(self, command, params):
         self.logger.debug('Received command %s with params %s' % (command, params))
         if command=='back':

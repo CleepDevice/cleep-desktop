@@ -141,22 +141,28 @@ def ui():
 
 @app.route('/config', method=['OPTIONS', 'POST'])
 def config():
-    logger.debug('Get config')
-    conf = {}
-    if config is not None:
-        conf = {
-            'proxymode': config.value('proxy_mode', type=str),
-            'proxyip': config.value('proxy_host', type=str),
-            'proxyport': config.value('proxy_port', type=int)
-        }
-    return conf
+    logger.debug('Get config (method=%s)' % bottle.request.method)
+    if bottle.request.method=='OPTIONS':
+        return {}
+    else:
+        conf = {}
+        if config is not None:
+            conf = {
+                'proxymode': config.value('proxy_mode', type=str),
+                'proxyip': config.value('proxy_host', type=str),
+                'proxyport': config.value('proxy_port', type=int)
+            }
+        return conf
 
 @app.route('/back', method=['OPTIONS', 'POST'])
 def back():
     logger.debug('Back')
-    cmd = CleepCommand()
-    cmd.command = 'back'
-    comm.send(cmd)
+    if bottle.request.method=='OPTIONS':
+        return {}
+    else:
+        cmd = CleepCommand()
+        cmd.command = 'back'
+        comm.send(cmd)
 
 @app.route('/<path:path>')
 def default(path):
