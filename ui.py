@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import QSizePolicy
 from comm import CleepCommand, CleepCommClientQt, CleepCommClient
 from PyQt5.QtCore import QSettings
 import requests
+import webbrowser
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
 
@@ -317,7 +318,16 @@ class CleepWebPage(QWebEnginePage):
     def acceptNavigationRequest(self, url, navigationType, isMainFrame):
         if navigationType==QWebEnginePage.NavigationTypeLinkClicked:
             self.logger.debug('url=%s navType=%s mainFrm=%s' % (url, navigationType, isMainFrame))
-            return False
+            host = url.host()
+            if host in ['localhost', '127.0.0.1']:
+                #open specified local page
+                return True
+
+            else:
+                #open external browser to open external link
+                webbrowser.open(url.url())
+                return False
+
         return True
 
 app = None
