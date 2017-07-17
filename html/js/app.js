@@ -22,6 +22,12 @@ var mainController = function($rootScope, $scope, uiService)
 };
 Cleep.controller('mainController', ['$rootScope', '$scope', 'uiService', mainController]);
 
+var installController = function($rootScope, $scope, uiService)
+{
+    var self = this;
+};
+Cleep.controller('installController', ['$rootScope', '$scope', 'uiService', installController]);
+
 var prefsController = function($rootScope, $scope, uiService)
 {
     var self = this;

@@ -33,31 +33,30 @@ class Cleep(QMainWindow):
         self.app = app
         self.config = {}
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.webLeft = None
-        self.webRight = None
+        self.web_left = None
+        self.web_right = None
         self.previous_page = None
         self.current_page = None
 
         #load configuration
         self.load_config()
 
-        #start communication server
-        self.signal.connect(self.command_handler)
-        self.comm = CleepCommClient(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.signal, self.logger)
-        if not self.comm.connect():
-            raise Exception('Unable to connect to comm. Stop application')
-        self.comm.start()
-        #self.start_comm_thread()
+        #start communication
+        self.start_comm_thread()
 
         if platform.system()=='Windows':
             #disable system proxy on windows env https://bugreports.qt.io/browse/QTBUG-44763
             QNetworkProxyFactory.setUseSystemConfiguration(False)
 
+        #handle ssl warnings
         #self.networkAccessManager = QNetworkAccessManager()
         #self.networkAccessManager.authenticationRequired.connect(self.handle_auth)
-        #self.networkAccessManager.sslErrors(self.handle_ssl_errors)
+        #self.networkAccessManager.sslErrors(self.handle_ssl)
 
+        #configure proxy or ssh tunnel
         self.configure_proxy()
+
+        #prepare and start ui
         self.init_actions()
         self.init_ui()
 
@@ -68,30 +67,35 @@ class Cleep(QMainWindow):
         self.config = QSettings('cleep', 'cleep-desktop')
 
     def start_comm_thread(self):
-
+        """
+        Start communication thread
+        RpcServer receives commands from webpage and send them to Ui through socket
+        """
+        #connect signal to ui command_handler
         self.signal.connect(self.command_handler)
 
-        self.comm = CleepCommClientQt(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.signal, self.logger)
+        #and start CommClient
+        self.comm = CleepCommClient(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.signal, self.logger)
         if not self.comm.connect():
-            self.logger.critical('Unable to connect to COMM socket. Stop application.')
-            raise Exception('Fatal exception: unable to connect to COMM')
-        else:
-            #create thread
-            self.thread = QThread()
-            self.thread.start()
-        
-            #connect comm instance to thread
-            self.comm.moveToThread(self.thread)
-            self.comm.start.connect(self.comm.run)
-            #start "thread"
-            self.comm.start.emit()
+            raise Exception('Unable to connect Comm. Stop application')
+        self.comm.start()
 
-            #self.comm.start()
+        #self.comm = CleepCommClientQt(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.signal, self.logger)
+        #if not self.comm.connect():
+        #    self.logger.critical('Unable to connect to COMM socket. Stop application.')
+        #    raise Exception('Fatal exception: unable to connect to COMM')
+        #else:
+        #    #create thread
+        #    self.thread = QThread()
+        #    self.thread.start()
         
+        #    #connect comm instance to thread
+        #    self.comm.moveToThread(self.thread)
+        #    self.comm.start.connect(self.comm.run)
+        #    #start "thread"
+        #    self.comm.start.emit()
 
-    #-----------
-    # UI
-    #-----------
+        #    #self.comm.start()
 
     #-----------
     # NAVIGATION
@@ -105,41 +109,58 @@ class Cleep(QMainWindow):
             page (string): page to open
         """
         self.logger.debug('Opening %s' % page)
-        self.webRight.load(QUrl('http://127.0.0.1:%d/%s' % (self.config.value('rpc_port', type=int), page)))
+        self.web_right.load(QUrl('http://127.0.0.1:%d/%s' % (self.config.value('rpc_port', type=int), page)))
         self.previous_page = self.current_page
         self.current_page = page
 
     def back(self):
         """
-        Return to last opened page
+        Return to last opened page if possible
         """
         self.logger.debug('back function back to %s' % self.previous_page)
         if self.previous_page is not None:
             self.open_page(self.previous_page)
         else:
-            self.logger.debug('Unable to go back because no last page available')
+            self.logger.debug('Unable to go back because no previous page available')
 
     @pyqtSlot(str, dict)
     def command_handler(self, command, params):
+        """
+        Command handler is called by communication thread after webpage commands
+
+        Args:
+            command (string): received command
+            params (dict): command parameters
+        """
         self.logger.debug('Received command %s with params %s' % (command, params))
         if command=='back':
             self.back()
+        elif command=='scan':
+            pass
+        elif command=='saveConfig':
+            pass
 
-    def send_command(self, command, params=None):
-        url = 'http://localhost:9666/%s' % command
-        resp = requests.post(url, params).json()
-        #self.logger.debug('response encoding %s' % raw.encoding)
-        self.logger.debug('response: %s' % resp)
-        #resp = json.loads(raw)
-        #self.logger.debug('response dict: %s' % resp)
-
-        #TODO handle errors
-
-        return resp['data']
+    #def send_command(self, command, params=None):
+    #    url = 'http://localhost:9666/%s' % command
+    #    resp = requests.post(url, params).json()
+    #    #self.logger.debug('response encoding %s' % raw.encoding)
+    #    self.logger.debug('response: %s' % resp)
+    #    #resp = json.loads(raw)
+    #    #self.logger.debug('response dict: %s' % resp)
+    #    return resp['data']
 
     def show_help(self):
-        self.logger.debug('--> showHelp')
-        #self.send_command('pid')
+        self.open_page('installation.html')
+
+    def show_preferences(self):
+        self.open_page('preferences.html')
+
+    def show_homepage(self):
+        self.open_page('homepage.html')
+
+    #-----------
+    # UI
+    #-----------
 
     def handle_exit(self):
         #stop comm
@@ -150,7 +171,10 @@ class Cleep(QMainWindow):
         self.logger.debug('Close application')
         self.close()
 
-    def handle_ssl_errors(self, reply, errors):
+    def handle_ssl(self, reply, errors):
+        """
+        Handle ssl warnings and errors accepting requests
+        """
         self.logger.debug('handle sslerrors')
         self.logger.debug('\n'.join([str(error.errorString()) for error in errors]))
 
@@ -191,11 +215,6 @@ class Cleep(QMainWindow):
         proxy.setPort(8080)
         QNetworkProxy.setApplicationProxy(proxy)
 
-    def show_preferences(self):
-        self.open_page('preferences.html')
-
-    def show_homepage(self):
-        self.open_page('homepage.html')
 
     def init_actions(self):
         #close action
@@ -223,9 +242,19 @@ class Cleep(QMainWindow):
         self.homepageAction.setStatusTip('Open homepage')
         self.homepageAction.triggered.connect(self.show_homepage)
 
+        #back action
         self.backAction = QAction(QIcon(''), 'Back', self)
         self.backAction.setStatusTip('Back')
         self.backAction.triggered.connect(self.back)
+
+        #installation
+        self.installAction = QAction(QIcon(''), 'Installation', self)
+        self.installAction.triggered.connect(lambda: self.open_page('installation.html'))
+
+        #about
+        self.aboutAction = QAction(QIcon(''), 'About', self)
+        self.aboutAction.triggered.connect(lambda: self.open_page('about.html'))
+
 
     def init_ui(self):
         #configure main window
@@ -237,9 +266,12 @@ class Cleep(QMainWindow):
         fileMenu.addAction(self.backAction)
         fileMenu.addAction(self.homepageAction)
         fileMenu.addAction(self.prefAction)
+        fileMenu.addSeparator()
         fileMenu.addAction(self.exitAction)
         helpMenu = menubar.addMenu('&Help')
-        helpMenu.addAction(self.helpAction)
+        helpMenu.addAction(self.installAction)
+        helpMenu.addSeparator()
+        helpMenu.addAction(self.aboutAction)
 
         #set main container (central widget)
         container = QWidget()
@@ -252,25 +284,23 @@ class Cleep(QMainWindow):
         container.setLayout(box)
 
         #set left web panel
-        self.webLeft = QWebEngineView()
+        self.web_left = QWebEngineView()
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
-        self.webLeft.setSizePolicy(sizePolicy)
-        self.webLeft.setContextMenuPolicy(Qt.NoContextMenu)
-        self.webLeft.setMaximumSize(QtCore.QSize(250, 16777215))
-        box.addWidget(self.webLeft)
-        self.webLeft.load(QUrl('http://127.0.0.1:%d/index.html' % self.config.value('rpc_port', type=int)))
+        self.web_left.setSizePolicy(sizePolicy)
+        self.web_left.setContextMenuPolicy(Qt.NoContextMenu)
+        self.web_left.setMaximumSize(QtCore.QSize(250, 16777215))
+        box.addWidget(self.web_left)
+        self.web_left.load(QUrl('http://127.0.0.1:%d/index.html' % self.config.value('rpc_port', type=int)))
         #disable cache
-        self.webLeft.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
+        self.web_left.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
         
         #set right web panel
-        self.webRight = QWebEngineView()
-        self.webRight.setContextMenuPolicy(Qt.NoContextMenu)
-        box.addWidget(self.webRight)
-        #self.webRight.load(QUrl("http://192.168.1.81"))
-        #self.webRight.load(QUrl('http://127.0.0.1:%d/welcome.html' % self.config.value('rpc_port', type=int)))
+        self.web_right = QWebEngineView()
+        #self.web_right.setContextMenuPolicy(Qt.NoContextMenu)
+        box.addWidget(self.web_right)
         self.open_page('homepage.html')
         #disable cache
-        self.webRight.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
+        self.web_right.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
 
         #show window
         self.showMaximized()
