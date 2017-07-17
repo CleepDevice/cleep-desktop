@@ -298,12 +298,27 @@ class Cleep(QMainWindow):
         self.web_right = QWebEngineView()
         #self.web_right.setContextMenuPolicy(Qt.NoContextMenu)
         box.addWidget(self.web_right)
+        page = CleepWebPage(QWebEngineProfile.NoCache, self.logger, self.web_right)
+        self.web_right.setPage(page)
         self.open_page('homepage.html')
         #disable cache
-        self.web_right.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
+        #self.web_right.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
+        #handle href
+        #self.web_right.page().acceptNavigationRequest = self.coucou
 
         #show window
         self.showMaximized()
+
+class CleepWebPage(QWebEnginePage):
+    def __init__(self, profile, logger, parent=None):
+        QWebEnginePage.__init__(self, parent)
+        self.logger = logger
+
+    def acceptNavigationRequest(self, url, navigationType, isMainFrame):
+        if navigationType==QWebEnginePage.NavigationTypeLinkClicked:
+            self.logger.debug('url=%s navType=%s mainFrm=%s' % (url, navigationType, isMainFrame))
+            return False
+        return True
 
 app = None
 try: 
