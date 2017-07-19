@@ -1,16 +1,48 @@
-/**
- * Main application
- */
-var Cleep = angular.module(
-    'Cleep',
-    ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute']
-);
+var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute']);
 
 /**
- * Main application controller
- * It holds some generic stuff like polling request, loaded services...
+ * Theme configuration
  */
-var mainController = function($rootScope, $scope, uiService)
+Cleep.config(['$mdThemingProvider', function($mdThemingProvider) {
+    $mdThemingProvider
+        .theme('default')
+        .primaryPalette('blue-grey')
+        .accentPalette('red')
+        .backgroundPalette('grey');
+    $mdThemingProvider
+        .theme('dark')
+        .primaryPalette('amber')
+        .accentPalette('blue')
+        .dark();
+}]);
+
+/**
+ * Empty controller
+ */
+var emptyController = function($rootScope, $scope)
+{
+    var self = this;
+};
+Cleep.controller('emptyController', ['$rootScope', '$scope', emptyController]);
+
+/**
+ * Devices controller
+ */
+var devicesController = function($rootScope, $scope)
+{
+    var self = this;
+
+    //scan devices
+    self.refresh = function()
+    {
+    };
+};
+Cleep.controller('devicesController', ['$rootScope', '$scope', devicesController]);
+
+/**
+ * Homepage controller
+ */
+var homepageController = function($rootScope, $scope, uiService)
 {
     var self = this;
 
@@ -19,16 +51,15 @@ var mainController = function($rootScope, $scope, uiService)
         console.log('refresh button clicked');
         uiService.sendUi('coucou', null);
     };
-};
-Cleep.controller('mainController', ['$rootScope', '$scope', 'uiService', mainController]);
 
-var installController = function($rootScope, $scope, uiService)
-{
-    var self = this;
-};
-Cleep.controller('installController', ['$rootScope', '$scope', 'uiService', installController]);
 
-var prefsController = function($rootScope, $scope, uiService)
+};
+Cleep.controller('homepageController', ['$rootScope', '$scope', 'uiService', homepageController]);
+
+/**
+ * Preferences controller
+ */
+var preferencesController = function($rootScope, $scope, uiService)
 {
     var self = this;
 
@@ -37,6 +68,12 @@ var prefsController = function($rootScope, $scope, uiService)
     self.proxyIp = null;
     self.proxyPort = null;
 
+    self.init = function()
+    {
+        self.getConfig();
+    };
+
+    //get configuration
     self.getConfig = function()
     {
         uiService.getConfig()
@@ -47,14 +84,15 @@ var prefsController = function($rootScope, $scope, uiService)
                 self.proxyPort = config.proxyport;
             });
     };
-    self.getConfig();
 
+    //go back
     self.back = function()
     {
         uiService.back();
     }
 
+    self.init();
 };
-Cleep.controller('prefsController', ['$rootScope', '$scope', 'uiService', prefsController]);
+Cleep.controller('preferencesController', ['$rootScope', '$scope', 'uiService', preferencesController]);
 
 

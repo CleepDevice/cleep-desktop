@@ -11,7 +11,7 @@
     <!-- only used to fix scrolling issue for toast: https://github.com/angular/material/issues/2936 -->
     <md-content flex="100">
 
-    <div ng-controller="prefsController as prefsCtl" layout="column" layout-fill ng-cloak>
+    <div ng-controller="preferencesController as ctl" layout="column" layout-fill ng-cloak>
 
         <!-- menu -->
         <md-toolbar flex="initial">
@@ -24,7 +24,7 @@
                     <md-tooltip md-direction="bottom">Save</md-tooltip>
                     <md-icon md-font-set="material-icons">save</md-icon>
                 </md-button>
-                <md-button ng-click="prefsCtl.back()" class="md-icon-button" aria-label="Close">
+                <md-button ng-click="ctl.back()" class="md-icon-button" aria-label="Close">
                     <md-tooltip md-direction="bottom">Close</md-tooltip>
                     <md-icon md-font-set="material-icons">close</md-icon>
                 </md-button>
@@ -33,28 +33,28 @@
 
 
         <!-- tabs -->
-        <md-nav-bar md-selected-nav-item="prefsCtl.pref" nav-bar-aria-label="Preferences">
+        <md-nav-bar md-selected-nav-item="ctl.pref" nav-bar-aria-label="Preferences">
             <md-nav-item md-nav-click="goto('proxy')" name="proxy">Proxy</md-nav-item>
             <md-nav-item md-nav-click="goto('advanced')" name="advanced">Advanced</md-nav-item>
         </md-nav-bar>
 
         <!-- proxy -->
-        <div ng-if="prefsCtl.pref=='proxy'" style="padding:20px;">
-            <md-radio-group ng-model="prefsCtl.proxyMode">
+        <div ng-if="ctl.pref=='proxy'" style="padding:20px;">
+            <md-radio-group ng-model="ctl.proxyMode">
                 <md-radio-button value="noproxy" class="md-primary">Direct connection (no proxy)</md-radio-button>
                 <md-radio-button value="manualproxy" class="md-primary">Manual proxy</md-radio-button>
             </md-radio-group>
             <md-input-container class="md-block" style="margin-top:30px;" flex-gt-sm>
                 <label>Proxy ip</label>
-                <input ng-model="prefsCtl.proxyIp" ng-disabled="prefsCtl.proxyMode=='noproxy'">
+                <input ng-model="ctl.proxyIp" ng-disabled="ctl.proxyMode=='noproxy'">
             </md-input-container>
             <md-input-container class="md-block" flex-gt-sm>
                 <label>Proxy port</label>
-                <input type="number" ng-model="prefsCtl.proxyPort" ng-disabled="prefsCtl.proxyMode=='noproxy'">
+                <input type="number" ng-model="ctl.proxyPort" ng-disabled="ctl.proxyMode=='noproxy'">
             </md-input-container>
         </div>
 
-        <div ng-if="prefsCtl.pref=='advanced'">
+        <div ng-if="ctl.pref=='advanced'">
             
         </div>
 

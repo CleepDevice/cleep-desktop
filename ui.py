@@ -97,6 +97,9 @@ class Cleep(QMainWindow):
         #    self.comm.start.emit()
 
         #    #self.comm.start()
+            
+    def scan(self):
+        self.logger.debug('Launch scan')
 
     #-----------
     # NAVIGATION
@@ -150,14 +153,6 @@ class Cleep(QMainWindow):
     #    #self.logger.debug('response dict: %s' % resp)
     #    return resp['data']
 
-    def show_help(self):
-        self.open_page('installation.html')
-
-    def show_preferences(self):
-        self.open_page('preferences.html')
-
-    def show_homepage(self):
-        self.open_page('homepage.html')
 
     #-----------
     # UI
@@ -224,53 +219,66 @@ class Cleep(QMainWindow):
         #exit action
         self.exitAction = QAction(QIcon('exit24.png'), 'Exit', self)
         #self.exitAction.setShortcut('Ctrl+Q')
-        self.exitAction.setStatusTip('Exit application')
+        #self.exitAction.setStatusTip('Exit application')
         self.exitAction.triggered.connect(self.handle_exit)
+
+        #scan action
+        self.scanAction = QAction(QIcon(''), 'Search new devices', self)
+        self.scanAction.triggered.connect(self.scan)
 
         #help action
         self.helpAction = QAction(QIcon(''), 'Help', self)
-        #self.helpAction.setShortcut('Ctrl+H')
-        self.helpAction.setStatusTip('Help')
-        self.helpAction.triggered.connect(self.show_help)
+        self.helpAction.triggered.connect(lambda: self.open_page('help'))
 
         #open preferences
         self.prefAction = QAction(QIcon(''), 'Preferences', self)
-        self.prefAction.setStatusTip('Open preferences')
-        self.prefAction.triggered.connect(self.show_preferences)
+        self.prefAction.triggered.connect(lambda: self.open_page('preferences.html'))
 
         #open homepage
         self.homepageAction = QAction(QIcon(''), 'Homepage', self)
-        self.homepageAction.setStatusTip('Open homepage')
-        self.homepageAction.triggered.connect(self.show_homepage)
+        self.homepageAction.triggered.connect(lambda: self.open_page('homepage.html'))
 
         #back action
         self.backAction = QAction(QIcon(''), 'Back', self)
-        self.backAction.setStatusTip('Back')
         self.backAction.triggered.connect(self.back)
 
         #installation
-        self.installAction = QAction(QIcon(''), 'Installation', self)
+        self.installAction = QAction(QIcon(''), 'First installation', self)
         self.installAction.triggered.connect(lambda: self.open_page('installation.html'))
 
+        #support
+        #self.supportAction = QAction(QIcon(''), 'Get support', self)
+        #self.supportAction.triggeredAction.connect(lambda: self.open_page('support.html'))
+
+        #social
+        self.socialAction = QAction(QIcon(''), 'Follow Cleep on social networks', self)
+        self.socialAction.triggered.connect(lambda: self.open_page('social.html'))
+
         #about
-        self.aboutAction = QAction(QIcon(''), 'About', self)
+        self.aboutAction = QAction(QIcon(''), 'About Cleep', self)
         self.aboutAction.triggered.connect(lambda: self.open_page('about.html'))
 
 
     def init_ui(self):
         #configure main window
-        self.setWindowTitle('Cleep')
+        self.setWindowTitle('Cleep-desktop')
 
         #add menus
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(self.backAction)
         fileMenu.addAction(self.homepageAction)
+        fileMenu.addAction(self.scanAction)
+        fileMenu.addSeparator()
         fileMenu.addAction(self.prefAction)
         fileMenu.addSeparator()
         fileMenu.addAction(self.exitAction)
+
         helpMenu = menubar.addMenu('&Help')
         helpMenu.addAction(self.installAction)
+        helpMenu.addAction(self.helpAction)
+        helpMenu.addSeparator()
+        helpMenu.addAction(self.socialAction)
         helpMenu.addSeparator()
         helpMenu.addAction(self.aboutAction)
 
@@ -291,7 +299,7 @@ class Cleep(QMainWindow):
         self.web_left.setContextMenuPolicy(Qt.NoContextMenu)
         self.web_left.setMaximumSize(QtCore.QSize(250, 16777215))
         box.addWidget(self.web_left)
-        self.web_left.load(QUrl('http://127.0.0.1:%d/index.html' % self.config.value('rpc_port', type=int)))
+        self.web_left.load(QUrl('http://127.0.0.1:%d/devices.html' % self.config.value('rpc_port', type=int)))
         #disable cache
         self.web_left.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
         

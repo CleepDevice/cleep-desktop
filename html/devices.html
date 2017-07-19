@@ -1,6 +1,6 @@
 <html>
 <head>
-    <title>Welcome</title>
+    <title>Cleep</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/roboto-fonts.css">
     <link rel="stylesheet" href="css/angular-material.min.css"/>
@@ -11,44 +11,29 @@
     <!-- only used to fix scrolling issue for toast: https://github.com/angular/material/issues/2936 -->
     <md-content flex="100">
 
-    <div ng-controller="emptyController as ctl" layout="column">
+    <div ng-controller="devicesController as ctl" layout="column" layout-fill>
 
-		<!-- menu -->
+        <!-- menu -->
         <md-toolbar flex="initial">
             <div class="md-toolbar-tools">
-                <h2 ng-if="!mainCtl.hostname">
-                    Cleep installation
+                <h2>
+                    Devices
                 </h2>
                 <span flex></span>
+                <md-button class="md-icon-button" aria-label="Modules" ng-click="ctl.refresh()">
+                    <md-tooltip md-direction="left">Search new devices</md-tooltip>
+                    <md-icon md-font-set="material-icons">refresh</md-icon>
+                </md-button>
             </div>
         </md-toolbar>
 
-		<md-content layout-padding>
-            <h2>Simplest solution</h2>
-            <p>
-				The simplest solution is to buy a sdcard with Cleep software preinstalled. You can find one in online <a href="http://www.cleep.me/">Cleep shop</a>.
-			</p>
-            <h2>Manual installation</h2>
-			<p>
-				<ul>
-					<li>Plug your sdcard on your computer using USB adapter or embedded sdcard card reader</li>
-					<li>Download Cleep image from Cleep website</li>
-					<li>Install Etcher sdcard writer tool after downlading it <a href="https://etcher.io">from here</a></li>
-					<li>Launch Etcher software</li>
-				</ul>
-				<img src="images/etcher.png"/>
-				<ol>
-					<li>Select previously downloaded image</li>
-					<li>Choose your sdcard</li>
-					<li>Click on "Flash!" button</li>
-				</ol>
-				<br/>
-				Now you're ready to start your brand new device!
-				Connect ethernet cable to your router and plug power adapter to Raspberri Pi micro USB port.
-			</p>	
+        <md-content>
+            My devices
         </md-content>
 
     </div>
+
+    </md-content>
 
     <!-- system -->
     <script src="js/libs/jquery.min.js"></script>
