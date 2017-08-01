@@ -136,14 +136,50 @@ def enable_cors():
 
 @app.route('/ui', method=['OPTIONS', 'POST'])
 def ui():
-    logger.debug('Received command from ui')
-    cmd = CleepCommand()
-    cmd.command = 'coucou'
-    comm.send(cmd)
+    """
+    Communication way between javascript and ui
+    """
+    logger.debug('Ui (method=%s)' % bottle.request.method)
+    if bottle.request.method=='OPTIONS':
+        return {}
+    else:
+        #convert command to cleep command
+        cmd = CleepCommand()
+        tmp_params = bottle.request.json
+        if tmp_params.has_key(u'command'):
+            cmd.command = tmp_params[u'command']
+        if tmp_params.has_key(u'params'):
+            cmd.params = tmp_params[u'params']
+
+        #and send command to ui
+        comm.send(cmd)
+
+@app.route('/command', method=['OPTIONS', 'POST'])
+def command():
+    """
+    Communication way between javascript and rpcserver
+    """
+    logger.debug('Command (method=%s)' % bottle.request.method)
+    if bottle.request.method=='OPTIONS':
+        return {}
+    else:
+        #convert command to cleep command
+        cmd = CleepCommand()
+        tmp_params = bottle.request.json
+        if tmp_params.has_key(u'command'):
+            cmd.command = tmp_params[u'command']
+        if tmp_params.has_key(u'params'):
+            cmd.params = tmp_params[u'params']
+
+        #and send command
+        comm.send(cmd)
 
 @app.route('/config', method=['OPTIONS', 'POST'])
 def config():
-    logger.debug('Get config (method=%s)' % bottle.request.method)
+    """
+    Return current configuration
+    """
+    logger.debug('Config (method=%s)' % bottle.request.method)
     if bottle.request.method=='OPTIONS':
         return {}
     else:
@@ -158,6 +194,9 @@ def config():
 
 @app.route('/back', method=['OPTIONS', 'POST'])
 def back():
+    """
+    Go back in right panel
+    """
     logger.debug('Back')
     if bottle.request.method=='OPTIONS':
         return {}
@@ -169,18 +208,21 @@ def back():
 @app.route('/<path:path>')
 def default(path):
     """
-    Servers static files from HTML_DIR.
+    Serves static files from HTML_DIR.
     """
     return bottle.static_file(path, HTML_DIR)
 
 @app.route('/')
 def index():
     """
-    Return a default document if no path was specified.
+    Return a default document
     """
     return bottle.static_file('index.html', HTML_DIR)
 
 def command_received(command, params):
+    """
+    Process command received from Ui
+    """
     logger.debug('Command %s received with params %s' % (command, params))
 
 
@@ -201,7 +243,6 @@ if __name__ == u'__main__':
 
     #start rpc server
     logger.debug('Serving files from "%s" folder.' % HTML_DIR)
-    #TODO get data from config file
     start(u'0.0.0.0', config.value('rpc_port', type=int), None, None)
 
     #clean everythng

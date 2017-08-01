@@ -7,16 +7,18 @@ var uiService = function($http, $q, $rootScope, $location) {
     self.port = 5610;
     if( urlValues && urlValues.port )
     {
-        console.log('port in url');
         self.port = urlValues.port;
     }
-    console.log('port='+self.port);
     
     //configure url
+    self.uriCommand = window.location.protocol + '//localhost:' + self.port + '/command';
     self.uriUi = window.location.protocol + '//localhost:' + self.port + '/ui';
     self.uriConfig = window.location.protocol + '//localhost:' + self.port + '/config';
     self.uriBack = window.location.protocol + '//localhost:' + self.port + '/back';
 
+    /**
+     * Base function to send data to rpcserver
+     */
     self.send = function(url, command, params) {
         var d = $q.defer();
         var data = {
@@ -40,10 +42,54 @@ var uiService = function($http, $q, $rootScope, $location) {
         return d.promise;
     };
 
+    /**
+     * Send command to rpcserver
+     */
+    self.sendCommand = function(command, params) {
+        //check parameters
+        if( params===undefined || params===null )
+        {
+            params = {};
+        }
+
+        //prepare data to send
+        var data = {
+            command: command,
+            params: params
+        };
+
+        return self.send(self.uriCommand, data);
+    };
+
+    /**
+     * Send command to ui
+     */
+    self.sendUi = function(command, params) {
+        //check parameters
+        if( params===undefined || params===null )
+        {
+            params = {};
+        }
+
+        //prepare data to send
+        var data = {
+            command: command,
+            params: params
+        };
+
+        return self.send(self.uriUi, data);
+    };
+
+    /**
+     * Get cleep-desktop config
+     */
     self.getConfig = function() {
         return self.send(self.uriConfig);
     };
 
+    /**
+     * Go back in history. Works only once
+     */
     self.back = function() {
         return self.send(self.uriBack);
     };
