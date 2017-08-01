@@ -124,6 +124,32 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
         if not server.closed:
             server.close()
 
+def execute_command(command, params):
+    """
+    Execute specified command
+
+    Args:
+        command (string): command to execute
+        params (dict): command parameters
+
+    Return:
+        MessageResponse
+    """
+    if command is None:
+        logger.error('Invalid command received, unable to process it')
+
+    resp = MessageResponse()
+    try:
+        if command=='getdrives':
+            resp.data = flashdrive.get_flashable_drives()
+    except Exception as e:
+        resp.error = True
+        resp.message = repr(e)
+
+    #send response
+    logger.debug('Command response: %s' % resp.to_dict())
+    return json.dumps(resp.to_dict())
+
 @app.hook('after_request')
 def enable_cors():
     """
@@ -146,13 +172,13 @@ def ui():
         #convert command to cleep command
         cmd = CleepCommand()
         tmp_params = bottle.request.json
-        if tmp_params.has_key(u'command'):
+        if u'command' in tmp_params:
             cmd.command = tmp_params[u'command']
-        if tmp_params.has_key(u'params'):
+        if u'params' in tmp_params:
             cmd.params = tmp_params[u'params']
 
         #and send command to ui
-        comm.send(cmd)
+        return comm.send(cmd)
 
 @app.route('/command', method=['OPTIONS', 'POST'])
 def command():
@@ -164,15 +190,17 @@ def command():
         return {}
     else:
         #convert command to cleep command
-        cmd = CleepCommand()
         tmp_params = bottle.request.json
-        if tmp_params.has_key(u'command'):
-            cmd.command = tmp_params[u'command']
-        if tmp_params.has_key(u'params'):
-            cmd.params = tmp_params[u'params']
+        command = None
+        if u'command' in tmp_params:
+            command = tmp_params[u'command']
+        params = None
+        if u'params' in tmp_params:
+            params = tmp_params[u'params']
 
-        #and send command
-        comm.send(cmd)
+        #and execute command
+        logger.debug('Execute command %s with params %s' % (command, params))
+        return execute_command(command, params)
 
 @app.route('/config', method=['OPTIONS', 'POST'])
 def config():

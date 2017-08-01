@@ -21,6 +21,12 @@ var uiService = function($http, $q, $rootScope, $location) {
      */
     self.send = function(url, command, params) {
         var d = $q.defer();
+
+        //prepare data
+        if( params===undefined || params===null )
+        {
+            params = {};
+        }
         var data = {
             command: command,
             params: params
@@ -46,38 +52,14 @@ var uiService = function($http, $q, $rootScope, $location) {
      * Send command to rpcserver
      */
     self.sendCommand = function(command, params) {
-        //check parameters
-        if( params===undefined || params===null )
-        {
-            params = {};
-        }
-
-        //prepare data to send
-        var data = {
-            command: command,
-            params: params
-        };
-
-        return self.send(self.uriCommand, data);
+        return self.send(self.uriCommand, command, params);
     };
 
     /**
      * Send command to ui
      */
     self.sendUi = function(command, params) {
-        //check parameters
-        if( params===undefined || params===null )
-        {
-            params = {};
-        }
-
-        //prepare data to send
-        var data = {
-            command: command,
-            params: params
-        };
-
-        return self.send(self.uriUi, data);
+        return self.send(self.uriUi, command, params);
     };
 
     /**

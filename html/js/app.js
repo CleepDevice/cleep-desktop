@@ -101,6 +101,31 @@ Cleep.controller('preferencesController', ['$rootScope', '$scope', 'uiService', 
 var easyInstallController = function($rootScope, $scope, uiService)
 {
     var self = this;
-    self.port = uiService.port;
+    self.drives = [];
+    self.versions = [];
+
+    /**
+     * Get flashable drives
+     */
+    self.refreshDrives = function()
+    {
+        uiService.sendCommand('getdrives')
+            .then(function(resp) {
+                self.drives = resp.data;
+            });
+    };
+
+    /**
+     * Get cleep versions
+     */
+    self.refreshVersions = function()
+    {
+        uiService.sendCommand('getversions')
+            .then(function(resp) {
+                self.versions = resp.data;
+            });
+    };
 };
 Cleep.controller('easyInstallController', ['$rootScope', '$scope', 'uiService', easyInstallController]);
+
+

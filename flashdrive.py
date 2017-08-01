@@ -18,7 +18,7 @@ class FlashDrive():
 
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
         self.lsblk = Lsblk()
         self.udevadm = Udevadm()
         self.console = None
@@ -49,7 +49,19 @@ class FlashDrive():
         for drive in drives:
             device_type = self.udevadm.get_device_type('/dev/%s' % drive)
             if device_type in (self.udevadm.TYPE_USB, self.udevadm.TYPE_SDCARD):
-                flashables.append('/dev/%s' % drive)
+                #get readble model
+                model = drives[drive]['drivemodel']
+                if model is None or len(model)==0:
+                    if device_type==self.udevadm.TYPE_USB:
+                        model = 'No model USB'
+                    if device_type==self.udevadm.TYPE_SDCARD:
+                        model = 'No model SD Card'
+
+                #save entry
+                flashables.append({
+                    'model': model,
+                    'path': '/dev/%s' % drive
+                })
 
         return flashables
 

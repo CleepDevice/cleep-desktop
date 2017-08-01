@@ -28,18 +28,54 @@
             <div class="note">
                 This is the easy way to install Cleep on your SD card: Cleep-desktop embed a SD card burner power by <a href="https://etcher.io" alt="etcher.io" title="etcher.io"><img style="height:14px;" src="images/etcher_logo_black.png"/></a>
             </div>
-            <div>
-                <md-icon class="bullet">label</md-icon>
-                Select Cleep version you want to install on your SD card:
+            <div layout="row" layout-align="space-between center">
+                <div>
+                    <md-icon md-font-set="material-icons" class="bullet">label</md-icon>
+                    Select Cleep version you want to install on your SD card:
+                </div>
+                <div>
+                    <md-input-container>
+                        <md-select ng-model="ctl.selectedVersion" placeholder="Cleep version" class="md-no-underline">
+                            <md-option ng-repeat="version in ctl.versions" ng-value="version.uri">
+                                {{version.label + ' (' + version.date + ')'}}
+                            </md-option>
+                        </md-select>
+                    </md-input-container>
+                    <md-button class="md-raised" ng-click="ctl.refreshDrives()">
+                        <md-tooltip>Refresh drives list</md-tooltip>
+                        <md-icon md-font-set="material-icons">refresh</md-icon>
+                        Refresh drives
+                    </md-button>
+                </div>
             </div>
-            <div>
-                <md-icon class="bullet">label</md-icon>
-                Plug your SD card or your USB card reader on your computer and select it from drives list:
+            <div layout="row" layout-align="space-between center">
+                <div>
+                    <md-icon md-font-set="material-icons" class="bullet">label</md-icon>
+                    Plug your SD card or your USB card reader on your computer and select it from drives list:
+                </div>
+                <div>
+                    <md-input-container>
+                        <md-select ng-model="ctl.selectedDrive" placeholder="Drive" class="md-no-underline">
+                            <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path">
+                                {{drive.model + ' (' + drive.path + ')'}}
+                            </md-option>
+                        </md-select>
+                    </md-input-container>
+                    <md-button class="md-raised" ng-click="ctl.refreshDrives()">
+                        <md-tooltip>Refresh drives list</md-tooltip>
+                        <md-icon md-font-set="material-icons">refresh</md-icon>
+                        Refresh drives
+                    </md-button>
+                </div>
             </div>
-            <div>
-                <md-icon class="bullet">label</md-icon>
-                Now click on button to install Cleep on your SD card:
-                <md-button class="md-raised md-accent">Install Cleep</md-button>
+            <div layout="row" layout-align="space-between center">
+                <div>
+                    <md-icon md-font-set="material-icons" class="bullet">label</md-icon>
+                    Now click on button to install Cleep on your SD card:
+                </div>
+                <div>
+                    <md-button class="md-raised md-accent">Install Cleep on selected drive</md-button>
+                </div>
             </div>
         </md-content>
 
