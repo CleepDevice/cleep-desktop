@@ -56,6 +56,7 @@ app = bottle.app()
 server = None
 comm = None
 config = None
+flashdrive = FlashDrive()
 
 def bottle_logger(func):
     """

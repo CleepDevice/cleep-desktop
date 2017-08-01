@@ -95,4 +95,12 @@ var preferencesController = function($rootScope, $scope, uiService)
 };
 Cleep.controller('preferencesController', ['$rootScope', '$scope', 'uiService', preferencesController]);
 
-
+/**
+ * Easy install controller
+ */
+var easyInstallController = function($rootScope, $scope, uiService)
+{
+    var self = this;
+    self.port = uiService.port;
+};
+Cleep.controller('easyInstallController', ['$rootScope', '$scope', 'uiService', easyInstallController]);

@@ -105,17 +105,22 @@ class Cleep(QMainWindow):
     # NAVIGATION
     #-----------
     
-    def open_page(self, page):
+    def open_page(self, page, right_panel=True):
         """
         Open page in right panel
 
         Args:
             page (string): page to open
         """
-        self.logger.debug('Opening %s' % page)
-        self.web_right.load(QUrl('http://127.0.0.1:%d/%s' % (self.config.value('rpc_port', type=int), page)))
-        self.previous_page = self.current_page
-        self.current_page = page
+        if right_panel:
+            self.logger.debug('Opening %s on right panel' % page)
+            self.web_right.load(QUrl('http://127.0.0.1:%d/%s?port=%s' % (self.config.value('rpc_port', type=int), page, self.config.value('comm_port', type=int))))
+            self.previous_page = self.current_page
+            self.current_page = page
+
+        else:
+            self.logger.debug('Opening %s on left panel')
+            self.web_left.load(QUrl('http://127.0.0.1:%d/%s?port=%s' % (self.config.value('rpc_port', type=int), page, self.config.value('comm_port', type=int))))
 
     def back(self):
         """
@@ -306,7 +311,8 @@ class Cleep(QMainWindow):
         self.web_left.setContextMenuPolicy(Qt.NoContextMenu)
         self.web_left.setMaximumSize(QtCore.QSize(350, 16777215))
         box.addWidget(self.web_left)
-        self.web_left.load(QUrl('http://127.0.0.1:%d/devices.html' % self.config.value('rpc_port', type=int)))
+        self.open_page('devices.html', False)
+        #self.web_left.load(QUrl('http://127.0.0.1:%d/devices.html' % self.config.value('rpc_port', type=int)))
         #disable cache
         self.web_left.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
         
