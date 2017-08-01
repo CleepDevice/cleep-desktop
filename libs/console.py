@@ -1,37 +1,65 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
 import subprocess
 import time
 from threading import Timer, Thread
+try:
+    from Queue import Queue, Empty
+except ImportError:
+    from queue import Queue, Empty  # python 3.x
 import os
 import signal
 import logging
-import sys
 import re
+
+ON_POSIX = 'posix' in sys.builtin_module_names
 
 class EndlessConsole(Thread):
     """
     Helper class to execute long command line (system update...)
-    This kind of console doesn't kill command line after timeout. It just let command line running
+    This kind of console doesn't kill command line after timeout. It just let command running
     until end of it or if user explicitely requests to stop (or kill) it.
+
+    Note: Subprocess output async reading copied from https://stackoverflow.com/a/4896288
     """
 
-    def __init__(self, command, callback, logger):
+    def __init__(self, command, callback, callback_end=None):
         """
         Constructor
 
         Args:
             command (string): command to execute
             callback (function): callback when message is received
-            logger (Logger): logger
+            callback_end (function): callback when process is over
         """
         Thread.__init__(self)
         Thread.daemon = True
 
         #members
-        self.logger = logger
+        self.command = command
+        self.callback = callback
+        self.callback_end = callback_end
+        self.logger = logging.getLogger(self.__class__.__name__)
+        #self.logger.setLevel(logging.DEBUG)
         self.running = True
+        self.__start_time = 0
+        self.__stdout_queue = Queue()
+        self.__stderr_queue = Queue()
+        self.__stdout_thread = None
+        self.__stderr_thread = None
+
+    def __enqueue_output(self, output, queue):
+        for line in iter(output.readline, b''):
+            if not self.running:
+                break
+            queue.put(line.strip())
+        try:
+            output.close()
+        except:
+            pass
+        self.logger.debug('Enqueued thread stopped')
 
     def __del__(self):
         """
@@ -39,23 +67,14 @@ class EndlessConsole(Thread):
         """
         self.stop()
 
-    def __log(self, message, level):
+    def get_start_time(self):
         """
-        Log facility
+        Return process start time
 
-        Args:
-            message (string): message to log
-            level (int): log level
+        Returns:
+            float: start timestamp (with milliseconds)
         """
-        if self.logger:
-            if level==logging.DEBUG:
-                self.logger.debug(message)
-            if level==logging.INFO:
-                self.logger.info(message)
-            if level==logging.WARN:
-                self.logger.warn(message)
-            if level==logging.ERROR:
-                self.logger.error(message)
+        return self.__start_time
 
     def stop(self):
         """
@@ -67,41 +86,70 @@ class EndlessConsole(Thread):
         """
         Stop command line execution
         """
-        self.running = False
+        self.stop()
 
     def run(self):
         """
         Console process
         """
         #launch command
-        p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+        self.__start_time = time.time()
+        p = subprocess.Popen(self.command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
         pid = p.pid
+        self.logger.debug('PID=%d' % pid)
+
+        if self.callback:
+            #async stdout reading
+            self.__stdout_thread = Thread(target=self.__enqueue_output, args=(p.stdout, self.__stdout_queue))
+            self.__stdout_thread.daemon = True
+            self.__stdout_thread.start()
+
+            #async stderr reading
+            self.__stderr_thread = Thread(target=self.__enqueue_output, args=(p.stderr, self.__stdout_queue))
+            self.__stderr_thread.daemon = True
+            self.__stderr_thread.start()
 
         #wait for end of command line
-        while not done:
-            #check if command has finished
+        while self.running:
+            #check process status
             p.poll()
 
-            #read outputs and launch callbacks
+            #read outputs and trigger callback
             if self.callback:
-                (stdout, stderr) = p.communicate()
-                if len(stdout)>0 or len(stderr)>0:
+                stdout = None
+                stderr = None
+                try:
+                    stdout = self.__stdout_queue.get_nowait()
+                except:
+                    pass
+                try:
+                    stderr = self.__stderr_queue.get_nowait()
+                except:
+                    pass
+                if stdout is not None or stderr is not None:
                     self.callback(stdout, stderr)
 
             #check end of command
             if p.returncode is not None:
+                self.logger.debug('Process is terminated')
                 break
             
-            #kill on demand
-            if not self.running:
-                p.kill()
-                break
-
             #pause
-            time.sleep(0.125)
+            time.sleep(0.25)
 
         #make sure process is killed
-        os.kill(pid, signal.SIGKILL)
+        try:
+            self.logger.debug('Kill process with PID %d' % pid)
+            os.kill(pid, signal.SIGKILL)
+        except:
+            pass
+
+        #process is over
+        self.running = False
+
+        #stop callback
+        if self.callback_end:
+            self.callback_end()
 
 
 class Console():
@@ -154,7 +202,7 @@ class Console():
             raise Exception(u'Timeout is mandatory and must be greater than 0')
 
         #launch command
-        p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+        p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
         pid = p.pid
 
         #wait for end of command line

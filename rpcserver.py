@@ -33,6 +33,7 @@ import functools
 #from .libs.raspiotconf import RaspiotConf
 from comm import CleepCommand, CleepCommServer
 from PyQt5.QtCore import QSettings
+from flashdrive import FlashDrive
 
 __all__ = ['app']
 

@@ -242,9 +242,13 @@ class Cleep(QMainWindow):
         self.backAction = QAction(QIcon(''), 'Back', self)
         self.backAction.triggered.connect(self.back)
 
-        #installation
-        self.installAction = QAction(QIcon(''), 'First installation', self)
-        self.installAction.triggered.connect(lambda: self.open_page('installation.html'))
+        #installation on sdcard
+        self.sdcardAction = QAction(QIcon(''), 'Easy install', self)
+        self.sdcardAction.triggered.connect(lambda: self.open_page('installEasy.html'))
+
+        #installation on raspbian
+        self.raspbianAction = QAction(QIcon(''), 'Manual install', self)
+        self.raspbianAction.triggered.connect(lambda: self.open_page('installManually.html'))
 
         #support
         #self.supportAction = QAction(QIcon(''), 'Get support', self)
@@ -274,8 +278,11 @@ class Cleep(QMainWindow):
         fileMenu.addSeparator()
         fileMenu.addAction(self.exitAction)
 
+        installMenu = menubar.addMenu('&Install Cleep')
+        installMenu.addAction(self.sdcardAction)
+        installMenu.addAction(self.raspbianAction)
+
         helpMenu = menubar.addMenu('&Help')
-        helpMenu.addAction(self.installAction)
         helpMenu.addAction(self.helpAction)
         helpMenu.addSeparator()
         helpMenu.addAction(self.socialAction)
@@ -297,7 +304,7 @@ class Cleep(QMainWindow):
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
         self.web_left.setSizePolicy(sizePolicy)
         self.web_left.setContextMenuPolicy(Qt.NoContextMenu)
-        self.web_left.setMaximumSize(QtCore.QSize(250, 16777215))
+        self.web_left.setMaximumSize(QtCore.QSize(350, 16777215))
         box.addWidget(self.web_left)
         self.web_left.load(QUrl('http://127.0.0.1:%d/devices.html' % self.config.value('rpc_port', type=int)))
         #disable cache

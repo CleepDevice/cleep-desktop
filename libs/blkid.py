@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from console import Console
+try:
+    from console import Console
+except:
+    from libs.console import Console
 import re
 import time
 
@@ -12,10 +15,13 @@ class Blkid():
     def __init__(self):
         self.console = Console()
         self.timestamp = None
-        self.__devices = {}
-        self.__uuids = {}
+        self.devices = {}
+        self.uuids = {}
 
     def __refresh(self):
+        """
+        Refresh data
+        """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             return
@@ -23,33 +29,56 @@ class Blkid():
         res = self.console.command(u'/sbin/blkid')
         if not res[u'error'] and not res[u'killed']:
             #parse data
-            matches = re.finditer(r'^(\/dev\/.*?):.*UUID=\"(.*?)\"\s+.*$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
+            matches = re.finditer(r'^(\/dev\/.*?):.*\s+UUID=\"(.*?)\"\s+.*$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
             for matchNum, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==2:
-                    self.__devices[groups[0]] = groups[1]
-                    self.__uuids[groups[1]] = groups[0]
+                    self.devices[groups[0]] = groups[1]
+                    self.uuids[groups[1]] = groups[0]
 
         self.timestamp = time.time()
 
     def get_devices(self):
+        """
+        Get all devices infos
+
+        Return:
+            dict: dict of devices
+        """
+        self.__refresh()
+        return self.devices
+
+    def get_device_by_uuid(self, uuid):
+        """
+        Get device specified by uuid
+
+        Args:
+            uuid (string): device uuid
+
+        Return:
+            dict: dict of device infos
+        """
         self.__refresh()
 
-        return self.__devices
-
-    def get_device(self, uuid):
-        self.__refresh()
-
-        if self.__uuids.has_key(uuid):
-            return self.__uuids[uuid]
+        if uuid in self.uuids:
+            return self.uuids[uuid]
 
         return None
 
-    def get_uuid(self, device):
+    def get_device(self, device):
+        """
+        Get device
+
+        Args:
+            device (string): device to search for
+
+        Return:
+            dict: dict of device infos
+        """
         self.__refresh()
 
-        if self.__devices.has_key(device):
-            return self.__devices[device]
+        if device in self.devices:
+            return self.devices[device]
 
         return None
 

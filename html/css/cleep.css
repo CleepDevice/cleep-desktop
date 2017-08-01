@@ -1,0 +1,42 @@
+a {
+    color: rgb(244, 67, 54);
+    text-decoration: none;
+}
+
+md-icon.bullet {
+    font-size:14px;
+    margin-left:10px;
+    margin-top:8px;
+}
+
+code {
+    padding: 3px;
+    background-color: rgba(205, 205, 205, 0.45);
+    border-radius: 3px;
+}
+
+span.note code {
+    font-size: 0.85em;
+}
+
+div.note {
+    font-size: 0.95em;
+    margin: 30px;
+    padding: 15px;
+    background-color: rgba(205, 205, 205, 0.45);
+    border-radius: 5px;
+}
+
+div.note-info {
+    background-color: rgb(76, 175, 80);
+    color: white;
+}
+
+div.note-warning {
+    background-color: rgb(255, 152, 0);
+}
+
+div.note-important {
+    background-color: rgb(244, 67, 54);
+    color: white;
+}
