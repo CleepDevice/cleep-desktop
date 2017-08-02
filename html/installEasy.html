@@ -26,7 +26,7 @@
 
 		<md-content layout-padding>
             <div class="note">
-                This is the easy way to install Cleep on your SD card: Cleep-desktop embed a SD card burner power by <a href="https://etcher.io" alt="etcher.io" title="etcher.io"><img style="height:14px;" src="images/etcher_logo_black.png"/></a>
+                This is the easiest way to install Cleep on your SD card: Cleep-desktop embed a SD card burner power by <a href="https://etcher.io" alt="etcher.io" title="etcher.io"><img style="height:14px;" src="images/etcher_logo_black.png"/></a>
             </div>
             <div layout="row" layout-align="space-between center">
                 <div>
@@ -35,17 +35,17 @@
                 </div>
                 <div>
                     <md-input-container>
-                        <md-select ng-model="ctl.selectedVersion" placeholder="Cleep version" class="md-no-underline">
+                        <md-select ng-model="ctl.selectedVersion" md-on-open="ctl.refreshVersions()" placeholder="Cleep version" class="md-no-underline">
                             <md-option ng-repeat="version in ctl.versions" ng-value="version.uri">
                                 {{version.label + ' (' + version.date + ')'}}
                             </md-option>
                         </md-select>
                     </md-input-container>
-                    <md-button class="md-raised" ng-click="ctl.refreshDrives()">
+                    <!--<md-button class="md-raised" ng-click="ctl.refreshDrives()">
                         <md-tooltip>Refresh drives list</md-tooltip>
                         <md-icon md-font-set="material-icons">refresh</md-icon>
                         Refresh drives
-                    </md-button>
+                    </md-button>-->
                 </div>
             </div>
             <div layout="row" layout-align="space-between center">
@@ -55,28 +55,52 @@
                 </div>
                 <div>
                     <md-input-container>
-                        <md-select ng-model="ctl.selectedDrive" placeholder="Drive" class="md-no-underline">
+                        <md-select ng-model="ctl.selectedDrive" md-on-open="ctl.refreshDrives()" placeholder="Drive" class="md-no-underline">
                             <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path">
                                 {{drive.model + ' (' + drive.path + ')'}}
                             </md-option>
                         </md-select>
                     </md-input-container>
-                    <md-button class="md-raised" ng-click="ctl.refreshDrives()">
+                    <!--<md-button class="md-raised" ng-click="ctl.refreshDrives()">
                         <md-tooltip>Refresh drives list</md-tooltip>
                         <md-icon md-font-set="material-icons">refresh</md-icon>
                         Refresh drives
-                    </md-button>
+                    </md-button>-->
                 </div>
             </div>
             <div layout="row" layout-align="space-between center">
                 <div>
                     <md-icon md-font-set="material-icons" class="bullet">label</md-icon>
-                    Now click on button to install Cleep on your SD card:
+                    Click on button to install Cleep on your SD card and wait end of process:
                 </div>
                 <div>
-                    <md-button class="md-raised md-accent">Install Cleep on selected drive</md-button>
+                    <md-button ng-click="ctl.startFlash()" class="md-raised md-accent">Install Cleep on selected drive</md-button>
                 </div>
             </div>
+            <div class="md-title">
+                <br/>Flash process
+            </div>
+            <div layout="row" layout-align="space-between center">
+                <div>
+                    Status: 
+                    <span ng-if="ctl.status.status==0">Idle</span>
+                    <span ng-if="ctl.status.status==1">Downloading Cleep {{ctl.status.percent}}%</span>
+                    <span ng-if="ctl.status.status==2">Downloading Cleep (unknown file size)</span>
+                    <span ng-if="ctl.status.status==3">Flashing drive {{ctl.status.percent}}%</span>
+                    <span ng-if="ctl.status.status==4">Flash completed</span>
+                    <span ng-if="ctl.status.status==5">Flash canceled</span>
+                    <span ng-if="ctl.status.status==6">Internal error occured</span>
+                    <span ng-if="ctl.status.status==7">Downloaded file size is invalid</span>
+                    <span ng-if="ctl.status.status==8">Downloaded file seems to be corrupted</span>
+                </div>
+                <div>
+                    <md-button ng-click="ctl.cancelFlash()" class="md-raised md-primary">Cancel</md-button>
+                </div>
+            </div>
+            <div>
+                <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.status.percent}}"></md-progress-linear>
+            </div>
+
         </md-content>
 
     </div>
@@ -93,6 +117,7 @@
     <!-- application -->
     <script src="js/app.js"></script>
     <script src="js/services/ui.js"></script>
+    <script src="js/services/toast.js"></script>
 
 </body>
 </html>

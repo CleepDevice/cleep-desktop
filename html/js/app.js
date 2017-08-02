@@ -98,18 +98,45 @@ Cleep.controller('preferencesController', ['$rootScope', '$scope', 'uiService', 
 /**
  * Easy install controller
  */
-var easyInstallController = function($rootScope, $scope, uiService)
+var easyInstallController = function($rootScope, $scope, uiService, $timeout, toast)
 {
     var self = this;
+    self.status = {
+        percent: 0,
+        status: 0
+    };
     self.drives = [];
+    self.selectedDrive = null;
     self.versions = [];
+    self.selectedVersion = null;
+
+    self.test = function() {
+        toast.info("coucou");
+    };
+
+    /**
+     * Return current flash status
+     */
+    self.getStatus = function(init)
+    {
+        return uiService.sendCommand('getflashstatus')
+            .then(function(resp) {
+                self.status = resp.data;
+
+                //launch watcher if process is running
+                if( init===true && self.status.status!=0 )
+                {
+                    self.watchStatus();
+                }
+            });
+    };
 
     /**
      * Get flashable drives
      */
     self.refreshDrives = function()
     {
-        uiService.sendCommand('getdrives')
+        return uiService.sendCommand('getflashdrives')
             .then(function(resp) {
                 self.drives = resp.data;
             });
@@ -120,12 +147,59 @@ var easyInstallController = function($rootScope, $scope, uiService)
      */
     self.refreshVersions = function()
     {
-        uiService.sendCommand('getversions')
+        return uiService.sendCommand('getcleepversions')
             .then(function(resp) {
                 self.versions = resp.data;
             });
     };
+
+    /**
+     * Get status every 1 seconds
+     */
+    self.watchStatus = function()
+    {
+        $timeout(function() {
+            self.getStatus();
+        }, 1000)
+            .then(function() {
+                //launch again getstatus until end of flash process
+                if( self.status.status<4 )
+                {
+                    self.watchStatus();
+                }
+            });
+    };
+
+    /**
+     * Start flash process
+     */
+    self.startFlash = function()
+    {
+        var data = {
+            uri: 'https://downloads.raspberrypi.org/raspbian_lite_latest',
+            drive: 'toto'
+        };
+        uiService.sendCommand('startflash', data)
+            .then(function() {
+                toast.info('Flashing started')
+                self.watchStatus();
+            });
+    };
+
+    /**
+     * Cancel flash process
+     */
+    self.cancelFlash = function()
+    {
+        uiService.sendCommand('stopflash')
+            .then(function() {
+                toast.info('Flashing canceled');
+            });
+    };
+
+    //init controller
+    self.getStatus(true);
 };
-Cleep.controller('easyInstallController', ['$rootScope', '$scope', 'uiService', easyInstallController]);
+Cleep.controller('easyInstallController', ['$rootScope', '$scope', 'uiService', '$timeout', 'toastService', easyInstallController]);
 
 

@@ -56,7 +56,7 @@ app = bottle.app()
 server = None
 comm = None
 config = None
-flashdrive = FlashDrive()
+flashdrive = None
 
 def bottle_logger(func):
     """
@@ -79,7 +79,7 @@ def get_app(debug_enabled):
     Returns:
         object: bottle instance
     """
-    global logger, app
+    global logger, app, flashdrive
 
     #logging (in raspiot.conf file, module name is 'rpcserver')
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
@@ -87,8 +87,9 @@ def get_app(debug_enabled):
     if debug_enabled:
         logger.setLevel(logging.DEBUG)
 
-    #load auth
-    #load_auth()
+    #launch flash process
+    flashdrive = FlashDrive()
+    flashdrive.start()
 
     return app
 
@@ -135,13 +136,29 @@ def execute_command(command, params):
     Return:
         MessageResponse
     """
+    global flashdrive
+
     if command is None:
         logger.error('Invalid command received, unable to process it')
 
     resp = MessageResponse()
     try:
-        if command=='getdrives':
+        if command=='getflashdrives':
             resp.data = flashdrive.get_flashable_drives()
+        elif command=='getflashstatus':
+            resp.data = flashdrive.get_status()
+        elif command=='startflash':
+            flashdrive.start_flash(params[u'uri'], params[u'drive'])
+        elif command=='cancelflash':
+            flashdrive.cancel_flash()
+        elif command=='getcleepversions':
+            #TODO
+            resp.data = None
+        else:
+            #unknow command
+            resp.error = True
+            resp.message = u'Unknown command "%s" received. Nothing processed' % command
+
     except Exception as e:
         resp.error = True
         resp.message = repr(e)

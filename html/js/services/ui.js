@@ -1,4 +1,4 @@
-var uiService = function($http, $q, $rootScope, $location) {
+var uiService = function($http, $q, $rootScope, $location, toast) {
 
     var self = this;
 
@@ -39,7 +39,15 @@ var uiService = function($http, $q, $rootScope, $location) {
             responseType:'json'
         })
         .then(function(resp) {
-            d.resolve(resp.data);
+            if( resp && resp.data && resp.data.error!==undefined && resp.data.error!==null && resp.data.error==true )
+            {
+                toast.error(resp.data.message);
+                d.reject(resp.data.message);
+            }
+            else
+            {
+                d.resolve(resp.data);
+            }
         }, function(err) {
             console.error('Request failed: '+err);
             d.reject(err.statusText);
@@ -78,5 +86,5 @@ var uiService = function($http, $q, $rootScope, $location) {
 };
 
 var Cleep = angular.module('Cleep');
-Cleep.service('uiService', ['$http', '$q', '$rootScope', '$location', uiService]);
+Cleep.service('uiService', ['$http', '$q', '$rootScope', '$location', 'toastService', uiService]);
 
