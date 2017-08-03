@@ -24,6 +24,7 @@ span.note code {
 }
 
 div.note {
+    line-height: 25px;
     font-size: 0.95em;
     margin: 30px;
     padding: 15px;

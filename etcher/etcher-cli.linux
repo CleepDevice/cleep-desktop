@@ -1,0 +1,6 @@
+#!/bin/sh
+
+#params:
+# $1: drive path
+# $2: image filepath
+/etc/cleep/etcher-cli/etcher --drive $1 $2

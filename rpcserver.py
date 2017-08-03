@@ -143,35 +143,39 @@ def execute_command(command, params):
 
     resp = MessageResponse()
     try:
+        #flashdrive
         if command=='getflashdrives':
             resp.data = flashdrive.get_flashable_drives()
         elif command=='getflashstatus':
             resp.data = flashdrive.get_status()
         elif command=='startflash':
-            flashdrive.start_flash(params[u'uri'], params[u'drive'])
+            #TODO set include_raspbian param from config
+            flashdrive.start_flash(params[u'uri'], params[u'drive'], True)
         elif command=='cancelflash':
             flashdrive.cancel_flash()
-        elif command=='getcleepversions':
-            #TODO
-            resp.data = None
+        elif command=='getisos':
+            #TODO set include_raspbian param from config
+            resp.data = flashdrive.get_isos(True)
+
+        #default
         else:
             #unknow command
             resp.error = True
             resp.message = u'Unknown command "%s" received. Nothing processed' % command
 
     except Exception as e:
+        logger.exception('Error occured during command execution:')
         resp.error = True
-        resp.message = repr(e)
+        resp.message = str(e)
 
     #send response
-    logger.debug('Command response: %s' % resp.to_dict())
+    #logger.debug('Command response: %s' % resp.to_dict())
     return json.dumps(resp.to_dict())
 
 @app.hook('after_request')
 def enable_cors():
     """
-    You need to add some headers to each request.
-    Don't use the wildcard '*' for Access-Control-Allow-Origin in production.
+    Enable CORS on each request
     """
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'PUT, GET, POST, DELETE, OPTIONS'
@@ -202,7 +206,7 @@ def command():
     """
     Communication way between javascript and rpcserver
     """
-    logger.debug('Command (method=%s)' % bottle.request.method)
+    #logger.debug('Command (method=%s)' % bottle.request.method)
     if bottle.request.method=='OPTIONS':
         return {}
     else:
@@ -216,7 +220,7 @@ def command():
             params = tmp_params[u'params']
 
         #and execute command
-        logger.debug('Execute command %s with params %s' % (command, params))
+        #logger.debug('Execute command %s with params %s' % (command, params))
         return execute_command(command, params)
 
 @app.route('/config', method=['OPTIONS', 'POST'])

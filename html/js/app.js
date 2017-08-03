@@ -1,6 +1,51 @@
 var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute']);
 
 /**
+ * Timestamp to human readable string
+ **/
+Cleep.filter('hrDatetime', function($filter) {
+    return function(ts, shortYear) {
+        if( angular.isUndefined(ts) || ts===null )
+            return '-';
+        else
+        {
+            if( angular.isUndefined(shortYear) )
+                return moment.unix(ts).format('DD/MM/YYYY HH:mm:ss');
+            else
+                return moment.unix(ts).format('DD/MM/YY HH:mm:ss');
+        }
+    };
+});
+
+Cleep.filter('hrTime', function($filter) {
+    return function(ts, withSeconds) {
+        if( angular.isUndefined(ts) || ts===null )
+            return '-';
+        else
+        {
+            if( angular.isUndefined(withSeconds) )
+                return moment.unix(ts).format('HH:mm:ss');
+            else
+                return moment.unix(ts).format('HH:mm');
+        }
+    };
+});
+
+Cleep.filter('hrDate', function($filter) {
+    return function(ts, shortYear) {
+        if( angular.isUndefined(ts) || ts===null )
+            return '-';
+        else
+        {
+            if( angular.isUndefined(shortYear) )
+                return moment.unix(ts).format('DD/MM/YYYY');
+            else
+                return moment.unix(ts).format('DD/MM/YY');
+        }
+    };
+});
+
+/**
  * Theme configuration
  */
 Cleep.config(['$mdThemingProvider', function($mdThemingProvider) {
@@ -98,17 +143,19 @@ Cleep.controller('preferencesController', ['$rootScope', '$scope', 'uiService', 
 /**
  * Easy install controller
  */
-var easyInstallController = function($rootScope, $scope, uiService, $timeout, toast)
+var easyInstallController = function($rootScope, $scope, uiService, $timeout, toast, confirm)
 {
     var self = this;
     self.status = {
         percent: 0,
-        status: 0
+        total_percent: 0,
+        status: 0,
+        eta: ''
     };
     self.drives = [];
     self.selectedDrive = null;
-    self.versions = [];
-    self.selectedVersion = null;
+    self.isos = [];
+    self.selectedIso = null;
 
     self.test = function() {
         toast.info("coucou");
@@ -143,13 +190,13 @@ var easyInstallController = function($rootScope, $scope, uiService, $timeout, to
     };
 
     /**
-     * Get cleep versions
+     * Get isos
      */
-    self.refreshVersions = function()
+    self.refreshIsos = function()
     {
-        return uiService.sendCommand('getcleepversions')
+        return uiService.sendCommand('getisos')
             .then(function(resp) {
-                self.versions = resp.data;
+                self.isos = resp.data;
             });
     };
 
@@ -163,7 +210,7 @@ var easyInstallController = function($rootScope, $scope, uiService, $timeout, to
         }, 1000)
             .then(function() {
                 //launch again getstatus until end of flash process
-                if( self.status.status<4 )
+                if( self.status.status<5 )
                 {
                     self.watchStatus();
                 }
@@ -174,15 +221,25 @@ var easyInstallController = function($rootScope, $scope, uiService, $timeout, to
      * Start flash process
      */
     self.startFlash = function()
-    {
-        var data = {
-            uri: 'https://downloads.raspberrypi.org/raspbian_lite_latest',
-            drive: 'toto'
-        };
-        uiService.sendCommand('startflash', data)
+    {     
+        //check values
+        if( !self.selectedIso || !self.selectedDrive )
+        {
+            toast.error('Please select a Cleep version and a drive');
+            return;
+        }
+        
+        confirm.open('Confirm installation?', 'Installation will erase all drive content. This operation cannot be reversed!', 'Yes, install Cleep', 'No')
             .then(function() {
-                toast.info('Flashing started')
-                self.watchStatus();
+                var data = {
+                    uri: self.selectedIso,
+                    drive: self.selectedDrive
+                };
+                uiService.sendCommand('startflash', data)
+                    .then(function() {
+                        toast.info('Installation started')
+                        self.watchStatus();
+                    });
             });
     };
 
@@ -191,15 +248,37 @@ var easyInstallController = function($rootScope, $scope, uiService, $timeout, to
      */
     self.cancelFlash = function()
     {
-        uiService.sendCommand('stopflash')
-            .then(function() {
-                toast.info('Flashing canceled');
-            });
+        //check if process is running
+        if( self.status && self.status.status>=5 )
+        {
+            return;
+        }
+
+        if( self.status && (self.status.status===1 || self.status.status===2) )
+        {
+            confirm.open('Cancel installation?', null, 'Yes', 'No')
+                .then(function() {
+                    uiService.sendCommand('cancelflash')
+                        .then(function() {
+                            toast.info('Installation canceled');
+                        });
+                });
+        }
+        else if( self.status && (self.status.status===3 || self.status.status===4) )
+        {
+            confirm.open('Cancel installation?', 'Canceling installation during this step of process makes your removable media unusable until next installation.', 'Yes, I want to cancel', 'No, I don\'t want')
+                .then(function() {
+                    uiService.sendCommand('cancelflash')
+                        .then(function() {
+                            toast.info('Installation canceled');
+                        });
+                });
+        }
     };
 
     //init controller
     self.getStatus(true);
 };
-Cleep.controller('easyInstallController', ['$rootScope', '$scope', 'uiService', '$timeout', 'toastService', easyInstallController]);
+Cleep.controller('easyInstallController', ['$rootScope', '$scope', 'uiService', '$timeout', 'toastService', 'confirmService', easyInstallController]);
 
 
