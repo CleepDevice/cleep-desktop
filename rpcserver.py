@@ -237,7 +237,9 @@ def config():
             conf = {
                 'proxymode': config.value('proxy_mode', type=str),
                 'proxyip': config.value('proxy_host', type=str),
-                'proxyport': config.value('proxy_port', type=int)
+                'proxyport': config.value('proxy_port', type=int),
+                'isoraspbian': config.value('iso_raspbian', type=bool),
+                'locale': config.value('locale', type=str)
             }
         return conf
 

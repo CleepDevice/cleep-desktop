@@ -34,28 +34,78 @@
 
         <!-- tabs -->
         <md-nav-bar md-selected-nav-item="ctl.pref" nav-bar-aria-label="Preferences">
-            <md-nav-item md-nav-click="goto('proxy')" name="proxy">Proxy</md-nav-item>
+            <md-nav-item md-nav-click="goto('general')" name="general">General</md-nav-item>
+            <md-nav-item md-nav-click="goto('network')" name="network">Network</md-nav-item>
             <md-nav-item md-nav-click="goto('advanced')" name="advanced">Advanced</md-nav-item>
         </md-nav-bar>
 
-        <!-- proxy -->
-        <div ng-if="ctl.pref=='proxy'" style="padding:20px;">
-            <md-radio-group ng-model="ctl.proxyMode">
-                <md-radio-button value="noproxy" class="md-primary">Direct connection (no proxy)</md-radio-button>
-                <md-radio-button value="manualproxy" class="md-primary">Manual proxy</md-radio-button>
-            </md-radio-group>
-            <md-input-container class="md-block" style="margin-top:30px;" flex-gt-sm>
-                <label>Proxy ip</label>
-                <input ng-model="ctl.proxyIp" ng-disabled="ctl.proxyMode=='noproxy'">
-            </md-input-container>
-            <md-input-container class="md-block" flex-gt-sm>
-                <label>Proxy port</label>
-                <input type="number" ng-model="ctl.proxyPort" ng-disabled="ctl.proxyMode=='noproxy'">
-            </md-input-container>
+        <!-- general -->
+        <div ng-if="ctl.pref=='general'" style="padding:20px;">
+            <!-- locale -->
+            <md-whiteframe flex class="md-whiteframe-1dp">
+                <md-toolbar class="md-hue-3">
+                    <div class="md-toolbar-tools">
+                        Locale
+                    </div>
+                </md-toolbar>
+                <md-list>
+                    <md-list-item>
+                        <p>Language</p>
+                        <md-select ng-model="ctl.config.locale">
+                            <md-option value="en">English</md-option>
+                        </md-select>
+                    </md-list-item>
+                </md-list>
+            </md-whiteframe>
         </div>
 
-        <div ng-if="ctl.pref=='advanced'">
-            
+        <!-- network -->
+        <div ng-if="ctl.pref=='network'" style="padding:20px;">
+            <!-- proxy -->
+            <md-whiteframe flex class="md-whiteframe-1dp">
+                <md-toolbar class="md-hue-3">
+                    <div class="md-toolbar-tools">
+                        Configure proxy
+                    </div>
+                </md-toolbar>
+                <md-list>
+                    <md-list-item ng-click="ctl.updateProxyMode('noproxy')">
+                        <p>Direct connection (no proxy)</p>
+                        <md-checkbox class="md-secondary" ng-model="ctl.noproxy" ng-click="ctl.updateProxyMode('noproxy')"></md-checkbox>
+                    </md-list-item>
+                    <md-list-item ng-click="ctl.updateProxyMode('manualproxy')">
+                        <p>Manual proxy</p>
+                        <md-checkbox class="md-secondary" ng-model="ctl.manualproxy" ng-click="ctl.updateProxyMode('manualproxy')"></md-checkbox>
+                    </md-list-item>
+                    <div ng-if="ctl.manualproxy">
+                        <md-input-container class="md-block" style="margin-left:15px; margin-right:15px;">
+                            <label>Proxy ip</label>
+                            <input ng-model="ctl.config.proxyip" ng-disabled="ctl.proxyMode=='noproxy'">
+                        </md-input-container>
+                        <md-input-container class="md-block" style="margin-left:15px; margin-right:15px;">
+                            <label>Proxy port</label>
+                            <input type="number" ng-model="ctl.config.proxyport" ng-disabled="ctl.proxyMode=='noproxy'">
+                        </md-input-container>
+                    </div>
+                </md-list>
+            </md-whiteframe>
+        </div>
+
+        <div ng-if="ctl.pref=='advanced'" style="padding:20px;">
+            <!-- iso raspbian -->
+            <md-whiteframe flex class="md-whiteframe-1dp">
+                <md-toolbar class="md-hue-3">
+                    <div class="md-toolbar-tools">
+                        Installation files
+                    </div>
+                </md-toolbar>
+                <md-list>
+                    <md-list-item>
+                        <p>Include latest Raspbian versions in installable versions</p>
+                        <md-switch ng-model="ctl.config.isoraspbian" aria-label="Raspbian"></md-switch>
+                    </md-list-item>
+                </md-list>
+            </md-whiteframe>
         </div>
 
     </div>

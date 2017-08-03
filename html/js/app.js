@@ -108,15 +108,12 @@ var preferencesController = function($rootScope, $scope, uiService)
 {
     var self = this;
 
-    self.pref = 'proxy';
-    self.proxyMode = null;
+    self.pref = 'general';
+    self.noproxy = false;
+    self.manualproxy = false;
+    /*self.proxyMode = null;
     self.proxyIp = null;
-    self.proxyPort = null;
-
-    self.init = function()
-    {
-        self.getConfig();
-    };
+    self.proxyPort = null;*/
 
     //get configuration
     self.getConfig = function()
@@ -124,10 +121,30 @@ var preferencesController = function($rootScope, $scope, uiService)
         uiService.getConfig()
             .then(function(config) {
                 console.log(config);
-                self.proxyMode = config.proxymode;
+                /*self.proxyMode = config.proxymode;
                 self.proxyIp = config.proxyip;
-                self.proxyPort = config.proxyport;
+                self.proxyPort = config.proxyport;*/
+                self.config = config;
+
+                //update proxy mode
+                self.updateProxyMode(self.config.proxymode);
             });
+    };
+
+    //update proxy mode
+    self.updateProxyMode = function(mode)
+    {
+        if( mode==='noproxy' )
+        {
+            self.noproxy = true;
+            self.manualproxy = false;
+        }
+        else if( mode==='manualproxy' )
+        {
+            self.noproxy = false;
+            self.manualproxy = true;
+        }
+        self.config.proxymode = mode;
     };
 
     //go back
@@ -136,7 +153,8 @@ var preferencesController = function($rootScope, $scope, uiService)
         uiService.back();
     }
 
-    self.init();
+    //init controller
+    self.getConfig();
 };
 Cleep.controller('preferencesController', ['$rootScope', '$scope', 'uiService', preferencesController]);
 

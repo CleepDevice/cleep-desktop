@@ -36,6 +36,10 @@ if 'proxy_host' not in config.allKeys():
     config.setValue('proxy_host', '')
 if 'proxy_port' not in config.allKeys():
     config.setValue('proxy_port', 8080)
+if 'iso_raspbian' not in config.allKeys():
+    config.setValue('iso_raspbian', False)
+if 'locale' not in config.allKeys():
+    config.setValue('locale', 'en')
 config.sync()
 
 #launch processes
