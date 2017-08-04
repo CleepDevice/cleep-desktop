@@ -283,7 +283,7 @@ class Cleep(QMainWindow):
         fileMenu.addSeparator()
         fileMenu.addAction(self.exitAction)
 
-        installMenu = menubar.addMenu('&Install Cleep')
+        installMenu = menubar.addMenu('&Cleep install')
         installMenu.addAction(self.sdcardAction)
         installMenu.addAction(self.raspbianAction)
 
