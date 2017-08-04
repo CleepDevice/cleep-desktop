@@ -18,6 +18,7 @@
         <md-toolbar flex="initial">
             <div class="md-toolbar-tools">
                 <h2 ng-if="!mainCtl.hostname">
+                    <md-icon md-font-set="material-icons">sd_card</md-icon>
                     Install Cleep easily on your device
                 </h2>
                 <span flex></span>
@@ -30,10 +31,14 @@
                 Cleep installation consists of copying Cleep data on removable media.
             </div>
 
+            <!-- preparation -->
             <md-card>
                 <md-card-title>
                     <md-card-title-text>
-                        <span class="md-headline">Preparation</span>
+                        <span class="md-headline">
+                            <md-icon md-font-set="material-icons">create</md-icon>
+                            Preparation
+                        </span>
                     </md-card-title-text>
                 </md-card-title>
                 <md-card-content>
@@ -86,10 +91,14 @@
                 </md-card-content>
             </md-card>
 
+            <!-- installation -->
             <md-card>
                 <md-card-title>
                     <md-card-title-text>
-                        <span class="md-headline">Installation progress</span>
+                        <span class="md-headline">
+                            <md-icon md-font-set="material-icons">flag</md-icon>
+                            Installation progress
+                        </span>
                     </md-card-title-text>
                 </md-card-title>
                 <md-card-content>
