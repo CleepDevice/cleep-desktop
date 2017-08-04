@@ -28,7 +28,6 @@
             </div>
         </md-toolbar>
 
-
         <!-- tabs -->
         <md-nav-bar md-selected-nav-item="ctl.pref" nav-bar-aria-label="Preferences">
             <md-nav-item md-nav-click="goto('general')" name="general">General</md-nav-item>
@@ -37,7 +36,7 @@
         </md-nav-bar>
 
         <!-- general -->
-        <div ng-if="ctl.pref=='general'" style="padding:20px;">
+        <div ng-if="ctl.pref=='general'" layout-padding>
             <!-- locale --> 
             <md-card>
                 <md-card-title>
@@ -62,7 +61,7 @@
         </div>
 
         <!-- network -->
-        <div ng-if="ctl.pref=='network'" style="padding:20px;">
+        <div ng-if="ctl.pref=='network'" layout-padding>
             <!-- proxy -->
             <md-card>
                 <md-card-title>
@@ -99,7 +98,7 @@
         </div>
 
         <!-- advanced -->
-        <div ng-if="ctl.pref=='advanced'" style="padding:20px;">
+        <div ng-if="ctl.pref=='advanced'" layout-padding>
             <!-- iso raspbian -->
             <md-card>
                 <md-card-title>
