@@ -1,4 +1,4 @@
-var uiService = function($http, $q, $rootScope, $location, toast) {
+var rpcService = function($http, $q, $rootScope, $location, toast) {
 
     var self = this;
 
@@ -19,8 +19,14 @@ var uiService = function($http, $q, $rootScope, $location, toast) {
     /**
      * Base function to send data to rpcserver
      */
-    self.send = function(url, command, params) {
+    self.send = function(url, command, params, method) {
         var d = $q.defer();
+
+        //prepare method
+        if( !method )
+        {
+            method = 'POST';
+        }
 
         //prepare data
         if( params===undefined || params===null )
@@ -33,7 +39,7 @@ var uiService = function($http, $q, $rootScope, $location, toast) {
         };
 
 		$http({
-            method: 'POST',
+            method: method,
             url: url,
             data: data,
             responseType:'json'
@@ -78,6 +84,13 @@ var uiService = function($http, $q, $rootScope, $location, toast) {
     };
 
     /**
+     * Set cleep-desktop config
+     */
+    self.setConfig = function(config) {
+        return self.send(self.uriConfig, null, {config:config}, 'PUT');
+    };
+
+    /**
      * Go back in history. Works only once
      */
     self.back = function() {
@@ -86,5 +99,5 @@ var uiService = function($http, $q, $rootScope, $location, toast) {
 };
 
 var Cleep = angular.module('Cleep');
-Cleep.service('uiService', ['$http', '$q', '$rootScope', '$location', 'toastService', uiService]);
+Cleep.service('rpcService', ['$http', '$q', '$rootScope', '$location', 'toastService', rpcService]);
 

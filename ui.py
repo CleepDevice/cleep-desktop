@@ -76,12 +76,12 @@ class Cleep(QMainWindow):
         self.signal.connect(self.command_handler)
 
         #and start CommClient
-        self.comm = CleepCommClient(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.signal, self.logger)
+        self.comm = CleepCommClient(self.config.value('localhost', type=str), self.config.value('commport', type=int), self.signal, self.logger)
         if not self.comm.connect():
             raise Exception('Unable to connect Comm. Stop application')
         self.comm.start()
 
-        #self.comm = CleepCommClientQt(self.config.value('localhost', type=str), self.config.value('comm_port', type=int), self.signal, self.logger)
+        #self.comm = CleepCommClientQt(self.config.value('localhost', type=str), self.config.value('commport', type=int), self.signal, self.logger)
         #if not self.comm.connect():
         #    self.logger.critical('Unable to connect to COMM socket. Stop application.')
         #    raise Exception('Fatal exception: unable to connect to COMM')
@@ -114,13 +114,13 @@ class Cleep(QMainWindow):
         """
         if right_panel:
             self.logger.debug('Opening %s on right panel' % page)
-            self.web_right.load(QUrl('http://127.0.0.1:%d/%s?port=%s' % (self.config.value('rpc_port', type=int), page, self.config.value('comm_port', type=int))))
+            self.web_right.load(QUrl('http://127.0.0.1:%d/%s?port=%s' % (self.config.value('rpcport', type=int), page, self.config.value('commport', type=int))))
             self.previous_page = self.current_page
             self.current_page = page
 
         else:
             self.logger.debug('Opening %s on left panel')
-            self.web_left.load(QUrl('http://127.0.0.1:%d/%s?port=%s' % (self.config.value('rpc_port', type=int), page, self.config.value('comm_port', type=int))))
+            self.web_left.load(QUrl('http://127.0.0.1:%d/%s?port=%s' % (self.config.value('rpcport', type=int), page, self.config.value('commport', type=int))))
 
     def back(self):
         """
@@ -312,7 +312,7 @@ class Cleep(QMainWindow):
         self.web_left.setMaximumSize(QtCore.QSize(350, 16777215))
         box.addWidget(self.web_left)
         self.open_page('devices.html', False)
-        #self.web_left.load(QUrl('http://127.0.0.1:%d/devices.html' % self.config.value('rpc_port', type=int)))
+        #self.web_left.load(QUrl('http://127.0.0.1:%d/devices.html' % self.config.value('rpcport', type=int)))
         #disable cache
         self.web_left.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
         

@@ -17,13 +17,10 @@
         <md-toolbar flex="initial">
             <div class="md-toolbar-tools">
                 <h2>
+                    <md-icon md-font-set="material-icons">settings</md-icon>
                     Preferences
                 </h2>
                 <span flex></span>
-                <md-button class="md-icon-button" aria-label="Save">
-                    <md-tooltip md-direction="bottom">Save</md-tooltip>
-                    <md-icon md-font-set="material-icons">save</md-icon>
-                </md-button>
                 <md-button ng-click="ctl.back()" class="md-icon-button" aria-label="Close">
                     <md-tooltip md-direction="bottom">Close</md-tooltip>
                     <md-icon md-font-set="material-icons">close</md-icon>
@@ -41,71 +38,87 @@
 
         <!-- general -->
         <div ng-if="ctl.pref=='general'" style="padding:20px;">
-            <!-- locale -->
-            <md-whiteframe flex class="md-whiteframe-1dp">
-                <md-toolbar class="md-hue-3">
-                    <div class="md-toolbar-tools">
-                        Locale
-                    </div>
-                </md-toolbar>
-                <md-list>
-                    <md-list-item>
-                        <p>Language</p>
-                        <md-select ng-model="ctl.config.locale">
-                            <md-option value="en">English</md-option>
-                        </md-select>
-                    </md-list-item>
-                </md-list>
-            </md-whiteframe>
+            <!-- locale --> 
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">
+                            <md-icon md-font-set="material-icons">language</md-icon>
+                            Language
+                        </span>
+                    </md-card-title-text>
+                </md-card-title>
+                <md-card-content>
+                    <md-list>
+                        <md-list-item>
+                            <p>Prefered language</p>
+                            <md-select ng-model="ctl.config.locale" aria-label="Language">
+                                <md-option value="en">English</md-option>
+                            </md-select>
+                        </md-list-item>
+                    </md-list>
+                </md-card-content>
+            </md-card>
         </div>
 
         <!-- network -->
         <div ng-if="ctl.pref=='network'" style="padding:20px;">
             <!-- proxy -->
-            <md-whiteframe flex class="md-whiteframe-1dp">
-                <md-toolbar class="md-hue-3">
-                    <div class="md-toolbar-tools">
-                        Configure proxy
-                    </div>
-                </md-toolbar>
-                <md-list>
-                    <md-list-item ng-click="ctl.updateProxyMode('noproxy')">
-                        <p>Direct connection (no proxy)</p>
-                        <md-checkbox class="md-secondary" ng-model="ctl.noproxy" ng-click="ctl.updateProxyMode('noproxy')"></md-checkbox>
-                    </md-list-item>
-                    <md-list-item ng-click="ctl.updateProxyMode('manualproxy')">
-                        <p>Manual proxy</p>
-                        <md-checkbox class="md-secondary" ng-model="ctl.manualproxy" ng-click="ctl.updateProxyMode('manualproxy')"></md-checkbox>
-                    </md-list-item>
-                    <div ng-if="ctl.manualproxy">
-                        <md-input-container class="md-block" style="margin-left:15px; margin-right:15px;">
-                            <label>Proxy ip</label>
-                            <input ng-model="ctl.config.proxyip" ng-disabled="ctl.proxyMode=='noproxy'">
-                        </md-input-container>
-                        <md-input-container class="md-block" style="margin-left:15px; margin-right:15px;">
-                            <label>Proxy port</label>
-                            <input type="number" ng-model="ctl.config.proxyport" ng-disabled="ctl.proxyMode=='noproxy'">
-                        </md-input-container>
-                    </div>
-                </md-list>
-            </md-whiteframe>
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">
+                            <md-icon md-font-set="material-icons">settings_ethernet</md-icon>
+                            Proxy settings
+                        </span>
+                    </md-card-title-text>
+                </md-card-title>
+                <md-card-content>
+                    <md-list>
+                        <md-list-item ng-click="ctl.updateProxyMode('noproxy')">
+                            <p>Direct connection (no proxy)</p>
+                            <md-checkbox class="md-secondary" ng-model="ctl.noproxy" ng-click="ctl.updateProxyMode('noproxy')" aria-label="No proxy"></md-checkbox>
+                        </md-list-item>
+                        <md-list-item ng-click="ctl.updateProxyMode('manualproxy')">
+                            <p>Manual proxy</p>
+                            <md-checkbox class="md-secondary" ng-model="ctl.manualproxy" ng-click="ctl.updateProxyMode('manualproxy')" aria-label="Manual proxy"></md-checkbox>
+                        </md-list-item>
+                        <div ng-if="ctl.manualproxy">
+                            <md-input-container class="md-block" style="margin-left:15px; margin-right:15px;">
+                                <label>Proxy ip</label>
+                                <input ng-model="ctl.config.proxyip" ng-disabled="ctl.proxyMode=='noproxy'">
+                            </md-input-container>
+                            <md-input-container class="md-block" style="margin-left:15px; margin-right:15px;">
+                                <label>Proxy port</label>
+                                <input type="number" ng-model="ctl.config.proxyport" ng-disabled="ctl.proxyMode=='noproxy'">
+                            </md-input-container>
+                        </div>
+                    </md-list>
+                </md-card-content>
+            </md-card>
         </div>
 
+        <!-- advanced -->
         <div ng-if="ctl.pref=='advanced'" style="padding:20px;">
             <!-- iso raspbian -->
-            <md-whiteframe flex class="md-whiteframe-1dp">
-                <md-toolbar class="md-hue-3">
-                    <div class="md-toolbar-tools">
-                        Installation files
-                    </div>
-                </md-toolbar>
-                <md-list>
-                    <md-list-item>
-                        <p>Include latest Raspbian versions in installable versions</p>
-                        <md-switch ng-model="ctl.config.isoraspbian" aria-label="Raspbian"></md-switch>
-                    </md-list-item>
-                </md-list>
-            </md-whiteframe>
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">
+                            <md-icon md-font-set="material-icons">file_download</md-icon>
+                            Installation files
+                        </span>
+                    </md-card-title-text>
+                </md-card-title>
+                <md-card-content>
+                    <md-list>
+                        <md-list-item>
+                            <p>Include latest Raspbian versions in installable versions</p>
+                            <md-switch ng-model="ctl.config.isoraspbian" aria-label="Raspbian"></md-switch>
+                        </md-list-item>
+                    </md-list>
+                </md-card-content>
+            </md-card>
         </div>
 
     </div>
@@ -124,8 +137,9 @@
 
     <!-- application -->
     <script src="js/app.js"></script>
-    <script src="js/services/ui.js"></script>
+    <script src="js/services/rpc.js"></script>
     <script src="js/services/toast.js"></script>
+    <script src="js/services/debounce.js"></script>
 
 </body>
 </html>

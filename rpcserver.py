@@ -125,6 +125,26 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
         if not server.closed:
             server.close()
 
+def get_config():
+    """
+    Return cleep-desktop configuration
+
+    Return:
+        dict: config
+    """
+    conf = {}
+
+    if config is not None:
+        conf = {
+            'proxymode': config.value('proxymode', type=str),
+            'proxyip': config.value('proxyip', type=str),
+            'proxyport': config.value('proxyport', type=int),
+            'isoraspbian': config.value('isoraspbian', type=bool),
+            'locale': config.value('locale', type=str)
+        }
+    
+    return conf
+
 def execute_command(command, params):
     """
     Execute specified command
@@ -211,37 +231,65 @@ def command():
         return {}
     else:
         #convert command to cleep command
-        tmp_params = bottle.request.json
+        data = bottle.request.json
         command = None
-        if u'command' in tmp_params:
-            command = tmp_params[u'command']
+        if u'command' in data:
+            command = data[u'command']
         params = None
-        if u'params' in tmp_params:
-            params = tmp_params[u'params']
+        if u'params' in data:
+            params = data[u'params']
 
         #and execute command
         #logger.debug('Execute command %s with params %s' % (command, params))
         return execute_command(command, params)
 
-@app.route('/config', method=['OPTIONS', 'POST'])
+@app.route('/config', method=['OPTIONS', 'POST', 'PUT'])
 def config():
     """
     Return current configuration
     """
     logger.debug('Config (method=%s)' % bottle.request.method)
+    resp = MessageResponse()
+
     if bottle.request.method=='OPTIONS':
         return {}
+
+    if bottle.request.method=='PUT':
+        data = bottle.request.json
+        logger.debug('Data=%s' % data)
+        if config is not None and 'params' in data and 'config' in data['params']:
+            data_config = data['params']['config']
+            try:
+                if 'proxymode' in data_config:
+                    config.setValue('proxymode', data_config['proxymode'])
+                if 'proxyport' in data_config:
+                    config.setValue('proxyport', data_config['proxyport'])
+                if 'proxyip' in data_config:
+                    logger.debug('save proxyip')
+                    config.setValue('proxyip', data_config['proxyip'])
+                if 'isoraspbian' in data_config:
+                    config.setValue('isoraspbian', data_config['isoraspbian'])
+                if 'locale' in data_config:
+                    config.setValue('locale', data_config['locale'])
+                config.sync()
+
+                #once updated, return cleep-desktop config
+                resp.data = {
+                    'config': get_config()
+                }
+
+            except:
+                logger.exception('Unable to save configuration:')
+                resp.error = True
+                resp.message('Unable to save configuration')
+
     else:
-        conf = {}
-        if config is not None:
-            conf = {
-                'proxymode': config.value('proxy_mode', type=str),
-                'proxyip': config.value('proxy_host', type=str),
-                'proxyport': config.value('proxy_port', type=int),
-                'isoraspbian': config.value('iso_raspbian', type=bool),
-                'locale': config.value('locale', type=str)
-            }
-        return conf
+        #return cleep-desktop config
+        resp.data = {
+            'config': get_config()
+        }
+
+    return json.dumps(resp.to_dict())
 
 @app.route('/back', method=['OPTIONS', 'POST'])
 def back():
@@ -286,15 +334,15 @@ if __name__ == u'__main__':
     app = get_app(debug)
 
     #connect to ui
-    #comm = CleepCommClient(config.value('localhost', type=str), config.value('comm_port', type=int), command_received, logger)
-    comm = CleepCommServer(config.value('localhost', type=str), config.value('comm_port', type=int), command_received, logger)
+    #comm = CleepCommClient(config.value('localhost', type=str), config.value('commport', type=int), command_received, logger)
+    comm = CleepCommServer(config.value('localhost', type=str), config.value('commport', type=int), command_received, logger)
     if not comm.connect():
         print('Failed to connect to ui, stop')
     comm.start()
 
     #start rpc server
     logger.debug('Serving files from "%s" folder.' % HTML_DIR)
-    start(u'0.0.0.0', config.value('rpc_port', type=int), None, None)
+    start(u'0.0.0.0', config.value('rpcport', type=int), None, None)
 
     #clean everythng
     comm.disconnect()

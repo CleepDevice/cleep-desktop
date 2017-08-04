@@ -26,17 +26,17 @@ config = QSettings('cleep', 'cleep-desktop')
 logger.info('Config file location: %s' % config.fileName)
 if 'localhost' not in config.allKeys():
     config.setValue('localhost', DEFAULT_HOST)
-if 'rpc_port' not in config.allKeys():
+if 'rpcport' not in config.allKeys():
     config.setValue('rpc_port', DEFAULT_RPC_PORT)
-if 'comm_port' not in config.allKeys():
+if 'commport' not in config.allKeys():
     config.setValue('comm_port', DEFAULT_COMM_PORT)
-if 'proxy_mode' not in config.allKeys():
+if 'proxymode' not in config.allKeys():
     config.setValue('proxy_mode', DEFAULT_PROXY_MODE)
-if 'proxy_host' not in config.allKeys():
+if 'proxyhost' not in config.allKeys():
     config.setValue('proxy_host', '')
-if 'proxy_port' not in config.allKeys():
+if 'proxyport' not in config.allKeys():
     config.setValue('proxy_port', 8080)
-if 'iso_raspbian' not in config.allKeys():
+if 'isoraspbian' not in config.allKeys():
     config.setValue('iso_raspbian', False)
 if 'locale' not in config.allKeys():
     config.setValue('locale', 'en')

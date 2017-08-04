@@ -87,47 +87,68 @@ Cleep.controller('devicesController', ['$rootScope', '$scope', devicesController
 /**
  * Homepage controller
  */
-var homepageController = function($rootScope, $scope, uiService)
+var homepageController = function($rootScope, $scope, rpcService)
 {
     var self = this;
 
     self.refresh = function()
     {
         console.log('refresh button clicked');
-        uiService.sendUi('coucou', null);
+        rpcService.sendUi('coucou', null);
     };
 
 
 };
-Cleep.controller('homepageController', ['$rootScope', '$scope', 'uiService', homepageController]);
+Cleep.controller('homepageController', ['$rootScope', '$scope', 'rpcService', homepageController]);
 
 /**
  * Preferences controller
  */
-var preferencesController = function($rootScope, $scope, uiService)
+var preferencesController = function($rootScope, $scope, rpcService, debounce)
 {
     var self = this;
 
     self.pref = 'general';
+    self.config = {};
     self.noproxy = false;
     self.manualproxy = false;
-    /*self.proxyMode = null;
-    self.proxyIp = null;
-    self.proxyPort = null;*/
+
+    //automatic settings saving when config value changed
+    $scope.$watchCollection(function() {
+        return self.config;
+    }, function(newValue, oldValue) {
+        if( Object.keys(newValue).length>0 && Object.keys(oldValue).length>0 )
+        {
+            debounce.exec('config', self.setConfig, 500)
+                .then(function() {
+                    console.log('config saved');
+                }, function() {})
+        }
+    });
 
     //get configuration
     self.getConfig = function()
     {
-        uiService.getConfig()
-            .then(function(config) {
-                console.log(config);
-                /*self.proxyMode = config.proxymode;
-                self.proxyIp = config.proxyip;
-                self.proxyPort = config.proxyport;*/
-                self.config = config;
+        rpcService.getConfig()
+            .then(function(resp) {
+                //save config
+                self.config = resp.data.config;
 
                 //update proxy mode
                 self.updateProxyMode(self.config.proxymode);
+            });
+    };
+
+    //set configuration
+    self.setConfig = function()
+    {
+        rpcService.setConfig(self.config)
+            .then(function(resp) {
+                //overwrite config if specified
+                if( resp && resp.data && resp.data.config )
+                {
+                    self.config = resp.data.config;
+                }
             });
     };
 
@@ -150,18 +171,18 @@ var preferencesController = function($rootScope, $scope, uiService)
     //go back
     self.back = function()
     {
-        uiService.back();
+        rpcService.back();
     }
 
     //init controller
     self.getConfig();
 };
-Cleep.controller('preferencesController', ['$rootScope', '$scope', 'uiService', preferencesController]);
+Cleep.controller('preferencesController', ['$rootScope', '$scope', 'rpcService', 'debounceService', preferencesController]);
 
 /**
  * Easy install controller
  */
-var easyInstallController = function($rootScope, $scope, uiService, $timeout, toast, confirm)
+var easyInstallController = function($rootScope, $scope, rpcService, $timeout, toast, confirm)
 {
     var self = this;
     self.status = {
@@ -184,7 +205,7 @@ var easyInstallController = function($rootScope, $scope, uiService, $timeout, to
      */
     self.getStatus = function(init)
     {
-        return uiService.sendCommand('getflashstatus')
+        return rpcService.sendCommand('getflashstatus')
             .then(function(resp) {
                 self.status = resp.data;
 
@@ -201,7 +222,7 @@ var easyInstallController = function($rootScope, $scope, uiService, $timeout, to
      */
     self.refreshDrives = function()
     {
-        return uiService.sendCommand('getflashdrives')
+        return rpcService.sendCommand('getflashdrives')
             .then(function(resp) {
                 self.drives = resp.data;
             });
@@ -212,7 +233,7 @@ var easyInstallController = function($rootScope, $scope, uiService, $timeout, to
      */
     self.refreshIsos = function()
     {
-        return uiService.sendCommand('getisos')
+        return rpcService.sendCommand('getisos')
             .then(function(resp) {
                 self.isos = resp.data;
             });
@@ -253,7 +274,7 @@ var easyInstallController = function($rootScope, $scope, uiService, $timeout, to
                     uri: self.selectedIso,
                     drive: self.selectedDrive
                 };
-                uiService.sendCommand('startflash', data)
+                rpcService.sendCommand('startflash', data)
                     .then(function() {
                         toast.info('Installation started')
                         self.watchStatus();
@@ -276,7 +297,7 @@ var easyInstallController = function($rootScope, $scope, uiService, $timeout, to
         {
             confirm.open('Cancel installation?', null, 'Yes', 'No')
                 .then(function() {
-                    uiService.sendCommand('cancelflash')
+                    rpcService.sendCommand('cancelflash')
                         .then(function() {
                             toast.info('Installation canceled');
                         });
@@ -286,7 +307,7 @@ var easyInstallController = function($rootScope, $scope, uiService, $timeout, to
         {
             confirm.open('Cancel installation?', 'Canceling installation during this step of process makes your removable media unusable until next installation.', 'Yes, I want to cancel', 'No, I don\'t want')
                 .then(function() {
-                    uiService.sendCommand('cancelflash')
+                    rpcService.sendCommand('cancelflash')
                         .then(function() {
                             toast.info('Installation canceled');
                         });
@@ -297,6 +318,6 @@ var easyInstallController = function($rootScope, $scope, uiService, $timeout, to
     //init controller
     self.getStatus(true);
 };
-Cleep.controller('easyInstallController', ['$rootScope', '$scope', 'uiService', '$timeout', 'toastService', 'confirmService', easyInstallController]);
+Cleep.controller('easyInstallController', ['$rootScope', '$scope', 'rpcService', '$timeout', 'toastService', 'confirmService', easyInstallController]);
 
 
