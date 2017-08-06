@@ -169,13 +169,12 @@ def execute_command(command, params):
         elif command=='getflashstatus':
             resp.data = flashdrive.get_status()
         elif command=='startflash':
-            #TODO set include_raspbian param from config
-            flashdrive.start_flash(params[u'uri'], params[u'drive'], True)
+            flashdrive.start_flash(params[u'uri'], params[u'drive'], config.value('isoraspbian', type=bool))
         elif command=='cancelflash':
             flashdrive.cancel_flash()
         elif command=='getisos':
             #TODO set include_raspbian param from config
-            resp.data = flashdrive.get_isos(True)
+            resp.data = flashdrive.get_isos(config.value('isoraspbian', type=bool))
 
         #default
         else:
@@ -265,7 +264,6 @@ def config():
                 if 'proxyport' in data_config:
                     config.setValue('proxyport', data_config['proxyport'])
                 if 'proxyip' in data_config:
-                    logger.debug('save proxyip')
                     config.setValue('proxyip', data_config['proxyip'])
                 if 'isoraspbian' in data_config:
                     config.setValue('isoraspbian', data_config['isoraspbian'])

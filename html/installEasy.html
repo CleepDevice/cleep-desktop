@@ -51,11 +51,13 @@
                             <md-input-container>
                                 <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" required>
                                     <md-optgroup label="Cleep">
+                                        <md-option ng-if="ctl.noCleepIso" ng-disabled="true">No Cleep version found</md-option>
                                         <md-option ng-repeat="iso in ctl.isos | filter: {category:'cleep'}" ng-value="iso.uri">
                                             {{iso.label}} ({{iso.timestamp | hrDate}})
                                         </md-option>
                                     </md-optgroup>
-                                    <md-optgroup label="Raspbian">
+                                    <md-optgroup label="Raspbian" ng-if="ctl.raspbian">
+                                        <md-option ng-if="ctl.noRaspbianIso" ng-disabled="true">No Raspbian version found</md-option>
                                         <md-option ng-repeat="iso in ctl.isos | filter: {category:'raspbian'}" ng-value="iso.uri">
                                             {{iso.label}} ({{iso.timestamp | hrDate}})
                                         </md-option>
@@ -72,6 +74,7 @@
                         <div>
                             <md-input-container>
                                 <md-select ng-model="ctl.selectedDrive" md-on-open="ctl.refreshDrives()" placeholder="Drive" class="md-no-underline" required>
+                                    <md-option ng-if="ctl.noDrive" ng-disabled="true">No drive found</md-option>
                                     <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path">
                                         {{drive.model + ' (' + drive.path + ')'}}
                                     </md-option>

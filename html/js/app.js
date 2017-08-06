@@ -182,7 +182,7 @@ Cleep.controller('preferencesController', ['$rootScope', '$scope', 'rpcService',
 /**
  * Easy install controller
  */
-var easyInstallController = function($rootScope, $scope, rpcService, $timeout, toast, confirm)
+var easyInstallController = function($rootScope, $scope, rpcService, $timeout, toast, confirm, $filter)
 {
     var self = this;
     self.status = {
@@ -195,6 +195,9 @@ var easyInstallController = function($rootScope, $scope, rpcService, $timeout, t
     self.selectedDrive = null;
     self.isos = [];
     self.selectedIso = null;
+    self.noCleepIso = true;
+    self.noRaspbianIso = true;
+    self.noDrive = true;
 
     self.test = function() {
         toast.info("coucou");
@@ -225,6 +228,7 @@ var easyInstallController = function($rootScope, $scope, rpcService, $timeout, t
         return rpcService.sendCommand('getflashdrives')
             .then(function(resp) {
                 self.drives = resp.data;
+                self.noDrive = self.drives.length===0;
             });
     };
 
@@ -235,7 +239,10 @@ var easyInstallController = function($rootScope, $scope, rpcService, $timeout, t
     {
         return rpcService.sendCommand('getisos')
             .then(function(resp) {
-                self.isos = resp.data;
+                self.isos = resp.data.isos;
+                self.noCleepIso = resp.data.cleepIsos===0;
+                self.noRaspbianIso = resp.data.raspbianIsos===0;
+                self.raspbian = resp.data.raspbian;
             });
     };
 
@@ -318,6 +325,6 @@ var easyInstallController = function($rootScope, $scope, rpcService, $timeout, t
     //init controller
     self.getStatus(true);
 };
-Cleep.controller('easyInstallController', ['$rootScope', '$scope', 'rpcService', '$timeout', 'toastService', 'confirmService', easyInstallController]);
+Cleep.controller('easyInstallController', ['$rootScope', '$scope', 'rpcService', '$timeout', 'toastService', 'confirmService', '$filter', easyInstallController]);
 
 

@@ -178,7 +178,7 @@ class FlashDrive(Thread):
 
         return sha1.hexdigest()
 
-    def start_flash(self, uri, drive, include_raspbian):
+    def start_flash(self, uri, drive, iso_raspbian):
         """
         Set flash data before launching process
         """
@@ -190,8 +190,8 @@ class FlashDrive(Thread):
             raise Exception('Installation is already running')
 
         #get sha1
-        isos = self.get_isos(include_raspbian)
-        for iso in isos:
+        isos = self.get_isos(iso_raspbian)
+        for iso in isos['isos']:
             if iso['uri']==uri:
                 self.logger.debug('Found sha1 "%s" for iso "%s"' % (iso['sha1'], uri))
                 self.iso_sha1 = iso['sha1']
@@ -259,57 +259,94 @@ class FlashDrive(Thread):
 
         return flashables
 
-    def get_isos(self, include_raspbian):
+    def get_isos(self, iso_raspbian):
         """
         Get list of isos file available
 
         Args:
-            include_raspbian (bool): function will also return raspbian isos
+            iso_raspbian (bool): function will also return raspbian isos
 
         Return:
-            list: list of isos available ordered by date
-                [
-                    {
-                        label (string): iso label,
-                        uri (string): file uri,
-                        timestamp (int): timestamp of isos,
-                        category (string): entry category ('cleep' or 'raspbian')
-                        sha1 (string): sha1 checksum
-                    },
-                    ...
-                }
+            dict:
+                raspbian (bool): with raspbian iso,
+                cleepIsos (int): number of returned Cleep isos
+                raspbianIsos (int): number of returned Raspbian isos
+                isos (list): list of isos available ordered by date
+                    [
+                        {
+                            label (string): iso label,
+                            uri (string): file uri,
+                            timestamp (int): timestamp of isos,
+                            category (string): entry category ('cleep' or 'raspbian')
+                            sha1 (string): sha1 checksum
+                        },
+                        ...
+                    ]
         """
         #return isos from cache
+        refresh_isos = True
         if self.timestamp_isos is not None and time.time()-self.timestamp_isos<=self.CACHE_DURATION:
-            self.logger.debug('Return isos list from cache')
-            return self.isos
+            #check if raspbian isos are requested
+            need_refresh = False
+            if not iso_raspbian:
+                for iso in self.isos:
+                    if iso['category']=='raspbian':
+                        #need to refresh list
+                        need_refresh = True
+                        break
+            else:
+                need_refresh = True
+                for iso in self.isos:
+                    if iso['category']=='raspbian':
+                        need_refresh = False
+                        break
+
+            if not need_refresh: 
+                refresh_isos = False
 
         isos = []
 
-        #TODO get Cleep isos: need to develop website first :S
-        #also raspbian isos will be included in this request
+        if refresh_isos:
+            #TODO get Cleep isos: need to develop website first :S
+            #also raspbian isos will be included in this request
 
-        #get raspbian isos
-        if include_raspbian:
-            isos.append({
-                'label': 'Raspbian Lite',
-                'uri': 'https://downloads.raspberrypi.org/raspbian_lite_latest',
-                'timestamp': 1499205600,
-                'category': 'raspbian',
-                'sha1': '30a171e10eb0b93b0e552837929c504d1bacd755'
-            })
-            isos.append({
-                'label': 'Raspbian Desktop',
-                'uri': 'https://downloads.raspberrypi.org/raspbian_latest',
-                'timestamp': 1499205600,
-                'category': 'raspbian',
-                'sha1': 'e1edd4d26090b3e67a66939fa77eeb656de8a2c5'
-            })
+            #get raspbian isos
+            if iso_raspbian:
+                isos.append({
+                    'label': 'Raspbian Lite',
+                    'uri': 'https://downloads.raspberrypi.org/raspbian_lite_latest',
+                    'timestamp': 1499205600,
+                    'category': 'raspbian',
+                    'sha1': '30a171e10eb0b93b0e552837929c504d1bacd755'
+                })
+                isos.append({
+                    'label': 'Raspbian Desktop',
+                    'uri': 'https://downloads.raspberrypi.org/raspbian_latest',
+                    'timestamp': 1499205600,
+                    'category': 'raspbian',
+                    'sha1': 'e1edd4d26090b3e67a66939fa77eeb656de8a2c5'
+                })
 
-        self.isos = sorted(isos, key=lambda i:i['timestamp'])
-        self.timestamp_isos = time.time()
+            self.isos = sorted(isos, key=lambda i:i['timestamp'])
+            self.timestamp_isos = time.time()
 
-        return self.isos
+        else:
+            self.logger.debug('Return isos list from cache')
+
+        cleepIsos = 0
+        raspbianIsos = 0
+        for iso in self.isos:
+            if iso['category']=='cleep':
+                cleepIsos += 1
+            elif iso['category']=='raspbian':
+                raspbianIsos += 1
+
+        return {
+            'isos': self.isos,
+            'cleepIsos': cleepIsos,
+            'raspbianIsos': raspbianIsos,
+            'raspbian': iso_raspbian
+        }
 
     def __download_file(self):
         """
