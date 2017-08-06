@@ -167,6 +167,12 @@ def execute_command(command, params):
             #TODO set include_raspbian param from config
             resp.data = flashdrive.get_isos(config.value('isoraspbian', type=bool))
 
+        #about
+        elif command=='version':
+            resp.data = {
+                'version': config.value('version', type=str)
+            }
+
         #default
         else:
             #unknow command

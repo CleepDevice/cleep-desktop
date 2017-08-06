@@ -96,10 +96,29 @@ var homepageController = function($rootScope, $scope, rpcService)
         console.log('refresh button clicked');
         rpcService.sendUi('coucou', null);
     };
-
-
 };
 Cleep.controller('homepageController', ['$rootScope', '$scope', 'rpcService', homepageController]);
+
+/**
+ * About controller
+ */
+var aboutController = function($rootScope, $scope, rpcService)
+{
+    var self = this;
+    self.version = '';
+
+    self.getVersion = function()
+    {
+        rpcService.sendCommand('version', null)
+            .then(function(resp) {
+                self.version = resp.data.version;
+            });
+    };
+
+    //init controller
+    self.getVersion();
+};
+Cleep.controller('aboutController', ['$rootScope', '$scope', 'rpcService', aboutController]);
 
 /**
  * Preferences controller

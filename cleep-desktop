@@ -9,6 +9,8 @@ import logging
 import platform
 from PyQt5.QtCore import QSettings
 
+VERSION = '0.0.0'
+
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
 logger = logging.getLogger('Cleep-desktop')
 
@@ -24,6 +26,12 @@ DEFAULT_PROXY_MODE = 'noproxy'
 #handle default config
 config = QSettings('cleep', 'cleep-desktop')
 logger.info('Config file location: %s' % config.fileName)
+if 'version' not in config.allKeys():
+    config.setValue('version', VERSION)
+else:
+    version = config.value('version', type=str)
+    if version!=VERSION:
+        config.setValue('version', VERSION)
 if 'localhost' not in config.allKeys():
     config.setValue('localhost', DEFAULT_HOST)
 if 'rpcport' not in config.allKeys():
