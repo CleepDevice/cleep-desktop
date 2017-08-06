@@ -40,17 +40,8 @@ __all__ = ['app']
 #constants
 BASE_DIR = ''
 HTML_DIR = os.path.join(BASE_DIR, 'html')
-#AUTH_FILE = '/etc/raspiot/auth.conf'
-#POLL_TIMEOUT = 60
-#SESSION_TIMEOUT = 900 #15mins
-
 
 #globals
-#polling = 0
-#subscribed = False
-#sessions = {}
-#auth_config = {}
-#auth_enabled = False
 logger = None
 app = bottle.app()
 server = None
@@ -82,7 +73,7 @@ def get_app(debug_enabled):
     global logger, app, flashdrive
 
     #logging (in raspiot.conf file, module name is 'rpcserver')
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s : %(message)s")
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
     logger = logging.getLogger('RpcServer')
     if debug_enabled:
         logger.setLevel(logging.DEBUG)

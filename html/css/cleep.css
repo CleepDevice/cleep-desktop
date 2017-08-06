@@ -26,7 +26,7 @@ span.note code {
 div.note {
     line-height: 25px;
     font-size: 0.95em;
-    margin: 30px;
+    margin: 10px 5px 10px 5px;
     padding: 15px;
     background-color: rgba(205, 205, 205, 0.45);
     border-radius: 5px;

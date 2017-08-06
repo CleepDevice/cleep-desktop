@@ -119,7 +119,7 @@ class Cleep(QMainWindow):
             self.current_page = page
 
         else:
-            self.logger.debug('Opening %s on left panel')
+            self.logger.debug('Opening %s on left panel' % page)
             self.web_left.load(QUrl('http://127.0.0.1:%d/%s?port=%s' % (self.config.value('rpcport', type=int), page, self.config.value('commport', type=int))))
 
     def back(self):
@@ -210,12 +210,20 @@ class Cleep(QMainWindow):
         dialog.exec()
 
     def configure_proxy(self):
-        proxy = QNetworkProxy()
-        proxy.setType(QNetworkProxy.HttpProxy)
-        proxy.setHostName('localhost')
-        proxy.setPort(8080)
-        QNetworkProxy.setApplicationProxy(proxy)
+        proxy_mode = self.config.value('proxymode', type=str)
+        if proxy_mode=='manualproxy':
+            proxy_ip = self.config.value('proxyip', type=str)
+            proxy_port = self.config.value('proxyport', type=int)
+            self.logger.debug('Proxy enabled at %s:%d' % (proxy_ip, proxy_port))
+            
+            proxy = QNetworkProxy()
+            proxy.setType(QNetworkProxy.HttpProxy)
+            proxy.setHostName(proxy_ip)
+            proxy.setPort(proxy_port)
+            QNetworkProxy.setApplicationProxy(proxy)
 
+        else:
+            self.logger.debug('Proxy disabled')
 
     def init_actions(self):
         #close action
