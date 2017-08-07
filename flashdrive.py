@@ -494,13 +494,3 @@ class FlashDrive(Thread):
         self.console = EndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
         self.console.start()
 
-    #def stop_flash(self):
-    #    """
-    #    Stop flash process
-    #    """
-    #    if self.console is None:
-    #        #no flash process is running
-    #        return False
-    #
-    #    self.console.kill()
-
