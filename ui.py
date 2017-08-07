@@ -267,9 +267,9 @@ class Cleep(QMainWindow):
         #self.supportAction = QAction(QIcon(''), 'Get support', self)
         #self.supportAction.triggeredAction.connect(lambda: self.open_page('support.html'))
 
-        #social
-        self.socialAction = QAction(QIcon(''), 'Follow Cleep on social networks', self)
-        self.socialAction.triggered.connect(lambda: self.open_page('social.html'))
+        #TODO social
+        #self.socialAction = QAction(QIcon(''), 'Follow Cleep', self)
+        #self.socialAction.triggered.connect(lambda: self.open_page('social.html'))
 
         #about
         self.aboutAction = QAction(QIcon(''), 'About Cleep', self)
@@ -295,11 +295,11 @@ class Cleep(QMainWindow):
         installMenu.addAction(self.sdcardAction)
         installMenu.addAction(self.raspbianAction)
 
-        helpMenu = menubar.addMenu('&Help')
-        helpMenu.addAction(self.helpAction)
-        helpMenu.addSeparator()
-        helpMenu.addAction(self.socialAction)
-        helpMenu.addSeparator()
+        #helpMenu = menubar.addMenu('&Help')
+        #helpMenu.addAction(self.helpAction)
+        #helpMenu.addSeparator()
+        #helpMenu.addAction(self.socialAction)
+        #helpMenu.addSeparator()
         helpMenu.addAction(self.aboutAction)
 
         #set main container (central widget)

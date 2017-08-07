@@ -96,29 +96,13 @@ class FlashDrive(Thread):
             if self.uri and self.drive:
                 self.logger.info('Flash process started')
 
-                """
-                self.iso = '/tmp/cleep_iso_171e4436-77e7-41e0-af0a-494903e43419'
-                self.drive = '/dev/mmcblk0'
-                self.__flash_drive()
-                while self.console is not None:
-                    if self.cancel:
-                        break
-                    time.sleep(0.250)
-
-                if self.cancel:
-                    self.console.kill()
-                    self.status = self.STATUS_CANCELED
-                else:
-                    self.status = self.STATUS_DONE
-                """
-
                 if self.__download_file():
                     #file downloaded successfully, launch flash+validation
                     self.__flash_drive()
                     while self.console is not None:
                         if self.cancel:
                             break
-                        time.sleep(0.250)
+                        time.sleep(0.25)
 
                     #end of flash+validation
                     if self.cancel:
