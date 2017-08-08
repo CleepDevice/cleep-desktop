@@ -5,30 +5,79 @@
     <link rel="stylesheet" href="css/roboto-fonts.css">
     <link rel="stylesheet" href="css/angular-material.min.css"/>
     <link rel="stylesheet" href="css/materialicons.css"/>
+    <link rel="stylesheet" href="css/cleep.css"/>
 </head>
-<body ng-app="Cleep" layout-fill ng-cloak
+<body ng-app="Cleep" layout-fill ng-cloak class="panel-separator">
 
     <!-- only used to fix scrolling issue for toast: https://github.com/angular/material/issues/2936 -->
-    <md-content flex="100">
+    <md-content flex="100" >
 
-    <div ng-controller="devicesController as ctl" layout="column" layout-fill>
+    <div ng-controller="devicesController as ctl" layout="column" >
 
-        <!-- menu -->
-        <md-toolbar flex="initial">
+        <md-toolbar flex="initial" class="fix-toolbar">
             <div class="md-toolbar-tools">
                 <h2>
-                    Devices
+                    <md-icon md-font-set="material-icons">stay_current_portrait</md-icon>
+                    Cleep devices
                 </h2>
                 <span flex></span>
-                <md-button class="md-icon-button" aria-label="Modules" ng-click="ctl.refresh()">
-                    <md-tooltip md-direction="left">Search new devices</md-tooltip>
-                    <md-icon md-font-set="material-icons">refresh</md-icon>
-                </md-button>
             </div>
         </md-toolbar>
+        <md-progress-linear md-mode="determinate" value="100"></md-progress-linear>
 
         <md-content>
-            My devices
+
+            <!-- loader -->
+            <div layout="column" layout-align="center center" ng-if="ctl.loading">
+                <div>   
+                    <br/><br/><br/>
+                    <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+                </div>
+            </div>
+
+            <!-- devices list -->
+            <md-list ng-if="!ctl.loading">
+
+                <!-- unconfigured devices -->
+                <md-subheader ng-if="ctl.unconfigured>0" class="md-no-sticky">Unconfigured devices</md-subheader>
+                <md-list-item ng-repeat="device in ctl.devices | filter: {configured:false}" ng-if="ctl.unconfigured>0" ng-click="ctl.openDevicePage(device)">
+                    <md-icon ng-if="device.online" md-font-set="material-icons" class="icon-margin">
+                        <md-tooltip md-direction="right">Unconfigured</md-tooltip>
+                        phonelink_setup
+                    </md-icon>
+                    <md-icon ng-if="!device.online" md-font-set="material-icons" class="icon-margin">
+                        <md-tooltip md-direction="right">Offline</md-tooltip>
+                        phonelink_erase
+                    </md-icon>
+                    <p>Unconfigured device</p>
+                </md-list-item>
+
+                <md-divider ng-if="ctl.unconfigured>0"></md-divider>
+
+                <!-- configured devices -->
+                <md-subheader>Devices</md-subheader>
+                <md-list-item ng-repeat="device in ctl.devices | filter: {configured:true}" ng-click="ctl.openDevicePage(device)">
+                    <md-icon ng-if="device.online" md-font-set="material-icons" class="icon-margin">
+                        <md-tooltip md-direction="right">Online</md-tooltip>
+                        stay_current_portrait
+                    </md-icon>
+                    <md-icon ng-if="!device.online" md-font-set="material-icons" class="icon-margin">
+                        <md-tooltip md-direction="right">Offline</md-tooltip>
+                        phonelink_erase
+                    </md-icon>
+                    <p>{{device.hostname}}</p>
+                </md-list-item>
+
+                <!-- no device -->
+                <md-list-item ng-if="ctl.configured==0">
+                    <md-icon md-font-set="material-icons" class="no-device icon-margin">highlight_off</md-icon>
+                    <p class="no-device">No device found</p>
+                </md-list-item>
+
+                <md-divider></md-divider>
+
+            </md-list>
+
         </md-content>
 
     </div>

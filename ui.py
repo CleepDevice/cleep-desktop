@@ -23,7 +23,7 @@ import webbrowser
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
 
-class Cleep(QMainWindow):
+class CleepUi(QMainWindow):
 
     signal = pyqtSignal(str, dict)
 
@@ -112,15 +112,38 @@ class Cleep(QMainWindow):
         Args:
             page (string): page to open
         """
+        rpc_port = self.config.value('rpcport', type=int)
+        comm_port = self.config.value('commport', type=int)
+
         if right_panel:
             self.logger.debug('Opening %s on right panel' % page)
-            self.web_right.load(QUrl('http://127.0.0.1:%d/%s?port=%s' % (self.config.value('rpcport', type=int), page, self.config.value('commport', type=int))))
+            self.web_right.load(QUrl('http://127.0.0.1:%d/%s?port=%d' % (rpc_port, page, comm_port)))
             self.previous_page = self.current_page
             self.current_page = page
+            #TODO handle more pages?
 
         else:
             self.logger.debug('Opening %s on left panel' % page)
-            self.web_left.load(QUrl('http://127.0.0.1:%d/%s?port=%s' % (self.config.value('rpcport', type=int), page, self.config.value('commport', type=int))))
+            self.web_left.load(QUrl('http://127.0.0.1:%d/%s?port=%d' % (rpc_port, page, comm_port)))
+
+    def open_device_page(self, uuid, ip, port, ssl):
+        """
+        Open device page in right panel
+
+        Args:
+            uuid (string): device uuid
+            ip (string): device ip address
+            port (int): device webserver port
+            ssl (bool): http/https flag
+        """
+        if ssl:
+            self.logger.debug('Opening device %s @ https://%s:%d on right panel' % (uuid, ip, port))
+            self.web_right.load(QUrl('https://%s:%d' % (ip, port)))
+        else:
+            self.logger.debug('Opening device %s @ http://%s:%d on right panel' % (uuid, ip, port))
+            self.web_right.load(QUrl('http://%s:%d' % (ip, port)))
+
+        #TODO handle history?
 
     def back(self):
         """
@@ -142,22 +165,12 @@ class Cleep(QMainWindow):
             params (dict): command parameters
         """
         self.logger.debug('Received command %s with params %s' % (command, params))
+
         if command=='back':
             self.back()
-        elif command=='scan':
-            pass
-        elif command=='saveConfig':
-            pass
 
-    #def send_command(self, command, params=None):
-    #    url = 'http://localhost:9666/%s' % command
-    #    resp = requests.post(url, params).json()
-    #    #self.logger.debug('response encoding %s' % raw.encoding)
-    #    self.logger.debug('response: %s' % resp)
-    #    #resp = json.loads(raw)
-    #    #self.logger.debug('response dict: %s' % resp)
-    #    return resp['data']
-
+        elif command=='opendevicepage':
+            self.open_device_page(params['uuid'], params['ip'], params['port'], params['ssl'])
 
     #-----------
     # UI
@@ -295,7 +308,7 @@ class Cleep(QMainWindow):
         installMenu.addAction(self.sdcardAction)
         installMenu.addAction(self.raspbianAction)
 
-        #helpMenu = menubar.addMenu('&Help')
+        helpMenu = menubar.addMenu('&Help')
         #helpMenu.addAction(self.helpAction)
         #helpMenu.addSeparator()
         #helpMenu.addAction(self.socialAction)
@@ -362,7 +375,7 @@ class CleepWebPage(QWebEnginePage):
 app = None
 try: 
     app = QApplication(sys.argv)
-    cleep = Cleep(app) 
+    cleep = CleepUi(app) 
     sys.exit(app.exec_())
 
 except SystemExit:

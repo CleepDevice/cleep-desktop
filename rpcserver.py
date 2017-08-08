@@ -30,10 +30,10 @@ import bottle
 from bottle import auth_basic, response
 from passlib.hash import sha256_crypt
 import functools
-#from .libs.raspiotconf import RaspiotConf
 from comm import CleepCommand, CleepCommServer
 from PyQt5.QtCore import QSettings
 from flashdrive import FlashDrive
+from devices import Devices
 
 __all__ = ['app']
 
@@ -48,6 +48,7 @@ server = None
 comm = None
 config = None
 flashdrive = None
+devices = None
 
 def bottle_logger(func):
     """
@@ -70,7 +71,7 @@ def get_app(debug_enabled):
     Returns:
         object: bottle instance
     """
-    global logger, app, flashdrive
+    global logger, app, flashdrive, devices
 
     #logging (in raspiot.conf file, module name is 'rpcserver')
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
@@ -81,6 +82,10 @@ def get_app(debug_enabled):
     #launch flash process
     flashdrive = FlashDrive()
     flashdrive.start()
+
+    #launch devices process
+    devices = Devices()
+    devices.start()
 
     return app
 
@@ -136,6 +141,17 @@ def get_config():
     
     return conf
 
+def open_device_page(params):
+    """
+    Open device page on ui
+    """
+    cmd = CleepCommand()
+    cmd.command = 'opendevicepage'
+    cmd.params = params
+    comm.send(cmd)
+
+    return True
+
 def execute_command(command, params):
     """
     Execute specified command
@@ -154,8 +170,12 @@ def execute_command(command, params):
 
     resp = MessageResponse()
     try:
+        #devices
+        if command=='openDevicePage':
+            resp.data = open_device_page(params)
+        
         #flashdrive
-        if command=='getflashdrives':
+        elif command=='getflashdrives':
             resp.data = flashdrive.get_flashable_drives()
         elif command=='getflashstatus':
             resp.data = flashdrive.get_status()
@@ -298,6 +318,19 @@ def back():
         cmd = CleepCommand()
         cmd.command = 'back'
         comm.send(cmd)
+
+@app.route('/devices', method=['OPTIONS', 'POST'])
+def devices():
+    #logger.debug('Devices (method=%s)' % bottle.request.method)
+    resp = MessageResponse()
+
+    if bottle.request.method=='OPTIONS':
+        return {}
+
+    else:
+        resp.data = devices.get_devices()
+
+    return json.dumps(resp.to_dict())
 
 @app.route('/<path:path>')
 def default(path):

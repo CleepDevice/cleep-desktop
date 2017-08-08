@@ -4,6 +4,28 @@ a {
     text-decoration: none;
 }
 
+/* devices panel */
+.panel-separator {
+    border-right: 1px solid #DCDCDC;
+    box-sizing: border-box;
+}
+
+.fix-toolbar {
+    height: 64px;
+}
+
+.fix-toolbar > .md-toolbar-tools {
+    padding-top: 6px;
+}
+
+.no-device {
+    color: rgba(189,189,189,0.87);
+}
+
+.icon-margin {
+    margin-right: 20px !important;
+}
+
 /* bullet */
 md-icon.bullet {
     font-size:14px;

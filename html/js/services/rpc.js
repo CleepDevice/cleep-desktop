@@ -15,6 +15,7 @@ var rpcService = function($http, $q, $rootScope, $location, toast) {
     self.uriUi = window.location.protocol + '//localhost:' + self.port + '/ui';
     self.uriConfig = window.location.protocol + '//localhost:' + self.port + '/config';
     self.uriBack = window.location.protocol + '//localhost:' + self.port + '/back';
+    self.uriDevices = window.location.protocol + '//localhost:' + self.port + '/devices';
 
     /**
      * Base function to send data to rpcserver
@@ -95,6 +96,13 @@ var rpcService = function($http, $q, $rootScope, $location, toast) {
      */
     self.back = function() {
         return self.send(self.uriBack);
+    };
+
+    /**
+     * Get devices
+     */
+    self.getDevices = function() {
+        return self.send(self.uriDevices);
     };
 };
 

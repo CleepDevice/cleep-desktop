@@ -73,16 +73,101 @@ Cleep.controller('emptyController', ['$rootScope', '$scope', emptyController]);
 /**
  * Devices controller
  */
-var devicesController = function($rootScope, $scope)
+var devicesController = function($rootScope, $scope, rpcService, $timeout)
 {
     var self = this;
+    self.devices = [];
+    self.unconfigured = 0;
+    self.configured = 0;
+    self.loading = true;
 
-    //scan devices
-    self.refresh = function()
+    //synchronize devices
+    self.syncDevices = function(devices)
     {
+        if( devices )
+        {
+            var found = false;
+            for( var i=0; i<devices.length; i++ )
+            {
+                found = false;
+                for( var j=0; j<self.devices.length; j++ )
+                {
+                    if( self.devices[j].uuid===devices[i].uuid )
+                    {
+                        //device found
+                        found = true;
+
+                        //update device infos
+                        self.devices[j].hostname = devices[i].hostname;
+                        self.devices[j].ip = devices[i].ip;
+                        self.devices[j].port = devices[i].port;
+                        self.devices[j].online = devices[i].online;
+
+                        break;
+                    }
+                }
+
+                //add new device
+                if( !found )
+                {
+                    //set device configured flag
+                    if( devices[i].hostname.length>0 )
+                        devices[i].configured = true;
+                    else
+                        devices[i].configured = false;
+
+                    //save entry
+                    self.devices.push(devices[i]);
+                }
+            }
+        }
     };
+
+    //get devices
+    self.getDevices = function()
+    {
+        rpcService.getDevices('coucou', null)
+            .then(function(resp) {
+                if( resp && !resp.error )
+                {
+                    self.loading = false;
+
+                    self.syncDevices(resp.data.devices);
+                    self.unconfigured = resp.data.unconfigured;
+                    self.configured = self.devices.length - self.unconfigured;
+                }
+            });
+    };
+
+    //watch for devices
+    self.watchDevices = function()
+    {
+        $timeout(function() {
+            self.getDevices();
+        }, 1000)
+            .then(function() {
+                self.watchDevices();
+            });
+    };
+
+    //open device page
+    self.openDevicePage = function(device)
+    {
+        if( device )
+        {
+            rpcService.sendCommand('openDevicePage', {
+                uuid: device.uuid,
+                ip: device.ip,
+                port: device.port,
+                ssl: device.ssl
+            });
+        }
+    };
+
+    //init controller
+    self.watchDevices();
 };
-Cleep.controller('devicesController', ['$rootScope', '$scope', devicesController]);
+Cleep.controller('devicesController', ['$rootScope', '$scope', 'rpcService', '$timeout', devicesController]);
 
 /**
  * Homepage controller
