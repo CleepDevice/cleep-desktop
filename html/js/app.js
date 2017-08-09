@@ -71,20 +71,6 @@ var emptyController = function($rootScope, $scope)
 Cleep.controller('emptyController', ['$rootScope', '$scope', emptyController]);
 
 /**
- * Loader controller
- */
-var loaderController = function($rootScope, $scope, $timeout)
-{
-    var self = this;
-    self.show = false;
-
-    $timeout(function() {
-        self.show = true;
-    }, 500);
-};
-Cleep.controller('loaderController', ['$rootScope', '$scope', '$timeout', loaderController]);
-
-/**
  * Devices controller
  */
 var devicesController = function($rootScope, $scope, rpcService, $timeout)

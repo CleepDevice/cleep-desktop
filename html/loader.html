@@ -12,13 +12,11 @@
     <!-- only used to fix scrolling issue for toast: https://github.com/angular/material/issues/2936 -->
     <md-content flex="100" >
 
-    <div ng-controller="loaderController as ctl" layout="column" layout-fill layout-align="center center">
+    <div ng-controller="emptyController as ctl" layout="column" layout-fill layout-align="center center">
 
-    <div ng-if="ctl.show">
         <md-progress-circular md-mode="indeterminate"></md-progress-circular>
         <br/>
         Connecting to Cleep device. Please wait...
-    </div>
 
     </div>
 
