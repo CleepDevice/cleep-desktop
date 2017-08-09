@@ -55,6 +55,11 @@ div.note {
 }
 
 div.note-info {
+    background-color: rgb(231, 242, 250);
+    color: black;
+}
+
+div.note-success {
     background-color: rgb(76, 175, 80);
     color: white;
 }
