@@ -46,13 +46,8 @@ class CleepUi(QMainWindow):
         self.start_comm_thread()
 
         if platform.system()=='Windows':
-            #disable system proxy on windows env https://bugreports.qt.io/browse/QTBUG-44763
+            #disable system proxy on windows env due to huge latency (https://bugreports.qt.io/browse/QTBUG-44763)
             QNetworkProxyFactory.setUseSystemConfiguration(False)
-
-        #handle ssl warnings
-        #self.networkAccessManager = QNetworkAccessManager()
-        #self.networkAccessManager.authenticationRequired.connect(self.handle_auth)
-        #self.networkAccessManager.sslErrors(self.handle_ssl)
 
         #configure proxy or ssh tunnel
         self.configure_proxy()
@@ -98,9 +93,6 @@ class CleepUi(QMainWindow):
 
         #    #self.comm.start()
             
-    def scan(self):
-        self.logger.debug('Launch scan')
-
     #-----------
     # NAVIGATION
     #-----------
@@ -117,14 +109,16 @@ class CleepUi(QMainWindow):
 
         if right_panel:
             self.logger.debug('Opening %s on right panel' % page)
-            self.web_right.load(QUrl('http://127.0.0.1:%d/%s?port=%d' % (rpc_port, page, comm_port)))
+            url = QUrl('http://127.0.0.1:%d/%s?port=%d' % (rpc_port, page, comm_port))
+            self.web_right.load(url)
             self.previous_page = self.current_page
             self.current_page = page
             #TODO handle more pages?
 
         else:
             self.logger.debug('Opening %s on left panel' % page)
-            self.web_left.load(QUrl('http://127.0.0.1:%d/%s?port=%d' % (rpc_port, page, comm_port)))
+            url = QUrl('http://127.0.0.1:%d/%s?port=%d' % (rpc_port, page, comm_port))
+            self.web_left.load(url)
 
     def open_device_page(self, uuid, ip, port, ssl):
         """
@@ -137,11 +131,14 @@ class CleepUi(QMainWindow):
             ssl (bool): http/https flag
         """
         if ssl:
+            #self.networkAccessManager
             self.logger.debug('Opening device %s @ https://%s:%d on right panel' % (uuid, ip, port))
-            self.web_right.load(QUrl('https://%s:%d' % (ip, port)))
+            url = QUrl('https://%s:%d' % (ip, port))
+            self.web_right.load(url)
         else:
             self.logger.debug('Opening device %s @ http://%s:%d on right panel' % (uuid, ip, port))
-            self.web_right.load(QUrl('http://%s:%d' % (ip, port)))
+            url = QUrl('http://%s:%d' % (ip, port))
+            self.web_right.load(url)
 
         #TODO handle history?
 
@@ -177,6 +174,9 @@ class CleepUi(QMainWindow):
     #-----------
 
     def handle_exit(self):
+        """
+        Handle exit action
+        """
         #stop comm
         if self.comm:
             self.comm.disconnect()
@@ -185,14 +185,10 @@ class CleepUi(QMainWindow):
         self.logger.debug('Close application')
         self.close()
 
-    def handle_ssl(self, reply, errors):
-        """
-        Handle ssl warnings and errors accepting requests
-        """
-        self.logger.debug('handle sslerrors')
-        self.logger.debug('\n'.join([str(error.errorString()) for error in errors]))
-
     def dialog_auth(self):
+        """
+        Authentication dialog
+        """
         self.logger.debug('handle auth')
         dialog = QDialog()
         dialog.resize(400, 128)
@@ -248,10 +244,6 @@ class CleepUi(QMainWindow):
         #self.exitAction.setStatusTip('Exit application')
         self.exitAction.triggered.connect(self.handle_exit)
 
-        #scan action
-        self.scanAction = QAction(QIcon(''), 'Search new devices', self)
-        self.scanAction.triggered.connect(self.scan)
-
         #help action
         self.helpAction = QAction(QIcon(''), 'Help', self)
         self.helpAction.triggered.connect(lambda: self.open_page('help'))
@@ -276,7 +268,7 @@ class CleepUi(QMainWindow):
         self.raspbianAction = QAction(QIcon(''), 'Manual install', self)
         self.raspbianAction.triggered.connect(lambda: self.open_page('installManually.html'))
 
-        #support
+        #TODO support
         #self.supportAction = QAction(QIcon(''), 'Get support', self)
         #self.supportAction.triggeredAction.connect(lambda: self.open_page('support.html'))
 
@@ -298,7 +290,6 @@ class CleepUi(QMainWindow):
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(self.backAction)
         fileMenu.addAction(self.homepageAction)
-        fileMenu.addAction(self.scanAction)
         fileMenu.addSeparator()
         fileMenu.addAction(self.prefAction)
         fileMenu.addSeparator()
@@ -329,35 +320,49 @@ class CleepUi(QMainWindow):
         self.web_left = QWebEngineView()
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
         self.web_left.setSizePolicy(sizePolicy)
+        #disable right click menu
         self.web_left.setContextMenuPolicy(Qt.NoContextMenu)
+        #set left panel size
         self.web_left.setMaximumSize(QtCore.QSize(350, 16777215))
         box.addWidget(self.web_left)
+        #open default page
         self.open_page('devices.html', False)
-        #self.web_left.load(QUrl('http://127.0.0.1:%d/devices.html' % self.config.value('rpcport', type=int)))
         #disable cache
         self.web_left.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
         
         #set right web panel
         self.web_right = QWebEngineView()
+        #disable right click menu
         #self.web_right.setContextMenuPolicy(Qt.NoContextMenu)
         box.addWidget(self.web_right)
         page = CleepWebPage(QWebEngineProfile.NoCache, self.logger, self.web_right)
         self.web_right.setPage(page)
+        #open default page
         self.open_page('homepage.html')
         #disable cache
         #self.web_right.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
-        #handle href
-        #self.web_right.page().acceptNavigationRequest = self.coucou
 
         #show window
         self.showMaximized()
 
 class CleepWebPage(QWebEnginePage):
+    """
+    CleepWebPage handles specific page behavior
+    """
+
     def __init__(self, profile, logger, parent=None):
+        """
+        Constructor
+        """
         QWebEnginePage.__init__(self, parent)
         self.logger = logger
 
     def acceptNavigationRequest(self, url, navigationType, isMainFrame):
+        """
+        Handle link click: 
+         - Load internal link (host is localhost or 127.0.0.1)
+         - Open external link in external browser like standard application do
+        """
         if navigationType==QWebEnginePage.NavigationTypeLinkClicked:
             self.logger.debug('url=%s navType=%s mainFrm=%s' % (url, navigationType, isMainFrame))
             host = url.host()
@@ -371,6 +376,17 @@ class CleepWebPage(QWebEnginePage):
                 return False
 
         return True
+
+    def certificateError(self, error):
+        """
+        Handle SSL certificate errors. It allows only:
+         - certificate not signed by authority (-202)
+        """
+        self.logger.debug('SSL error for "%s": %s [%s]' % (error.url().url(), error.errorDescription(), error.error()))
+        if error.error() in [-202]:
+            return True
+        else:
+            return False
 
 app = None
 try: 
