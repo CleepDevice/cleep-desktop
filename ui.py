@@ -4,24 +4,25 @@ import os
 import signal 
 import sys
 import logging
-import json 
+import json
+import platform
 from OpenGL import GL
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, Qt, QUrl
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, Qt, QUrl, QSettings, QTimer
 from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+#from PyQt5.QtWidgets import *
 from PyQt5.QtWebEngineWidgets import *
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
-from PyQt5.QtWidgets import QGridLayout, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QGridLayout, QHBoxLayout, QSizePolicy, QAction
+#from PyQt5.QtWidgets import QGridLayout, QHBoxLayout
 from PyQt5.QtNetwork import QNetworkProxyFactory, QNetworkAccessManager, QNetworkProxy
-import platform
-from PyQt5.QtWidgets import QSizePolicy
+#from PyQt5.QtWidgets import QSizePolicy, QAction, QGraphicsOpacityEffect
 from comm import CleepCommand, CleepCommClientQt, CleepCommClient
-from PyQt5.QtCore import QSettings
+#from PyQt5.QtCore import QSettings
 import requests
 import webbrowser
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
+
 
 class CleepUi(QMainWindow):
 
@@ -36,8 +37,10 @@ class CleepUi(QMainWindow):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.web_left = None
         self.web_right = None
+        self.loader = None
         self.previous_page = None
         self.current_page = None
+        self.debounce = None
 
         #load configuration
         self.load_config()
@@ -130,8 +133,11 @@ class CleepUi(QMainWindow):
             port (int): device webserver port
             ssl (bool): http/https flag
         """
+        #show loader
+        self.show_loader()
+    
+        #open page according to ssl parameter
         if ssl:
-            #self.networkAccessManager
             self.logger.debug('Opening device %s @ https://%s:%d on right panel' % (uuid, ip, port))
             url = QUrl('https://%s:%d' % (ip, port))
             self.web_right.load(url)
@@ -234,6 +240,43 @@ class CleepUi(QMainWindow):
         else:
             self.logger.debug('Proxy disabled')
 
+    def __show_loader(self):
+        """
+        Real show loader function
+        """
+        self.logger.debug('Show loader')
+        #reset debounce
+        self.debounce = None
+
+        #hide right panel and show loader
+        self.web_right.hide()
+        self.loader.show()
+
+        #reload page content to play again js delay
+        self.loader.load(QUrl('http://127.0.0.1:%d/loader.html' % (self.config.value('rpcport', type=int))))
+
+    def show_loader(self):
+        """
+        Show loader on right panel (this function only launch debouncer)
+        """
+        self.debounce = QTimer()
+        self.debounce.setSingleShot(True)
+        self.debounce.timeout.connect(self.__show_loader)
+        self.debounce.start(500)
+
+    def hide_loader(self):
+        """
+        Hide loader on right panel
+        """
+        #cancel existing loader
+        if self.debounce is not None:
+            self.logger.debug('Stop debounce')
+            self.debounce.stop()
+
+        #hide loader and show right panel
+        self.loader.hide()
+        self.web_right.show()
+
     def init_actions(self):
         #close action
         self.app.aboutToQuit.connect(self.handle_exit)
@@ -334,13 +377,21 @@ class CleepUi(QMainWindow):
         self.web_right = QWebEngineView()
         #disable right click menu
         #self.web_right.setContextMenuPolicy(Qt.NoContextMenu)
-        box.addWidget(self.web_right)
-        page = CleepWebPage(QWebEngineProfile.NoCache, self.logger, self.web_right)
+        page = CleepWebPage(QWebEngineProfile.NoCache, self.logger, self.hide_loader, self.web_right)
         self.web_right.setPage(page)
         #open default page
         self.open_page('homepage.html')
         #disable cache
         #self.web_right.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
+        box.addWidget(self.web_right)
+
+        #right panel loader
+        self.loader = QWebEngineView()
+        self.loader.hide()
+        #disable right click menu
+        self.loader.setContextMenuPolicy(Qt.NoContextMenu)
+        self.loader.page().profile().setHttpCacheType(QWebEngineProfile.NoCache)
+        box.addWidget(self.loader)
 
         #show window
         self.showMaximized()
@@ -350,12 +401,17 @@ class CleepWebPage(QWebEnginePage):
     CleepWebPage handles specific page behavior
     """
 
-    def __init__(self, profile, logger, parent=None):
+    def __init__(self, profile, logger, hide_loader, parent=None):
         """
         Constructor
         """
         QWebEnginePage.__init__(self, parent)
         self.logger = logger
+        self.hide_loader = hide_loader
+
+        #connect some signals
+        self.loadStarted.connect(self.__loadStarted)
+        self.loadFinished.connect(self.__loadFinished)
 
     def acceptNavigationRequest(self, url, navigationType, isMainFrame):
         """
@@ -387,6 +443,20 @@ class CleepWebPage(QWebEnginePage):
             return True
         else:
             return False
+
+    def __loadStarted(self):
+        """
+        Loading page started
+        """
+        self.logger.debug('loading started')
+
+    def __loadFinished(self, ok):
+        """
+        Loading page finished
+        """
+        self.logger.debug('loading terminated %s' % ok)
+        if self.hide_loader:
+            self.hide_loader()
 
 app = None
 try: 
