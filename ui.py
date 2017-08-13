@@ -327,6 +327,7 @@ class CleepUi(QMainWindow):
     def init_ui(self):
         #configure main window
         self.setWindowTitle('Cleep-desktop')
+        self.setWindowIcon(QtGui.QIcon('resources/cleep-logo-red.png'))
 
         #add menus
         menubar = self.menuBar()
