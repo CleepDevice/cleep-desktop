@@ -332,7 +332,7 @@ class CleepUi(QMainWindow):
         #add menus
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
-        fileMenu.addAction(self.backAction)
+        #fileMenu.addAction(self.backAction)
         fileMenu.addAction(self.homepageAction)
         fileMenu.addSeparator()
         fileMenu.addAction(self.prefAction)

@@ -1,21 +1,136 @@
 <html>
 <head>
-    <title>Welcome</title>
+    <title>Cleep</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/roboto-fonts.css">
     <link rel="stylesheet" href="css/angular-material.min.css"/>
     <link rel="stylesheet" href="css/materialicons.css"/>
+    <link rel="stylesheet" href="css/cleep.css"/>
 </head>
 <body ng-app="Cleep" layout-fill ng-cloak>
 
     <!-- only used to fix scrolling issue for toast: https://github.com/angular/material/issues/2936 -->
     <md-content flex="100">
 
-    <div ng-controller="homepageController as ctl" layout="column" layout-fill>
+    <div ng-controller="aboutController as ctl" layout="column" layout-fill>
 
-        
+        <!-- menu -->
+        <md-toolbar flex="initial">
+            <div class="md-toolbar-tools">
+                <h2>
+                    Welcome
+                </h2>
+                <span flex></span>
+            </div>
+        </md-toolbar>
+        <md-progress-linear md-mode="determinate"></md-progress-linear>
 
-        Welcome to Cleep desktop application. This application allows you to configur
+        <!-- page content -->
+        <md-content layout-padding>
+
+            <!-- cleep-desktop -->
+            <md-card>
+
+                <md-card-content>
+
+                    <!-- panels -->
+                    <div layout="row" layout-padding layout-align="start center">
+                        <div class="md-headline">
+                            <img src="images/cleep-logo.png" style=""/>
+                        </div>
+                        <div class="md-headline">
+                            Welcome to Cleep-desktop!
+                        </div>
+                    </div>
+                    <p>
+                        Cleep-desktop is an application that allows you to detect, configure and monitor your Cleep devices easily.
+                    </p>
+
+                    <!-- window description -->
+                    <p class="md-title" style="margin-top:50px;">
+                        Main window
+                    </p>
+                    <p class="md-subhead">
+                        <ul><li>Left panel</li></ul>
+                    </p>
+                    <div layout="row" layout-padding layout-align="start center">
+                        <div>
+                            <img src="images/cleep-left-panel.png" style="height:100px; padding-right:25px;"/>
+                        </div>
+                        <div>
+                            The left panel is the <b>devices</b> panel. It allows you to select a device to access its configuration.
+                            <br/><br/>
+                            Cleep devices  are automatically discovered by Cleep-desktop as soon as they have started.
+                            <br/><br/>
+                            You will find different sections in this devices panel:
+                            <ul>
+                                <li>An <i>unconfigured device section</i> that shows you your new devices ready to be configured</li>
+                                <li>A <i>devices section</i> that displays your configured devices with their name you give them</li>
+                            </ul>
+                            <br/><br/>
+                            On the left of each devices, you will see an icon that represents device status. Here is icon signification:
+                            <ul>
+                                <li><md-icon md-font-set="material-icons">phonelink_erase</md-icon> for device that is not accessible (ie powered off or disconnected from network)</li>
+                                <li><md-icon md-font-set="material-icons">phonelink_setup</md-icon> for device ready to be configured</li>
+                                <li><md-icon md-font-set="material-icons" style="padding-left:2px;">stay_current_portrait</md-icon> for online device</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p class="md-subhead">
+                        <ul><li>Right panel</li></ul>
+                    </p>
+                    <div layout="row" layout-padding>
+                        <div>
+                            <img src="images/cleep-right-panel.png" style="height:100px; padding-right:25px;"/>
+                        </div>
+                        <div>
+                            All different application views are displayed in the right panel.
+                        </div>
+                    </div>
+
+                    <!-- cleep installation -->
+                    <p class="md-title" style="margin-top:50px;">
+                        Cleep software instalation
+                    </p>
+                    <div layout="row" layout-padding>
+                        <div>
+                            <b>Cleep install menu</b> gives you access to different way to install Cleep on your Raspberry pi:
+                            <ul>
+                                <li><i>Easy install menu</i> guides you to install easily Cleep software on your Raspberry pi SD card directly from Cleep-desktop.</li>
+                                <li>While <i>Manual install menu</i> will explain you all steps to install manually Cleep software on existing installation.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- need help -->
+                    <p class="md-title" style="margin-top:50px;">
+                        Need help ?
+                    </p>
+                    <div layout="row" layout-padding>
+                        <div>
+                            <img src="images/cleep-help.png" style="height:75px; padding-right:25px;"/>
+                        </div>
+                        <div>
+                            You are lost or need some help, you can post messages on Cleep forum directly accessible from help menu.
+                            <br/><br/>
+                            You found a bug? You have quick access to Cleep tracking bugs page directly from help menu.
+                        </div>
+                    </div>
+
+                    <!-- social -->
+                    <p class="md-title" style="margin-top:50px;">
+                        Follow Cleep
+                    </p>
+                    <div layout="row" layout-padding>
+                        <div>
+                            If you want to follow Cleep on social network, please feel free to register to our Facebook page.
+                        </div>
+                    </div>
+
+                </md-card-content>
+            </md-card>
+
+        </md-content>
 
     </div>
 
