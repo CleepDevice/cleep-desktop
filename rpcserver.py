@@ -370,7 +370,7 @@ if __name__ == u'__main__':
 
     #start rpc server
     logger.debug('Serving files from "%s" folder.' % HTML_DIR)
-    start(u'0.0.0.0', config.value('rpcport', type=int), None, None)
+    start(config.value('localhost', type=str), config.value('rpcport', type=int), None, None)
 
     #clean everythng
     comm.disconnect()

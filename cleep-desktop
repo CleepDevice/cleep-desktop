@@ -35,17 +35,17 @@ else:
 if 'localhost' not in config.allKeys():
     config.setValue('localhost', DEFAULT_HOST)
 if 'rpcport' not in config.allKeys():
-    config.setValue('rpc_port', DEFAULT_RPC_PORT)
+    config.setValue('rpcport', DEFAULT_RPC_PORT)
 if 'commport' not in config.allKeys():
-    config.setValue('comm_port', DEFAULT_COMM_PORT)
+    config.setValue('commport', DEFAULT_COMM_PORT)
 if 'proxymode' not in config.allKeys():
-    config.setValue('proxy_mode', DEFAULT_PROXY_MODE)
+    config.setValue('proxymode', DEFAULT_PROXY_MODE)
 if 'proxyhost' not in config.allKeys():
-    config.setValue('proxy_host', '')
+    config.setValue('proxyhost', '')
 if 'proxyport' not in config.allKeys():
-    config.setValue('proxy_port', 8080)
+    config.setValue('proxyport', 8080)
 if 'isoraspbian' not in config.allKeys():
-    config.setValue('iso_raspbian', False)
+    config.setValue('isoraspbian', False)
 if 'locale' not in config.allKeys():
     config.setValue('locale', 'en')
 config.sync()
