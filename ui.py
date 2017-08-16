@@ -420,7 +420,8 @@ class CleepWebPage(QWebEnginePage):
          - Load internal link (host is localhost or 127.0.0.1)
          - Open external link in external browser like standard application do
         """
-        if navigationType==QWebEnginePage.NavigationTypeLinkClicked:
+        self.logger.debug('href clicked of navigation type=%s' % navigationType)
+        if navigationType in (QWebEnginePage.NavigationTypeLinkClicked,): #, QWebEnginePage.NavigationTypeTyped):
             self.logger.debug('url=%s navType=%s mainFrm=%s' % (url, navigationType, isMainFrame))
             host = url.host()
             if host in ['localhost', '127.0.0.1']:
