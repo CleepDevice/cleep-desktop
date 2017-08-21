@@ -1,6 +1,7 @@
 var rpcService = function($http, $q, $rootScope, $location, toast) {
 
     var self = this;
+    self.devicesWs = null;
 
     //get port from url
     var urlValues = $location.search();
@@ -104,6 +105,26 @@ var rpcService = function($http, $q, $rootScope, $location, toast) {
     self.getDevices = function() {
         return self.send(self.uriDevices);
     };
+
+    /**
+     * Start devices websocket
+     */
+    self.devicesWebSocket = function(receive_callback) {
+        if( !self.devicesWs )
+        {
+            self.devicesWs = new WebSocket('ws://localhost:'+self.port+'/devicesws');
+            //define receive callback
+            self.devicesWs.onmessage = function(event) {
+                if( event && typeof(event.data)==='string' )
+                {
+                    var data = JSON.parse(event.data);
+                    receive_callback(data);
+                }
+            };
+        }
+
+    };
+
 };
 
 var Cleep = angular.module('Cleep');

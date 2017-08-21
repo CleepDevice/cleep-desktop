@@ -25,6 +25,8 @@ from gevent import queue
 from gevent import monkey; monkey.patch_all()
 from gevent import pywsgi 
 from gevent.pywsgi import LoggingLogAdapter
+from geventwebsocket import WebSocketError
+from geventwebsocket.handler import WebSocketHandler
 from utils import NoMessageAvailable, MessageResponse, MessageRequest, CommandError
 import bottle
 from bottle import auth_basic, response
@@ -34,6 +36,7 @@ from comm import CleepCommand, CleepCommServer
 from PyQt5.QtCore import QSettings
 from flashdrive import FlashDrive
 from devices import Devices
+from threading import Timer
 
 __all__ = ['app']
 
@@ -49,6 +52,8 @@ comm = None
 config = None
 flashdrive = None
 devices = None
+current_devices = {}
+last_device_update = 0
 
 def bottle_logger(func):
     """
@@ -62,7 +67,17 @@ def bottle_logger(func):
                      bottle.request.url,
                      bottle.response.status))
         return req
+
     return wrapper
+
+def update_devices_list(devices):
+    """
+    This function is triggered by Devices module when devices list is updated
+    """
+    global current_devices, last_device_update
+
+    current_devices = devices
+    last_device_update = time.time()
 
 def get_app(debug_enabled):
     """
@@ -84,10 +99,25 @@ def get_app(debug_enabled):
     flashdrive.start()
 
     #launch devices process
-    devices = Devices()
+    devices = Devices(update_devices_list)
     devices.start()
 
     return app
+
+def timer_call():
+    global current_devices, last_device_update
+    current_devices = {
+        'devices': [{
+            'uuid': 'toto',
+            'hostname': '',
+            'ip': '127.0.0.1',
+            'port': 80,
+            'ssl': False,
+            'online': True
+        }],
+        'unconfigured': 1
+    }
+    last_device_update = time.time()
 
 def start(host='0.0.0.0', port=80, key=None, cert=None):
     """
@@ -101,20 +131,26 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
         key (string): SSL key file
         cert (string): SSL certificate file
     """
-    global server, app
+    global server, app, devices, current_devices
+
+    tim = Timer(5.0, timer_call)
+    tim.start()
+
+    #populate current devices
+    current_devices = devices.get_devices()
 
     try:
         if key is not None and len(key)>0 and cert is not None and len(cert)>0:
             #start HTTPS server
             logger.info('Starting HTTPS server on %s:%d' % (host, port))
             server_logger = LoggingLogAdapter(logger, logging.DEBUG)
-            server = pywsgi.WSGIServer((host, port), app, keyfile=key, certfile=cert, log=server_logger)
+            server = pywsgi.WSGIServer((host, port), app, keyfile=key, certfile=cert, log=server_logger, handler_class=WebSocketHandler)
             server.serve_forever()
 
         else:
             #start HTTP server
             logger.info('Starting HTTP server on %s:%d' % (host, port))
-            app.run(server='gevent', host=host, port=port, quiet=True, debug=False, reloader=False)
+            app.run(server='gevent', host=host, port=port, quiet=True, debug=False, reloader=False, handler_class=WebSocketHandler)
 
     except KeyboardInterrupt:
         #user stops raspiot, close server properly
@@ -207,6 +243,7 @@ def execute_command(command, params):
     #send response
     #logger.debug('Command response: %s' % resp.to_dict())
     return json.dumps(resp.to_dict())
+
 
 @app.hook('after_request')
 def enable_cors():
@@ -331,6 +368,46 @@ def devices():
         resp.data = devices.get_devices()
 
     return json.dumps(resp.to_dict())
+
+@app.route('/devicesws')
+def handle_deviceswebsocket():
+    """
+    Devices websocket. Used to update ui when devices list is updated
+    """
+    global current_devices, devices, last_device_update
+
+    #init websocket
+    wsock = bottle.request.environ.get('wsgi.websocket')
+    if not wsock:
+        logger.error('Expected WebSocket request')
+        bottle.abort(400, 'Expected WebSocket request')
+
+    #send current devices at startup
+    #temp_devices = devices.get_devices()
+    #wsock.send(json.dumps(temp_devices))
+
+    #now wait devices list update
+    local_last_device_update = 0
+    while True:
+        try:
+            #if current_devices is not None:
+            if last_device_update>=local_last_device_update:
+                logger.debug('send device update')
+                #send new devices list
+                wsock.send(json.dumps(current_devices))
+            
+                #update local update
+                local_last_device_update = time.time()
+
+        except WebSocketError:
+            logger.exception('WebSocket error:')
+            break
+
+        except:
+            logger.exception('Exception occured in WebSocket handler:')
+            break
+
+        time.sleep(.5)
 
 @app.route('/<path:path>')
 def default(path):

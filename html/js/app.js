@@ -124,9 +124,9 @@ var devicesController = function($rootScope, $scope, rpcService, $timeout)
     };
 
     //get devices
-    self.getDevices = function()
+    /*self.getDevices = function()
     {
-        rpcService.getDevices('coucou', null)
+        rpcService.getDevices()
             .then(function(resp) {
                 if( resp && !resp.error )
                 {
@@ -137,10 +137,10 @@ var devicesController = function($rootScope, $scope, rpcService, $timeout)
                     self.configured = self.devices.length - self.unconfigured;
                 }
             });
-    };
+    };*/
 
     //watch for devices
-    self.watchDevices = function()
+    /*self.watchDevices = function()
     {
         $timeout(function() {
             self.getDevices();
@@ -148,7 +148,7 @@ var devicesController = function($rootScope, $scope, rpcService, $timeout)
             .then(function() {
                 self.watchDevices();
             });
-    };
+    };*/
 
     //open device page
     self.openDevicePage = function(device)
@@ -165,7 +165,21 @@ var devicesController = function($rootScope, $scope, rpcService, $timeout)
     };
 
     //init controller
-    self.watchDevices();
+    //self.watchDevices();
+    
+    self.updateDevices = function(devices) 
+    {
+        $timeout(function() {
+            self.syncDevices(devices);
+            self.unconfigured = devices.unconfigured;
+            self.configured = self.devices.length - self.unconfigured;
+            self.loading = false;
+        }, 0);
+    };
+
+    //start devices websocket
+    rpcService.devicesWebSocket(self.updateDevices);
+
 };
 Cleep.controller('devicesController', ['$rootScope', '$scope', 'rpcService', '$timeout', devicesController]);
 

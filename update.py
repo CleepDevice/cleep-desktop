@@ -8,7 +8,7 @@ import os
 import urllib3
 import platform
 import json
-from download import Download
+from libs.download import Download
 from libs.console import Console
 
 class UpdateInfos():
