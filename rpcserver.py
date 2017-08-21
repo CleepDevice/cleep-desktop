@@ -104,21 +104,6 @@ def get_app(debug_enabled):
 
     return app
 
-def timer_call():
-    global current_devices, last_device_update
-    current_devices = {
-        'devices': [{
-            'uuid': 'toto',
-            'hostname': '',
-            'ip': '127.0.0.1',
-            'port': 80,
-            'ssl': False,
-            'online': True
-        }],
-        'unconfigured': 1
-    }
-    last_device_update = time.time()
-
 def start(host='0.0.0.0', port=80, key=None, cert=None):
     """
     Start RPC server. This function is blocking.
@@ -132,9 +117,6 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
         cert (string): SSL certificate file
     """
     global server, app, devices, current_devices
-
-    tim = Timer(5.0, timer_call)
-    tim.start()
 
     #populate current devices
     current_devices = devices.get_devices()
