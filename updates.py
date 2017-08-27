@@ -38,10 +38,16 @@ class Updates(Thread):
     INSTALL_ETCHER_COMMAND_LINUX = '%s/scripts/install_etcher.linux %s %s'
 
     STATUS_IDLE = 0
-    STATUS_DOWNLOADING_ETCHER = 1
-    STATUS_DOWNLOADING_CLEEP = 2
+    STATUS_ETCHER_DOWNLOADING = 1
+    STATUS_ETCHER_INSTALLING = 2
+    STATUS_ETCHER_DONE = 3
+    STATUS_ETCHER_ERROR = 4
+    STATUS_CLEEP_DOWNLOADING = 1
+    STATUS_CLEEP_INSTALLING = 2
+    STATUS_CLEEP_DONE = 3
+    STATUS_CLEEP_ERROR = 4
 
-    def __init__(self):
+    def __init__(self, cleep_version, etcher_version, update_callback):
         Thread.__init__(self)
         Thread.daemon = True
 
@@ -50,15 +56,24 @@ class Updates(Thread):
         self.logger.setLevel(logging.DEBUG)
 
         #members
+        self.update_callback = update_callback
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.running = True
         self.http = urllib3.PoolManager(num_pools=1)
         self.__download_etcher = None
         self.__download_cleepdesktop = None
         self.__current_download = None
-        self.status = self.STATUS_IDLE
-        self.download_status = Download.STATUS_IDLE
-        self.percent = 0
+        self.etcher_status = self.STATUS_IDLE
+        self.etcher_download_status = Download.STATUS_IDLE
+        self.etcher_percent = 0
+        self.etcher_version = etcher_version
+        self.cleep_status = self.STATUS_IDLE
+        self.cleep_download_status = Download.STATUS_IDLE
+        self.cleep_percent = 0
+        self.cleep_version = cleep_version
+        self.last_update = 0
+
+        #cleep path
         self.cleep_path = os.getcwd()
         self.logger.debug('Cleep-desktop is installed in "%s"' % self.cleep_path)
 
@@ -90,15 +105,27 @@ class Updates(Thread):
         Returns:
             dict: current update status informations::
                 {
-                    status (int): current update status (see Updates.STATUS_*)
-                    download (int): download status (see Download.STATUS_*)
-                    percent (int): current download percentage
+                    etcherstatus (int): current etcher update status (see Updates.STATUS_*)
+                    etcherdownload (int): etcher download status (see Download.STATUS_*)
+                    etcherpercent (int): etcher current download percentage
+                    etcherversion (string): current etcher version
+                    cleepstatus (int): current cleep update status (see Updates.STATUS_*)
+                    cleepdownload (int): cleep download status (see Download.STATUS_*)
+                    cleeppercent (int): cleep current download percentage
+                    cleepversion (string): current cleep version,
+                    lastcheck (int): timestamp of last check
                 }
         """
         return {
-            'status': self.status,
-            'download': self.download_status,
-            'percent': self.percent
+            'etcherstatus': self.etcher_status,
+            'etcherdownload': self.etcher_download_status,
+            'etcherpercent': self.etcher_percent,
+            'etcherversion': self.etcher_version,
+            'cleepstatus': self.cleep_status,
+            'cleepdownload': self.cleep_download_status,
+            'cleeppercent': self.cleep_percent,
+            'cleepversion': self.cleep_version,
+            'lastcheck': self.last_check
         }
 
     def __download_callback(self, status, size, percent):
@@ -114,12 +141,17 @@ class Updates(Thread):
         self.download_status = status
         self.percent = percent
 
+        self.update_callback(self.get_status())
+
     def run(self):
         """
         Start update process. Does nothing until check_updates is called and trigger update if necessary
         """
         self.running = True
         self.logger.debug('Updates thread started')
+
+        #check updates at startup
+        self.check_updates()
 
         #endless loop
         while self.running:
@@ -242,15 +274,15 @@ class Updates(Thread):
         #TODO implement cleep-desktop updates as soon as website is available
         pass
 
-    def check_updates(self, etcher_version, cleepdesktop_version):
+    def check_updates(self):
         """
         Check updates available
-
-        Args:
-            etcher_version (string): current etcher-cli version
-            cleepdesktop_version (string): current cleep-desktop version
         """
-        infos = self.__check_etcher_updates(etcher_version)
+        #update last check timestamp and versions
+        self.last_check = int(time.time())
+
+        #check etcher
+        infos = self.__check_etcher_updates(self.etcher_version)
         self.logger.debug('Check etcher version: %s' % infos)
         if infos.update_available:
             #set member to trigger download in run function
@@ -281,14 +313,14 @@ class Updates(Thread):
 
         return True
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
-u = Updates()
-u.start()
-u.check_updates(None, None)
-
-try:
-    while True:
-        time.sleep(.125)
-except:
-    pass
-u.stop()
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
+#u = Updates()
+#u.start()
+#u.check_updates(None, None)
+#
+#try:
+#    while True:
+#        time.sleep(.125)
+#except:
+#    pass
+#u.stop()
