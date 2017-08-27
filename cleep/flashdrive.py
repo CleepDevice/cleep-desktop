@@ -3,9 +3,9 @@
 
 import logging
 from threading import Thread
-from libs.console import EndlessConsole
-from libs.lsblk import Lsblk
-from libs.udevadm import Udevadm
+from cleep.libs.console import EndlessConsole
+from cleep.libs.lsblk import Lsblk
+from cleep.libs.udevadm import Udevadm
 import urllib3
 import uuid
 import time

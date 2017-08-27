@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from libs.console import Console
+from cleep.libs.console import Console
 import re
 import time
 import logging

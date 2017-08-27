@@ -5,9 +5,9 @@ try:
     from blkid import Blkid
     from lsblk import Lsblk
 except:
-    from libs.console import Console
-    from libs.blkid import Blkid
-    from libs.lsblk import Lsblk
+    from cleep.libs.console import Console
+    from cleep.libs.blkid import Blkid
+    from cleep.libs.lsblk import Lsblk
 import re
 import time
 

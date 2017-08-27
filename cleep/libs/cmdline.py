@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from console import Console
-from blkid import Blkid
-from lsblk import Lsblk
+from cleep.libs.console import Console
+from cleep.libs.blkid import Blkid
+from cleep.libs.lsblk import Lsblk
 import re
 import time
 

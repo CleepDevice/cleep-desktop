@@ -27,16 +27,16 @@ from gevent import pywsgi
 from gevent.pywsgi import LoggingLogAdapter
 from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
-from utils import NoMessageAvailable, MessageResponse, MessageRequest, CommandError
 import bottle
 from bottle import auth_basic, response
 from passlib.hash import sha256_crypt
-import functools
-from comm import CleepCommand, CleepCommServer
-from PyQt5.QtCore import QSettings
-from flashdrive import FlashDrive
-from devices import Devices
-from updates import Updates
+#import functools
+
+from cleep.utils import NoMessageAvailable, MessageResponse, MessageRequest, CommandError
+from cleep.comm import CleepCommand, CleepCommServer
+from cleep.flashdrive import FlashDrive
+from cleep.devices import Devices
+from cleep.updates import Updates
 
 __all__ = ['app']
 
@@ -452,22 +452,24 @@ def command_received(command, params):
 
 if __name__ == u'__main__':
     #load config
-    config = QSettings('cleep', 'cleep-desktop')
+    #TODO
+    localhost = 'localhost'
+    rpcport = 5610
+    commport = 5611
 
     #get rpc application
     debug = True
     app = get_app(debug)
 
     #connect to ui
-    #comm = CleepCommClient(config.value('localhost', type=str), config.value('commport', type=int), command_received, logger)
-    comm = CleepCommServer(config.value('localhost', type=str), config.value('commport', type=int), command_received, logger)
+    comm = CleepCommServer(localhost, commport, command_received, True)
     if not comm.connect():
         print('Failed to connect to ui, stop')
     comm.start()
 
     #start rpc server
     logger.debug('Serving files from "%s" folder.' % HTML_DIR)
-    start(config.value('localhost', type=str), config.value('rpcport', type=int), None, None)
+    start(localhost, rpcport, None, None)
 
     #clean everythng
     comm.disconnect()
