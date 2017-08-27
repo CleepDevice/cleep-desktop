@@ -36,7 +36,7 @@ from comm import CleepCommand, CleepCommServer
 from PyQt5.QtCore import QSettings
 from flashdrive import FlashDrive
 from devices import Devices
-from threading import Timer
+from updates import Updates
 
 __all__ = ['app']
 
@@ -54,21 +54,10 @@ flashdrive = None
 devices = None
 current_devices = {}
 last_device_update = 0
+current_updates_status = None
+last_updates_update = 0
 
-def bottle_logger(func):
-    """
-    Define bottle logging
-    """
-    def wrapper(*args, **kwargs):
-        req = func(*args, **kwargs)
-        logger.debug('%s %s %s %s' % (
-                     bottle.request.remote_addr, 
-                     bottle.request.method,
-                     bottle.request.url,
-                     bottle.response.status))
-        return req
 
-    return wrapper
 
 def update_devices_list(devices):
     """
@@ -79,6 +68,15 @@ def update_devices_list(devices):
     current_devices = devices
     last_device_update = time.time()
 
+def update_updates(status):
+    """
+    This function is triggered by Updates module when updates status is updated
+    """
+    global current_updates_status, last_updates_update
+
+    current_updates_status = status
+    last_updates_update = time.time()
+
 def get_app(debug_enabled):
     """
     Return web server
@@ -86,13 +84,17 @@ def get_app(debug_enabled):
     Returns:
         object: bottle instance
     """
-    global logger, app, flashdrive, devices
+    global logger, app, config, flashdrive, devices, updates
 
-    #logging (in raspiot.conf file, module name is 'rpcserver')
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
+    #logging
+    logging.basicConfig(level=logging.WARNING, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
     logger = logging.getLogger('RpcServer')
     if debug_enabled:
         logger.setLevel(logging.DEBUG)
+
+    #versions
+    cleep_version = config.value('version', type=str)
+    etcher_version = config.value('etcher', type=str)
 
     #launch flash process
     flashdrive = FlashDrive()
@@ -101,6 +103,10 @@ def get_app(debug_enabled):
     #launch devices process
     devices = Devices(update_devices_list)
     devices.start()
+
+    #launch updates process
+    updates = Updates(cleep_version, etcher_version, update_updates)
+    updates.start()
 
     return app
 
@@ -125,7 +131,7 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
         if key is not None and len(key)>0 and cert is not None and len(cert)>0:
             #start HTTPS server
             logger.info('Starting HTTPS server on %s:%d' % (host, port))
-            server_logger = LoggingLogAdapter(logger, logging.DEBUG)
+            server_logger = LoggingLogAdapter(logger, logging.INFO)
             server = pywsgi.WSGIServer((host, port), app, keyfile=key, certfile=cert, log=server_logger, handler_class=WebSocketHandler)
             server.serve_forever()
 
@@ -364,10 +370,6 @@ def handle_deviceswebsocket():
         logger.error('Expected WebSocket request')
         bottle.abort(400, 'Expected WebSocket request')
 
-    #send current devices at startup
-    #temp_devices = devices.get_devices()
-    #wsock.send(json.dumps(temp_devices))
-
     #now wait devices list update
     local_last_device_update = 0
     while True:
@@ -382,7 +384,43 @@ def handle_deviceswebsocket():
                 local_last_device_update = time.time()
 
         except WebSocketError:
-            logger.exception('WebSocket error:')
+            #logger.exception('WebSocket error:')
+            break
+
+        except:
+            logger.exception('Exception occured in WebSocket handler:')
+            break
+
+        time.sleep(.5)
+
+@app.route('/updatesws')
+def handle_updateswebsocket():
+    """
+    Updates websocket. Used to update ui when update status is updated
+    """
+    global current_updates_status, last_updates_update
+
+    #init websocket
+    wsock = bottle.request.environ.get('wsgi.websocket')
+    if not wsock:
+        logger.error('Expected WebSocket request')
+        bottle.abort(400, 'Expected WebSocket request')
+
+    #now wait devices list update
+    local_last_updates_update = 0
+    while True:
+        try:
+            #if current_devices is not None:
+            if last_updates_update>=local_last_updates_update:
+                logger.debug('Send updates update')
+                #send new status
+                wsock.send(json.dumps(current_updates_status))
+            
+                #update local update
+                local_last_updates_update = time.time()
+
+        except WebSocketError:
+            #logger.exception('WebSocket error:')
             break
 
         except:
