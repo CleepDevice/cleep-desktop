@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
  
 import os
-import signal 
 import sys
 import json 
 import socket
-import requests
 from threading import Thread
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject
 import time
+import logging
 
 
-class CleepCommand():
+class CleepCommCommand():
+    """
+    CleepComm command structure
+    """
+
     def __init__(self):
         self.command = None
         self.params = {}
@@ -23,20 +25,36 @@ class CleepCommand():
         }
         return json.dumps(data)
 
-class CleepCommClientQt(QObject):
-    """
-    CleepCommClient for Qt
-    """
-    start = pyqtSignal()
-    def __init__(self, ip, port, command_handler, logger):
-        QObject.__init__(self)
+class CleepCommResponse():
+    def __init__(self):
+        self.error = False
+        self.message = ''
+        self.data = None
 
-        self.command_handler = command_handler
+    def to_json(self):
+        data = {
+            'response': True,
+            'error': self.error,
+            'message': self.message,
+            'data': self.data
+        }
+        return json.dumps(data)
+
+class CleepCommClient(Thread):
+    """
+    CleepComm client part
+    """
+
+    def __init__(self, ip, port, command_handler):
+        Thread.__init__(self)
+        Thread.daemon = True
+
         self.socket = None
         self.running = True
         self.ip = ip
         self.port = port
-        self.logger = logger
+        self.command_handler = command_handler
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def __del__(self):
         self.running = False
@@ -51,87 +69,9 @@ class CleepCommClientQt(QObject):
                 self.logger.debug(u'Connected to comm server')
                 connected = True
                 break
-    
-            except Exception as e:
-                self.logger.debug('CleepCommClient: exception occured: %s' % str(e))
 
-            time.sleep(0.250)
-
-        return connected
-
-    def disconnect(self):
-        if self.socket is not None:
-            self.socket.close()
-
-    def send(self, command):
-        if self.socket:
-            self.socket.send(command.to_json().encode(u'utf-8'))
-            return True
-
-        return False
-
-    @pyqtSlot()
-    def run(self):
-        self.logger.debug('CleepCommClientQt is running...')
-        while self.running:
-            try:
-                raw = self.socket.recv(1024)
-                #raw = raw.decode('utf-8')
-                if not raw or len(raw)==0:
-                    time.sleep(0.10)
-                    continue
-                self.logger.debug('CleepCommClient receives: %s' % str(raw))
-
-                if isinstance(raw, bytes):
-                    raw = raw.decode('utf-8')
-                command = json.loads(raw)
-
-                #self.command_handler(command['command'], command['params'])
-                self.logger.debug('Call command_handler(%s, %s)' % (command['command'], command['params']))
-                if isinstance(self.command_handler, pyqtSignal):
-                    self.command_handler.emit(command['command'], command['params'])
-                else:
-                    self.command_handler(command['command'], command['param'])
-
-            except ConnectionResetError:
-                #server closed connection
-                self.running = False
-                self.logger.debug('Connection closed')
-
-            except OSError:
-                #setver certainly closed connection
-                self.running = False
-                self.logger.debug('Connection closed')
-
-            except:
-                self.logger.exception('Exception occured:')
-
-        self.endOfThread.emit()
-
-class CleepCommClient(Thread):
-    def __init__(self, ip, port, command_handler, logger):
-        Thread.__init__(self)
-        Thread.daemon = True
-
-        self.socket = None
-        self.running = True
-        self.ip = ip
-        self.port = port
-        self.command_handler = command_handler
-        self.logger = logger
-
-    def __del__(self):
-        self.running = False
-        self.disconnect()
-
-    def connect(self):
-        connected = False
-        for i in range(20):
-            try:
-                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.socket.connect((self.ip, self.port))
-                self.logger.debug(u'Connected to comm server')
-                connected = True
+            except KeyboardInterrupt:
+                #user stop
                 break
     
             except Exception as e:
@@ -177,7 +117,7 @@ class CleepCommClient(Thread):
                 self.logger.debug('Connection closed')
 
             except OSError:
-                #setver certainly closed connection
+                #server certainly closed connection
                 self.running = False
                 self.logger.debug('Connection closed')
 
@@ -241,15 +181,108 @@ class CleepCommServerClient(Thread):
                 self.running = False
 
 
-class CleepCommServer(Thread):
-    def __init__(self, ip, port, command_handler, logger):
+class CleepCommServerNodeClient(Thread):
+    """
+    CleepComm server client for Node socket instance
+    """
+
+    def __init__(self, conn, command_handler, logger):
         Thread.__init__(self)
         Thread.daemon = True
 
+        self.logger = logger
+        self.conn = conn
+        self.command_handler = command_handler
+        self.running = True
+        self.delimiter = '#_#'
+
+    def __del__(self):
+        self.running = False
+        self.conn.close()
+
+    def send(self, command):
+        j = command.to_json() + self.delimiter
+        j = j.encode('utf-8')
+        self.logger.debug('send json=%s' % j)
+        self.conn.send(j)
+
+    def stop(self):
+        self.running = False
+        self.conn.close()
+
+    def run(self):
+        buf = ''
+        while self.running:
+            try:
+                raw = self.conn.recv(1024)
+                if not raw or len(raw)==0:
+                    time.sleep(0.10)
+                    continue
+
+                self.logger.debug('CommServerClient receives: %s' % str(raw))
+
+                if isinstance(raw, bytes):
+                    buf += raw.decode('utf-8')
+                else:
+                    buf += raw
+
+                #get chunk
+                command = None
+                pos = buf.find('##');
+                while pos>=0:
+                    chunk = buf[:pos]
+                    try:
+                        command = json.loads(chunk)
+                    except:
+                        self.logger.debug('Invalid Json')
+                        command
+                    
+                    buf = buf[pos+2:]
+                    pos = buf.find('##')
+
+                #command = None
+                #try:
+                #    command = json.loads(raw)
+
+                #    for i in range(4):
+                #        cmd = CleepCommCommand()
+                #        cmd.command = 'ok'
+                #        self.send(cmd)
+
+                #except:
+                #    self.logger.debug('Invalid json')
+
+                resp = CleepCommResponse()
+                if not isinstance(command, dict) or 'command' not in command or 'params' not in command:
+                    self.logger.error('Invalid data received')
+                    resp.error = True
+                    resp.message = 'Invalid data received'
+
+                else:
+                    res = self.command_handler(command['command'], command['params'])
+                    resp.data = res;
+                self.send(resp)
+
+            except ConnectionResetError:
+                #connection closed by peer
+                self.logger.debug('Connection closed by peer')
+                self.running = False
+
+
+class CleepCommServer(Thread):
+    """
+    CleepComm server part
+    """
+
+    def __init__(self, ip, port, command_handler, nodeClient=False):
+        Thread.__init__(self)
+        Thread.daemon = True
+
+        self.nodeClient = nodeClient
         self.ip = ip
         self.port = port
         self.command_handler = command_handler
-        self.logger = logger
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.socket = None
         self.running = True
         self.client_count = 0
@@ -293,7 +326,10 @@ class CleepCommServer(Thread):
             if self.client_count==0:
                 #accept client connection
                 self.logger.debug('CommClient connected')
-                self.client = CleepCommServerClient(conn, self.command_handler, self.logger)
+                if not self.nodeClient:
+                    self.client = CleepCommServerClient(conn, self.command_handler, self.logger)
+                else:
+                    self.client = CleepCommServerNodeClient(conn, self.command_handler, self.logger)
                 self.client.start()
 
             else:
