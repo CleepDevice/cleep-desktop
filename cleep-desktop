@@ -32,6 +32,8 @@ else:
     version = config.value('version', type=str)
     if version!=VERSION:
         config.setValue('version', VERSION)
+if 'etcher' not in config.allKeys():
+    config.setValue('etcher', '')
 if 'localhost' not in config.allKeys():
     config.setValue('localhost', DEFAULT_HOST)
 if 'rpcport' not in config.allKeys():
