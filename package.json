@@ -1,0 +1,35 @@
+{
+  "name": "CleepDesktop",
+  "version": "0.0.0",
+  "description": "Desktop app to manage your Cleep devices",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://bitbucket.org/Tangb/cleep-desktop",
+  "keywords": [
+    "cleep",
+    "rasperrypi",
+    "raspi",
+    "desktop"
+  ],
+  "author": "Tanguy Bonneau",
+  "license": "GPLv3",
+  "devDependencies": {
+    "electron": "~1.6.2"
+  },
+  "dependencies": {
+    "electron-log": "^2.2.7",
+    "electron-settings": "^3.1.1"
+  },
+  "build": {
+    "appId": "com.cleep.cleepdesktop",
+    "productName": "CleepDesktop",
+    "asar": false,
+    "linux": {
+      "target": "tar.gz",
+      "category": "Network",
+      "executableName": "cleepdesktop"
+    }
+  }
+}

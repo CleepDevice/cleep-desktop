@@ -7,7 +7,6 @@ import time
 import os
 from zeroconf import ServiceBrowser, Zeroconf
 
-
 class CleepDeviceInfos():
     """
     Cleep device infos gathers all useful properties from a device
@@ -103,7 +102,7 @@ class Devices(Thread):
     Devices manager: it allows auto device discovering
     """
 
-    def __init__(self, devices_updated_callback):
+    def __init__(self):
         Thread.__init__(self)
         Thread.daemon = True
 
@@ -114,8 +113,6 @@ class Devices(Thread):
         #members
         self.running = True
         self.devices = []
-        self.devices_updated_callback = devices_updated_callback
-        self.__devices_updated = False
 
     def stop(self):
         """
@@ -125,7 +122,7 @@ class Devices(Thread):
 
     def run(self):
         """
-        Start flash process. Does nothing except when devices list is updated
+        Start flash process. Does nothing until start_flash is called
         """
         self.running = True
         self.logger.debug('Devices thread started')
@@ -137,13 +134,6 @@ class Devices(Thread):
 
         #endless loop
         while self.running:
-
-            #devices list updated?
-            if self.__devices_updated:
-                #trigger callback
-                self.devices_updated_callback(self.devices)
-                self.__devices_updated = False
-
             time.sleep(.25)
 
         #cleanup
@@ -183,9 +173,6 @@ class Devices(Thread):
             found_device['port'] = infos.port
             found_device['ssl'] = infos.ssl
             found_device['online'] = True
-
-        #trigger devices list update
-        self.__devices_updated = True
             
     def __unregister_device(self, infos):
         """
@@ -206,19 +193,9 @@ class Devices(Thread):
             self.logger.info('Device offline %s' % str(infos))
             found_device['online'] = False
 
-        #trigger devices list update
-        self.__devices_updated = True
-
     def get_devices(self):
         """
         Return discovered devices
-
-        Returns:
-            dict: dict of unconfigured and configured devices::
-                {
-                    unconfigured (list): list of unconfigured devices
-                    devices (list): list of configured devices
-                }
         """
         #compute unconfigured devices
         #self.logger.debug(self.devices)

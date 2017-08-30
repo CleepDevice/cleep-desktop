@@ -1,3 +1,7 @@
 __pycache__
 **/*.swp
 etcher-cli/
+dist/
+node_modules/
+package-lock.json
+

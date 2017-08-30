@@ -1,4 +1,81 @@
-var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ngRoute']);
+//var log = require('electron-log');
+
+
+/*var left = document.getElementById('leftPanel');
+var leftPanel = angular.element(left);
+leftPanel.attr('src', 'http://localhost:5610/devices.html');*/
+
+/*setTimeout(function() {
+log.info('plouf');
+var right = document.getElementById('rightPanel');
+var rightPanel = angular.element(right);
+console.log(rightPanel);
+//rightPanel.attr('src', 'http://localhost:5610/homepage.html');
+//right.loadURL('http://localhost:5610/homepage.html');
+//right.reloadIgnoringCache()
+//right.loadUrlL('http://www.google.fr');
+}, 1000);*/
+
+/*var net = require('net');
+var s = new net.Socket();
+s.on('data', function(data) {
+    log.info('received data ', data);
+});
+s.connect(5611, function() {
+    var test = {
+        command: 'helloworld',
+        params: {
+            param1: 'yop',
+            param2: 'ploum'
+        }
+    };
+    var j = JSON.stringify(test);
+    s.write(j);
+});*/
+
+//https://github.com/socketio/socket.io-client
+/*var socket = io.connect('http://localhost:5611');
+socket.on('connect', function() {
+    log.info('connected');
+});
+socket.on('disconnect', function() {
+    log.info('disconnect');
+});
+socket.on('event', function(data) {
+    log.info('event', data);
+});
+function mysend() {
+    log.info('->send data');
+    log.info(socket.emit('pouet'));
+    setTimeout(function(){ mysend(); }, 1000);
+}
+mysend();*/
+
+
+/*doens't work
+document.addEventListener('DOMContentLoaded', function () {
+    log.info('ok');
+    document.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        setTimeout(function () {
+            var path = e.target.href;
+            //ipcRenderer.sendToHost('element-clicked', path);
+            log.info('click handled');
+        }, 100);
+        return false;
+    }, true);
+});*/
+
+/*right.addEventListener('will-navigate', function(event) {
+    log.info('wv navigate');
+});
+right.addEventListener('new-window', function() {
+    log.info('wv new window');
+});*/
+
+var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router'/*'ngRoute'*/]);
+
 
 /**
  * Timestamp to human readable string
@@ -61,19 +138,95 @@ Cleep.config(['$mdThemingProvider', function($mdThemingProvider) {
         .dark();
 }]);
 
+/*Cleep.config(['$routeProvider', function ($routeProvider) {
+    $routeProvider
+        .when('/', {
+            templateUrl: 'empty.html'
+        })
+        .when('/preferences', {
+            templateUrl: 'preferences.html'
+        });
+    $routeProvider.otherwise({ redirectTo: '/' });
+}]);*/
+Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
+    $stateProvider
+        .state('default', {
+            url: '/',
+            templateUrl: 'welcome.html'
+        })
+        .state('preferences', {
+            url: '/preferences',
+            templateUrl: 'preferences.html'
+        })
+        .state('about', {
+            url: '/about',
+            templateUrl: 'about.html'
+        })
+        .state('device', {
+            url: '/device',
+            params: {
+                url: null
+            },
+            templateUrl: 'device.html'
+        });
+
+    $urlRouterProvider.otherwise('/');
+}]);
+
 /**
  * Empty controller
  */
-var emptyController = function($rootScope, $scope)
+var emptyController = function($rootScope, $scope, $state)
 {
     var self = this;
+
+    self.openPage = function()
+    {
+        //$rootScope.openPage('/preferences');
+        $state.go('preferences');
+    }
 };
-Cleep.controller('emptyController', ['$rootScope', '$scope', emptyController]);
+Cleep.controller('emptyController', ['$rootScope', '$scope', '$state', emptyController]);
+
+var deviceController = function($rootScope, $scope, $stateParams)
+{
+    var self = this;
+    self.shell = require('electron').shell;
+    self.deviceUrl = $stateParams.url;
+    self.wv = document.getElementById('deviceWv');
+
+    //handle external link
+    self.wv.addEventListener('new-window', function(event) {
+        event.preventDefault();
+        self.shell.openExternal(event.url);
+    });
+
+    //configure webview src
+    self.wvAngular = angular.element(self.wv);
+    self.wvAngular.attr('src', $stateParams.url);
+};
+Cleep.controller('deviceController', ['$rootScope', '$scope', '$stateParams', deviceController]);
+
+var cleepController = function($rootScope, $scope, $state, cleepService)
+{
+    var self = this;
+    self.ipcRenderer = require('electron').ipcRenderer;
+
+    //handle 'openPage' menu event
+    self.ipcRenderer.on('openPage', function(event, page) {
+        $state.go(page);
+    });
+
+    //init websocket
+    cleepService.connectWebSocket();
+
+};
+Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', cleepController]);
 
 /**
  * Devices controller
  */
-var devicesController = function($rootScope, $scope, rpcService, $timeout)
+var devicesController = function($rootScope, $scope, $timeout, cleepService, $state)
 {
     var self = this;
     self.devices = [];
@@ -155,38 +308,53 @@ var devicesController = function($rootScope, $scope, rpcService, $timeout)
     {
         if( device )
         {
-            rpcService.sendCommand('openDevicePage', {
-                uuid: device.uuid,
-                ip: device.ip,
-                port: device.port,
-                ssl: device.ssl
-            });
+            //prepare device url
+            var url = device.ip + ':' + device.port;
+            if( device.ssl )
+                url = 'https://' + url;
+            else
+                url = 'http://' + url;
+
+            //open device page on right panel
+            $state.go('device', {url:url});
         }
     };
 
     //init controller
     //self.watchDevices();
     
-    self.updateDevices = function(devices) 
+    self.updateDevices = function(data) 
     {
         $timeout(function() {
-            self.syncDevices(devices);
-            self.unconfigured = devices.unconfigured;
+            self.syncDevices(data.devices);
+            self.unconfigured = data.unconfigured;
             self.configured = self.devices.length - self.unconfigured;
             self.loading = false;
         }, 0);
     };
 
+    self.openDevice = function()
+    {
+        //leftPanel.attr('src', self.src);
+
+        cleepService.send('coucou', {});
+    };
+
     //start devices websocket
-    rpcService.devicesWebSocket(self.updateDevices);
+    //rpcService.devicesWebSocket(self.updateDevices);
+    
+    $rootScope.$on('devices', function(event, data)
+    {
+        self.updateDevices(data);
+    });
 
 };
-Cleep.controller('devicesController', ['$rootScope', '$scope', 'rpcService', '$timeout', devicesController]);
+Cleep.controller('devicesController', ['$rootScope', '$scope', '$timeout', 'cleepService', '$state', devicesController]);
 
 /**
  * Homepage controller
  */
-var homepageController = function($rootScope, $scope, rpcService)
+/*var homepageController = function($rootScope, $scope, rpcService)
 {
     var self = this;
 
@@ -196,19 +364,19 @@ var homepageController = function($rootScope, $scope, rpcService)
         rpcService.sendUi('coucou', null);
     };
 };
-Cleep.controller('homepageController', ['$rootScope', '$scope', 'rpcService', homepageController]);
+Cleep.controller('homepageController', ['$rootScope', '$scope', 'rpcService', homepageController]);*/
 
 /**
  * About controller
  */
-var aboutController = function($rootScope, $scope, rpcService)
+var aboutController = function($rootScope, $scope, cleepService)
 {
     var self = this;
     self.version = '';
 
     self.getVersion = function()
     {
-        rpcService.sendCommand('version', null)
+        cleepService.sendCommand('version', null)
             .then(function(resp) {
                 self.version = resp.data.version;
             });
@@ -217,12 +385,12 @@ var aboutController = function($rootScope, $scope, rpcService)
     //init controller
     self.getVersion();
 };
-Cleep.controller('aboutController', ['$rootScope', '$scope', 'rpcService', aboutController]);
+Cleep.controller('aboutController', ['$rootScope', '$scope', 'cleepService', aboutController]);
 
 /**
  * Preferences controller
  */
-var preferencesController = function($rootScope, $scope, rpcService, debounce)
+var preferencesController = function($rootScope, $scope, cleepService, debounce)
 {
     var self = this;
 
@@ -247,7 +415,7 @@ var preferencesController = function($rootScope, $scope, rpcService, debounce)
     //get configuration
     self.getConfig = function()
     {
-        rpcService.getConfig()
+        cleepService.getConfig()
             .then(function(resp) {
                 //save config
                 self.config = resp.data.config;
@@ -260,7 +428,7 @@ var preferencesController = function($rootScope, $scope, rpcService, debounce)
     //set configuration
     self.setConfig = function()
     {
-        rpcService.setConfig(self.config)
+        cleepService.setConfig(self.config)
             .then(function(resp) {
                 //overwrite config if specified
                 if( resp && resp.data && resp.data.config )
@@ -287,20 +455,20 @@ var preferencesController = function($rootScope, $scope, rpcService, debounce)
     };
 
     //go back
-    self.back = function()
+    /*self.back = function()
     {
         rpcService.back();
-    }
+    }*/
 
     //init controller
     self.getConfig();
 };
-Cleep.controller('preferencesController', ['$rootScope', '$scope', 'rpcService', 'debounceService', preferencesController]);
+Cleep.controller('preferencesController', ['$rootScope', '$scope', 'cleepService', 'debounceService', preferencesController]);
 
 /**
  * Easy install controller
  */
-var easyInstallController = function($rootScope, $scope, rpcService, $timeout, toast, confirm, $filter)
+/*var easyInstallController = function($rootScope, $scope, rpcService, $timeout, toast, confirm, $filter)
 {
     var self = this;
     self.status = {
@@ -321,9 +489,7 @@ var easyInstallController = function($rootScope, $scope, rpcService, $timeout, t
         toast.info("coucou");
     };
 
-    /**
-     * Return current flash status
-     */
+    //Return current flash status
     self.getStatus = function(init)
     {
         return rpcService.sendCommand('getflashstatus')
@@ -338,9 +504,8 @@ var easyInstallController = function($rootScope, $scope, rpcService, $timeout, t
             });
     };
 
-    /**
-     * Get flashable drives
-     */
+   
+    //Get flashable drives
     self.refreshDrives = function()
     {
         return rpcService.sendCommand('getflashdrives')
@@ -350,9 +515,7 @@ var easyInstallController = function($rootScope, $scope, rpcService, $timeout, t
             });
     };
 
-    /**
-     * Get isos
-     */
+    //Get isos
     self.refreshIsos = function()
     {
         return rpcService.sendCommand('getisos')
@@ -364,9 +527,7 @@ var easyInstallController = function($rootScope, $scope, rpcService, $timeout, t
             });
     };
 
-    /**
-     * Get status every 1 seconds
-     */
+    //Get status every 1 seconds
     self.watchStatus = function()
     {
         $timeout(function() {
@@ -381,9 +542,7 @@ var easyInstallController = function($rootScope, $scope, rpcService, $timeout, t
             });
     };
 
-    /**
-     * Start flash process
-     */
+    //Start flash process
     self.startFlash = function()
     {     
         //check values
@@ -407,9 +566,7 @@ var easyInstallController = function($rootScope, $scope, rpcService, $timeout, t
             });
     };
 
-    /**
-     * Cancel flash process
-     */
+    //Cancel flash process
     self.cancelFlash = function()
     {
         //check if process is running
@@ -443,6 +600,6 @@ var easyInstallController = function($rootScope, $scope, rpcService, $timeout, t
     //init controller
     self.getStatus(true);
 };
-Cleep.controller('easyInstallController', ['$rootScope', '$scope', 'rpcService', '$timeout', 'toastService', 'confirmService', '$filter', easyInstallController]);
+Cleep.controller('easyInstallController', ['$rootScope', '$scope', 'rpcService', '$timeout', 'toastService', 'confirmService', '$filter', easyInstallController]);*/
 
 

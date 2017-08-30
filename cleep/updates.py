@@ -8,8 +8,8 @@ import os
 import urllib3
 import platform
 import json
-from libs.download import Download
-from libs.console import Console
+from cleep.libs.download import Download
+from cleep.libs.console import Console
 
 class UpdateInfos():
     """
