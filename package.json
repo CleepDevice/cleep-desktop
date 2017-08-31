@@ -16,7 +16,8 @@
   "author": "Tanguy Bonneau",
   "license": "GPLv3",
   "devDependencies": {
-    "electron": "~1.6.2"
+    "electron": "~1.6.2",
+    "devtron": "~1.4.0"
   },
   "dependencies": {
     "electron-log": "^2.2.7",

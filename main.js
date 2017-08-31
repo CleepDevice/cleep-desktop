@@ -222,7 +222,8 @@ function createWindow ()
     // Open the DevTools in dev mode only
     if( isDev )
     {
-        mainWindow.webContents.openDevTools()
+        require('devtron').install();
+        mainWindow.webContents.openDevTools();
     }
 
     // Emitted when the window is closed.
@@ -271,7 +272,6 @@ function launchCleepremote()
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', function() {
-
     parseArgs();
     createConfig();
     createWindow();
