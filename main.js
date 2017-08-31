@@ -1,5 +1,7 @@
+//cleepdesktop version
 const VERSION = '0.0.0';
 
+//default config
 const DEFAULT_RPCPORT = 5610;
 const DEFAULT_DEBUG = false;
 const DEFAULT_ISORASPBIAN = false;
@@ -8,28 +10,92 @@ const DEFAULT_PROXYMODE = 'noproxy';
 const DEFAULT_PROXYHOST = 'localhost';
 const DEFAULT_PROXYPORT = 8080;
 
+//electron
 const electron = require('electron')
-const Menu = require('electron').Menu
 
-// Module to control application life.
+//create default variables
 const app = electron.app
-// Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
-// external browser
-const shell = require('electron').shell;
-// config
-const settings = require('electron-settings');
+const argv = process.argv.slice(1)
 
+//imports
+const Menu = require('electron').Menu
+const shell = require('electron').shell;
+const settings = require('electron-settings');
 const path = require('path')
 const url = require('url')
+const log = require('electron-log');
 
-var log = require('electron-log');
+//variables
+var cleepremotePath = path.join(__dirname, 'cleepremote');
+let isDev = !require('fs').existsSync(cleepremotePath);
+let cleepremoteProcess = null;
+let cleepremoteDisabled = false;
 
-var cleepremote = null;
+//log
+log.transports.file.level = 'warn';
+log.transports.console.level = false;
+if( isDev )
+{
+    //enable console during development (can be overwritten by args)
+    log.transports.console.level = 'debug';
+}
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
+
+// Parse command line arguments
+function parseArgs()
+{
+    for (let i = 0; i < argv.length; i++)
+    {
+        if( argv[i]==='--norpc' )
+        {
+            //disable cleepremote. Useful to debug python aside
+            cleepremoteDisabled = true;
+        }
+        else if( argv[i].match(/^--logfile=/) )
+        {
+            //log to file
+            log.transports.file.level = false;
+            var level = argv[i].split('=')[1];
+            if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' )
+            {
+                log.transports.file.level = level;
+            }
+            else if( level==='no' )
+            {
+                //disable log
+                log.transports.file.level = false;
+            }
+            else
+            {
+                //invalid log level, set to default 'info'
+                log.transports.file.level = 'info';
+            }
+        }
+        else if( argv[i].match(/^--logconsole=/) )
+        {
+            //log to console
+            var level = argv[i].split('=')[1];
+            if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' )
+            {
+                log.transports.console.level = level;
+            }
+            else if( level==='no' )
+            {
+                //disable log
+                log.transports.console.level = false;
+            }
+            else
+            {
+                //invalid log level, set to default 'info'
+                log.transports.console.level = 'info';
+            }
+        }
+    }
+}
 
 // Create application configuration file
 function createConfig()
@@ -153,8 +219,11 @@ function createWindow ()
         slashes: true
     }), {"extraHeaders" : "pragma: no-cache\n"})
 
-    // Open the DevTools.
-    mainWindow.webContents.openDevTools()
+    // Open the DevTools in dev mode only
+    if( isDev )
+    {
+        mainWindow.webContents.openDevTools()
+    }
 
     // Emitted when the window is closed.
     mainWindow.on('closed', function () {
@@ -169,13 +238,27 @@ function createWindow ()
 // Launch cleepremote python application
 function launchCleepremote()
 {
-    let commandline = path.join(__dirname, 'cleepremote/cleepremote')
-    let port = settings.get('remote.rpcport')
-    console.log('commandline: '+commandline+' '+port)
-    cleepremote = require('child_process').spawn(commandline, [port]);
-    if( cleepremote!==null )
+    if( cleepremoteDisabled )
     {
-        console.log('cleepremote launched successfully')
+        log.debug('Cleepremote disabled');
+        return;
+    }
+
+    if( !isDev )
+    {
+        //launch release
+        log.debug('Launch release mode')
+        let commandline = path.join(__dirname, 'cleepremote/cleepremote')
+        let port = settings.get('remote.rpcport')
+        console.log('commandline: '+commandline+' '+port)
+        cleepremoteProcess = require('child_process').spawn(commandline, [port]);
+    }
+    else
+    {
+        //launch dev
+        log.debug('Launch development mode')
+        let port = settings.get('remote.rpcport')
+        cleepremoteProcess = require('child_process').spawn('python3', ['cleepremote.py', port]);
     }
 };
 
@@ -183,6 +266,8 @@ function launchCleepremote()
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', function() {
+
+    parseArgs();
     createConfig();
     createWindow();
     createMenu();
@@ -194,8 +279,9 @@ app.on('window-all-closed', function () {
     // On OS X it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
     if (process.platform !== 'darwin') {
-        if( cleepremote )
+        if( cleepremoteProcess )
         {
+            log.debug('Kill cleepremote');
             cleepremote.kill('SIGTERM')
         }
         app.quit()
