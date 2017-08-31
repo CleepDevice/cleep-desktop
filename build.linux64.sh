@@ -23,6 +23,8 @@ echo
 echo "Cleaning..."
 /bin/rm -rf build
 /bin/rm -rf cleepremote
+/bin/rm -rf __pycache__
+/bin/rm -rf cleep/__pycache__
 
 echo
 echo "Done"
