@@ -244,21 +244,26 @@ function launchCleepremote()
         return;
     }
 
+    //get config file path
+    var configPath = settings.file();
+    log.debug('Config path: '+configPath);
+
     if( !isDev )
     {
         //launch release
-        log.debug('Launch release mode')
-        let commandline = path.join(__dirname, 'cleepremote/cleepremote')
-        let port = settings.get('remote.rpcport')
-        console.log('commandline: '+commandline+' '+port)
-        cleepremoteProcess = require('child_process').spawn(commandline, [port]);
+        log.debug('Launch release mode');
+        let commandline = path.join(__dirname, 'cleepremote/cleepremote');
+        let port = settings.get('remote.rpcport');
+        log.debug('Cleepremote commandline: '+commandline+' ' + port + ' ' + configPath);
+        cleepremoteProcess = require('child_process').spawn(commandline, [port, configPath]);
     }
     else
     {
         //launch dev
-        log.debug('Launch development mode')
-        let port = settings.get('remote.rpcport')
-        cleepremoteProcess = require('child_process').spawn('python3', ['cleepremote.py', port]);
+        log.debug('Launch development mode');
+        let port = settings.get('remote.rpcport');
+        log.debug('Cleepremote commandline: python3 cleepremote.py ' + port + ' ' + configPath);
+        cleepremoteProcess = require('child_process').spawn('python3', ['cleepremote.py', port, configPath]);
     }
 };
 
@@ -282,7 +287,7 @@ app.on('window-all-closed', function () {
         if( cleepremoteProcess )
         {
             log.debug('Kill cleepremote');
-            cleepremote.kill('SIGTERM')
+            cleepremoteProcess.kill('SIGTERM')
         }
         app.quit()
     }

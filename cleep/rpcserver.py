@@ -19,6 +19,7 @@ import sys
 import argparse
 import json
 from contextlib import contextmanager
+from threading import Lock
 import time
 import uuid
 from gevent import queue
@@ -48,15 +49,15 @@ HTML_DIR = os.path.join(BASE_DIR, 'html')
 logger = None
 app = bottle.app()
 server = None
-#comm = None
 config = None
+config_path = None
+config_lock = Lock()
 flashdrive = None
 devices = None
 current_devices = {}
 last_device_update = 0
 current_updates_status = None
 last_updates_update = 0
-
 
 class CleepWebSocketReceive():
     def __init__(self):
@@ -91,6 +92,75 @@ class CleepWebSocketSend():
         return json.dumps(data)
 
 
+def save_config(config):
+    """
+    Save config file.
+
+    Args:
+        config (dict): config to save.
+    
+    Returns:
+        dict: configuration file content or None if error occured.
+    """
+    global config_path
+
+    out = None
+    force_reload = False
+
+    #check if module have config file
+    if config_path is None:
+        logger.error(u'Config filepath not set. Unable to save configuration')
+        return None
+
+    config_lock.acquire(True)
+    try:
+        f = open(config_path, u'w')
+        f.write(json.dumps(config))
+        f.close()
+        force_reload = True
+    except:
+        logger.exception(u'Unable to write config file %s:' % config_path)
+    config_lock.release()
+
+    if force_reload:
+        #reload config
+        out = load_config()
+
+    return out
+
+def load_config():
+    """
+    Load config file.
+
+    Returns:
+        dict: configuration file content or None if error occured.
+    """
+    global config_path, config
+
+    #check if module have config file
+    if config_path is None:
+        logger.error(u'Config filepath not set. Unable to load configuration')
+        return None
+
+    config_lock.acquire(True)
+    out = None
+    try:
+        logger.debug(u'Loading conf file %s' % config_path)
+        if os.path.exists(config_path):
+            f = open(config_path, u'r')
+            raw = f.read()
+            f.close()
+            config = json.loads(raw)
+            out = config
+        else:
+            #no conf file yet
+            logger.warning('No config file found at "%s"' % config_path)
+    except:
+        logger.exception(u'Unable to load config file %s:' % config_path)
+    config_lock.release()
+
+    return out
+
 def update_devices_list(devices):
     """
     This function is triggered by Devices module when devices list is updated
@@ -109,16 +179,18 @@ def update_updates(status):
     current_updates_status = status
     last_updates_update = time.time()
 
-def get_app(debug_enabled):
+def get_app(config_path_, debug_enabled):
     """
-    Return web server
+    Return web server instance
+
+    Args:
+        config_path_ (string): configuration file path
+        debug_enabled (bool): True if debug enabled
 
     Returns:
         object: bottle instance
     """
-    global logger, app, config, flashdrive, devices, updates
-
-    #config = qconfig
+    global logger, app, config, config_path, flashdrive, devices, updates
 
     #logging
     logging.basicConfig(level=logging.WARNING, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
@@ -126,9 +198,10 @@ def get_app(debug_enabled):
     if debug_enabled:
         logger.setLevel(logging.DEBUG)
 
-    #versions
-    #cleep_version = config.value('version', type=str)
-    #etcher_version = config.value('etcher', type=str)
+    #load config
+    config_path = config_path_
+    load_config()
+    logger.debug('Config: %s' % config)
 
     #launch flash process
     flashdrive = FlashDrive()

@@ -5,18 +5,19 @@ from cleep import rpcserver
 import sys
 
 #parameters
-if len(sys.argv)!=2:
-    print('Missing parameter. Usage: cleepremote <rpcport>')
+if len(sys.argv)!=3:
+    print('Missing parameter. Usage: cleepremote <rpcport> <configpath>')
     sys.exit(2)
 try:
     rpcport = int(sys.argv[1])
 except:
     print('Invalid parameter rpcport: integer awaited')
     sys.exit(1)
+config_path = sys.argv[2]
 
 #get rpc application
 debug = True
-app = rpcserver.get_app(debug)
+app = rpcserver.get_app(config_path, debug)
 
 #connect to ui
 #comm = CleepCommClient(config.value('localhost', type=str), config.value('commport', type=int), command_received, logger)
