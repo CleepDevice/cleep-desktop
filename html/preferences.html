@@ -9,10 +9,6 @@
                     Preferences
                 </h2>
                 <span flex></span>
-                <md-button ng-click="ctl.back()" class="md-icon-button" aria-label="Close">
-                    <md-tooltip md-direction="bottom">Close</md-tooltip>
-                    <md-icon md-font-set="material-icons">close</md-icon>
-                </md-button>
             </div>
         </md-toolbar>
         <md-progress-linear md-mode="determinate"></md-progress-linear>
@@ -23,6 +19,11 @@
             <md-nav-item md-nav-click="goto('network')" name="network">Network</md-nav-item>
             <md-nav-item md-nav-click="goto('advanced')" name="advanced">Advanced</md-nav-item>
         </md-nav-bar>
+
+        <!-- restart required -->
+        <div layout="row" layout-align="end center" class="md-caption" style="padding-top:8px; padding-right:16px;">
+            <span style="color:red">*</span>&nbsp;restart is required
+        </div>
 
         <!-- general -->
         <div ng-if="ctl.pref=='general'" layout-padding>
@@ -39,8 +40,8 @@
                 <md-card-content>
                     <md-list>
                         <md-list-item>
-                            <p>Prefered language</p>
-                            <md-select ng-model="ctl.config.locale" aria-label="Language">
+                            <p>Prefered language <span style="color:red">*</span></p>
+                            <md-select ng-model="ctl.config.cleep.locale" aria-label="Language">
                                 <md-option value="en">English</md-option>
                             </md-select>
                         </md-list-item>
@@ -62,26 +63,23 @@
                     </md-card-title-text>
                 </md-card-title>
                 <md-card-content>
-                    <div class="note">
-                        Restart application is required.
-                    </div>
                     <md-list>
                         <md-list-item ng-click="ctl.updateProxyMode('noproxy')">
-                            <p>Direct connection (no proxy)</p>
+                            <p>Direct connection (no proxy)<span style="color:red">*</span></p>
                             <md-checkbox class="md-secondary" ng-model="ctl.noproxy" ng-click="ctl.updateProxyMode('noproxy')" aria-label="No proxy"></md-checkbox>
                         </md-list-item>
                         <md-list-item ng-click="ctl.updateProxyMode('manualproxy')">
-                            <p>Manual proxy</p>
+                            <p>Manual proxy<span style="color:red">*</span></p>
                             <md-checkbox class="md-secondary" ng-model="ctl.manualproxy" ng-click="ctl.updateProxyMode('manualproxy')" aria-label="Manual proxy"></md-checkbox>
                         </md-list-item>
                         <div ng-if="ctl.manualproxy">
                             <md-input-container class="md-block" style="margin-left:15px; margin-right:15px;">
                                 <label>Proxy ip</label>
-                                <input ng-model="ctl.config.proxyip" ng-disabled="ctl.proxyMode=='noproxy'">
+                                <input ng-model="ctl.config.proxy.host" ng-disabled="ctl.proxyMode=='noproxy'">
                             </md-input-container>
                             <md-input-container class="md-block" style="margin-left:15px; margin-right:15px;">
                                 <label>Proxy port</label>
-                                <input type="number" ng-model="ctl.config.proxyport" ng-disabled="ctl.proxyMode=='noproxy'">
+                                <input type="number" ng-model="ctl.config.proxy.port" ng-disabled="ctl.proxyMode=='noproxy'">
                             </md-input-container>
                         </div>
                     </md-list>
@@ -105,7 +103,7 @@
                     <md-list>
                         <md-list-item>
                             <p>Include latest Raspbian versions in installable versions</p>
-                            <md-switch ng-model="ctl.config.isoraspbian" aria-label="Raspbian"></md-switch>
+                            <md-switch ng-model="ctl.config.cleep.isoraspbian" aria-label="Raspbian"></md-switch>
                         </md-list-item>
                     </md-list>
                 </md-card-content>

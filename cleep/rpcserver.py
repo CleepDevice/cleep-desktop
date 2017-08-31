@@ -100,17 +100,16 @@ def save_config(config):
         config (dict): config to save.
     
     Returns:
-        dict: configuration file content or None if error occured.
+        bool: True if file successfully saved, False otherwise
     """
     global config_path
-
-    out = None
     force_reload = False
+    out = False
 
     #check if module have config file
     if config_path is None:
         logger.error(u'Config filepath not set. Unable to save configuration')
-        return None
+        return False
 
     config_lock.acquire(True)
     try:
@@ -118,13 +117,14 @@ def save_config(config):
         f.write(json.dumps(config))
         f.close()
         force_reload = True
+        out = True
     except:
         logger.exception(u'Unable to write config file %s:' % config_path)
     config_lock.release()
 
     if force_reload:
         #reload config
-        out = load_config()
+        load_config()
 
     return out
 
@@ -260,18 +260,8 @@ def get_config():
     Return:
         dict: config
     """
-    conf = {}
-
-    if config is not None:
-        conf = {
-            'proxymode': config.value('proxymode', type=str),
-            'proxyip': config.value('proxyip', type=str),
-            'proxyport': config.value('proxyport', type=int),
-            'isoraspbian': config.value('isoraspbian', type=bool),
-            'locale': config.value('locale', type=str)
-        }
-    
-    return conf
+    global config
+    return config
 
 #def open_device_page(params):
 #    """
@@ -307,6 +297,12 @@ def execute_command(command, params):
             resp.data = {
                 'config': get_config()
             }
+        elif command=='setconfig':
+            if not save_config(params['config']):
+                resp.messages = 'Unable to save config'
+                resp.error = True
+            else:
+                resp.data = True
 
         #devices
         elif command=='openDevicePage':

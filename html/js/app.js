@@ -400,7 +400,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
     self.manualproxy = false;
 
     //automatic settings saving when config value changed
-    $scope.$watchCollection(function() {
+    $scope.$watch(function() {
         return self.config;
     }, function(newValue, oldValue) {
         if( Object.keys(newValue).length>0 && Object.keys(oldValue).length>0 )
@@ -410,7 +410,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
                     console.log('config saved');
                 }, function() {})
         }
-    });
+    }, true);
 
     //get configuration
     self.getConfig = function()
@@ -421,7 +421,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
                 self.config = resp.data.config;
 
                 //update proxy mode
-                self.updateProxyMode(self.config.proxymode);
+                self.updateProxyMode(self.config.proxy.mode);
             });
     };
 
@@ -451,14 +451,8 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
             self.noproxy = false;
             self.manualproxy = true;
         }
-        self.config.proxymode = mode;
+        self.config.proxy.mode = mode;
     };
-
-    //go back
-    /*self.back = function()
-    {
-        rpcService.back();
-    }*/
 
     //init controller
     self.getConfig();

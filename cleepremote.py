@@ -31,6 +31,5 @@ rpcserver.logger.debug('Serving files from "%s" folder.' % rpcserver.HTML_DIR)
 rpcserver.start(u'0.0.0.0', rpcport, None, None)
 
 #clean everythng
-comm.disconnect()
 sys.exit(0)
 
