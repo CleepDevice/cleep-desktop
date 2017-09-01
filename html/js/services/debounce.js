@@ -26,7 +26,6 @@ var debounceService = function($timeout, $q) {
                 promiseTimeout: null
             };
         }
-        console.log(self.debounces);
 
         //check debounce for current callback
         if( self.debounces[id].promise===null )
