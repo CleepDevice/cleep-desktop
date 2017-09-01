@@ -24,7 +24,7 @@ const shell = require('electron').shell;
 const settings = require('electron-settings');
 const path = require('path')
 const url = require('url')
-const log = require('electron-log');
+const log = require('electron-log')
 
 //variables
 var cleepremotePath = path.join(__dirname, 'cleepremote');
@@ -211,6 +211,12 @@ function createWindow ()
     // Create the browser window.
     mainWindow = new BrowserWindow({width: 800, height: 600})
     mainWindow.maximize();
+
+    // handle external url
+    mainWindow.webContents.on('new-window', function(e, url) {
+        e.preventDefault()
+        shell.openExternal(url)
+    });
 
     // and load the index.html of the app.
     mainWindow.loadURL(url.format({
