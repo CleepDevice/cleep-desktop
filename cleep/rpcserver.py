@@ -31,10 +31,8 @@ from geventwebsocket.handler import WebSocketHandler
 import bottle
 from bottle import auth_basic, response
 from passlib.hash import sha256_crypt
-#import functools
 
 from cleep.utils import NoMessageAvailable, MessageResponse, MessageRequest, CommandError
-#from cleep.comm import CleepCommCommand, CleepCommServer
 from cleep.flashdrive import FlashDrive
 from cleep.devices import Devices
 from cleep.updates import Updates
@@ -59,24 +57,10 @@ last_device_update = 0
 current_updates_status = None
 last_updates_update = 0
 
-class CleepWebSocketReceive():
-    def __init__(self):
-        self.command = None
-        self.params = None
-        self.uid = None
 
-    def to_json(self):
-        data = {
-            'command': self.command,
-            'params': self.params,
-            'uid': self.uid
-        }
-        return json.dumps(data)
-
-class CleepWebSocketSend():
+class CleepWebSocketMessage():
     def __init__(self):
         self.module = None
-        self.uid = None
         self.error = False
         self.message = ''
         self.data = None
@@ -84,7 +68,6 @@ class CleepWebSocketSend():
     def to_json(self):
         data = {
             'module': self.module,
-            'uid': self.uid,
             'error': self.error,
             'message': self.message,
             'data': self.data
@@ -213,8 +196,8 @@ def get_app(config_path_, debug_enabled):
     devices.start()
 
     #launch updates process
-    #updates = Updates(cleep_version, etcher_version, update_updates)
-    #updates.start()
+    updates = Updates(cleep_version, etcher_version, update_updates)
+    updates.start()
 
     return app
 
@@ -263,17 +246,6 @@ def get_config():
     global config
     return config
 
-#def open_device_page(params):
-#    """
-#    Open device page on ui
-#    """
-#    cmd = CleepCommand()
-#    cmd.command = 'opendevicepage'
-#    cmd.params = params
-#    comm.send(cmd)
-#
-#    return True
-
 def execute_command(command, params):
     """
     Execute specified command
@@ -314,17 +286,17 @@ def execute_command(command, params):
         elif command=='getflashstatus':
             resp.data = flashdrive.get_status()
         elif command=='startflash':
-            flashdrive.start_flash(params[u'uri'], params[u'drive'], config.value('isoraspbian', type=bool))
-        elif command=='cancelflash':
+            flashdrive.start_flash(params[u'uri'], params[u'drive'], config['cleep']['isoraspbian'])
+        elif command)=='cancelflash':
             flashdrive.cancel_flash()
         elif command=='getisos':
             #TODO set include_raspbian param from config
-            resp.data = flashdrive.get_isos(config.value('isoraspbian', type=bool))
+            resp.data = flashdrive.get_isos(config['cleep']['isoraspbian'])
 
         #about
         elif command=='version':
             resp.data = {
-                'version': config.value('version', type=str)
+                'version': config['cleep']['version']
             }
 
         #default
@@ -351,26 +323,6 @@ def enable_cors():
     response.headers['Access-Control-Allow-Methods'] = 'PUT, GET, POST, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
 
-#@app.route('/ui', method=['OPTIONS', 'POST'])
-#def ui():
-#    """
-#    Communication way between javascript and ui
-#    """
-#    logger.debug('Ui (method=%s)' % bottle.request.method)
-#    if bottle.request.method=='OPTIONS':
-#        return {}
-#    else:
-#        #convert command to cleep command
-#        cmd = CleepCommand()
-#        tmp_params = bottle.request.json
-#        if u'command' in tmp_params:
-#            cmd.command = tmp_params[u'command']
-#        if u'params' in tmp_params:
-#            cmd.params = tmp_params[u'params']
-#
-#        #and send command to ui
-#        return comm.send(cmd)
-
 @app.route('/command', method=['OPTIONS', 'POST'])
 def command():
     """
@@ -392,79 +344,6 @@ def command():
         #and execute command
         #logger.debug('Execute command %s with params %s' % (command, params))
         return execute_command(command, params)
-
-#@app.route('/config', method=['OPTIONS', 'POST', 'PUT'])
-#def config():
-#    """
-#    Return current configuration
-#    """
-#    logger.debug('Config (method=%s)' % bottle.request.method)
-#    resp = MessageResponse()
-#
-#    if bottle.request.method=='OPTIONS':
-#        return {}
-#
-#    if bottle.request.method=='PUT':
-#        data = bottle.request.json
-#        logger.debug('Data=%s' % data)
-#        if config is not None and 'params' in data and 'config' in data['params']:
-#            data_config = data['params']['config']
-#            try:
-#                if 'proxymode' in data_config:
-#                    config.setValue('proxymode', data_config['proxymode'])
-#                if 'proxyport' in data_config:
-#                    config.setValue('proxyport', data_config['proxyport'])
-#                if 'proxyip' in data_config:
-#                    config.setValue('proxyip', data_config['proxyip'])
-#                if 'isoraspbian' in data_config:
-#                    config.setValue('isoraspbian', data_config['isoraspbian'])
-#                if 'locale' in data_config:
-#                    config.setValue('locale', data_config['locale'])
-#                config.sync()
-#
-#                #once updated, return cleep-desktop config
-#                resp.data = {
-#                    'config': get_config()
-#                }
-#
-#            except:
-#                logger.exception('Unable to save configuration:')
-#                resp.error = True
-#                resp.message('Unable to save configuration')
-#
-#    else:
-#        #return cleep-desktop config
-#        resp.data = {
-#            'config': get_config()
-#        }
-#
-#    return json.dumps(resp.to_dict())
-
-#@app.route('/back', method=['OPTIONS', 'POST'])
-#def back():
-#    """
-#    Go back in right panel
-#    """
-#    logger.debug('Back')
-#    if bottle.request.method=='OPTIONS':
-#        return {}
-#    else:
-#        cmd = CleepCommand()
-#        cmd.command = 'back'
-#        comm.send(cmd)
-
-#@app.route('/devices', method=['OPTIONS', 'POST'])
-#def devices():
-#    #logger.debug('Devices (method=%s)' % bottle.request.method)
-#    resp = MessageResponse()
-#
-#    if bottle.request.method=='OPTIONS':
-#        return {}
-#
-#    else:
-#        resp.data = devices.get_devices()
-#
-#    return json.dumps(resp.to_dict())
 
 @app.route('/cleepws')
 def handle_cleepwebsocket():
@@ -492,7 +371,7 @@ def handle_cleepwebsocket():
             if last_device_update>=local_last_device_update:
                 logger.debug('send device update')
                 #send new devices list
-                send = CleepWebSocketSend()
+                send = CleepWebSocketMessage()
                 send.module = 'devices'
                 send.data = current_devices
                 wsock.send(send.to_json())
@@ -510,85 +389,4 @@ def handle_cleepwebsocket():
 
         time.sleep(.25)
 
-#@app.route('/updatesws')
-#def handle_updateswebsocket():
-#    """
-#    Updates websocket. Used to update ui when update status is updated
-#    """
-#    global current_updates_status, last_updates_update
-#
-#    #init websocket
-#    wsock = bottle.request.environ.get('wsgi.websocket')
-#    if not wsock:
-#        logger.error('Expected WebSocket request')
-#        bottle.abort(400, 'Expected WebSocket request')
-#
-#    #now wait devices list update
-#    local_last_updates_update = 0
-#    while True:
-#        try:
-#            #if current_devices is not None:
-#            if last_updates_update>=local_last_updates_update:
-#                logger.debug('Send updates update')
-#                #send new status
-#                wsock.send(json.dumps(current_updates_status))
-#            
-#                #update local update
-#                local_last_updates_update = time.time()
-#
-#        except WebSocketError:
-#            #logger.exception('WebSocket error:')
-#            break
-#
-#        except:
-#            logger.exception('Exception occured in WebSocket handler:')
-#            break
-#
-#        time.sleep(.5)
-
-#@app.route('/<path:path>')
-#def default(path):
-#    """
-#    Serves static files from HTML_DIR.
-#    """
-#    return bottle.static_file(path, HTML_DIR)
-
-#@app.route('/')
-#def index():
-#    """
-#    Return a default document
-#    """
-#    return bottle.static_file('index.html', HTML_DIR)
-
-#def command_received(command, params):
-#    """
-#    Process command received from Ui
-#    """
-#    logger.debug('Command %s received with params %s' % (command, params))
-
-"""
-if __name__ == u'__main__':
-    #load config
-    #TODO
-    localhost = 'localhost'
-    rpcport = 5610
-    commport = 5611
-
-    #get rpc application
-    debug = True
-    app = get_app(debug)
-
-    #connect to ui
-    comm = CleepCommServer(localhost, commport, command_received, True)
-    if not comm.connect():
-        print('Failed to connect to ui, stop')
-    comm.start()
-
-    #start rpc server
-    logger.debug('Serving files from "%s" folder.' % HTML_DIR)
-    start(localhost, rpcport, None, None)
-
-    #clean everythng
-    comm.disconnect()
-"""
 

@@ -19,16 +19,9 @@ config_path = sys.argv[2]
 debug = True
 app = rpcserver.get_app(config_path, debug)
 
-#connect to ui
-#comm = CleepCommClient(config.value('localhost', type=str), config.value('commport', type=int), command_received, logger)
-#comm = CleepCommServer(config.value('localhost', type=str), config.value('commport', type=int), rpcserver.command_received, True)
-#if not comm.connect():
-#    print('Failed to connect to ui, stop')
-#comm.start()
-
 #start rpc server
 rpcserver.logger.debug('Serving files from "%s" folder.' % rpcserver.HTML_DIR)
-rpcserver.start(u'0.0.0.0', rpcport, None, None)
+rpcserver.start(u'127.0.0.1', rpcport, None, None)
 
 #clean everythng
 sys.exit(0)
