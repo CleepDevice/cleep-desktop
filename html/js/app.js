@@ -365,27 +365,6 @@ Cleep.controller('devicesController', ['$rootScope', '$scope', '$timeout', 'clee
 Cleep.controller('homepageController', ['$rootScope', '$scope', 'rpcService', homepageController]);*/
 
 /**
- * About controller
- */
-var aboutController = function($rootScope, $scope, cleepService)
-{
-    var self = this;
-    self.version = '';
-
-    self.getVersion = function()
-    {
-        cleepService.sendCommand('version', null)
-            .then(function(resp) {
-                self.version = resp.data.version;
-            });
-    };
-
-    //init controller
-    self.getVersion();
-};
-Cleep.controller('aboutController', ['$rootScope', '$scope', 'cleepService', aboutController]);
-
-/**
  * Preferences controller
  */
 var preferencesController = function($rootScope, $scope, cleepService, debounce)
