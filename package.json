@@ -17,7 +17,8 @@
   "license": "GPLv3",
   "devDependencies": {
     "electron": "~1.6.2",
-    "devtron": "~1.4.0"
+    "devtron": "~1.4.0",
+    "electron-builder": "~19.27.3"
   },
   "dependencies": {
     "electron-log": "^2.2.7",
@@ -28,6 +29,7 @@
     "productName": "CleepDesktop",
     "asar": false,
     "linux": {
+      "icon": "resources/256x256.png",
       "target": "tar.gz",
       "category": "Network",
       "executableName": "cleepdesktop"
