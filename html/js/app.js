@@ -150,7 +150,9 @@ Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $
         })
         .state('about', {
             url: '/about',
-            templateUrl: 'about.html'
+            controller: 'aboutController', 
+            controllerAs: 'ctl',
+            templateUrl: 'js/about/about.html'
         })
         .state('updates', {
             url: '/updates',

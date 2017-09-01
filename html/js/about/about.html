@@ -1,0 +1,67 @@
+<div layout="column" layout-fill>
+
+    <!-- menu -->
+    <md-toolbar flex="initial">
+        <div class="md-toolbar-tools">
+            <h2>
+                <md-icon md-font-set="material-icons">info_outline</md-icon>
+                About CleepDesktop
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+    <md-progress-linear md-mode="determinate"></md-progress-linear>
+
+    <!-- page content -->
+    <md-content layout-padding>
+
+        <!-- cleepdesktop -->
+        <md-card>
+            <md-card-title>
+                <md-card-title-text>
+                    <span class="md-headline">
+                        <md-icon md-font-set="material-icons">info_outline</md-icon>
+                        CleepDesktop
+                    </span>
+                </md-card-title-text>
+            </md-card-title>
+            <md-card-content>
+                CleepDesktop is the frontend application that allows you to detect, configure and monitor your Cleep devices.<br/>
+                </br>
+                This application is an open-source software under <a href="https://www.gnu.org/licenses/gpl-3.0-standalone.html" target="_blank">GNU GPLv3</a> licence.<br/>
+            </md-card-content>
+        </md-card>
+
+        <!-- licences -->
+        <md-card>
+            <md-card-title>
+                <md-card-title-text>
+                    <span class="md-headline">
+                        <md-icon md-font-set="material-icons">copyright</md-icon>
+                        Licences
+                    </span>
+                </md-card-title-text>
+            </md-card-title>
+            <md-card-content>
+                <md-list>
+                    <md-list-item>
+                        <img src="images/python.png" style="width:50px; height:50px; margin:10px 15px 10px 0px;"/>CleepDesktop core is developped with Python language.
+                        <md-button class="md-secondary" ng-href="https://docs.python.org/3/license.html" target="_blank">PSF License</md-button>
+                    </md-list-item>
+                    <md-divider></md-divider>
+                    <md-list-item>
+                        <img src="images/electron.png" style="width:50px; height:50px; margin:10px 15px 10px 0px;"/>CleepDesktop interface is using Electron open-source framework developped by&nbsp;<a href="https://github.com/" target="_blank">GitHub</a>.
+                        <md-button class="md-secondary" ng-href="https://github.com/electron/electron/blob/master/LICENSE" target="_blank">MIT license</md-button>
+                    </md-list-item>
+                    <md-divider></md-divider>
+                    <md-list-item>
+                        <img src="images/resinio.png" style="width:50px; height:50px; margin:10px 15px 10px 0px;"/>CleepDesktop SD card burner is using Etcher developped by&nbsp;<a href="https://resin.io/" target="_blank">resin.io</a>.
+                    </md-list-item>
+                </md-list>
+            </md-card-content>
+        </md-card>
+
+    </md-content>
+
+</div>
+
