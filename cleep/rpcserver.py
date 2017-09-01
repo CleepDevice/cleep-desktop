@@ -52,9 +52,11 @@ config_path = None
 config_lock = Lock()
 flashdrive = None
 devices = None
-current_devices = {}
-last_device_update = 0
-current_updates_status = None
+
+current_devices = None
+last_devices_update = 0
+
+current_updates = None
 last_updates_update = 0
 
 
@@ -144,22 +146,33 @@ def load_config():
 
     return out
 
-def update_devices_list(devices):
+def devices_update(devices):
     """
     This function is triggered by Devices module when devices list is updated
     """
-    global current_devices, last_device_update
+    global current_devices, last_devices_update
 
     current_devices = devices
-    last_device_update = time.time()
+    last_devices_update = time.time()
 
-def update_updates(status):
+def updates_update(updates):
     """
     This function is triggered by Updates module when updates status is updated
     """
-    global current_updates_status, last_updates_update
+    global current_updates, last_updates_update, config
 
-    current_updates_status = status
+    #check software versions and store new versions on config file
+    if updates['etcherversion']!=config['etcher']['version']:
+        logger.debug('New etcher version installed. Update config')
+        config['etcher']['version'] = updates['etcherversion']
+        save_config(config)
+
+    elif updates['cleepversion']!=config['cleep']['version']:
+        logger.debug('New cleep version installed. Update config')
+        config['cleep']['version'] = updates['cleepversion']
+        save_config(config)
+
+    current_updates = updates
     last_updates_update = time.time()
 
 def get_app(config_path_, debug_enabled):
@@ -191,12 +204,11 @@ def get_app(config_path_, debug_enabled):
     flashdrive.start()
 
     #launch devices process
-    #devices = Devices(update_devices_list)
-    devices = Devices()
+    devices = Devices(devices_update)
     devices.start()
 
     #launch updates process
-    updates = Updates(cleep_version, etcher_version, update_updates)
+    updates = Updates(config['cleep']['version'], config['etcher']['version'], updates_update)
     updates.start()
 
     return app
@@ -217,6 +229,9 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
 
     #populate current devices
     current_devices = devices.get_devices()
+    
+    #get current update status
+    current_updates = updates.get_status()
 
     try:
         if key is not None and len(key)>0 and cert is not None and len(cert)>0:
@@ -287,11 +302,15 @@ def execute_command(command, params):
             resp.data = flashdrive.get_status()
         elif command=='startflash':
             flashdrive.start_flash(params[u'uri'], params[u'drive'], config['cleep']['isoraspbian'])
-        elif command)=='cancelflash':
+        elif command=='cancelflash':
             flashdrive.cancel_flash()
         elif command=='getisos':
             #TODO set include_raspbian param from config
             resp.data = flashdrive.get_isos(config['cleep']['isoraspbian'])
+
+        #updates
+        elif command=='getupdatesstatus':
+            resp.data = updates.get_status()
 
         #about
         elif command=='version':
@@ -350,7 +369,7 @@ def handle_cleepwebsocket():
     """
     Devices websocket. Used to update ui when devices list is updated
     """
-    global current_devices, devices, last_device_update
+    global current_devices, last_devices_update, current_updates, last_updates_update
 
     #init websocket
     wsock = bottle.request.environ.get('wsgi.websocket')
@@ -358,18 +377,15 @@ def handle_cleepwebsocket():
         logger.error('Expected WebSocket request')
         bottle.abort(400, 'Expected WebSocket request')
 
-    #now wait devices list update
-    local_last_device_update = 0
+    #now wait for module updates (devices, updates...)
+    local_last_devices_update = 0
+    local_last_updates_update = 0
     while True:
+
         try:
-            #check incoming message
-            #msg = wsock.receive()
-
-            #logger.debug('Received msg on socket: %s' % msg)
-
             #if current_devices is not None:
-            if last_device_update>=local_last_device_update:
-                logger.debug('send device update')
+            if last_devices_update>=local_last_devices_update:
+                logger.debug('Send device update')
                 #send new devices list
                 send = CleepWebSocketMessage()
                 send.module = 'devices'
@@ -377,7 +393,18 @@ def handle_cleepwebsocket():
                 wsock.send(send.to_json())
             
                 #update local update
-                local_last_device_update = time.time()
+                local_last_devices_update = time.time()
+
+            if last_updates_update>=local_last_updates_update:
+                logger.debug('Send updates update')
+                #send new devices list
+                send = CleepWebSocketMessage()
+                send.module = 'updates'
+                send.data = current_updates
+                wsock.send(send.to_json())
+            
+                #update local update
+                local_last_updates_update = time.time()
 
         except WebSocketError:
             #logger.exception('WebSocket error:')

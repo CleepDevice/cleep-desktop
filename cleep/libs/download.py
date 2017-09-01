@@ -23,6 +23,7 @@ class Download():
     STATUS_ERROR = 3
     STATUS_ERROR_INVALIDSIZE = 4
     STATUS_ERROR_BADCHECKSUM = 5
+    STATUS_DONE = 6
 
     def __init__(self, status_callback):
         #logger
@@ -224,6 +225,10 @@ class Download():
                 return None
         else:
             self.logger.debug('No checksum to verify :(')
+
+        #last status callback
+        self.status = self.STATUS_DONE
+        self.status_callback(self.status, file_size, 100)
 
         return self.download
 

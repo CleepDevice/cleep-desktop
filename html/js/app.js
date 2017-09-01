@@ -138,16 +138,6 @@ Cleep.config(['$mdThemingProvider', function($mdThemingProvider) {
         .dark();
 }]);
 
-/*Cleep.config(['$routeProvider', function ($routeProvider) {
-    $routeProvider
-        .when('/', {
-            templateUrl: 'empty.html'
-        })
-        .when('/preferences', {
-            templateUrl: 'preferences.html'
-        });
-    $routeProvider.otherwise({ redirectTo: '/' });
-}]);*/
 Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
     $stateProvider
         .state('default', {
@@ -161,6 +151,12 @@ Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $
         .state('about', {
             url: '/about',
             templateUrl: 'about.html'
+        })
+        .state('updates', {
+            url: '/updates',
+            controller: 'updatesController',
+            controllerAs: 'ctl',
+            templateUrl: 'js/updates/updates.html'
         })
         .state('device', {
             url: '/device',
@@ -407,7 +403,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
         {
             debounce.exec('config', self.setConfig, 500)
                 .then(function() {
-                    console.log('config saved');
+                    //console.log('Config saved');
                 }, function() {})
         }
     }, true);

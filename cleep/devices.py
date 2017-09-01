@@ -102,7 +102,7 @@ class Devices(Thread):
     Devices manager: it allows auto device discovering
     """
 
-    def __init__(self):
+    def __init__(self, update_callback):
         Thread.__init__(self)
         Thread.daemon = True
 
@@ -113,6 +113,7 @@ class Devices(Thread):
         #members
         self.running = True
         self.devices = []
+        self.update_callback = update_callback
 
     def stop(self):
         """
@@ -173,6 +174,9 @@ class Devices(Thread):
             found_device['port'] = infos.port
             found_device['ssl'] = infos.ssl
             found_device['online'] = True
+
+        #update ui
+        self.update_callback(self.get_devices())
             
     def __unregister_device(self, infos):
         """
@@ -192,6 +196,9 @@ class Devices(Thread):
         if found_device is not None:
             self.logger.info('Device offline %s' % str(infos))
             found_device['online'] = False
+
+        #update ui
+        self.update_callback(self.get_devices())
 
     def get_devices(self):
         """

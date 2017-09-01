@@ -38,14 +38,10 @@ class Updates(Thread):
     INSTALL_ETCHER_COMMAND_LINUX = '%s/scripts/install_etcher.linux %s %s'
 
     STATUS_IDLE = 0
-    STATUS_ETCHER_DOWNLOADING = 1
-    STATUS_ETCHER_INSTALLING = 2
-    STATUS_ETCHER_DONE = 3
-    STATUS_ETCHER_ERROR = 4
-    STATUS_CLEEP_DOWNLOADING = 1
-    STATUS_CLEEP_INSTALLING = 2
-    STATUS_CLEEP_DONE = 3
-    STATUS_CLEEP_ERROR = 4
+    STATUS_DOWNLOADING = 1
+    STATUS_INSTALLING = 2
+    STATUS_DONE = 3
+    STATUS_ERROR = 4
 
     def __init__(self, cleep_version, etcher_version, update_callback):
         Thread.__init__(self)
@@ -63,14 +59,17 @@ class Updates(Thread):
         self.__download_etcher = None
         self.__download_cleepdesktop = None
         self.__current_download = None
+
+        self.etcher_version = etcher_version
         self.etcher_status = self.STATUS_IDLE
         self.etcher_download_status = Download.STATUS_IDLE
-        self.etcher_percent = 0
-        self.etcher_version = etcher_version
+        self.etcher_download_percent = 0
+
+        self.cleep_version = cleep_version
         self.cleep_status = self.STATUS_IDLE
         self.cleep_download_status = Download.STATUS_IDLE
-        self.cleep_percent = 0
-        self.cleep_version = cleep_version
+        self.cleep_download_percent = 0
+
         self.last_update = 0
 
         #cleep path
@@ -117,14 +116,16 @@ class Updates(Thread):
                 }
         """
         return {
-            'etcherstatus': self.etcher_status,
-            'etcherdownload': self.etcher_download_status,
-            'etcherpercent': self.etcher_percent,
             'etcherversion': self.etcher_version,
-            'cleepstatus': self.cleep_status,
-            'cleepdownload': self.cleep_download_status,
-            'cleeppercent': self.cleep_percent,
+            'etcherstatus': self.etcher_status,
+            'etcherdownloadstatus': self.etcher_download_status,
+            'etcherdownloadpercent': self.etcher_download_percent,
+
             'cleepversion': self.cleep_version,
+            'cleepstatus': self.cleep_status,
+            'cleepdownloadstatus': self.cleep_download_status,
+            'cleepdownloadpercent': self.cleep_download_percent,
+
             'lastcheck': self.last_check
         }
 
@@ -138,9 +139,15 @@ class Updates(Thread):
             percent (int): current progress
         """
         #save download status
-        self.download_status = status
-        self.percent = percent
-
+        if self.etcher_status==self.STATUS_DOWNLOADING:
+            self.etcher_download_status = status
+            self.etcher_download_percent = percent
+    
+        elif self.cleep_status==self.STATUS_DOWNLOADING:
+            self.cleep_download_status = status
+            self.cleep_download_percent = percent
+        
+        #update ui
         self.update_callback(self.get_status())
 
     def run(self):
@@ -158,20 +165,33 @@ class Updates(Thread):
 
             if self.__download_etcher:
                 self.logger.info('Downloading Etcher archive %s (%s)' % (self.__download_etcher.filename, self.__download_etcher.url))
+                #update etcher status
+                self.etcher_status = self.STATUS_DOWNLOADING
                 #new etcher update available
                 self.__current_download = Download(self.__download_callback)
                 #download it with no checksum (call is blocking)
                 filepath = self.__current_download.download_from_url(self.__download_etcher.url)
                 #end of dowload, trigger callback and reset member
                 self.__current_download = None
+                #update etcher status
+                if self.etcher_download_status==Download.STATUS_DONE:
+                    self.etcher_status = self.STATUS_INSTALLING
+                else:
+                    self.etcher_status = self.STATUS_ERROR
+                self.update_callback(self.get_status())
 
                 if filepath:
                     self.logger.debug('Etcher archive downloaded')
                     #process downloaded archive
                     if not self.__update_etcher(filepath):
+                        self.etcher_status = self.STATUS_ERROR
                         self.logger.error('Etcher installation failed')
                     else:
+                        self.etcher_status = self.STATUS_DONE
+                        self.etcher_version = self.__download_etcher.version
                         self.logger.info('Etcher installation succeed (installed version is now %s)' % self.__download_etcher.version)
+                    self.update_callback(self.get_status())
+
                 else:
                     self.logger.error('Failed to download Etcher archive.')
 
