@@ -311,6 +311,8 @@ def execute_command(command, params):
         #updates
         elif command=='getupdatesstatus':
             resp.data = updates.get_status()
+        elif command=='checkupdates':
+            resp.data = updates.check_updates()
 
         #about
         elif command=='version':

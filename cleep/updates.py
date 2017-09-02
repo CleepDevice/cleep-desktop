@@ -8,6 +8,7 @@ import os
 import urllib3
 import platform
 import json
+import datetime
 from cleep.libs.download import Download
 from cleep.libs.console import Console
 
@@ -57,7 +58,7 @@ class Updates(Thread):
         self.running = True
         self.http = urllib3.PoolManager(num_pools=1)
         self.__download_etcher = None
-        self.__download_cleepdesktop = None
+        self.__download_cleep = None
         self.__current_download = None
 
         self.etcher_version = etcher_version
@@ -91,7 +92,7 @@ class Updates(Thread):
         self.logger.debug('Cancel download')
         #reset update flags
         self.__download_etcher = None
-        self.__download_cleepdesktop = None
+        self.__download_cleep = None
 
         #and cancel current download
         if self.__current_download:
@@ -198,10 +199,17 @@ class Updates(Thread):
                 #end of etcher update process, reset variables
                 self.__download_etcher = None
 
-            if self.__download_cleepdesktop:
+            if self.__download_cleep:
                 #TODO new cleep-desktop update available
                 pass
 
+            #auto check for updates at noon
+            now = datetime.datetime.now()
+            if now.hour==12 and now.minute==0:
+                self.logger.debug('Autoupdate triggered')
+                self.check_updates()
+
+            #release CPU
             time.sleep(1.0)
 
         self.logger.debug('Updates thread stopped')
@@ -296,7 +304,14 @@ class Updates(Thread):
 
     def check_updates(self):
         """
-        Check updates available
+        Check for available updates
+
+        Return:
+            dict: check output::
+                {
+                    updateavailable (bool): True if update is available
+                    lastcheck (int): timestamp of last check
+                }
         """
         #update last check timestamp and versions
         self.last_check = int(time.time())
@@ -309,6 +324,15 @@ class Updates(Thread):
             self.__download_etcher = infos
 
         #TODO check cleepdesktop version
+
+        update_available = False
+        if self.__download_etcher is not None or self.__download_cleep is not None:
+            update_available = True
+
+        return {
+            'updateavailable': update_available,
+            'lastcheck': self.last_check
+        }
 
     def __update_etcher(self, filepath):
         """
