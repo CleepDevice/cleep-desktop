@@ -59,6 +59,9 @@ last_devices_update = 0
 current_updates = None
 last_updates_update = 0
 
+current_flash = None
+last_flash_update = 0
+
 
 class CleepWebSocketMessage():
     def __init__(self):
@@ -155,6 +158,15 @@ def devices_update(devices):
     current_devices = devices
     last_devices_update = time.time()
 
+def flash_update(status):
+    """
+    This function is triggered by Flashdrive module when flash process is running
+    """
+    global current_flash, last_flash_update
+
+    current_flash = status
+    last_flash_update = time.time()
+
 def updates_update(updates):
     """
     This function is triggered by Updates module when updates status is updated
@@ -200,7 +212,7 @@ def get_app(config_path_, debug_enabled):
     logger.debug('Config: %s' % config)
 
     #launch flash process
-    flashdrive = FlashDrive()
+    flashdrive = FlashDrive(flash_update)
     flashdrive.start()
 
     #launch devices process
@@ -301,7 +313,7 @@ def execute_command(command, params):
         elif command=='getflashstatus':
             resp.data = flashdrive.get_status()
         elif command=='startflash':
-            flashdrive.start_flash(params[u'uri'], params[u'drive'], config['cleep']['isoraspbian'])
+            flashdrive.start_flash(params[u'url'], params[u'drive'], config['cleep']['isoraspbian'])
         elif command=='cancelflash':
             flashdrive.cancel_flash()
         elif command=='getisos':
@@ -382,11 +394,12 @@ def handle_cleepwebsocket():
     #now wait for module updates (devices, updates...)
     local_last_devices_update = 0
     local_last_updates_update = 0
+    local_last_flash_update = 0
     while True:
 
         try:
-            #if current_devices is not None:
             if last_devices_update>=local_last_devices_update:
+                #devices update
                 logger.debug('Send device update')
                 #send new devices list
                 send = CleepWebSocketMessage()
@@ -398,6 +411,7 @@ def handle_cleepwebsocket():
                 local_last_devices_update = time.time()
 
             if last_updates_update>=local_last_updates_update:
+                #updates update
                 logger.debug('Send updates update')
                 #send new devices list
                 send = CleepWebSocketMessage()
@@ -407,6 +421,18 @@ def handle_cleepwebsocket():
             
                 #update local update
                 local_last_updates_update = time.time()
+
+            if last_flash_update>=local_last_flash_update:
+                #flash update
+                logger.debug('Send flash update')
+                #send new flash list
+                send = CleepWebSocketMessage()
+                send.module = 'flash'
+                send.data = current_flash
+                wsock.send(send.to_json())
+            
+                #update local update
+                local_last_flash_update = time.time()
 
         except WebSocketError:
             #logger.exception('WebSocket error:')

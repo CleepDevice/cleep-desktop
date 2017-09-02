@@ -9,10 +9,12 @@ from cleep.libs.udevadm import Udevadm
 import urllib3
 import uuid
 import time
+import datetime
 import os
 import hashlib
 import platform
 import re
+import requests
 
 class FlashDrive(Thread):
     """
@@ -32,19 +34,22 @@ class FlashDrive(Thread):
     STATUS_CANCELED = 6
     STATUS_ERROR = 7
     STATUS_ERROR_INVALIDSIZE = 8
-    STATUS_ERROR_BADMD5SUM = 9
+    STATUS_ERROR_BADCHECKSUM = 9
 
     ETCHER_LINUX = '/etc/cleep/etcher-cli/etcher-cli.linux %s %s'
     ETCHER_WINDOWS = 'TODO'
     ETCHER_MAC = 'TODO'
 
-    def __init__(self):
+    RASPBIAN_URL = 'http://downloads.raspberrypi.org/raspbian/images/'
+    RASPBIAN_LITE_URL = 'http://downloads.raspberrypi.org/raspbian_lite/images/'
+
+    def __init__(self, update_callback):
         Thread.__init__(self)
         Thread.daemon = True
 
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.DEBUG)
 
         #get etcher command
         if platform.system()=='Windows':
@@ -56,6 +61,7 @@ class FlashDrive(Thread):
         self.logger.debug('Etcher command line: %s' % self.etcher_cmd)
 
         #members
+        self.update_callback = update_callback
         self.lsblk = Lsblk()
         self.udevadm = Udevadm()
         self.console = None
@@ -67,7 +73,7 @@ class FlashDrive(Thread):
         self.iso = None
         self.iso_sha1 = None
         self.isos = []
-        self.uri = None
+        self.url = None
         self.http = urllib3.PoolManager(num_pools=1)
         self.running = True
         self.cancel = False
@@ -93,10 +99,13 @@ class FlashDrive(Thread):
 
         while self.running:
             #check if process requested
-            if self.uri and self.drive:
+            if self.url and self.drive:
                 self.logger.info('Flash process started')
 
                 if self.__download_file():
+                    #update ui
+                    self.update_callback(self.get_status())
+
                     #file downloaded successfully, launch flash+validation
                     self.__flash_drive()
                     while self.console is not None:
@@ -104,7 +113,10 @@ class FlashDrive(Thread):
                             break
                         time.sleep(0.25)
 
-                    #end of flash+validation
+                    #update ui
+                    self.update_callback(self.get_status())
+
+                    #end of process
                     if self.cancel:
                         self.console.kill()
                         self.status = self.STATUS_CANCELED
@@ -113,8 +125,12 @@ class FlashDrive(Thread):
 
                 elif self.cancel:
                     self.status = self.STATUS_CANCELED
+
                 else:
                     self.status = self.STATUS_ERROR
+
+                #update ui
+                self.update_callback(self.get_status())
 
                 #reset everything
                 self.total_percent = 100
@@ -123,14 +139,14 @@ class FlashDrive(Thread):
                     self.logger.debug('File %s deleted' % self.iso)
                     self.iso = None
                 self.drive = None
-                self.uri = None
+                self.url = None
                 self.cancel = False
                 self.console = None
                 self.logger.info('Flash process terminated')
 
             else:
-                #no process, pause thread
-                time.sleep(.250)
+                #no process, release cpu
+                time.sleep(.25)
 
     def purge_files(self):
         """
@@ -162,26 +178,213 @@ class FlashDrive(Thread):
 
         return sha1.hexdigest()
 
-    def start_flash(self, uri, drive, iso_raspbian):
+    def __get_raspbian_release_infos(self, release):
+        """
+        Parse url specified in latest dict and get infos of release (checksum, link to archive...)
+
+        Args:
+            release (dict): release infos as returned by __get_latest_raspbian_releases function
+
+        Return:
+            dict: raspbian and raspbian lite infos::
+                {
+                    url (string): file url
+                    sha1 (string): sha1 checksum
+                    sha256 (string): sha256 checksum,
+                    timestamp (int): datetime of release
+                }
+        """
+        infos = {
+            'url': None,
+            'sha1': None,
+            'sha256': None,
+            'timestamp': None
+        }
+
+        #get release infos
+        try:
+            self.logger.debug('Requesting %s' % release['url'])
+            resp = requests.get(release['url'])
+            if resp.status_code==200:
+                #self.logger.debug('Resp content: %s' % resp.text)
+                #parse response content
+                matches = re.finditer(r'href=\"(%s.*?)\"' % release['prefix'], resp.text, re.UNICODE)
+                for matchNum, match in enumerate(matches):
+                    groups = match.groups()
+                    self.logger.debug('Groups: %s' % groups)
+
+                    if len(groups)==1:
+                        #main archive
+                        if groups[0].endswith('.zip'):
+                            infos['url'] = '%s%s' % (release['url'], groups[0])
+                            infos['timestamp'] = release['timestamp']
+
+                        #sha1 checksum
+                        elif groups[0].endswith('.sha1'):
+                            url = '%s%s' % (release['url'], groups[0])
+                            try:
+                                content = requests.get(url)
+                                if content.status_code==200:
+                                    infos['sha1'] = content.text.split()[0]
+                            except:
+                                self.logger.exception('Exception occured during %s request' % url)
+
+                        #sha256 checksum
+                        elif groups[0].endswith('.sha256'):
+                            url = '%s%s' % (release['url'], groups[0])
+                            try:
+                                content = requests.get(url)
+                                if content.status_code==200:
+                                    infos['sha256'] = content.text.split()[0]
+                            except:
+                                self.logger.exception('Exception occured during %s request' % url)
+
+            else:
+                self.logger.error('Request %s failed (status code=%d)' % (release['url'], resp.status_code))
+
+        except:
+            self.logger.exception('Exception occured during %s request:' % self.release.url)
+
+        return infos
+
+    def __get_latest_raspbian_releases(self):
+        """
+        Parse raspbian isos releases website and return latest release with it's informations
+
+        Return:
+            dict: infos about latest releases::
+                {
+                    raspbian: {
+                        prefix (string): prefix string (useful to search items in subfolder)
+                        url (string): url of latest archive,
+                        timestamp (int): timestamp of latest archive
+                    },
+                    raspbian_lite: {
+                        prefix (string): prefix string (useful to search items in subfolder)
+                        url (string): url of latest archive,
+                        timestamp (int): timestamp of latest archive
+                    }
+                }
+        """
+        latest_raspbian = None
+        latest_raspbian_lite = None
+
+        #get latest raspbian release infos
+        try:
+            self.logger.debug('Requesting %s' % self.RASPBIAN_URL)
+            resp = requests.get(self.RASPBIAN_URL)
+            if resp.status_code==200:
+                #parse response content
+                matches = re.finditer(r'href=\"((raspbian)-(\d*)-(\d*)-(\d*)/)\"', resp.text, re.UNICODE)
+                results = list(matches)
+                if len(results)>0:
+                    groups = results[-1].groups()
+                    if len(groups)==5 and groups[1]=='raspbian':
+                        dt = datetime.datetime(year=int(groups[2]), month=int(groups[3]), day=int(groups[4]))
+                        latest_raspbian = {
+                            'prefix': '%s' % (groups[2]),
+                            'url': '%s%s' % (self.RASPBIAN_URL, groups[0]),
+                            'timestamp': int(time.mktime(dt.timetuple()))
+                        }
+            else:
+                self.logger.error('Unable to request raspbian repository (status code=%d)' % resp.status_code)
+        except:
+            self.logger.exception('Exception occured during %s read:' % self.RASPBIAN_URL)
+
+        #get latest raspbian_lite release infos
+        try:
+            self.logger.debug('Requesting %s' % self.RASPBIAN_LITE_URL)
+            resp = requests.get(self.RASPBIAN_LITE_URL)
+            if resp.status_code==200:
+                #parse response content
+                matches = re.finditer(r'href=\"((raspbian_lite)-(\d*)-(\d*)-(\d*)/)\"', resp.text, re.UNICODE)
+                results = list(matches)
+                if len(results)>0:
+                    groups = results[-1].groups()
+                    if len(groups)==5 and groups[1]=='raspbian_lite':
+                        dt = datetime.datetime(year=int(groups[2]), month=int(groups[3]), day=int(groups[4]))
+                        latest_raspbian_lite = {
+                            'prefix': '%s' % (groups[2]),
+                            'url': '%s%s' % (self.RASPBIAN_LITE_URL, groups[0]),
+                            'timestamp': int(time.mktime(dt.timetuple()))
+                        }
+                else:
+                    self.logger.error('No result requesting %s' % self.RASPBIAN_LITE_URL)
+            else:
+                self.logger.error('Unable to request raspbian_lite repository (status code=%d)' % resp.status_code)
+        except:
+            self.logger.exception('Exception occured during %s request:' % self.RASPBIAN_LITE_URL)
+
+        return {
+            'raspbian': latest_raspbian,
+            'raspbian_lite': latest_raspbian_lite
+        }
+
+    def get_latest_raspbians(self):
+        """
+        Return latest raspbians releases
+
+        Return:
+            dict: raspbian and raspbian lite infos::
+                {
+                    raspbian: {
+                        fileurl (string): file url
+                        sha1 (string): sha1 checksum
+                        sha256 (string): sha256 checksum,
+                        timestamp (int): datetime of release
+                    },
+                    raspbian_lite: {
+                        fileurl (string): file url
+                        sha1 (string): sha1 checksum
+                        sha256 (string): sha256 checksum,
+                        timestamp (int): datetime of release
+                    }
+                }
+        """
+        raspbian_infos = None
+        raspbian_lite_infos = None
+
+        #get releases
+        releases = self.__get_latest_raspbian_releases()
+        self.logger.debug('Raspbian releases: %s' % releases)
+
+        #get releases infos
+        if releases['raspbian']:
+            infos = self.__get_raspbian_release_infos(releases['raspbian'])
+            if infos['url'] is not None:
+                raspbian_infos = infos
+            self.logger.debug('Raspbian release infos: %s' % raspbian_infos)
+        if releases['raspbian_lite']:
+            infos = self.__get_raspbian_release_infos(releases['raspbian_lite'])
+            if infos['url'] is not None:
+                raspbian_lite_infos = infos
+            self.logger.debug('Raspbian lite release infos: %s' % raspbian_lite_infos)
+
+        return {
+            'raspbian': raspbian_infos,
+            'raspbian_lite': raspbian_lite_infos
+        }
+
+    def start_flash(self, url, drive, iso_raspbian):
         """
         Set flash data before launching process
         """
-        if uri is None or len(uri)==0:
-            raise Exception('Invalid Uri "%s"' % uri)
+        if url is None or len(url)==0:
+            raise Exception('Invalid Url "%s"' % url)
         if drive is None or len(drive)==0:
-            raise Exception('Invalid drive "%s"' % uri)
-        if self.uri is not None or self.drive is not None:
+            raise Exception('Invalid drive "%s"' % url)
+        if self.url is not None or self.drive is not None:
             raise Exception('Installation is already running')
 
         #get sha1
         isos = self.get_isos(iso_raspbian)
         for iso in isos['isos']:
-            if iso['uri']==uri:
-                self.logger.debug('Found sha1 "%s" for iso "%s"' % (iso['sha1'], uri))
+            if iso['url']==url:
+                self.logger.debug('Found sha1 "%s" for iso "%s"' % (iso['sha1'], url))
                 self.iso_sha1 = iso['sha1']
 
         #store data
-        self.uri = uri
+        self.url = url
         self.drive = drive
 
     def cancel_flash(self):
@@ -259,7 +462,7 @@ class FlashDrive(Thread):
                     [
                         {
                             label (string): iso label,
-                            uri (string): file uri,
+                            url (string): file url,
                             timestamp (int): timestamp of isos,
                             category (string): entry category ('cleep' or 'raspbian')
                             sha1 (string): sha1 checksum
@@ -296,21 +499,26 @@ class FlashDrive(Thread):
 
             #get raspbian isos
             if iso_raspbian:
-                isos.append({
-                    'label': 'Raspbian Lite',
-                    'uri': 'https://downloads.raspberrypi.org/raspbian_lite_latest',
-                    'timestamp': 1499205600,
-                    'category': 'raspbian',
-                    'sha1': '30a171e10eb0b93b0e552837929c504d1bacd755'
-                })
-                isos.append({
-                    'label': 'Raspbian Desktop',
-                    'uri': 'https://downloads.raspberrypi.org/raspbian_latest',
-                    'timestamp': 1499205600,
-                    'category': 'raspbian',
-                    'sha1': 'e1edd4d26090b3e67a66939fa77eeb656de8a2c5'
-                })
+                raspbians = self.get_latest_raspbians()
+                self.logger.debug('Raspbians: %s' % raspbians)
+                if raspbians['raspbian_lite'] is not None:
+                    isos.append({
+                        'label': 'Raspbian Lite',
+                        'url': raspbians['raspbian_lite']['url'],
+                        'timestamp': raspbians['raspbian_lite']['timestamp'],
+                        'category': 'raspbian',
+                        'sha1': raspbians['raspbian_lite']['sha1']
+                    })
+                if raspbians['raspbian'] is not None:
+                    isos.append({
+                        'label': 'Raspbian desktop',
+                        'url': raspbians['raspbian']['url'],
+                        'timestamp': raspbians['raspbian']['timestamp'],
+                        'category': 'raspbian',
+                        'sha1': raspbians['raspbian']['sha1']
+                    })
 
+            self.logger.debug('Isos: %s' % isos)
             self.isos = sorted(isos, key=lambda i:i['timestamp'])
             self.timestamp_isos = time.time()
 
@@ -336,8 +544,8 @@ class FlashDrive(Thread):
         """
         Download file
         """
-        if self.uri is None or self.drive is None:
-            self.logger.debug('No drive or uri specified, flash process stopped')
+        if self.url is None or self.drive is None:
+            self.logger.debug('No drive or url specified, flash process stopped')
             return False
 
         #prepare iso
@@ -353,7 +561,7 @@ class FlashDrive(Thread):
 
         #initialize download
         try:
-            resp = self.http.request('GET', self.uri, preload_content=False)
+            resp = self.http.request('GET', self.url, preload_content=False)
         except:
             self.logger.exception('Error initializing http request:')
             self.status = self.STATUS_ERROR
@@ -372,6 +580,7 @@ class FlashDrive(Thread):
         #download file
         downloaded_size = 0
         last_percent = -1
+        start_time = time.time()
         while True:
             #read data
             buf = resp.read(1024)
@@ -393,6 +602,7 @@ class FlashDrive(Thread):
             if file_size!=0:
                 self.percent = int(float(downloaded_size) / float(file_size) * 100.0)
                 self.total_percent = int(self.percent / 3)
+                self.eta = '%.1fMo' % (float(downloaded_size)/1000000.0)
                 if not self.percent%5 and last_percent!=self.percent:
                     last_percent = self.percent
                     self.logger.debug('Downloading %s %d%%' % (self.iso, self.percent))
@@ -403,6 +613,9 @@ class FlashDrive(Thread):
                 self.logger.debug('Flash process canceled during download')
                 return False
 
+            #update ui
+            self.update_callback(self.get_status())
+
         #download over
         iso.close()
 
@@ -412,6 +625,7 @@ class FlashDrive(Thread):
         else:
             self.logger.error('Invalid downloaded size %d instead of %d' % (downloaded_size, file_size))
             self.status = self.STATUS_ERROR_INVALIDSIZE
+
             return False
 
         #checksum
@@ -468,6 +682,9 @@ class FlashDrive(Thread):
 
                     #eta
                     self.eta = items[2]
+
+                    #update ui
+                    self.update_callback(self.get_status())
         except:
             if not self.__etcher_output_error:
                 self.logger.exception('Exception occured during etcher status:')
@@ -480,6 +697,9 @@ class FlashDrive(Thread):
         self.logger.info('Flash operation terminated')
         self.console = None
         self.__etcher_output_error = False
+
+        #update ui
+        self.update_callback(self.get_status())
 
     def __flash_drive(self):
         """

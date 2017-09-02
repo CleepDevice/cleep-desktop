@@ -1,18 +1,4 @@
-<html>
-<head>
-    <title>Easy Cleep installation</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="css/roboto-fonts.css">
-    <link rel="stylesheet" href="css/angular-material.min.css"/>
-    <link rel="stylesheet" href="css/materialicons.css"/>
-    <link rel="stylesheet" href="css/cleep.css"/>
-</head>
-<body ng-app="Cleep" layout-fill ng-cloak>
-
-    <!-- only used to fix scrolling issue for toast: https://github.com/angular/material/issues/2936 -->
-    <md-content flex="100">
-
-    <div ng-controller="easyInstallController as ctl" layout="column">
+<div layout="column" layout-fill>
 
         <!-- menu -->
         <md-toolbar flex="initial">
@@ -50,16 +36,16 @@
                         </div>
                         <div>
                             <md-input-container>
-                                <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" required>
-                                    <md-optgroup label="Cleep">
+                                <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" ng-disabled="ctl.flashing" required>
+                                    <md-optgroup label="Cleep" ng-if="ctl.isos.length>0">
                                         <md-option ng-if="ctl.noCleepIso" ng-disabled="true">No Cleep version found</md-option>
-                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'cleep'}" ng-value="iso.uri">
+                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'cleep'}" ng-value="iso.url">
                                             {{iso.label}} ({{iso.timestamp | hrDate}})
                                         </md-option>
                                     </md-optgroup>
                                     <md-optgroup label="Raspbian" ng-if="ctl.raspbian">
                                         <md-option ng-if="ctl.noRaspbianIso" ng-disabled="true">No Raspbian version found</md-option>
-                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'raspbian'}" ng-value="iso.uri">
+                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'raspbian'}" ng-value="iso.url">
                                             {{iso.label}} ({{iso.timestamp | hrDate}})
                                         </md-option>
                                     </md-optgroup>
@@ -74,7 +60,7 @@
                         </div>
                         <div>
                             <md-input-container>
-                                <md-select ng-model="ctl.selectedDrive" md-on-open="ctl.refreshDrives()" placeholder="Drive" class="md-no-underline" required>
+                                <md-select ng-model="ctl.selectedDrive" md-on-open="ctl.refreshDrives()" placeholder="Drive" class="md-no-underline" ng-disabled="ctl.flashing" required>
                                     <md-option ng-if="ctl.noDrive" ng-disabled="true">No drive found</md-option>
                                     <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path">
                                         {{drive.model + ' (' + drive.path + ')'}}
@@ -89,7 +75,7 @@
                             Click on button to install Cleep and wait end of process:
                         </div>
                         <div>
-                            <md-button ng-click="ctl.startFlash()" class="md-raised md-accent">Install Cleep on selected drive</md-button>
+                            <md-button ng-click="ctl.startFlash()" ng-disabled="ctl.flashing" class="md-raised md-accent">Install on selected drive</md-button>
                         </div>
                     </div>
                 </md-card-content>
@@ -110,11 +96,11 @@
                         <div>
                             Status: 
                             <span ng-if="ctl.status.status==0">Idle</span>
-                            <span ng-if="ctl.status.status==1">Downloading file {{ctl.status.percent}}%</span>
-                            <span ng-if="ctl.status.status==2">Downloading file (unknown file size)</span>
-                            <span ng-if="ctl.status.status==3">Installing on drive {{ctl.status.percent}}% {{ctl.status.eta}}</span>
-                            <span ng-if="ctl.status.status==4">Validating operation {{ctl.status.percent}}% {{ctl.status.eta}}</span>
-                            <span ng-if="ctl.status.status==5">Installation completed</span>
+                            <span ng-if="ctl.status.status==1">Downloading file {{ctl.status.percent}}% ({{ctl.status.eta}})</span>
+                            <span ng-if="ctl.status.status==2">Downloading file ({{ctl.status.eta}})</span>
+                            <span ng-if="ctl.status.status==3">Installing on drive {{ctl.status.percent}}% ({{ctl.status.eta}})</span>
+                            <span ng-if="ctl.status.status==4">Validating operation {{ctl.status.percent}}% ({{ctl.status.eta}})</span>
+                            <span ng-if="ctl.status.status==5">Installation completed. You can unplug your SD card.</span>
                             <span ng-if="ctl.status.status==6">Installation canceled</span>
                             <span ng-if="ctl.status.status==7">Internal error occured</span>
                             <span ng-if="ctl.status.status==8">Downloaded file size is invalid</span>
@@ -125,10 +111,10 @@
                         </div>
                     </div>
                     <div>
-                        <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.status.total_percent}}"></md-progress-linear>
+                        <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.status.total_percent}}" style="padding-top: 15px !important;"></md-progress-linear>
                     </div>
                     <div layout="row" layout-align="end center" style="padding-top:30px;">
-                        Powered by <a href="https://etcher.io" alt="etcher.io" title="etcher.io"><img style="height:14px;" src="images/etcher_logo_black.png"/></a>
+                        Powered by&nbsp;<a href="https://etcher.io" target="_blank"><img style="height:14px;" src="images/etcher_logo_black.png"/></a>
                     </div>
                 </md-card-content>
             </md-card>
@@ -136,23 +122,4 @@
         </md-content>
 
     </div>
-
-    <!-- system -->
-    <script src="js/libs/jquery.min.js"></script>
-    <script src="js/libs/angular.min.js"></script>
-    <script src="js/libs/angular-route.min.js"></script>
-    <script src="js/libs/angular-animate.min.js"></script>
-    <script src="js/libs/angular-messages.min.js"></script>
-    <script src="js/libs/angular-aria.min.js"></script>
-    <script src="js/libs/angular-material.min.js"></script>
-    <script src="js/libs/moment.min.js"></script>
-
-    <!-- application -->
-    <script src="js/app.js"></script>
-    <script src="js/services/rpc.js"></script>
-    <script src="js/services/toast.js"></script>
-    <script src="js/services/confirm.js"></script>
-
-</body>
-</html>
 

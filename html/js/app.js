@@ -74,7 +74,7 @@ right.addEventListener('new-window', function() {
     log.info('wv new window');
 });*/
 
-var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router'/*'ngRoute'*/]);
+var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router', 'ngSanitize']);
 
 
 /**
@@ -162,6 +162,12 @@ Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $
             controllerAs: 'ctl',
             templateUrl: 'js/updates/updates.html'
         })
+        .state('installAuto', {
+            url: '/installAuto',
+            controller: 'autoInstallController',
+            controllerAs: 'ctl',
+            templateUrl: 'js/install/installAuto.html'
+        })
         .state('device', {
             url: '/device',
             params: {
@@ -216,6 +222,15 @@ var cleepController = function($rootScope, $scope, $state, cleepService)
     self.ipcRenderer.on('openPage', function(event, page) {
         $state.go(page);
     });
+
+    //display infos about ended installation
+    /*$rootScope.on('flash', function(event, data) {
+        if( data.status>=5 )
+        {
+            //flash is terminated
+            toast.info('Installation is terminated');
+        }
+    });*/
 
     //init websocket
     cleepService.connectWebSocket();
@@ -347,7 +362,6 @@ var devicesController = function($rootScope, $scope, $timeout, cleepService, $st
     {
         self.updateDevices(data);
     });
-
 };
 Cleep.controller('devicesController', ['$rootScope', '$scope', '$timeout', 'cleepService', '$state', devicesController]);
 
@@ -365,142 +379,4 @@ Cleep.controller('devicesController', ['$rootScope', '$scope', '$timeout', 'clee
     };
 };
 Cleep.controller('homepageController', ['$rootScope', '$scope', 'rpcService', homepageController]);*/
-
-/**
- * Easy install controller
- */
-/*var easyInstallController = function($rootScope, $scope, rpcService, $timeout, toast, confirm, $filter)
-{
-    var self = this;
-    self.status = {
-        percent: 0,
-        total_percent: 0,
-        status: 0,
-        eta: ''
-    };
-    self.drives = [];
-    self.selectedDrive = null;
-    self.isos = [];
-    self.selectedIso = null;
-    self.noCleepIso = true;
-    self.noRaspbianIso = true;
-    self.noDrive = true;
-
-    self.test = function() {
-        toast.info("coucou");
-    };
-
-    //Return current flash status
-    self.getStatus = function(init)
-    {
-        return rpcService.sendCommand('getflashstatus')
-            .then(function(resp) {
-                self.status = resp.data;
-
-                //launch watcher if process is running
-                if( init===true && self.status.status!=0 )
-                {
-                    self.watchStatus();
-                }
-            });
-    };
-
-   
-    //Get flashable drives
-    self.refreshDrives = function()
-    {
-        return rpcService.sendCommand('getflashdrives')
-            .then(function(resp) {
-                self.drives = resp.data;
-                self.noDrive = self.drives.length===0;
-            });
-    };
-
-    //Get isos
-    self.refreshIsos = function()
-    {
-        return rpcService.sendCommand('getisos')
-            .then(function(resp) {
-                self.isos = resp.data.isos;
-                self.noCleepIso = resp.data.cleepIsos===0;
-                self.noRaspbianIso = resp.data.raspbianIsos===0;
-                self.raspbian = resp.data.raspbian;
-            });
-    };
-
-    //Get status every 1 seconds
-    self.watchStatus = function()
-    {
-        $timeout(function() {
-            self.getStatus();
-        }, 1000)
-            .then(function() {
-                //launch again getstatus until end of flash process
-                if( self.status.status<5 )
-                {
-                    self.watchStatus();
-                }
-            });
-    };
-
-    //Start flash process
-    self.startFlash = function()
-    {     
-        //check values
-        if( !self.selectedIso || !self.selectedDrive )
-        {
-            toast.error('Please select a Cleep version and a drive');
-            return;
-        }
-        
-        confirm.open('Confirm installation?', 'Installation will erase all drive content. This operation cannot be reversed!', 'Yes, install Cleep', 'No')
-            .then(function() {
-                var data = {
-                    uri: self.selectedIso,
-                    drive: self.selectedDrive
-                };
-                rpcService.sendCommand('startflash', data)
-                    .then(function() {
-                        toast.info('Installation started')
-                        self.watchStatus();
-                    });
-            });
-    };
-
-    //Cancel flash process
-    self.cancelFlash = function()
-    {
-        //check if process is running
-        if( self.status && self.status.status>=5 )
-        {
-            return;
-        }
-
-        if( self.status && (self.status.status===1 || self.status.status===2) )
-        {
-            confirm.open('Cancel installation?', null, 'Yes', 'No')
-                .then(function() {
-                    rpcService.sendCommand('cancelflash')
-                        .then(function() {
-                            toast.info('Installation canceled');
-                        });
-                });
-        }
-        else if( self.status && (self.status.status===3 || self.status.status===4) )
-        {
-            confirm.open('Cancel installation?', 'Canceling installation during this step of process makes your removable media unusable until next installation.', 'Yes, I want to cancel', 'No, I don\'t want')
-                .then(function() {
-                    rpcService.sendCommand('cancelflash')
-                        .then(function() {
-                            toast.info('Installation canceled');
-                        });
-                });
-        }
-    };
-
-    //init controller
-    self.getStatus(true);
-};
-Cleep.controller('easyInstallController', ['$rootScope', '$scope', 'rpcService', '$timeout', 'toastService', 'confirmService', '$filter', easyInstallController]);*/
-
 

@@ -178,9 +178,9 @@ function createMenu()
         label: 'Device',
         submenu: [
             {
-                label: 'Easy install',
+                label: 'Automatic install',
                 click: () => {
-                    mainWindow.webContents.send('openPage', 'installEasy');
+                    mainWindow.webContents.send('openPage', 'installAuto');
                 }
             }, {
                 label: 'Manual install',

@@ -45,7 +45,7 @@
                             <span ng-if="ctl.status.cleepstatus===2">Installing update</span>
                         </div>
                         <div ng-if="ctl.status.cleepstatus===1 || ctl.status.cleepstatus===2" flex>
-                            <md-progress-linear md-mode="determinate" value="{{ctl.status.cleepdownloadpercent}}"></md-progress-linear>
+                            <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.status.cleepdownloadpercent}}"></md-progress-linear>
                         </div>
                         <div ng-if="ctl.status.cleepstatus===4" flex>
                             <span>Last update attemps failed (</span>
@@ -65,7 +65,7 @@
                             <span ng-if="ctl.status.etcherstatus===2">Installing update</span>
                         </div>
                         <div ng-if="ctl.status.etcherstatus===1 || ctl.status.etcherstatus===2" flex>
-                            <md-progress-linear md-mode="determinate" value="{{ctl.status.etcherdownloadpercent}}"></md-progress-linear>
+                            <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.status.etcherdownloadpercent}}"></md-progress-linear>
                         </div>
                         <div ng-if="ctl.status.etcherstatus===4" flex>
                             <span>Last update attemps failed (</span>

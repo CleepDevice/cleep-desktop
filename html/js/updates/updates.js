@@ -18,6 +18,10 @@ var updatesController = function($rootScope, $scope, cleepService, toast)
                 {
                     toast.info('No update available');
                 }
+                else
+                {
+                    toast.sucess('Update available');
+                }
                 self.status.lastcheck = resp.data.lastcheck;
             })
             .finally(function() {
@@ -37,8 +41,10 @@ var updatesController = function($rootScope, $scope, cleepService, toast)
 
     //handle updates update
     $rootScope.$on('updates', function(event, data) {
-        console.log('updates received', data);
-        self.status = data;
+        if( data )
+        {
+            self.status = data;
+        }
     });
 
 };

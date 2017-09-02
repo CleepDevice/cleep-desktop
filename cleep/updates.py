@@ -156,6 +156,7 @@ class Updates(Thread):
         Start update process. Does nothing until check_updates is called and trigger update if necessary
         """
         self.running = True
+        auto_update = True
         self.logger.debug('Updates thread started')
 
         #check updates at startup
@@ -205,11 +206,11 @@ class Updates(Thread):
 
             #auto check for updates at noon
             now = datetime.datetime.now()
-            if !auto_update and now.hour==12 and now.minute==0:
+            if not auto_update and now.hour==12 and now.minute==0:
                 auto_update = True
                 self.logger.debug('Auto-update triggered')
                 self.check_updates()
-            elif now.hour==12 and now.minute=1:
+            elif now.hour==12 and now.minute==1:
                 auto_update = False
 
             #release CPU
