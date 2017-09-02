@@ -156,6 +156,11 @@ function createMenu()
         label: 'File',
         submenu: [
             {
+                label: 'Updates',
+                click: () => {
+                    mainWindow.webContents.send('openPage', 'updates');
+                }
+            }, {
                 label: 'Preferences',
                 click: () => {
                     mainWindow.webContents.send('openPage', 'preferences');
@@ -188,11 +193,6 @@ function createMenu()
         label: 'Help',
         submenu: [
             {
-                label: 'Updates',
-                click: () => {
-                    mainWindow.webContents.send('openPage', 'updates');
-                }
-            }, {
                 label: 'About',
                 click: () => {
                     mainWindow.webContents.send('openPage', 'about');
