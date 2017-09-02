@@ -209,7 +209,12 @@ function createMenu()
 function createWindow ()
 {
     // Create the browser window.
-    mainWindow = new BrowserWindow({width:800, height:600, icon:__dirname+'/resources/256x256.png'})
+    mainWindow = new BrowserWindow({
+        width:800,
+        height:600,
+        icon:__dirname+'/resources/256x256.png',
+        title:'CleepDesktop'
+    })
     mainWindow.maximize();
 
     // handle external url
