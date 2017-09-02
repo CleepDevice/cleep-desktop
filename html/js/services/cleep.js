@@ -24,7 +24,7 @@ var cleepService = function($http, $q, $rootScope, $location, toast, $interval) 
      * Connect to cleep websocket
      */
     self.__cleepWebSocket = function() {
-        if( !self.__ws || self.__ws.readyState!==1 )
+        if( !self.__ws /*|| self.__ws.readyState!==1*/ )
         {
             //create websocket
             //self.__ws = new WebSocket('ws://localhost:'+self.port+'/cleepws');
