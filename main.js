@@ -115,7 +115,7 @@ function createConfig()
     }
     if( !settings.has('cleep.locale') )
     {
-        settings.set('cleep.local', DEFAULT_LOCALE);
+        settings.set('cleep.locale', DEFAULT_LOCALE);
     }
     if( !settings.has('cleep.debug') )
     {
