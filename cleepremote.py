@@ -22,7 +22,7 @@ if mode=='debug':
     debug = True
 
 #real cleepremote path
-real_path = os.path.dirname(sys.argv[0]) 
+real_path = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 #get rpc application
 app = rpcserver.get_app(real_path, config_path, config_filename, debug)
