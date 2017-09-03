@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 import Cleep
  
 setup(
-    name = 'pycleep',
+    name = 'cleepremote',
     version = cleep.__version__,
     packages = find_packages(),
     author = 'Tanguy Bonneau',

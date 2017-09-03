@@ -2,29 +2,51 @@
 
 #env
 CURRENTPATH=`pwd`
+CLEEPDESKTOPPATH=build/cleepdesktop_tree
 
 #clear previous process
-rm -rf dist/
-rm -rf build/
+/bin/rm -rf dist/
+/bin/rm -rf build/
+
+#create dirs
+/bin/mkdir -p "$CLEEPDESKTOPPATH"
+/bin/mkdir dist
 
 #pyinstaller
 echo
-echo "Pyinstaller cleepremote..."
+echo "Packaging cleepremote..."
+echo "------------------------"
 /usr/local/bin/pyinstaller --clean --noconfirm --noupx --windowed --debug --log-level INFO cleepremote.spec
-/bin/mv dist/cleepremote .
+/bin/mv dist/cleepremote "$CLEEPDESKTOPPATH"
+
+#copy files and dirs
+echo
+echo "Copying release files..."
+echo "------------------------"
+/bin/cp -a html "$CLEEPDESKTOPPATH"
+/bin/cp -a LICENCE.txt "$CLEEPDESKTOPPATH"
+/bin/cp -a main.js "$CLEEPDESKTOPPATH"
+/bin/cp -a package.json "$CLEEPDESKTOPPATH"
+/bin/cp -a README.md "$CLEEPDESKTOPPATH"
+/bin/cp -a resources "$CLEEPDESKTOPPATH"
+/bin/cp -a scripts "$CLEEPDESKTOPPATH"
 
 #electron-builder
 echo
 echo "Packaging cleepdesktop..."
-/usr/bin/electron-builder --linux --x64
+echo "-------------------------"
+/usr/bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH"
 
 #cleaning
 echo
-echo "Cleaning..."
+echo "Finalizing..."
+echo "-------------"
+/bin/sleep 1
+/bin/mv "./$CLEEPDESKTOPPATH/dist" .
 /bin/rm -rf build
-/bin/rm -rf cleepremote
 /bin/rm -rf __pycache__
 /bin/rm -rf cleep/__pycache__
+/bin/rm -rf cleep/libs/__pycache__
 
-echo
 echo "Done"
+
