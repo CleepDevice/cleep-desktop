@@ -47,6 +47,8 @@ class Lsblk():
                     #drive properties
                     partition = True
                     model = None
+                    total_size = 0
+                    current_drive = None
                     if groups[3].find('disk')!=-1:
                         current_drive = name
                         model = groups[9]
@@ -95,9 +97,10 @@ class Lsblk():
                     }
 
                     #save device
-                    if current_drive not in devices:
-                        devices[current_drive] = {}
-                    devices[current_drive][name] = device
+                    if current_drive:
+                        if current_drive not in devices:
+                            devices[current_drive] = {}
+                        devices[current_drive][name] = device
 
                     #partition
                     if partition:
