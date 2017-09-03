@@ -8,6 +8,7 @@ import time
 import os
 import hashlib
 import platform
+import tempfile
 
 class Download():
     """
@@ -31,6 +32,7 @@ class Download():
         self.logger.setLevel(logging.DEBUG)
 
         #members
+        self.temp_dir = tempfile.gettempdir()
         self.download = None
         self.__cancel = False
         self.status_callback = status_callback
@@ -49,12 +51,12 @@ class Download():
         """
         Remove all files that stay from previous processes
         """
-        for root, dirs, dls in os.walk('/tmp'):
+        for root, dirs, dls in os.walk(self.temp_dir):
             for dl in dls:
                 if os.path.basename(dl).startswith(self.TMP_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded file: %s' % dl)
                     try:
-                        os.remove(os.path.join('/tmp', dl))
+                        os.remove(os.path.join(self.temp_dir, dl))
                     except:
                         pass
 
@@ -123,7 +125,7 @@ class Download():
             string: downloaded filepath (temp filename, it will be deleted during next download)
         """
         #prepare iso
-        self.download = '/tmp/%s_%s' % (self.TMP_FILE_PREFIX, str(uuid.uuid4()))
+        self.download = os.path.join(self.temp_dir, '%s_%s' % (self.TMP_FILE_PREFIX, str(uuid.uuid4())))
         self.logger.debug('File will be saved to "%s"' % self.download)
         download = None
         try:

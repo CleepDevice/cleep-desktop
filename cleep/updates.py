@@ -37,6 +37,8 @@ class Updates(Thread):
     ETCHER_RELEASES = 'https://api.github.com/repos/resin-io/etcher/releases'
 
     INSTALL_ETCHER_COMMAND_LINUX = '%s/scripts/install_etcher.linux %s %s'
+    INSTALL_ETCHER_COMMAND_WINDOWS = '%s\\scripts\\install_etcher.windows.bat %s %s'
+    INSTALL_ETCHER_COMMAND_MAC = 'TODO'
 
     STATUS_IDLE = 0
     STATUS_DOWNLOADING = 1
@@ -54,6 +56,8 @@ class Updates(Thread):
 
         #members
         self.real_path = real_path
+        if len(self.real_path)==0:
+            self.real_path = '.'
         self.update_callback = update_callback
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.running = True
@@ -71,6 +75,10 @@ class Updates(Thread):
         self.cleep_status = self.STATUS_IDLE
         self.cleep_download_status = Download.STATUS_IDLE
         self.cleep_download_percent = 0
+        
+        #running env
+        self.env = platform.system().lower()
+        self.arch64 = platform.machine().endswith('64')
 
         self.last_update = 0
 
@@ -226,18 +234,16 @@ class Updates(Thread):
             tuple (string, string, int): release filename, release url (ready to download) and filesize (in bytes)
         """
         #get environment and architecture
-        env = platform.system().lower()
-        arch64 = platform.machine().endswith('64')
         pattern = None
-        if env=='linux':
+        if self.env=='linux':
             pattern = 'linux-x86'
-            if arch64:
+            if self.arch64:
                 pattern = 'linux-x64'
-        elif env=='darwin':
+        elif self.env=='darwin':
             pattern = 'darwin'
-        elif env=='windows':
+        elif self.env=='windows':
             pattern = 'win32-x86'
-            if arch64:
+            if self.arch64:
                 pattern = 'win32-x64'
         self.logger.debug('Search release using pattern: %s' % pattern)
 
@@ -346,14 +352,20 @@ class Updates(Thread):
             bool: True if install succeed, False otherwise
         """
         #prepare command
-        command = self.INSTALL_ETCHER_COMMAND_LINUX % (self.real_path, archive_path, self.real_path)
+        command = None
+        if self.env=='linux':
+            command = self.INSTALL_ETCHER_COMMAND_LINUX % (self.real_path, archive_path, self.real_path)
+        elif self.env=='darwin':
+            command = self.INSTALL_ETCHER_COMMAND_MAC % (self.real_path, archive_path, self.real_path)
+        elif self.env=='windows':
+            command = self.INSTALL_ETCHER_COMMAND_WINDOWS % (self.real_path, archive_path, self.real_path)
         self.logger.debug('Command executed to install etcher: %s' % command)
 
         #execute command
         c = Console()
         resp = c.command(command, 10.0)
         if resp['error'] or resp['killed']:
-            self.logger.error('Unable to install etcher-cli: %s' % resp['stdout']+resp['stderr'])
+            self.logger.error('Unable to install etcher-cli: %s' % (resp['stdout'] + resp['stderr']))
             return False
 
         return True

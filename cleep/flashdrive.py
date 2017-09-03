@@ -15,6 +15,7 @@ import hashlib
 import platform
 import re
 import requests
+import tempfile
 
 class FlashDrive(Thread):
     """
@@ -61,6 +62,7 @@ class FlashDrive(Thread):
         self.logger.debug('Etcher command line: %s' % self.etcher_cmd)
 
         #members
+        self.temp_dir = tempfile.gettempdir()
         self.update_callback = update_callback
         self.lsblk = Lsblk()
         self.udevadm = Udevadm()
@@ -152,12 +154,12 @@ class FlashDrive(Thread):
         """
         Remove all files that stay from previous processes
         """
-        for root, dirs, cleeps in os.walk('/tmp'):
+        for root, dirs, cleeps in os.walk(self.temp_dir):
             for cleep in cleeps:
                 if os.path.basename(cleep).startswith(self.TMP_FILE_PREFIX):
                     self.logger.debug('Purge existing iso file: %s' % cleep)
                     try:
-                        os.remove(os.path.join('/tmp', cleep))
+                        os.remove(os.path.join(self.temp_dir, cleep))
                     except:
                         pass
 
@@ -549,7 +551,7 @@ class FlashDrive(Thread):
             return False
 
         #prepare iso
-        self.iso = '/tmp/%s_%s' % (self.TMP_FILE_PREFIX, str(uuid.uuid4()))
+        self.iso = os.path.join(self.temp_dir, '%s_%s' % (self.TMP_FILE_PREFIX, str(uuid.uuid4())))
         self.logger.debug('Iso file will be saved to "%s"' % self.iso)
         iso = None
         try:

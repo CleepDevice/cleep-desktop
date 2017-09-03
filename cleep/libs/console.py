@@ -160,6 +160,9 @@ class Console():
         self.timer = None
         self.__callback = None
         self.encoding = sys.getfilesystemencoding()
+        self.console_encoding = 'utf-8'
+        if sys.platform == 'win32':
+            self.console_encoding = 'cp850'
 
     def __del__(self):
         """
@@ -178,7 +181,7 @@ class Console():
         Results:
             list: input list of lines with eol removed
         """
-        return [line.decode('utf-8').rstrip() for line in lines]
+        return [line.decode(self.console_encoding).encode('utf-8').rstrip() for line in lines]
 
     def command(self, command, timeout=2.0):
         """
@@ -200,7 +203,7 @@ class Console():
         #check params
         if timeout is None or timeout<=0.0:
             raise Exception(u'Timeout is mandatory and must be greater than 0')
-
+        
         #launch command
         p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
         pid = p.pid
