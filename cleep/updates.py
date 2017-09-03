@@ -44,7 +44,7 @@ class Updates(Thread):
     STATUS_DONE = 3
     STATUS_ERROR = 4
 
-    def __init__(self, cleep_version, etcher_version, update_callback):
+    def __init__(self, real_path, cleep_version, etcher_version, update_callback):
         Thread.__init__(self)
         Thread.daemon = True
 
@@ -53,6 +53,7 @@ class Updates(Thread):
         self.logger.setLevel(logging.DEBUG)
 
         #members
+        self.real_path = real_path
         self.update_callback = update_callback
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.running = True
@@ -72,10 +73,6 @@ class Updates(Thread):
         self.cleep_download_percent = 0
 
         self.last_update = 0
-
-        #cleep path
-        self.cleep_path = os.getcwd()
-        self.logger.debug('Cleep-desktop is installed in "%s"' % self.cleep_path)
 
     def stop(self):
         """
@@ -338,18 +335,18 @@ class Updates(Thread):
             'lastcheck': self.last_check
         }
 
-    def __update_etcher(self, filepath):
+    def __update_etcher(self, archive_path):
         """
         Update etcher software
 
         Args:
-            filepath (string): etcher archive file path
+            archive_path (string): etcher archive file path
 
         Returns:
             bool: True if install succeed, False otherwise
         """
         #prepare command
-        command = self.INSTALL_ETCHER_COMMAND_LINUX % (self.cleep_path, filepath, self.cleep_path)
+        command = self.INSTALL_ETCHER_COMMAND_LINUX % (self.real_path, archive_path, self.real_path)
         self.logger.debug('Command executed to install etcher: %s' % command)
 
         #execute command

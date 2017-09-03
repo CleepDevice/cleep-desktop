@@ -29,7 +29,7 @@ echo "------------------------"
 /bin/cp -a package.json "$CLEEPDESKTOPPATH"
 /bin/cp -a README.md "$CLEEPDESKTOPPATH"
 /bin/cp -a resources "$CLEEPDESKTOPPATH"
-/bin/cp -a scripts "$CLEEPDESKTOPPATH"
+echo "Done"
 
 #electron-builder
 echo

@@ -3,10 +3,11 @@
 
 from cleep import rpcserver
 import sys
+import os
 
 #parameters
-if len(sys.argv)!=3:
-    print('Missing parameter. Usage: cleepremote <rpcport> <configpath>')
+if len(sys.argv)!=5:
+    print('Missing parameter. Usage: cleepremote <rpcport> <config path> <config filename> <debug|release>')
     sys.exit(2)
 try:
     rpcport = int(sys.argv[1])
@@ -14,10 +15,17 @@ except:
     print('Invalid parameter rpcport: integer awaited')
     sys.exit(1)
 config_path = sys.argv[2]
+config_filename = sys.argv[3]
+mode = sys.argv[4]
+debug = False
+if mode=='debug':
+    debug = True
+
+#real cleepremote path
+real_path = os.path.dirname(sys.argv[0]) 
 
 #get rpc application
-debug = True
-app = rpcserver.get_app(config_path, debug)
+app = rpcserver.get_app(real_path, config_path, config_filename, debug)
 
 #start rpc server
 rpcserver.logger.debug('Serving files from "%s" folder.' % rpcserver.HTML_DIR)

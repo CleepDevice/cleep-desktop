@@ -42,13 +42,14 @@ __all__ = ['app']
 #constants
 BASE_DIR = ''
 HTML_DIR = os.path.join(BASE_DIR, 'html')
+ETCHER_DIR = 'etcher-cli'
 
 #globals
 logger = None
 app = bottle.app()
 server = None
 config = None
-config_path = None
+config_file = None
 config_lock = Lock()
 flashdrive = None
 devices = None
@@ -90,24 +91,24 @@ def save_config(config):
     Returns:
         bool: True if file successfully saved, False otherwise
     """
-    global config_path
+    global config_file
     force_reload = False
     out = False
 
     #check if module have config file
-    if config_path is None:
+    if config_file is None:
         logger.error(u'Config filepath not set. Unable to save configuration')
         return False
 
     config_lock.acquire(True)
     try:
-        f = open(config_path, u'w')
+        f = open(config_file, u'w')
         f.write(json.dumps(config))
         f.close()
         force_reload = True
         out = True
     except:
-        logger.exception(u'Unable to write config file %s:' % config_path)
+        logger.exception(u'Unable to write config file %s:' % config_file)
     config_lock.release()
 
     if force_reload:
@@ -123,28 +124,28 @@ def load_config():
     Returns:
         dict: configuration file content or None if error occured.
     """
-    global config_path, config
+    global config_file, config
 
     #check if module have config file
-    if config_path is None:
+    if config_file is None:
         logger.error(u'Config filepath not set. Unable to load configuration')
         return None
 
     config_lock.acquire(True)
     out = None
     try:
-        logger.debug(u'Loading conf file %s' % config_path)
-        if os.path.exists(config_path):
-            f = open(config_path, u'r')
+        logger.debug(u'Loading conf file %s' % config_file)
+        if os.path.exists(config_file):
+            f = open(config_file, u'r')
             raw = f.read()
             f.close()
             config = json.loads(raw)
             out = config
         else:
             #no conf file yet
-            logger.warning('No config file found at "%s"' % config_path)
+            logger.warning('No config file found at "%s"' % config_file)
     except:
-        logger.exception(u'Unable to load config file %s:' % config_path)
+        logger.exception(u'Unable to load config file %s:' % config_file)
     config_lock.release()
 
     return out
@@ -187,27 +188,32 @@ def updates_update(updates):
     current_updates = updates
     last_updates_update = time.time()
 
-def get_app(config_path_, debug_enabled):
+def get_app(real_path, config_path, config_filename, debug_enabled):
     """
     Return web server instance
 
     Args:
-        config_path_ (string): configuration file path
+        real_path (string): real application path
+        config_path (string): configuration path
+        config_filename (string): configuration filename
         debug_enabled (bool): True if debug enabled
 
     Returns:
         object: bottle instance
     """
-    global logger, app, config, config_path, flashdrive, devices, updates
+    global logger, app, config, config_file, flashdrive, devices, updates
 
     #logging
-    logging.basicConfig(level=logging.WARNING, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
-    logger = logging.getLogger('RpcServer')
     if debug_enabled:
-        logger.setLevel(logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
+    else:
+        logging.basicConfig(level=logging.DEBUG, filename=os.path.join(config_path, 'cleepremote.log'), format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
+    logger = logging.getLogger('RpcServer')
+
+    logger.debug('Real cleepremote path: %s' % real_path)
 
     #load config
-    config_path = config_path_
+    config_file = os.path.join(config_path, config_filename)
     load_config()
     logger.debug('Config: %s' % config)
 
@@ -219,8 +225,14 @@ def get_app(config_path_, debug_enabled):
     devices = Devices(devices_update)
     devices.start()
 
+    #check etcher dir
+    etcher_version = config['etcher']['version']
+    if not os.path.exists(os.path.join(real_path, ETCHER_DIR)):
+        logger.info('Etcher-cli not found')
+        etcher_version = None
+
     #launch updates process
-    updates = Updates(config['cleep']['version'], config['etcher']['version'], updates_update)
+    updates = Updates(real_path, config['cleep']['version'], etcher_version, updates_update)
     updates.start()
 
     return app

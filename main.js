@@ -233,7 +233,7 @@ function createWindow ()
     // Open the DevTools in dev mode only
     if( isDev )
     {
-        require('devtron').install();
+        //require('devtron').install();
         mainWindow.webContents.openDevTools();
     }
 
@@ -257,8 +257,10 @@ function launchCleepremote()
     }
 
     //get config file path
-    var configPath = settings.file();
-    log.debug('Config path: '+configPath);
+    var configFile = settings.file();
+    log.debug('Config path: '+configFile);
+    var configPath = path.dirname(configFile);
+    var configFilename = path.basename(configFile);
 
     if( !isDev )
     {
@@ -266,16 +268,16 @@ function launchCleepremote()
         log.debug('Launch release mode');
         let commandline = path.join(__dirname, 'cleepremote/cleepremote');
         let port = settings.get('remote.rpcport');
-        log.debug('Cleepremote commandline: '+commandline+' ' + port + ' ' + configPath);
-        cleepremoteProcess = require('child_process').spawn(commandline, [port, configPath]);
+        log.debug('Cleepremote commandline: '+commandline+' ' + port + ' ' + configPath + ' ' + configFilename + ' release');
+        cleepremoteProcess = require('child_process').spawn(commandline, [port, configPath, configFilename, 'release']);
     }
     else
     {
         //launch dev
         log.debug('Launch development mode');
         let port = settings.get('remote.rpcport');
-        log.debug('Cleepremote commandline: python3 cleepremote.py ' + port + ' ' + configPath);
-        cleepremoteProcess = require('child_process').spawn('python3', ['cleepremote.py', port, configPath]);
+        log.debug('Cleepremote commandline: python3 cleepremote.py ' + port + ' ' + configPath + ' ' + configFilename + ' debug');
+        cleepremoteProcess = require('child_process').spawn('python3', ['cleepremote.py', port, configPath, configFilename, 'debug']);
     }
 };
 
