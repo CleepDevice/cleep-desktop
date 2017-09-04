@@ -45,7 +45,12 @@
       "depends": []
     },
     "win": {
-        "target": "nsis"
+      "icon": "resources/icon",
+      "target": "nsis"
+    },
+    "nsis": {
+      "menuCategory": "Cleep",
+      "shortcutName": "CleepDesktop"
     }
   }
 }
