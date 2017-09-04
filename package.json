@@ -16,9 +16,9 @@
   "author": "Tanguy Bonneau",
   "license": "GPLv3",
   "devDependencies": {
-    "electron": "~1.6.2",
     "devtron": "~1.4.0",
-    "electron-builder": "~19.27.3"
+    "electron": "~1.6.2",
+    "electron-builder": "^19.27.3"
   },
   "dependencies": {
     "electron-log": "^2.2.7",
@@ -29,10 +29,20 @@
     "productName": "CleepDesktop",
     "asar": false,
     "linux": {
-      "icon": "resources/256x256.png",
-      "target": "tar.gz",
+      "icon": "resources/",
+      "target": [
+        "tar.gz",
+        "deb"
+      ],
       "category": "Network",
       "executableName": "cleepdesktop"
+    },
+    "deb": {
+      "icon": "resources/256x256.png",
+      "maintainer": "Tanguy Bonneau <tanguy.bonneau@gmail.com>",
+      "packageCategory": "misc",
+      "priority": "optional",
+      "depends": []
     }
   }
 }
