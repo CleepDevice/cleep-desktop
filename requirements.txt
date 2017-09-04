@@ -3,3 +3,4 @@ gevent==1.2.2
 bottle==0.12.13
 gevent-websocket==0.10.1
 requests==2.18.4
+PyInstaller>=3.2
