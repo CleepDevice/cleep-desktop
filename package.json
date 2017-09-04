@@ -43,6 +43,9 @@
       "packageCategory": "misc",
       "priority": "optional",
       "depends": []
+    },
+    "win": {
+        "target": "nsis"
     }
   }
 }
