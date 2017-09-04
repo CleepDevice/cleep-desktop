@@ -181,7 +181,7 @@ class Console():
         Results:
             list: input list of lines with eol removed
         """
-        return [line.decode(self.console_encoding).encode('utf-8').rstrip() for line in lines]
+        return [line.decode(self.console_encoding).rstrip() for line in lines]
 
     def command(self, command, timeout=2.0):
         """
