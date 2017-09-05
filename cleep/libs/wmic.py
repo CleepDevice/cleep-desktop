@@ -32,7 +32,6 @@ class Wmic():
             return
 
         res = self.console.command(u'wmic logicaldisk get volumename,description,size,drivetype,caption,freespace')
-        print(res)
         devices = {}
         if not res[u'error'] and not res[u'killed']:
         
@@ -40,7 +39,6 @@ class Wmic():
             matches = re.finditer(r'^(.*?:)\s+(.*?)\s+(\d)\s+(\d+)\s+(\d+)\s+(.*?)$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
             for matchNum, match in enumerate(matches):
                 groups = match.groups()
-                print(groups)
                 if len(groups)==6:
                     #fields
                     field_caption = groups[0]

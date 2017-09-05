@@ -5,6 +5,7 @@ import logging
 from threading import Thread
 from cleep.libs.console import EndlessConsole
 from cleep.libs.lsblk import Lsblk
+from cleep.libs.wmic import Wmic
 from cleep.libs.udevadm import Udevadm
 import urllib3
 import uuid
@@ -38,7 +39,7 @@ class FlashDrive(Thread):
     STATUS_ERROR_BADCHECKSUM = 9
 
     ETCHER_LINUX = '/etc/cleep/etcher-cli/etcher-cli.linux %s %s'
-    ETCHER_WINDOWS = 'TODO'
+    ETCHER_WINDOWS = '/etc/cleep/etcher-cli/etcher-cli.windows.bat %s %s'
     ETCHER_MAC = 'TODO'
 
     RASPBIAN_URL = 'http://downloads.raspberrypi.org/raspbian/images/'
@@ -433,17 +434,16 @@ class FlashDrive(Thread):
             #fill flashable drives list
             flashables = []
             for drive in drives:
-                if drive['removable']:
+                if drives[drive]['removable']:
                     #get human readble name for drive
-                    model = drive['name'].strip()
+                    model = drives[drive]['name'].strip()
                     if len(model)==0:
-                        model = drive['drivemodel']
-                    model = '%s (%s)' % (model, drive['mountpoint'])
-                    
+                        model = drives[drive]['drivemodel']
+                   
                     #save entry
                     flashables.append({
                         'model': model,
-                        'path': '/dev/%s' % drive['mountpoint']
+                        'path': '%s' % drives[drive]['mountpoint']
                     })
         
         elif self.env=='linux':
