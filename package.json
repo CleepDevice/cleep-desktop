@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron ."
   },
-  "repository": "https://bitbucket.org/Tangb/cleep-desktop",
+  "repository": "https://bitbucket.org/Tangb/CleepDesktop",
   "keywords": [
     "cleep",
     "rasperrypi",
