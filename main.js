@@ -25,6 +25,7 @@ const settings = require('electron-settings');
 const path = require('path')
 const url = require('url')
 const log = require('electron-log')
+const detectPort = require('detect-port');
 
 //variables
 var cleepremotePath = path.join(__dirname, 'cleepremote');
@@ -248,7 +249,7 @@ function createWindow ()
 };
 
 // Launch cleepremote python application
-function launchCleepremote()
+function launchCleepremote(rpcport)
 {
     if( cleepremoteDisabled )
     {
@@ -267,17 +268,15 @@ function launchCleepremote()
         //launch release
         log.debug('Launch release mode');
         let commandline = path.join(__dirname, 'cleepremote/cleepremote');
-        let port = settings.get('remote.rpcport');
-        log.debug('Cleepremote commandline: '+commandline+' ' + port + ' ' + configPath + ' ' + configFilename + ' release');
-        cleepremoteProcess = require('child_process').spawn(commandline, [port, configPath, configFilename, 'release']);
+        log.debug('Cleepremote commandline: '+commandline+' ' + rpcport + ' ' + configPath + ' ' + configFilename + ' release');
+        cleepremoteProcess = require('child_process').spawn(commandline, [rpcport, configPath, configFilename, 'release']);
     }
     else
     {
         //launch dev
         log.debug('Launch development mode');
-        let port = settings.get('remote.rpcport');
-        log.debug('Cleepremote commandline: python3 cleepremote.py ' + port + ' ' + configPath + ' ' + configFilename + ' debug');
-        cleepremoteProcess = require('child_process').spawn('python3', ['cleepremote.py', port, configPath, configFilename, 'debug']);
+        log.debug('Cleepremote commandline: python3 cleepremote.py ' + rpcport + ' ' + configPath + ' ' + configFilename + ' debug');
+        cleepremoteProcess = require('child_process').spawn('python3', ['cleepremote.py', rpcport, configPath, configFilename, 'debug']);
     }
 };
 
@@ -285,11 +284,27 @@ function launchCleepremote()
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', function() {
+    //parse command line arguments
     parseArgs();
+
+    //fill configuration file
     createConfig();
-    createWindow();
-    createMenu();
-    launchCleepremote();
+    
+    //detect available port
+    detectPort(null, (err, rpcport) => {
+        if( err )
+        {
+            log.error('Error detecting available port:', err);
+        }
+
+        //save rpcport to config to be used in js app
+        settings.set('remote.rpcport', rpcport);
+
+        //launch application
+        createWindow();
+        createMenu();
+        launchCleepremote(rpcport);
+    });
 });
 
 // Quit when all windows are closed.
