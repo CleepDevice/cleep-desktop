@@ -3,7 +3,7 @@
 block_cipher = None
 
 a = Analysis(['cleepremote.py'],
-             pathex=['/home/tbonneau/cleep-desktop.electron'],
+             pathex=[],
              binaries=[],
              datas=[('cleep', 'cleep'), ('scripts', 'scripts')],
              hiddenimports=[],
