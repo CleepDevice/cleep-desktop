@@ -290,21 +290,36 @@ app.on('ready', function() {
     //fill configuration file
     createConfig();
     
-    //detect available port
-    detectPort(null, (err, rpcport) => {
-        if( err )
-        {
-            log.error('Error detecting available port:', err);
-        }
-
+    if( isDev )
+    {
+        //use static rpc port in development mode
+        
         //save rpcport to config to be used in js app
-        settings.set('remote.rpcport', rpcport);
+        settings.set('remote.rpcport', DEFAULT_RPCPORT);
 
         //launch application
         createWindow();
         createMenu();
-        launchCleepremote(rpcport);
-    });
+        launchCleepremote(DEFAULT_RPCPORT);
+    }
+    else
+    {
+        //detect available port
+        detectPort(null, (err, rpcport) => {
+            if( err )
+            {
+                log.error('Error detecting available port:', err);
+            }
+
+            //save rpcport to config to be used in js app
+            settings.set('remote.rpcport', rpcport);
+
+            //launch application
+            createWindow();
+            createMenu();
+            launchCleepremote(rpcport);
+        });
+    }
 });
 
 // Quit when all windows are closed.
