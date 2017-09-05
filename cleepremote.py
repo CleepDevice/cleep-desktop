@@ -21,11 +21,11 @@ debug = False
 if mode=='debug':
     debug = True
 
-#real cleepremote path
-real_path = os.path.abspath(os.path.dirname(sys.argv[0]))
+#absolute cleepremote path
+abs_path = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 #get rpc application
-app = rpcserver.get_app(real_path, config_path, config_filename, debug)
+app = rpcserver.get_app(abs_path, config_path, config_filename, debug)
 
 #start rpc server
 rpcserver.logger.debug('Serving files from "%s" folder.' % rpcserver.HTML_DIR)

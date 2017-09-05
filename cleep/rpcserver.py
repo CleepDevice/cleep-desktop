@@ -188,12 +188,12 @@ def updates_update(updates):
     current_updates = updates
     last_updates_update = time.time()
 
-def get_app(real_path, config_path, config_filename, debug_enabled):
+def get_app(abs_path, config_path, config_filename, debug_enabled):
     """
     Return web server instance
 
     Args:
-        real_path (string): real application path
+        abs_path (string): absolute application path
         config_path (string): configuration path
         config_filename (string): configuration filename
         debug_enabled (bool): True if debug enabled
@@ -210,7 +210,7 @@ def get_app(real_path, config_path, config_filename, debug_enabled):
         logging.basicConfig(level=logging.DEBUG, filename=os.path.join(config_path, 'cleepremote.log'), format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
     logger = logging.getLogger('RpcServer')
 
-    logger.debug('Real cleepremote path: %s' % real_path)
+    logger.debug('Absolute cleepremote path: %s' % abs_path)
 
     #load config
     config_file = os.path.join(config_path, config_filename)
@@ -227,12 +227,12 @@ def get_app(real_path, config_path, config_filename, debug_enabled):
 
     #check etcher dir
     etcher_version = config['etcher']['version']
-    if not os.path.exists(os.path.join(real_path, ETCHER_DIR)):
+    if not os.path.exists(os.path.join(abs_path, ETCHER_DIR)):
         logger.info('Etcher-cli not found')
         etcher_version = None
 
     #launch updates process
-    updates = Updates(real_path, config['cleep']['version'], etcher_version, updates_update)
+    updates = Updates(abs_path, config['cleep']['version'], etcher_version, updates_update)
     updates.start()
 
     return app

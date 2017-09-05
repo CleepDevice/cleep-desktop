@@ -38,7 +38,7 @@
                     <md-divider></md-divider>
                     <md-list-item layout"row" layout-padding>
                         <div flex="50">
-                            CleepDesktop version {{ctl.status.cleepversion}} is installed
+                            <span>CleepDesktop version {{ctl.status.cleepversion}} is installed</span>
                         </div>
                         <div ng-if="ctl.status.cleepstatus===1 || ctl.status.cleepstatus===2" flex="20" style="text-align:right;">
                             <span ng-if="ctl.status.cleepstatus===1">Downloading update ({{ctl.status.cleepdownloadpercent}}%)</span>
@@ -58,7 +58,8 @@
                     <md-divider></md-divider>
                     <md-list-item layout="row" layout-padding>
                         <div flex="40">
-                            Etcher version {{ctl.status.etcherversion}} is installed
+                            <span ng-if="ctl.status.etcherversion!==null">Etcher version {{ctl.status.etcherversion}} is installed</span>
+                            <span ng-if="ctl.status.etcherversion===null">Etcher is not installed</span>
                         </div>
                         <div ng-if="ctl.status.etcherstatus===1 || ctl.status.etcherstatus===2" flex="20" style="text-align:right;">
                             <span ng-if="ctl.status.etcherstatus===1">Downloading update ({{ctl.status.etcherdownloadpercent}}%)</span>
