@@ -13,6 +13,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         eta: ''
     };
     self.flashing = false;
+    self.refreshingIsos = false;
     self.drives = [];
     self.selectedDrive = null;
     self.isos = [];
@@ -43,12 +44,16 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     //get isos
     self.refreshIsos = function()
     {
+        self.refreshingIsos = true;
         return cleepService.sendCommand('getisos')
             .then(function(resp) {
                 self.isos = resp.data.isos;
                 self.noCleepIso = resp.data.cleepIsos===0;
                 self.noRaspbianIso = resp.data.raspbianIsos===0;
                 self.raspbian = resp.data.raspbian;
+            })
+            .finally(function() {
+                self.refreshingIsos = false;
             });
     };
 

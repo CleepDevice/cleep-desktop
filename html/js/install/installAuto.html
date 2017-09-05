@@ -37,7 +37,7 @@
                         <div>
                             <md-input-container>
                                 <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" ng-disabled="ctl.flashing" required>
-                                    <md-optgroup label="Cleep" ng-if="ctl.isos.length>0">
+                                    <md-optgroup label="Cleep" ng-if="!ctl.refreshingIsos">
                                         <md-option ng-if="ctl.noCleepIso" ng-disabled="true">No Cleep version found</md-option>
                                         <md-option ng-repeat="iso in ctl.isos | filter: {category:'cleep'}" ng-value="iso.url">
                                             {{iso.label}} ({{iso.timestamp | hrDate}})
