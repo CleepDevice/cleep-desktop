@@ -11,10 +11,10 @@ setup(
     packages = find_packages(),
     author = 'Tanguy Bonneau',
     author_email = 'tanguy.bonneau+raspiot@gmail.com',
-    description = 'Manage easily your Cleep devices',
+    description = 'CleepDesktop python core',
     long_description = open('README.md').read(),
     install_requires = open('requirements.txt').readlines(),
     include_package_data = True,
-    url = 'https://bitbucket.org/Tangb/cleep-desktop'
+    url = 'https://bitbucket.org/Tangb/CleepDesktop'
 )
 

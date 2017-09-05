@@ -31,7 +31,7 @@ class UpdateInfos():
 
 class Updates(Thread):
     """
-    Updates manager: it can update etcher-cli and cleep-desktop files
+    Updates manager: it can update etcher-cli and CleepDesktop files
     """
 
     ETCHER_RELEASES = 'https://api.github.com/repos/resin-io/etcher/releases'
@@ -206,7 +206,7 @@ class Updates(Thread):
                 self.__download_etcher = None
 
             if self.__download_cleep:
-                #TODO new cleep-desktop update available
+                #TODO new CleepDesktop update available
                 pass
 
             #auto check for updates at noon
@@ -304,9 +304,9 @@ class Updates(Thread):
 
     def __check_cleepdesktop_updates(self):
         """
-        Check if cleep-desktop updates are available
+        Check if CleepDesktop updates are available
         """
-        #TODO implement cleep-desktop updates as soon as website is available
+        #TODO implement CleepDesktop updates as soon as website is available
         pass
 
     def check_updates(self):

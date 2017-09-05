@@ -118,14 +118,14 @@ var cleepService = function($http, $q, $rootScope, $location, toast, $interval) 
     };
 
     /**
-     * Get cleep-desktop config
+     * Get CleepDesktop config
      */
     self.getConfig = function() {
         return self.send(self.urlCommand, 'getconfig');
     };
 
     /**
-     * Set cleep-desktop config
+     * Set CleepDesktop config
      */
     self.setConfig = function(config) {
         return self.send(self.urlCommand, 'setconfig', {config:config});

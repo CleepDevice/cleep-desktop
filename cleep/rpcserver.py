@@ -277,7 +277,7 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
 
 def get_config():
     """
-    Return cleep-desktop configuration
+    Return CleepDesktop configuration
 
     Return:
         dict: config

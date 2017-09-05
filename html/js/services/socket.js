@@ -217,14 +217,14 @@ var cleepService = function($http, $q, $rootScope, $location, toast, $interval) 
     };
 
     /**
-     * Get cleep-desktop config
+     * Get CleeDesktop config
      */
     self.getConfig = function() {
         return self.send(self.uriConfig);
     };
 
     /**
-     * Set cleep-desktop config
+     * Set cleepDesktop config
      */
     self.setConfig = function(config) {
         return self.send(self.uriConfig, null, {config:config}, 'PUT');
