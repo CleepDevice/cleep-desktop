@@ -18,12 +18,36 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
     }, function(newValue, oldValue) {
         if( Object.keys(newValue).length>0 && Object.keys(oldValue).length>0 )
         {
-            debounce.exec('config', self.setConfig, 500)
-                .then(function() {
-                    //console.log('Config saved');
-                }, function() {})
+            if( self.checkConfig() )
+            {
+                debounce.exec('config', self.setConfig, 500)
+                    .then(function() {
+                        //console.log('Config saved');
+                    }, function() {})
+            }
         }
     }, true);
+
+    //check configuration
+    //@return true if config is valid, false otherwise
+    self.checkConfig = function()
+    {
+        if( self.config )
+        {
+            if( self.config.remote && !self.config.remote.rpcport )
+                return false;
+            if( self.config.proxy && !self.config.proxy.host )
+                return false;
+            if( self.config.proxy && !self.config.proxy.port )
+                return false;
+
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    };
 
     //get configuration
     self.getConfig = function()
