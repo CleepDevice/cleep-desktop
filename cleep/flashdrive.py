@@ -51,20 +51,13 @@ class FlashDrive(Thread):
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
-
-        #get etcher command
-        if platform.system()=='Windows':
-            self.etcher_cmd = self.ETCHER_WINDOWS
-        elif platform.system()=='Linux':
-            self.etcher_cmd = self.ETCHER_LINUX
-        elif platform.system()=='Darwin':
-            self.etcher_cmd = self.ETCHER_MAC
-        self.logger.debug('Etcher command line: %s' % self.etcher_cmd)
-
+        
         #members
+        self.env = platform.system().lower()
         self.temp_dir = tempfile.gettempdir()
         self.update_callback = update_callback
         self.lsblk = Lsblk()
+        self.wmic = Wmic()
         self.udevadm = Udevadm()
         self.console = None
         self.percent = 0
@@ -82,6 +75,15 @@ class FlashDrive(Thread):
         self.timestamp_isos = None
         self.__etcher_output_pattern = r'.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)'
         self.__etcher_output_error = False
+        
+        #get etcher command
+        if self.env=='windows':
+            self.etcher_cmd = self.ETCHER_WINDOWS
+        elif self.env=='linux':
+            self.etcher_cmd = self.ETCHER_LINUX
+        elif self.env=='darwin':
+            self.etcher_cmd = self.ETCHER_MAC
+        self.logger.debug('Etcher command line: %s' % self.etcher_cmd)
 
         #sanity clean
         self.purge_files()
@@ -423,28 +425,50 @@ class FlashDrive(Thread):
                     ...
                 ]
         """
-        #get system drives
-        drives = self.lsblk.get_drives()
-        self.logger.debug('drives=%s' % drives)
+        if self.env=='windows':
+            #get system drives
+            drives = self.wmic.get_drives()
+            self.logger.debug('drives=%s' % drives)
+            
+            #fill flashable drives list
+            flashables = []
+            for drive in drives:
+                if drive['removable']:
+                    #get human readble name for drive
+                    model = drive['name'].strip()
+                    if len(model)==0:
+                        model = drive['drivemodel']
+                    model = '%s (%s)' % (model, drive['mountpoint'])
+                    
+                    #save entry
+                    flashables.append({
+                        'model': model,
+                        'path': '/dev/%s' % drive['mountpoint']
+                    })
+        
+        elif self.env=='linux':
+            #get system drives
+            drives = self.lsblk.get_drives()
+            self.logger.debug('drives=%s' % drives)
 
-        #get drives types
-        flashables = []
-        for drive in drives:
-            device_type = self.udevadm.get_device_type('/dev/%s' % drive)
-            if device_type in (self.udevadm.TYPE_USB, self.udevadm.TYPE_SDCARD):
-                #get readble model
-                model = drives[drive]['drivemodel']
-                if model is None or len(model)==0:
-                    if device_type==self.udevadm.TYPE_USB:
-                        model = 'No model USB'
-                    if device_type==self.udevadm.TYPE_SDCARD:
-                        model = 'No model SD Card'
+            #get drives types
+            flashables = []
+            for drive in drives:
+                device_type = self.udevadm.get_device_type('/dev/%s' % drive)
+                if device_type in (self.udevadm.TYPE_USB, self.udevadm.TYPE_SDCARD):
+                    #get human readble name for drive
+                    model = drives[drive]['drivemodel']
+                    if model is None or len(model)==0:
+                        if device_type==self.udevadm.TYPE_USB:
+                            model = 'No model USB'
+                        if device_type==self.udevadm.TYPE_SDCARD:
+                            model = 'No model SD Card'
 
-                #save entry
-                flashables.append({
-                    'model': model,
-                    'path': '/dev/%s' % drive
-                })
+                    #save entry
+                    flashables.append({
+                        'model': model,
+                        'path': '/dev/%s' % drive
+                    })
 
         return flashables
 
