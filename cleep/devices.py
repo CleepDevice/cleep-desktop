@@ -102,7 +102,14 @@ class Devices(Thread):
     Devices manager: it allows auto device discovering
     """
 
-    def __init__(self, update_callback):
+    def __init__(self, update_callback, crash_report):
+        """
+        Contructor
+
+        Args:
+            update_callback (function): function to call when data need to be pushed to ui
+            crash_report (CrashReport): crash report instance
+        """
         Thread.__init__(self)
         Thread.daemon = True
 
@@ -111,6 +118,7 @@ class Devices(Thread):
         #self.logger.setLevel(logging.DEBUG)
 
         #members
+        self.crash_report = crash_report
         self.running = True
         self.devices = []
         self.update_callback = update_callback

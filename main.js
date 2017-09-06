@@ -9,6 +9,7 @@ const DEFAULT_LOCALE = 'en';
 const DEFAULT_PROXYMODE = 'noproxy';
 const DEFAULT_PROXYHOST = 'localhost';
 const DEFAULT_PROXYPORT = 8080;
+const DEFAULT_CRASHREPORT = true;
 
 //electron
 const electron = require('electron')
@@ -121,6 +122,10 @@ function createConfig()
     if( !settings.has('cleep.debug') )
     {
         settings.set('cleep.debug', DEFAULT_DEBUG);
+    }
+    if( !settings.has('cleep.crashreport') )
+    {
+        settings.set('cleep.crashreport', DEFAULT_CRASHREPORT);
     }
 
     //etcher

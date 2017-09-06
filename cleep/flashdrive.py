@@ -45,7 +45,14 @@ class FlashDrive(Thread):
     RASPBIAN_URL = 'http://downloads.raspberrypi.org/raspbian/images/'
     RASPBIAN_LITE_URL = 'http://downloads.raspberrypi.org/raspbian_lite/images/'
 
-    def __init__(self, update_callback):
+    def __init__(self, update_callback, crash_report):
+        """
+        Contructor
+
+        Args:
+            update_callback (function): function to call when data need to be pushed to ui
+            crash_report (CrashReport): crash report instance
+        """
         Thread.__init__(self)
         Thread.daemon = True
 
@@ -54,6 +61,7 @@ class FlashDrive(Thread):
         self.logger.setLevel(logging.DEBUG)
         
         #members
+        self.crash_report = crash_report
         self.env = platform.system().lower()
         self.temp_dir = tempfile.gettempdir()
         self.update_callback = update_callback
@@ -232,6 +240,7 @@ class FlashDrive(Thread):
                                 if content.status_code==200:
                                     infos['sha1'] = content.text.split()[0]
                             except:
+                                self.crash_report.report_exception()
                                 self.logger.exception('Exception occured during %s request' % url)
 
                         #sha256 checksum
@@ -242,12 +251,14 @@ class FlashDrive(Thread):
                                 if content.status_code==200:
                                     infos['sha256'] = content.text.split()[0]
                             except:
+                                self.crash_report.report_exception()
                                 self.logger.exception('Exception occured during %s request' % url)
 
             else:
                 self.logger.error('Request %s failed (status code=%d)' % (release['url'], resp.status_code))
 
         except:
+            self.crash_report.report_exception()
             self.logger.exception('Exception occured during %s request:' % self.release.url)
 
         return infos
@@ -294,6 +305,7 @@ class FlashDrive(Thread):
             else:
                 self.logger.error('Unable to request raspbian repository (status code=%d)' % resp.status_code)
         except:
+            self.crash_report.report_exception()
             self.logger.exception('Exception occured during %s read:' % self.RASPBIAN_URL)
 
         #get latest raspbian_lite release infos
@@ -318,6 +330,7 @@ class FlashDrive(Thread):
             else:
                 self.logger.error('Unable to request raspbian_lite repository (status code=%d)' % resp.status_code)
         except:
+            self.crash_report.report_exception()
             self.logger.exception('Exception occured during %s request:' % self.RASPBIAN_LITE_URL)
 
         return {
@@ -713,6 +726,7 @@ class FlashDrive(Thread):
                     self.update_callback(self.get_status())
         except:
             if not self.__etcher_output_error:
+                self.crash_report.report_exception()
                 self.logger.exception('Exception occured during etcher status:')
                 self.__etcher_output_error = True
 

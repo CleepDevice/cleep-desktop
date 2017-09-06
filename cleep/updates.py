@@ -46,7 +46,17 @@ class Updates(Thread):
     STATUS_DONE = 3
     STATUS_ERROR = 4
 
-    def __init__(self, real_path, cleep_version, etcher_version, update_callback):
+    def __init__(self, abs_path, cleep_version, etcher_version, update_callback, crash_report):
+        """
+        Constructor
+
+        Args:
+            abs_path (string): absolute application path
+            cleep_version (string): current cleepdesktop version
+            etcher_version (string): current etcher-cli version
+            update_callback (function): function to call when data need to be updated on ui
+            crash_report (CrashReport): crash report instance
+        """
         Thread.__init__(self)
         Thread.daemon = True
 
@@ -55,9 +65,10 @@ class Updates(Thread):
         self.logger.setLevel(logging.DEBUG)
 
         #members
-        self.real_path = real_path
-        if len(self.real_path)==0:
-            self.real_path = '.'
+        self.crash_report = crash_report
+        self.abs_path = abs_path
+        if len(self.abs_path)==0:
+            self.abs_path = '.'
         self.update_callback = update_callback
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.running = True
@@ -298,6 +309,7 @@ class Updates(Thread):
                 infos.error= True
 
         except:
+            self.crash_report.report_exception()
             self.logger.exception('Unable to get etcher releases:')
 
         return infos
@@ -354,11 +366,11 @@ class Updates(Thread):
         #prepare command
         command = None
         if self.env=='linux':
-            command = self.INSTALL_ETCHER_COMMAND_LINUX % (self.real_path, archive_path, self.real_path)
+            command = self.INSTALL_ETCHER_COMMAND_LINUX % (self.abs_path, archive_path, self.abs_path)
         elif self.env=='darwin':
-            command = self.INSTALL_ETCHER_COMMAND_MAC % (self.real_path, archive_path, self.real_path)
+            command = self.INSTALL_ETCHER_COMMAND_MAC % (self.abs_path, archive_path, self.abs_path)
         elif self.env=='windows':
-            command = self.INSTALL_ETCHER_COMMAND_WINDOWS % (self.real_path, archive_path, self.real_path)
+            command = self.INSTALL_ETCHER_COMMAND_WINDOWS % (self.abs_path, archive_path, self.abs_path)
         self.logger.debug('Command executed to install etcher: %s' % command)
 
         #execute command

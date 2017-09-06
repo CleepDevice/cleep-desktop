@@ -22,20 +22,25 @@ from contextlib import contextmanager
 from threading import Lock
 import time
 import uuid
+from gevent import __version__ as gevent_version
 from gevent import queue
 from gevent import monkey; monkey.patch_all()
 from gevent import pywsgi 
 from gevent.pywsgi import LoggingLogAdapter
+from geventwebsocket import get_version as geventwebsocket_version
 from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
 import bottle
 from bottle import auth_basic, response
+from passlib import __version__ as passlib_version
 from passlib.hash import sha256_crypt
+from requests import __version__ as requests_version
 
 from cleep.utils import NoMessageAvailable, MessageResponse, MessageRequest, CommandError
 from cleep.flashdrive import FlashDrive
 from cleep.devices import Devices
 from cleep.updates import Updates
+from cleep.libs.crashreport import CrashReport
 
 __all__ = ['app']
 
@@ -53,6 +58,7 @@ config_file = None
 config_lock = Lock()
 flashdrive = None
 devices = None
+crash_report = None
 
 current_devices = None
 last_devices_update = 0
@@ -62,6 +68,7 @@ last_updates_update = 0
 
 current_flash = None
 last_flash_update = 0
+
 
 
 class CleepWebSocketMessage():
@@ -201,7 +208,7 @@ def get_app(abs_path, config_path, config_filename, debug_enabled):
     Returns:
         object: bottle instance
     """
-    global logger, app, config, config_file, flashdrive, devices, updates
+    global logger, app, config, config_file, flashdrive, devices, updates, crash_report
 
     #logging
     if debug_enabled:
@@ -217,12 +224,24 @@ def get_app(abs_path, config_path, config_filename, debug_enabled):
     load_config()
     logger.debug('Config: %s' % config)
 
+    #init crash report (disabled by default)
+    libs_version = {
+        'gevent': gevent_version,
+        'bottle': bottle.__version__,
+        'passlib': passlib_version,
+        'requests': requests_version,
+        'geventwebsocket': geventwebsocket_version()
+    }
+    crash_report = CrashReport('CleepDesktop', config['cleep']['version'], libs_version)
+    if config['cleep']['crashreport']:
+        crash_report.enable()
+
     #launch flash process
-    flashdrive = FlashDrive(flash_update)
+    flashdrive = FlashDrive(flash_update, crash_report)
     flashdrive.start()
 
     #launch devices process
-    devices = Devices(devices_update)
+    devices = Devices(devices_update, crash_report)
     devices.start()
 
     #check etcher dir
@@ -232,7 +251,7 @@ def get_app(abs_path, config_path, config_filename, debug_enabled):
         etcher_version = None
 
     #launch updates process
-    updates = Updates(abs_path, config['cleep']['version'], etcher_version, updates_update)
+    updates = Updates(abs_path, config['cleep']['version'], etcher_version, updates_update, crash_report)
     updates.start()
 
     return app
