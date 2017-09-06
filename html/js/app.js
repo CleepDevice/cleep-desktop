@@ -168,6 +168,10 @@ Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $
             controllerAs: 'ctl',
             templateUrl: 'js/install/installAuto.html'
         })
+        .state('installManually', {
+            url: '/installManually',
+            templateUrl: 'js/install/installManually.html'
+        })
         .state('device', {
             url: '/device',
             params: {

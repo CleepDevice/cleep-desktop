@@ -191,7 +191,7 @@ function createMenu()
             }, {
                 label: 'Manual install',
                 click: () => {
-                    mainWindow.webContents.send('openPage', 'installManual');
+                    mainWindow.webContents.send('openPage', 'installManually');
                 }
             }
         ]
