@@ -142,7 +142,7 @@ Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $
     $stateProvider
         .state('default', {
             url: '/',
-            templateUrl: 'welcome.html'
+            templateUrl: 'js/welcome/welcome.html'
         })
         .state('preferences', {
             url: '/preferences',
