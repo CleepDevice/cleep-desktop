@@ -123,6 +123,7 @@ function createConfig()
     {
         settings.set('cleep.debug', DEFAULT_DEBUG);
     }
+    settings.set('cleep.isdev', isDev);
     if( !settings.has('cleep.crashreport') )
     {
         settings.set('cleep.crashreport', DEFAULT_CRASHREPORT);

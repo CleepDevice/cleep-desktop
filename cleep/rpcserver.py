@@ -235,6 +235,10 @@ def get_app(abs_path, config_path, config_filename, debug_enabled):
     crash_report = CrashReport('CleepDesktop', config['cleep']['version'], libs_version)
     if config['cleep']['crashreport']:
         crash_report.enable()
+    if config['cleep']['isdev']:
+        #disable crash report during developments
+        logger.debug('Crash report disabled during developments')
+        crash_report.disable()
 
     #launch flash process
     flashdrive = FlashDrive(flash_update, crash_report)
