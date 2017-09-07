@@ -56,6 +56,7 @@ app = bottle.app()
 server = None
 config = None
 config_file = None
+logs_file = None
 config_lock = Lock()
 updates = None
 flashdrive = None
@@ -210,14 +211,15 @@ def get_app(abs_path, config_path, config_filename, debug_enabled):
     Returns:
         object: bottle instance
     """
-    global logger, app, config, config_file, flashdrive, devices, updates, crash_report
+    global logger, app, config, config_file, logs_file, flashdrive, devices, updates, crash_report
 
     #logging
     debug = False
+    logs_file = os.path.join(config_path, 'cleepremote.log')
     if debug_enabled:
         logging.basicConfig(level=logging.WARN, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
     else:
-        logging.basicConfig(level=logging.WARN, filename=os.path.join(config_path, 'cleepremote.log'), format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
+        logging.basicConfig(level=logging.WARN, filename=logs_file, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
     logger = logging.getLogger('RpcServer')
 
     #load config
@@ -358,7 +360,7 @@ def execute_command(command, params):
     Return:
         MessageResponse
     """
-    global flashdrive
+    global flashdrive, logs_file
 
     if command is None:
         logger.error('Invalid command received, unable to process it')
@@ -368,7 +370,8 @@ def execute_command(command, params):
         #preferences
         if command=='getconfig':
             resp.data = {
-                'config': get_config()
+                'config': get_config(),
+                'logs': logs_file
             }
         elif command=='setconfig':
             old_config = copy.deepcopy(get_config())

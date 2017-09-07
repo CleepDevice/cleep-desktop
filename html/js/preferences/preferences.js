@@ -7,10 +7,12 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
 {
     var self = this;
 
+    self.shell = require('electron').shell;
     self.pref = 'general';
     self.config = {};
     self.noproxy = false;
     self.manualproxy = false;
+    self.logs = '';
 
     //automatic settings saving when config value changed
     $scope.$watch(function() {
@@ -56,6 +58,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
             .then(function(resp) {
                 //save config
                 self.config = resp.data.config;
+                self.logs = resp.data.logs;
 
                 //update proxy mode
                 self.updateProxyMode(self.config.proxy.mode);
@@ -89,6 +92,12 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
             self.manualproxy = true;
         }
         self.config.proxy.mode = mode;
+    };
+
+    // Open logs
+    self.openLogs = function()
+    {
+        self.shell.openItem(self.logs);
     };
 
     //init controller
