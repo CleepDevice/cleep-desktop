@@ -35,6 +35,7 @@ echo "Done"
 echo
 echo "Packaging cleepdesktop..."
 echo "-------------------------"
+#DEBUG=electron-builder,electron-builder:* /usr/bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH"
 /usr/bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH"
 
 #cleaning
