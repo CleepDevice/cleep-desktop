@@ -18,6 +18,7 @@ import logging
 import sys
 import argparse
 import json
+import copy
 from contextlib import contextmanager
 from threading import Lock
 import time
@@ -36,7 +37,7 @@ from passlib import __version__ as passlib_version
 from passlib.hash import sha256_crypt
 from requests import __version__ as requests_version
 
-from cleep.utils import NoMessageAvailable, MessageResponse, MessageRequest, CommandError
+from cleep.utils import MessageResponse
 from cleep.flashdrive import FlashDrive
 from cleep.devices import Devices
 from cleep.updates import Updates
@@ -56,6 +57,7 @@ server = None
 config = None
 config_file = None
 config_lock = Lock()
+updates = None
 flashdrive = None
 devices = None
 crash_report = None
@@ -211,17 +213,27 @@ def get_app(abs_path, config_path, config_filename, debug_enabled):
     global logger, app, config, config_file, flashdrive, devices, updates, crash_report
 
     #logging
+    debug = False
     if debug_enabled:
-        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
+        logging.basicConfig(level=logging.WARN, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
     else:
-        logging.basicConfig(level=logging.DEBUG, filename=os.path.join(config_path, 'cleepremote.log'), format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
+        logging.basicConfig(level=logging.WARN, filename=os.path.join(config_path, 'cleepremote.log'), format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
     logger = logging.getLogger('RpcServer')
-
-    logger.debug('Absolute cleepremote path: %s' % abs_path)
 
     #load config
     config_file = os.path.join(config_path, config_filename)
     load_config()
+
+    #handle debug
+    #force debug in dev mode
+    if config['cleep']['isdev']:
+        config['cleep']['debug'] = True
+    #update logger level
+    if config['cleep']['debug']:
+        debug = True
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.WARN)
     logger.debug('Config: %s' % config)
 
     #init crash report (disabled by default)
@@ -232,7 +244,7 @@ def get_app(abs_path, config_path, config_filename, debug_enabled):
         'requests': requests_version,
         'geventwebsocket': geventwebsocket_version()
     }
-    crash_report = CrashReport('CleepDesktop', config['cleep']['version'], libs_version)
+    crash_report = CrashReport('CleepDesktop', config['cleep']['version'], libs_version, config['cleep']['isdev'])
     if config['cleep']['crashreport']:
         crash_report.enable()
     if config['cleep']['isdev']:
@@ -241,21 +253,22 @@ def get_app(abs_path, config_path, config_filename, debug_enabled):
         crash_report.disable()
 
     #launch flash process
-    flashdrive = FlashDrive(flash_update, crash_report)
+    flashdrive = FlashDrive(flash_update, debug, crash_report)
     flashdrive.start()
 
     #launch devices process
-    devices = Devices(devices_update, crash_report)
+    devices = Devices(devices_update, debug, crash_report)
     devices.start()
 
     #check etcher dir
+    logger.debug('Absolute cleepremote path: %s' % abs_path)
     etcher_version = config['etcher']['version']
     if not os.path.exists(os.path.join(abs_path, ETCHER_DIR)):
         logger.info('Etcher-cli not found')
         etcher_version = None
 
     #launch updates process
-    updates = Updates(abs_path, config['cleep']['version'], etcher_version, updates_update, crash_report)
+    updates = Updates(abs_path, config['cleep']['version'], etcher_version, updates_update, debug, crash_report)
     updates.start()
 
     return app
@@ -298,6 +311,32 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
         if not server.closed:
             server.close()
 
+def process_config(old, new):
+    """
+    Process configuration after save
+    """
+    global crash_report, updates, devices, flashdrive
+
+    #process debug flag
+    if old['cleep']['debug']!=new['cleep']['debug']:
+        if new['cleep']['debug']:
+            logger.setLevel(logging.DEBUG)
+            updates.set_debug(True)
+            devices.set_debug(True)
+            flashdrive.set_debug(True)
+        else:
+            logger.setLevel(logging.WARN)
+            updates.set_debug(False)
+            devices.set_debug(False)
+            flashdrive.set_debug(False)
+            
+    #process crashreport flag
+    if old['cleep']['crashreport']!=new['cleep']['crashreport']:
+        if new['cleep']['crashreport']:
+            crash_report.enable()
+        else:
+            crash_report.disable()
+
 def get_config():
     """
     Return CleepDesktop configuration
@@ -332,10 +371,12 @@ def execute_command(command, params):
                 'config': get_config()
             }
         elif command=='setconfig':
+            old_config = copy.deepcopy(get_config())
             if not save_config(params['config']):
                 resp.messages = 'Unable to save config'
                 resp.error = True
             else:
+                process_config(old_config, get_config())
                 resp.data = True
 
         #devices
@@ -375,6 +416,9 @@ def execute_command(command, params):
 
     except Exception as e:
         logger.exception('Error occured during command execution:')
+
+        crash_report.report_exception()
+
         resp.error = True
         resp.message = str(e)
 

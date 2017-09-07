@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*
 
 import logging
-from threading import Thread
 from cleep.libs.console import EndlessConsole
 from cleep.libs.lsblk import Lsblk
 from cleep.libs.wmic import Wmic
 from cleep.libs.udevadm import Udevadm
+from cleep.utils import CleepremoteModule
 import urllib3
 import uuid
 import time
@@ -18,7 +18,7 @@ import re
 import requests
 import tempfile
 
-class FlashDrive(Thread):
+class FlashDrive(CleepremoteModule):
     """
     Flash drive helper
     """
@@ -45,23 +45,18 @@ class FlashDrive(Thread):
     RASPBIAN_URL = 'http://downloads.raspberrypi.org/raspbian/images/'
     RASPBIAN_LITE_URL = 'http://downloads.raspberrypi.org/raspbian_lite/images/'
 
-    def __init__(self, update_callback, crash_report):
+    def __init__(self, update_callback, debug_enabled, crash_report):
         """
         Contructor
 
         Args:
             update_callback (function): function to call when data need to be pushed to ui
+            debug_enabled (bool): True if debug is enabled
             crash_report (CrashReport): crash report instance
         """
-        Thread.__init__(self)
-        Thread.daemon = True
+        CleepremoteModule.__init__(self, debug_enabled, crash_report)
 
-        #logger
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
-        
         #members
-        self.crash_report = crash_report
         self.env = platform.system().lower()
         self.temp_dir = tempfile.gettempdir()
         self.update_callback = update_callback
@@ -79,7 +74,6 @@ class FlashDrive(Thread):
         self.isos = []
         self.url = None
         self.http = urllib3.PoolManager(num_pools=1)
-        self.running = True
         self.cancel = False
         self.timestamp_isos = None
         self.__etcher_output_pattern = r'.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)'
@@ -97,19 +91,16 @@ class FlashDrive(Thread):
         #sanity clean
         self.purge_files()
 
-    def stop(self):
+    def _stop(self):
         """
         Stop flash. Called before stopping application
         """
         self.cancel = True
-        self.running = False
 
     def run(self):
         """
         Start flash process. Does nothing until start_flash is called
         """
-        self.running = True
-
         while self.running:
             #check if process requested
             if self.url and self.drive:

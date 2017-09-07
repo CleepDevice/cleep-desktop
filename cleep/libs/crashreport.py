@@ -12,9 +12,13 @@ class CrashReport():
     Crash report class
     """
 
-    def __init__(self, product, product_version, libs_version={}):
+    def __init__(self, product, product_version, libs_version={}, debug=False):
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.WARN)
 
         #members
         self.enabled = False
@@ -38,12 +42,14 @@ class CrashReport():
         """
         Enable crash report
         """
+        self.logger.debug('Crash report is eabled')
         self.enabled = True
 
     def disable(self):
         """
         Disable crash report
         """
+        self.logger.debug('Crash report is disabled')
         self.enabled = False
 
     def crash_report(self, type, value, tb):

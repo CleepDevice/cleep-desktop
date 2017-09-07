@@ -103,8 +103,39 @@
                 <md-card-content>
                     <md-list>
                         <md-list-item>
-                            <p>Include latest Raspbian versions in installable versions</p>
+                            <p>Include latest Raspbian versions in installer</p>
                             <md-switch ng-model="ctl.config.cleep.isoraspbian" aria-label="Raspbian"></md-switch>
+                        </md-list-item>
+                    </md-list>
+                </md-card-content>
+            </md-card>
+            <!-- debug/troubleshoot -->
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">
+                            <md-icon md-font-set="material-icons">bug_report</md-icon>
+                            Debug
+                        </span>
+                    </md-card-title-text>
+                </md-card-title>
+                <md-card-content>
+                    <md-list>
+                        <md-list-item class="md-2-line">
+                            <div class="md-list-item-text">
+                               <h3>Enable debug mode</h3>
+                               <p>Enabling debug mode add more messages in application log file. This is useful to report a problem.</p>
+                            </div>
+                            <md-switch ng-model="ctl.config.cleep.debug" aria-label="Debug"></md-switch>
+                        </md-list-item>
+                    </md-list>
+                    <md-list>
+                        <md-list-item class="md-2-line">
+                            <div class="md-list-item-text">
+                               <h3>Send crash report (no personal information are sent to our server!).</h3>
+                               <p>This software is open-source and enabling crash report will help us improving the application.</p>
+                            </div>
+                            <md-switch ng-model="ctl.config.cleep.crashreport" aria-label="Debug"></md-switch>
                         </md-list-item>
                     </md-list>
                 </md-card-content>

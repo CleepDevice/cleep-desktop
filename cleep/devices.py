@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*
 
 import logging
-from threading import Thread
 import time
 import os
 from zeroconf import ServiceBrowser, Zeroconf
+from cleep.utils import CleepremoteModule
 
 class CleepDeviceInfos():
     """
@@ -31,11 +31,13 @@ class ZeroconfListener(object):
     Zeroconf listener
     """
 
-    def __init__(self, callback_register, callback_unregister):
+    def __init__(self, callback_register, callback_unregister, debug_enabled):
         """
         Constructor
         """
         self.logger = logging.getLogger(self.__class__.__name__)
+        if debug_enabled:
+            self.logger.setLevel(logging.DEBUG)
         self.callback_register = callback_register
         self.callback_unregister = callback_unregister
 
@@ -97,12 +99,12 @@ class ZeroconfListener(object):
             self.logger.debug('Drop not Cleep service')
 
 
-class Devices(Thread):
+class Devices(CleepremoteModule):
     """
     Devices manager: it allows auto device discovering
     """
 
-    def __init__(self, update_callback, crash_report):
+    def __init__(self, update_callback, debug_enabled, crash_report):
         """
         Contructor
 
@@ -110,35 +112,21 @@ class Devices(Thread):
             update_callback (function): function to call when data need to be pushed to ui
             crash_report (CrashReport): crash report instance
         """
-        Thread.__init__(self)
-        Thread.daemon = True
-
-        #logger
-        self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        CleepremoteModule.__init__(self, debug_enabled, crash_report)
 
         #members
-        self.crash_report = crash_report
-        self.running = True
         self.devices = []
         self.update_callback = update_callback
-
-    def stop(self):
-        """
-        Stop process
-        """
-        self.running = False
 
     def run(self):
         """
         Start flash process. Does nothing until start_flash is called
         """
-        self.running = True
         self.logger.debug('Devices thread started')
 
         #init zeroconf
         zeroconf = Zeroconf()
-        listener = ZeroconfListener(self.__register_device, self.__unregister_device)
+        listener = ZeroconfListener(self.__register_device, self.__unregister_device, self.debug_enabled)
         browser = ServiceBrowser(zeroconf, '_http._tcp.local.', listener)
 
         #endless loop

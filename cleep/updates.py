@@ -11,6 +11,7 @@ import json
 import datetime
 from cleep.libs.download import Download
 from cleep.libs.console import Console
+from cleep.utils import CleepremoteModule
 
 class UpdateInfos():
     """
@@ -29,7 +30,7 @@ class UpdateInfos():
         return 'UpdateInfos {update_available=%s error=%s filename=%s url=%s version=%s size=%d}' % (self.update_available, self.error, self.filename, self.url, self.version, self.size)
 
 
-class Updates(Thread):
+class Updates(CleepremoteModule):
     """
     Updates manager: it can update etcher-cli and CleepDesktop files
     """
@@ -46,7 +47,7 @@ class Updates(Thread):
     STATUS_DONE = 3
     STATUS_ERROR = 4
 
-    def __init__(self, abs_path, cleep_version, etcher_version, update_callback, crash_report):
+    def __init__(self, abs_path, cleep_version, etcher_version, update_callback, debug_enabled, crash_report):
         """
         Constructor
 
@@ -55,23 +56,17 @@ class Updates(Thread):
             cleep_version (string): current cleepdesktop version
             etcher_version (string): current etcher-cli version
             update_callback (function): function to call when data need to be updated on ui
+            debug_enabled (bool): True if debug is enabled
             crash_report (CrashReport): crash report instance
         """
-        Thread.__init__(self)
-        Thread.daemon = True
-
-        #logger
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        CleepremoteModule.__init__(self, debug_enabled, crash_report)
 
         #members
-        self.crash_report = crash_report
         self.abs_path = abs_path
         if len(self.abs_path)==0:
             self.abs_path = '.'
         self.update_callback = update_callback
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
-        self.running = True
         self.http = urllib3.PoolManager(num_pools=1)
         self.__download_etcher = None
         self.__download_cleep = None
@@ -93,13 +88,12 @@ class Updates(Thread):
 
         self.last_update = 0
 
-    def stop(self):
+    def _stop(self):
         """
         Stop process
         """
         self.logger.debug('Stop update')
         self.cancel_download()
-        self.running = False
 
     def cancel_download(self):
         """
