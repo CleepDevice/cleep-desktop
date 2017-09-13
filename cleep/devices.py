@@ -66,6 +66,13 @@ class Devices(CleepremoteModule):
             infos (dict): peer infos
         """
         self.logger.debug('Peer %s connected: %s' % (peer, infos))
+
+        #drop cleepdesktop connection
+        if infos['hostname']==self.CLEEPDESKTOP_HOSTNAME and infos['port']==self.CLEEPDESKTOP_PORT:
+            self.logger.debug('CleepDesktop connected. Drop it')
+            return
+
+        #append online status and save peer infos
         infos['online'] = True
         self.devices[peer] = infos
 
@@ -80,10 +87,12 @@ class Devices(CleepremoteModule):
             peer (??): peer id
         """
         self.logger.debug('Peer %s disconnected' % peer)
+
+        #keep peer entry locally but update its online status
         if peer in self.devices.keys():
             self.devices[peer]['online'] = False
         else:
-            self.logger.info('Unknown peer %s disconnected' % peer)
+            self.logger.info('Unknown peer %s disconnected (surely CleepDesktop instance)' % peer)
 
         #update ui
         self.update_callback(self.get_devices())

@@ -287,7 +287,7 @@ class PyreBus(ExternalBus):
                         try:
                             infos = {
                                 'id': str(data_peer),
-                                'version': headers['version']
+                                'version': headers['version'],
                                 'hostname': headers['hostname'],
                                 'ip': peer_endpoint.hostname,
                                 'port': int(headers['port']),
