@@ -1,0 +1,7 @@
+#!/bin/sh
+
+/bin/rm -rf $2/etcher-cli
+/usr/bin/tar xzvf $1 -C $2
+/bin/mv $2/Etcher-cli* $2/etcher-cli
+/bin/cp $2/scripts/etcher-cli.mac $2/etcher-cli
+

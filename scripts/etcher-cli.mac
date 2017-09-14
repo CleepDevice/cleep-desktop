@@ -1,0 +1,7 @@
+#!/bin/sh
+
+#params:
+# $1: drive path
+# $2: image filepath
+pkexec /etc/cleep/etcher-cli/etcher --yes --drive $1 $2
+
