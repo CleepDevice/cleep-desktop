@@ -3,5 +3,5 @@
 #params:
 # $1: drive path
 # $2: image filepath
-pkexec /etc/cleep/etcher-cli/etcher --yes --drive $1 $2
+osascript -e "do shell script \"etcher-cli/etcher --yes --drive $1 $2\" with administrator privileges"
 

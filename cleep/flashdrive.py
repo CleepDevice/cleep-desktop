@@ -40,7 +40,7 @@ class FlashDrive(CleepremoteModule):
 
     ETCHER_LINUX = '/etc/cleep/etcher-cli/etcher-cli.linux %s %s'
     ETCHER_WINDOWS = '/etc/cleep/etcher-cli/etcher-cli.windows.bat %s %s'
-    ETCHER_MAC = 'TODO'
+    ETCHER_MAC = 'etcher-cli/etcher-cli.mac %s %s'
 
     RASPBIAN_URL = 'http://downloads.raspberrypi.org/raspbian/images/'
     RASPBIAN_LITE_URL = 'http://downloads.raspberrypi.org/raspbian_lite/images/'
