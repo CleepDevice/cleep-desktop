@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Script copied from resin.io Github repo
+# https://github.com/resin-io-modules/drivelist/tree/master/scripts
+# License Apache v2.0 https://github.com/resin-io-modules/drivelist/blob/master/LICENSE
+
 set -u
 set -e
 
