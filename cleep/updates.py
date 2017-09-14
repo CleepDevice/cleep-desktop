@@ -39,7 +39,7 @@ class Updates(CleepremoteModule):
 
     INSTALL_ETCHER_COMMAND_LINUX = '%s/scripts/install_etcher.linux %s %s'
     INSTALL_ETCHER_COMMAND_WINDOWS = '%s\\scripts\\install_etcher.windows.bat %s %s'
-    INSTALL_ETCHER_COMMAND_MAC = 'TODO'
+    INSTALL_ETCHER_COMMAND_MAC = '%s/scripts/install_etcher.mac %s %s'
 
     STATUS_IDLE = 0
     STATUS_DOWNLOADING = 1
