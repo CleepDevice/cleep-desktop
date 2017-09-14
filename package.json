@@ -56,7 +56,11 @@
         "mac": {
             "category": "public.app-category.utilities",
             "target": "dmg",
-            "icon": "resources/icon"
+            "icon": "resources/icon",
+            "extendInfo": "Info.plist",
+            "binaries": [
+                "TODO set path to generated cleepremote binary"
+            ]
         },
         "dmg": {
             "icon": "resources/icon.icns"
