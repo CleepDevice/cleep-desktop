@@ -16,6 +16,7 @@ const electron = require('electron')
 
 //create default variables
 const app = electron.app
+app.setName('CleepDesktop')
 const BrowserWindow = electron.BrowserWindow
 const argv = process.argv.slice(1)
 
