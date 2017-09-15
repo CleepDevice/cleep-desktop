@@ -4,7 +4,7 @@
 import logging
 from cleep.libs.console import EndlessConsole
 from cleep.libs.lsblk import Lsblk
-from cleep.libs.wmic import Wmic
+from cleep.libs.windowsdrives import WindowsDrives
 from cleep.libs.udevadm import Udevadm
 from cleep.utils import CleepremoteModule
 import urllib3
@@ -61,7 +61,7 @@ class FlashDrive(CleepremoteModule):
         self.temp_dir = tempfile.gettempdir()
         self.update_callback = update_callback
         self.lsblk = Lsblk()
-        self.wmic = Wmic()
+        self.windowsdrives = WindowsDrives()
         self.udevadm = Udevadm()
         self.console = None
         self.percent = 0
@@ -421,33 +421,30 @@ class FlashDrive(CleepremoteModule):
         Return all flashable drives plugged on computer
 
         Returns:
-            list: drives paths
+            list: removable drives list
                 [
                     {
-                        model (string): drive model
+                        desc (string): drive description
                         path (string): drive path
+                        readonly (bool): True if drive is readonly
                     },
                     ...
                 ]
         """
         if self.env=='windows':
             #get system drives
-            drives = self.wmic.get_drives()
+            drives = self.windowdrives.get_drives()
             self.logger.debug('drives=%s' % drives)
             
             #fill flashable drives list
             flashables = []
             for drive in drives:
                 if drives[drive]['removable']:
-                    #get human readble name for drive
-                    model = drives[drive]['name'].strip()
-                    if len(model)==0:
-                        model = drives[drive]['drivemodel']
-                   
                     #save entry
                     flashables.append({
-                        'model': model,
-                        'path': '%s' % drives[drive]['mountpoint']
+                        'desc': '%s (%s)' % (drives[drive]['description'], drives[drive]['displayName']),
+                        'path': '%s' % drives[drive]['device'],
+                        'readonly': drives[drive]['protected']
                     })
         
         elif self.env=='linux':
