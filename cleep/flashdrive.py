@@ -129,6 +129,7 @@ class FlashDrive(CleepremoteModule):
                         self.status = self.STATUS_CANCELED
                     else:
                         #installation succeed
+                        self.
                         self.status = self.STATUS_DONE
                         
                     #update ui
@@ -139,9 +140,6 @@ class FlashDrive(CleepremoteModule):
 
                 else:
                     self.status = self.STATUS_ERROR
-
-                #update ui
-                self.update_callback(self.get_status())
 
                 #reset everything
                 self.total_percent = 100
@@ -154,6 +152,9 @@ class FlashDrive(CleepremoteModule):
                 self.cancel = False
                 self.console = None
                 self.logger.info('Flash process terminated')
+                
+                #update ui
+                self.update_callback(self.get_status())
 
             else:
                 #no process, release cpu
