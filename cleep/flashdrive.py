@@ -129,7 +129,6 @@ class FlashDrive(CleepremoteModule):
                         self.status = self.STATUS_CANCELED
                     else:
                         #installation succeed
-                        self.
                         self.status = self.STATUS_DONE
                         
                     #update ui
