@@ -16,6 +16,7 @@ import re
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 
+
 class EndlessConsole(Thread):
     """
     Helper class to execute long command line (system update...)
@@ -24,6 +25,10 @@ class EndlessConsole(Thread):
 
     Note: Subprocess output async reading copied from https://stackoverflow.com/a/4896288
     """
+    
+    ERROR_NOTLAUNCHED = -1
+    ERROR_STOPPED = -2
+    ERROR_INTERNAL = -3
 
     def __init__(self, command, callback, callback_end=None):
         """
@@ -38,6 +43,9 @@ class EndlessConsole(Thread):
         Thread.daemon = True
 
         #members
+        self.console_encoding = 'utf-8'
+        if sys.platform == 'win32':
+            self.console_encoding = 'cp850'
         self.command = command
         self.callback = callback
         self.callback_end = callback_end
@@ -49,8 +57,23 @@ class EndlessConsole(Thread):
         self.__stderr_queue = Queue()
         self.__stdout_thread = None
         self.__stderr_thread = None
+        self.return_code = self.ERROR_NOTLAUNCHED
+        self.__duration = 0.0
 
+    def __del__(self):
+        """
+        Destructor
+        """
+        self.stop()
+        
     def __enqueue_output(self, output, queue):
+        """
+        Enqueue output
+        
+        Args:
+            output (filedescriptor) : output to look
+            queue (Queue): Queue instance
+        """
         for line in iter(output.readline, b''):
             if not self.running:
                 break
@@ -59,13 +82,24 @@ class EndlessConsole(Thread):
             output.close()
         except:
             pass
-        self.logger.debug('Enqueued thread stopped')
-
-    def __del__(self):
+            
+    def get_duration(self):
         """
-        Destructor
+        Return command duration
+        
+        Return:
+            float: time in milliseconds. 0.0 if command not terminated
         """
-        self.stop()
+        return self.__duration
+            
+    def get_return_code(self):
+        """
+        Return command return code. Usually 0 if command was successful
+        
+        Return:
+            int: return code, -1 if command stopped
+        """
+        return self.return_code
 
     def get_start_time(self):
         """
@@ -80,6 +114,7 @@ class EndlessConsole(Thread):
         """
         Stop command line execution (kill it)
         """
+        self.return_code = self.ERROR_STOPPED
         self.running = False
 
     def kill(self):
@@ -96,7 +131,7 @@ class EndlessConsole(Thread):
         self.__start_time = time.time()
         p = subprocess.Popen(self.command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
         pid = p.pid
-        self.logger.debug('PID=%d' % pid)
+        self.logger.debug('Command pid: %d' % pid)
 
         if self.callback:
             #async stdout reading
@@ -120,10 +155,14 @@ class EndlessConsole(Thread):
                 stderr = None
                 try:
                     stdout = self.__stdout_queue.get_nowait()
+                    if isinstance(stdout, bytes):
+                        stdout = stdout.decode(self.console_encoding).rstrip()
                 except:
                     pass
                 try:
                     stderr = self.__stderr_queue.get_nowait()
+                    if isinstance(stderr, bytes):
+                        stderr = stderr.decode(self.console_encoding).rstrip()
                 except:
                     pass
                 if stdout is not None or stderr is not None:
@@ -131,11 +170,15 @@ class EndlessConsole(Thread):
 
             #check end of command
             if p.returncode is not None:
+                self.return_code = p.returncode
                 self.logger.debug('Process is terminated')
                 break
             
             #pause
             time.sleep(0.25)
+            
+        #compute command duration
+        self.__duration = time.time() - self.__start_time
 
         #make sure process is killed
         try:
@@ -151,6 +194,171 @@ class EndlessConsole(Thread):
         if self.callback_end:
             self.callback_end()
 
+            
+class WindowsUacEndlessConsole(EndlessConsole):
+    """
+    EndlessConsole version with privilege elevation (UAC) for windows
+    How it works: this class launches windows command line with elavated rights.
+    The command line executes cmdlogger.exe with user command (and arguments)
+    Cmdlogger.exe catches stdout and stderr messages from user command and send them
+    to WindowsUacEndlessConsole instance using socket.
+    
+    Note: code adapted from https://stackoverflow.com/q/31480571
+    """
+    
+    #https://msdn.microsoft.com/fr-fr/library/windows/desktop/ms683189(v=vs.85).aspx
+    PROCESS_STILLACTIVE = 259
+    
+    def __init__(self, command, callback, callback_end=None):
+        """
+        Constructor
+
+        Args:
+            command (string): command to execute
+            callback (function): callback when message is received
+            callback_end (function): callback when process is over
+        """
+        EndlessConsole.__init__(self, command, callback, callback_end)
+        self.logger.setLevel(logging.DEBUG)
+        
+        #members
+        self.cmdlogger_path = None
+        self.comm_port = None
+        
+        #check command
+        if not isinstance(command, list):
+            raise Exception('Invalid command parameter: must be a list with the program in first position followed by its arguments')
+            
+    def set_cmdlogger(self, cmdlogger_path):
+        """
+        Set cmdlogger.exe fullpath
+        """
+        self.cmdlogger_path = cmdlogger_path
+        if not os.path.exists(self.cmdlogger_path):
+            raise Exception('Invalid cmdlogger path. The exe does not exist')
+                
+    def is_admin():
+        """
+        Check running with admin privilege or not
+        """
+        try:
+            import ctypes
+            # WARNING: requires Windows XP SP2 or higher!
+            return ctypes.windll.shell32.IsUserAnAdmin()
+            
+        except:
+            self.logger.exception('Admin check failed, assuming not admin:')
+            return False
+        
+    def run(self):
+        """
+        Console process
+        """
+        #windows console specific import
+        import win32api, win32con, win32event, win32process
+        from win32com.shell.shell import ShellExecuteEx
+        from win32com.shell import shellcon
+        import socket
+        
+        #check cmdlogger
+        if self.cmdlogger_path is None:
+            raise Exception('Please configure cmdlogger path before launching command')
+        
+        #get free communication port
+        comm_port = None
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.bind(('',0))
+            s.listen(1)
+            comm_port = s.getsockname()[1]
+            self.logger.debug('Use comm port: %d' % comm_port)
+            s.close()
+        except:
+            self.logger.exception('Unable to get free communication port')
+            self.return_code = self.ERROR_INTERNAL
+            return
+            
+        #open communication socket
+        comm_server = None
+        try:
+            comm_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            comm_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            comm_server.bind((u'', comm_port))
+            comm_server.settimeout(5.0)
+        except:
+            self.logger.exception(u'Unable to get create communication server')
+            self.return_code = self.ERROR_INTERNAL
+            return
+        
+        #get command and command arguments
+        user_cmd = u'"%s"' % self.command[0]
+        user_cmd_params = u' '.join([u'"%s"' % (x,) for x in self.command[1:]])
+        self.logger.debug(u'user_cmd=%s user_cmd_params=%s' % (user_cmd, user_cmd_params))
+       
+        #prepare cmdlogger command
+        cmd = self.cmdlogger_path
+        params = u'"%d" %s %s' % (comm_port, user_cmd, user_cmd_params)
+        self.logger.debug(u'cmd=%s params=%s' % (cmd, params))
+            
+        #launch Windows command with parameters:
+        # - hidden console
+        # - rise UAC elevation
+        self.__start_time = time.time()
+        proc_info = ShellExecuteEx(nShow=win32con.SW_HIDE, fMask=shellcon.SEE_MASK_NOCLOSEPROCESS, lpVerb=u'runas', lpFile=cmd, lpParameters=params)
+        proc_handle = proc_info[u'hProcess']
+        pid = win32process.GetProcessId(proc_handle)
+        self.logger.debug(u'Command pid: %d' % pid)
+        
+        #wait for cmdlogger connection
+        comm_server.listen(1)
+        (cmdlogger, (ip, port)) = comm_server.accept()
+        
+        #look for cmdlogger messages
+        while True:
+            try:
+                message = cmdlogger.recv(4096)
+                self.logger.debug(u'Message received: %s' % message)
+                if isinstance(message, bytes):
+                    message = message.decode(self.console_encoding).rstrip()
+            
+                #check socket disconnection
+                if message is None or len(message)==0:
+                    self.logger.debug(u'Cmdlogger disconnected')
+                    break
+                else:
+                    #process received message
+                    if message.startswith(u'STDOUT:'):
+                        #stdout
+                        self.callback(message.replace(u'STDOUT:', u''), None)
+                    else:
+                        #stderr
+                        self.callback(None, message.replace(u'STDERR:', u''))
+            except socket.error:
+                pass
+                
+        time.sleep(2.0)
+                
+        #get process return code
+        self.return_code = win32process.GetExitCodeProcess(proc_handle)
+        self.logger.debug('Return code: %s' % self.return_code)
+        
+        #close comm_server
+        comm_server.close()
+        
+        #make sure process is killed
+        try:
+            self.logger.debug('Kill process with pid %d' % pid)
+            os.kill(pid, signal.SIGKILL)
+        except:
+            pass
+
+        #process is over
+        self.running = False
+
+        #stop callback
+        if self.callback_end:
+            self.callback_end()
+        
 
 class Console():
     """
@@ -346,3 +554,19 @@ class AdvancedConsole(Console):
 
         return results
 
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.WARN, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')    
+    
+    def command_terminated():
+        print('Terminated')
+        
+    def command_callback(stdout, stderr):
+        if stdout:
+            print('Stdout from command: %s' % stdout)
+        if stderr:
+            print('Stderr from command: %s' % stderr)
+    
+    c = WindowsUacEndlessConsole(['chkdsk'], command_callback, command_terminated)
+    c.set_cmdlogger('c:\\cleep-desktop\\tools\\cmdlogger\\cmdlogger.exe')
+    c.run()
+        
