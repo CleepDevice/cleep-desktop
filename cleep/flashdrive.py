@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*
 
 import logging
-from cleep.libs.console import EndlessConsole
+from cleep.libs.console import EndlessConsole, WindowsUacEndlessConsole
 from cleep.libs.lsblk import Lsblk
 from cleep.libs.windowsdrives import WindowsDrives
 from cleep.libs.udevadm import Udevadm
@@ -23,7 +23,7 @@ class FlashDrive(CleepremoteModule):
     Flash drive helper
     """
 
-    CACHE_DURATION = 3600.0
+    CACHE_DURATION = 1800.0
 
     TMP_FILE_PREFIX = 'cleep_iso'
 
@@ -37,10 +37,13 @@ class FlashDrive(CleepremoteModule):
     STATUS_ERROR = 7
     STATUS_ERROR_INVALIDSIZE = 8
     STATUS_ERROR_BADCHECKSUM = 9
+    STATUS_ERROR_FLASH = 10
 
     ETCHER_LINUX = '/etc/cleep/etcher-cli/etcher-cli.linux %s %s'
-    ETCHER_WINDOWS = '/etc/cleep/etcher-cli/etcher-cli.windows.bat %s %s'
+    ETCHER_WINDOWS = 'etcher-cli\etcher-cli.windows.bat'
     ETCHER_MAC = 'etcher-cli/etcher-cli.mac %s %s'
+    
+    CMDLOGGER = 'tools\\cmdlogger\\cmdlogger.exe'
 
     RASPBIAN_URL = 'http://downloads.raspberrypi.org/raspbian/images/'
     RASPBIAN_LITE_URL = 'http://downloads.raspberrypi.org/raspbian_lite/images/'
@@ -60,9 +63,6 @@ class FlashDrive(CleepremoteModule):
         self.env = platform.system().lower()
         self.temp_dir = tempfile.gettempdir()
         self.update_callback = update_callback
-        self.lsblk = Lsblk()
-        self.windowsdrives = WindowsDrives()
-        self.udevadm = Udevadm()
         self.console = None
         self.percent = 0
         self.total_percent = 0
@@ -82,8 +82,11 @@ class FlashDrive(CleepremoteModule):
         #get etcher command
         if self.env=='windows':
             self.etcher_cmd = self.ETCHER_WINDOWS
+            self.windowsdrives = WindowsDrives()
         elif self.env=='linux':
             self.etcher_cmd = self.ETCHER_LINUX
+            self.lsblk = Lsblk()
+            self.udevadm = Udevadm()
         elif self.env=='darwin':
             self.etcher_cmd = self.ETCHER_MAC
         self.logger.debug('Etcher command line: %s' % self.etcher_cmd)
@@ -116,17 +119,21 @@ class FlashDrive(CleepremoteModule):
                         if self.cancel:
                             break
                         time.sleep(0.25)
-
-                    #update ui
-                    self.update_callback(self.get_status())
-
+                        
                     #end of process
-                    if self.cancel:
-                        self.console.kill()
+                    if self.__etcher_output_error:
+                        #error occured during flash
+                        self.status = self.STATUS_ERROR_FLASH
+                    elif self.cancel:
+                        #process canceled
                         self.status = self.STATUS_CANCELED
                     else:
+                        #installation succeed
                         self.status = self.STATUS_DONE
-
+                        
+                    #update ui
+                    self.update_callback(self.get_status())
+                    
                 elif self.cancel:
                     self.status = self.STATUS_CANCELED
 
@@ -433,18 +440,18 @@ class FlashDrive(CleepremoteModule):
         """
         if self.env=='windows':
             #get system drives
-            drives = self.windowdrives.get_drives()
+            drives = self.windowsdrives.get_drives()
             self.logger.debug('drives=%s' % drives)
             
             #fill flashable drives list
             flashables = []
             for drive in drives:
-                if drives[drive]['removable']:
+                if drive['deviceType']==WindowsDrives.DEVICE_TYPE_REMOVABLE:
                     #save entry
                     flashables.append({
-                        'desc': '%s (%s)' % (drives[drive]['description'], drives[drive]['displayName']),
-                        'path': '%s' % drives[drive]['device'],
-                        'readonly': drives[drive]['protected']
+                        'desc': '%s (%s)' % (drive['description'], drive['displayName']),
+                        'path': '%s' % drive['device'],
+                        'readonly': drive['protected']
                     })
         
         elif self.env=='linux':
@@ -575,6 +582,10 @@ class FlashDrive(CleepremoteModule):
             self.logger.debug('No drive or url specified, flash process stopped')
             return False
 
+        #debug purpose, avoid iso downloading
+        #self.iso = 'c:\\cleep_iso_c8bee3ea-bfa4-455e-a554-bc7cf1746da3.zip'
+        #return True
+        
         #prepare iso
         self.iso = os.path.join(self.temp_dir, '%s_%s' % (self.TMP_FILE_PREFIX, str(uuid.uuid4())))
         self.logger.debug('Iso file will be saved to "%s"' % self.iso)
@@ -666,7 +677,7 @@ class FlashDrive(CleepremoteModule):
                 self.status = self.STATUS_ERROR_BADCHECKSUM
                 return False
         else:
-            self.logger.debug('No checksum to verify :(')
+            self.logger.debug('No checksum to verify')
 
         return True
 
@@ -680,8 +691,8 @@ class FlashDrive(CleepremoteModule):
         """
         #handle current flasing/validating status
         try:
-            #self.logger.info('Flash stdout=%s' % stdout)
-            matches = re.finditer(self.__etcher_output_pattern, stdout.decode('utf-8'), re.UNICODE | re.DOTALL)
+            #self.logger.debug('Flash stdout=%s' % stdout)
+            matches = re.finditer(self.__etcher_output_pattern, stdout, re.UNICODE | re.DOTALL)
             for matchNum, match in enumerate(matches):
                 group = match.group().strip()
                 if len(group)>0 and len(match.groups())>0:
@@ -722,12 +733,24 @@ class FlashDrive(CleepremoteModule):
         """
         Flash process ended callback
         """
-        self.logger.info('Flash operation terminated')
-        self.console = None
-        self.__etcher_output_error = False
+        #get console return code
+        return_code = self.console.get_return_code()
+        self.logger.info('Flash operation terminated with return code %s' % return_code)
+                
+        #check return code
+        if return_code!=0:
+            #flash failed
+            self.logger.error('Flash failed. Return code awaited is 0, received %s' % return_code)
+            self.__etcher_output_error = True
+        else:
+            #reset console and set status
+            self.__etcher_output_error = False
 
         #update ui
         self.update_callback(self.get_status())
+        
+        #reset console
+        self.console = None
 
     def __flash_drive(self):
         """
@@ -737,8 +760,15 @@ class FlashDrive(CleepremoteModule):
             raise Exception(u'Flashing operation is already running')
 
         self.status = self.STATUS_FLASHING
-        cmd = self.etcher_cmd % (self.drive, self.iso)
-        self.logger.debug('Etcher command to execute: %s' % cmd)
-        self.console = EndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
-        self.console.start()
+        if self.env=='windows':
+            cmd = [self.etcher_cmd, self.drive, self.iso]
+            self.logger.debug('Etcher command to execute: %s' % cmd)
+            self.console = WindowsUacEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
+            self.console.set_cmdlogger(self.CMDLOGGER)
+            self.console.start()
+        else:
+            cmd = self.etcher_cmd % (self.drive, self.iso)
+            self.logger.debug('Etcher command to execute: %s' % cmd)
+            self.console = EndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
+            self.console.start()
 

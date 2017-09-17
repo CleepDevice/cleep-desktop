@@ -62,8 +62,8 @@
                             <md-input-container>
                                 <md-select ng-model="ctl.selectedDrive" md-on-open="ctl.refreshDrives()" placeholder="Drive" class="md-no-underline" ng-disabled="ctl.flashing" required>
                                     <md-option ng-if="ctl.noDrive" ng-disabled="true">No drive found</md-option>
-                                    <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path">
-                                        {{drive.model + ' (' + drive.path + ')'}}
+                                    <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path" ng-disabled="drive.readonly">
+                                        {{drive.desc}} {{drive.readonly ? '[Readonly]' : ''}}
                                     </md-option>
                                 </md-select>
                             </md-input-container>
@@ -105,6 +105,7 @@
                             <span ng-if="ctl.status.status==7">Internal error occured</span>
                             <span ng-if="ctl.status.status==8">Downloaded file size is invalid</span>
                             <span ng-if="ctl.status.status==9">Downloaded file seems to be corrupted</span>
+                            <span ng-if="ctl.status.status==10">Problem during data copy on drive</span>
                         </div>
                         <div>
                             <md-button ng-click="ctl.cancelFlash()" class="md-raised md-primary">Cancel</md-button>
