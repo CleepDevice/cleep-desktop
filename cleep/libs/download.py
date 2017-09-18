@@ -234,13 +234,13 @@ class Download():
 
         return self.download
 
-last_percent = 0
-def cb(status, size, percent):
-    global last_percent
-    if not percent%5 and last_percent!=percent:
-        print(status, size, percent)
-        last_percent = percent
-
+#last_percent = 0
+#def cb(status, size, percent):
+#    global last_percent
+#    if not percent%5 and last_percent!=percent:
+#        print(status, size, percent)
+#        last_percent = percent
+#
 #logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
 #d = Download(cb)
 #d.purge_files()
