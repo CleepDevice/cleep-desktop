@@ -74,7 +74,7 @@ right.addEventListener('new-window', function() {
     log.info('wv new window');
 });*/
 
-var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router', 'ngSanitize']);
+var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router', 'ngSanitize', 'ngWebSocket']);
 
 
 /**
@@ -221,7 +221,6 @@ var cleepController = function($rootScope, $scope, $state, cleepService)
 
     //init websocket
     cleepService.connectWebSocket();
-
 };
 Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', cleepController]);
 

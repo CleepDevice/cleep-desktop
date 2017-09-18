@@ -10,7 +10,7 @@
 
 var settings = require('electron-settings');
 
-var cleepService = function($http, $q, $rootScope, $location, toast, $interval) {
+var cleepService = function($http, $q, $rootScope, toast, $websocket) {
 
     var self = this;
 
@@ -21,35 +21,21 @@ var cleepService = function($http, $q, $rootScope, $location, toast, $interval) 
     self.urlWebsocket = 'ws://localhost:' + self.port + '/cleepws';
 
     /**
-     * Connect to cleep websocket
-     */
-    self.__cleepWebSocket = function() {
-        if( !self.__ws /*|| self.__ws.readyState!==1*/ )
-        {
-            //create websocket
-            //self.__ws = new WebSocket('ws://localhost:'+self.port+'/cleepws');
-            self.__ws = new WebSocket(self.urlWebsocket);
-
-            //define onmessage callback
-            self.__ws.onmessage = self.__receive;
-        }
-    };
-
-    /**
-     * Websocket watchdog. Reconnect websocket if necessary
-     */
-    self.__webSocketWatchdog = function()
-    {
-        $interval(self.__cleepWebSocket, 1000);
-    };
-
-    /**
      * Connect websocket to python server
      */
     self.connectWebSocket = function()
     {
-        //launch websocket watchdog
-        self.__webSocketWatchdog();
+        if( !self.__ws )
+        {
+            self.__ws = $websocket('ws://localhost:'+self.port+'/cleepws', null, {reconnectIfNotNormalClose: true});
+            self.__ws.onMessage(self.__receive);
+            self.__ws.onClose(function() {
+                console.log('Websocket closed');
+            });
+            self.__ws.onOpen(function() {
+                console.log('Websocket opened');
+            });
+        }
     };
 
     /**
@@ -134,5 +120,5 @@ var cleepService = function($http, $q, $rootScope, $location, toast, $interval) 
 };
 
 var Cleep = angular.module('Cleep');
-Cleep.service('cleepService', ['$http', '$q', '$rootScope', '$location', 'toastService', '$interval', cleepService]);
+Cleep.service('cleepService', ['$http', '$q', '$rootScope', 'toastService', '$websocket', cleepService]);
 
