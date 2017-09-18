@@ -474,14 +474,17 @@ class FlashDrive(CleepremoteModule):
                     model = drives[drive]['drivemodel']
                     if model is None or len(model)==0:
                         if device_type==self.udevadm.TYPE_USB:
-                            model = 'No model USB'
+                            desc = 'Unknown USB (/dev/%s)' % drive
                         if device_type==self.udevadm.TYPE_SDCARD:
-                            model = 'No model SD Card'
+                            desc = 'Unknown SD Card (/dev/%s)' % drive
+                    else:
+                        desc = '%s (/dev/%s)' % (model, drive)
 
                     #save entry
                     flashables.append({
-                        'model': model,
-                        'path': '/dev/%s' % drive
+                        'desc': desc,
+                        'path': '/dev/%s' % drive,
+                        'readonly': drives[drive]['readonly']
                     })
 
         elif self.env=='darwin':
