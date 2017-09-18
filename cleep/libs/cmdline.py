@@ -8,6 +8,9 @@ import re
 import time
 
 class Cmdline():
+    """
+    Handle /proc/cmdline file content
+    """
 
     CACHE_DURATION = 3600.0
 
@@ -30,6 +33,7 @@ class Cmdline():
         if not res[u'error'] and not res[u'killed']:
             #parse data
             matches = re.finditer(r'root=(.*?)\s', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
+
             for matchNum, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==1:

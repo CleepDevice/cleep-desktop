@@ -13,8 +13,13 @@ import os
 import signal
 import logging
 import re
-
-ON_POSIX = 'posix' in sys.builtin_module_names
+import platform
+if platform.system()=='Windows':
+    #windows console specific import
+    import win32api, win32con, win32event, win32process
+    from win32com.shell.shell import ShellExecuteEx
+    from win32com.shell import shellcon
+    import socket
 
 
 class EndlessConsole(Thread):
@@ -44,8 +49,10 @@ class EndlessConsole(Thread):
 
         #members
         self.console_encoding = 'utf-8'
+        self.on_posix = True
         if sys.platform == 'win32':
             self.console_encoding = 'cp850'
+            self.on_posix = False
         self.command = command
         self.callback = callback
         self.callback_end = callback_end
@@ -129,7 +136,7 @@ class EndlessConsole(Thread):
         """
         #launch command
         self.__start_time = time.time()
-        p = subprocess.Popen(self.command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
+        p = subprocess.Popen(self.command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=self.on_posix)
         pid = p.pid
         self.logger.debug('Command pid: %d' % pid)
 
@@ -254,11 +261,6 @@ class WindowsUacEndlessConsole(EndlessConsole):
         """
         Console process
         """
-        #windows console specific import
-        import win32api, win32con, win32event, win32process
-        from win32com.shell.shell import ShellExecuteEx
-        from win32com.shell import shellcon
-        import socket
         
         #check cmdlogger
         if self.cmdlogger_path is None:
@@ -369,8 +371,10 @@ class Console():
         self.__callback = None
         self.encoding = sys.getfilesystemencoding()
         self.console_encoding = 'utf-8'
+        self.on_posix = True
         if sys.platform == 'win32':
             self.console_encoding = 'cp850'
+            self.on_posix = False
 
     def __del__(self):
         """
@@ -413,7 +417,7 @@ class Console():
             raise Exception(u'Timeout is mandatory and must be greater than 0')
         
         #launch command
-        p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX)
+        p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=self.on_posix)
         pid = p.pid
 
         #wait for end of command line
@@ -455,7 +459,8 @@ class Console():
 
         #make sure process is really killed
         try:
-            subprocess.Popen(u'/bin/kill -9 %s' % pid, shell=True)
+            self.logger.debug('Kill process with PID %d' % pid)
+            os.kill(pid, signal.SIGKILL)
         except:
             pass
 

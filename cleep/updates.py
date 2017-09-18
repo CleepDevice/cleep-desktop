@@ -13,6 +13,7 @@ from cleep.libs.download import Download
 from cleep.libs.console import Console
 from cleep.utils import CleepremoteModule
 
+
 class UpdateInfos():
     """
     Update structure
@@ -88,7 +89,7 @@ class Updates(CleepremoteModule):
 
         self.last_update = 0
 
-    def _stop(self):
+    def _custom_stop(self):
         """
         Stop process
         """

@@ -2,11 +2,6 @@
 # -*- coding: utf-8 -*
 
 import logging
-from cleep.libs.console import EndlessConsole, WindowsUacEndlessConsole
-from cleep.libs.lsblk import Lsblk
-from cleep.libs.windowsdrives import WindowsDrives
-from cleep.libs.udevadm import Udevadm
-from cleep.utils import CleepremoteModule
 import urllib3
 import uuid
 import time
@@ -17,6 +12,15 @@ import platform
 import re
 import requests
 import tempfile
+from cleep.utils import CleepremoteModule
+if platform.system()=='Windows':
+    from cleep.libs.console import WindowsUacEndlessConsole
+    from cleep.libs.windowsdrives import WindowsDrives
+else:
+    from cleep.libs.console import EndlessConsole
+    from cleep.libs.lsblk import Lsblk
+    from cleep.libs.udevadm import Udevadm
+    
 
 class FlashDrive(CleepremoteModule):
     """
@@ -94,7 +98,7 @@ class FlashDrive(CleepremoteModule):
         #sanity clean
         self.purge_files()
 
-    def _stop(self):
+    def _custom_stop(self):
         """
         Stop flash. Called before stopping application
         """
@@ -438,13 +442,15 @@ class FlashDrive(CleepremoteModule):
                     ...
                 ]
         """
+        flashables = []
+        
         if self.env=='windows':
+            self.logger.debug('Drives on Windows')
             #get system drives
             drives = self.windowsdrives.get_drives()
             self.logger.debug('drives=%s' % drives)
             
             #fill flashable drives list
-            flashables = []
             for drive in drives:
                 if drive['deviceType']==WindowsDrives.DEVICE_TYPE_REMOVABLE:
                     #save entry
@@ -455,12 +461,12 @@ class FlashDrive(CleepremoteModule):
                     })
         
         elif self.env=='linux':
+            self.logger.debug('Drives on Linux')
             #get system drives
             drives = self.lsblk.get_drives()
             self.logger.debug('drives=%s' % drives)
 
             #get drives types
-            flashables = []
             for drive in drives:
                 device_type = self.udevadm.get_device_type('/dev/%s' % drive)
                 if device_type in (self.udevadm.TYPE_USB, self.udevadm.TYPE_SDCARD):
@@ -477,6 +483,10 @@ class FlashDrive(CleepremoteModule):
                         'model': model,
                         'path': '/dev/%s' % drive
                     })
+
+        elif self.env=='darwin':
+            self.logger.debug('Drives on MacOs')
+            self.logger.error('NOT IMPLEMENTED ON MACOS')
 
         return flashables
 

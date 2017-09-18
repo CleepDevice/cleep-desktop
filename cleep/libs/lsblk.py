@@ -28,7 +28,7 @@ class Lsblk():
         """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
-            self.logger.debug('Don\'t refresh')
+            self.logger.debug(u'Don\'t refresh')
             return
 
         res = self.console.command(u'/bin/lsblk --list --bytes --output NAME,MAJ:MIN,TYPE,RM,SIZE,RO,MOUNTPOINT,RA,MODEL')
@@ -49,7 +49,7 @@ class Lsblk():
                     model = None
                     total_size = 0
                     current_drive = None
-                    if groups[3].find('disk')!=-1:
+                    if groups[3].find(u'disk')!=-1:
                         current_drive = name
                         model = groups[9]
                         partition = False
@@ -61,12 +61,12 @@ class Lsblk():
 
                     #readonly flag
                     readonly = True
-                    if groups[6]=='0':
+                    if groups[6]==u'0':
                         readonly = False
 
                     #removable flag
                     removable = True
-                    if groups[4]=='0':
+                    if groups[4]==u'0':
                         removable = False
 
                     #mountpoint
@@ -135,7 +135,7 @@ class Lsblk():
         drives = {}
         for drive in self.devices:
             for device in self.devices[drive]:
-                if not self.devices[drive][device]['partition']:
+                if not self.devices[drive][device][u'partition']:
                     #it's a drive
                     drives[drive] = self.devices[drive][device]
                 
@@ -153,7 +153,7 @@ class Lsblk():
         partitions = {}
         for drive in self.devices:
             for device in self.devices[drive]:
-                if self.devices[drive][device]['partition']:
+                if self.devices[drive][device][u'partition']:
                     #it's a partition
                     partitions[device] = self.devices[drive][device]
                 

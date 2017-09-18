@@ -65,10 +65,10 @@ class CleepremoteModule(Thread):
         """
         Stop process
         """
-        self._stop()
+        self._custom_stop()
         self.running = False
 
-    def _stop(self):
+    def _custom_stop(self):
         """
         Customizable stop
         """
