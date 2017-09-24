@@ -77,6 +77,13 @@ for disk in $DISKS; do
     echo "protected: False"
   fi
 
+  if [[ "$removable" == "No" ]]
+  then
+    echo "removable: False"
+  else
+    echo "removable: True"
+  fi
+
   if [[ "$device" == "/dev/disk0" ]] || \
      [[ ( "$removable" == "No" ) || ("$removable" == "Fixed") ]] || \
      [[ ( "$location" =~ "Internal" ) && ( "$removable" != "Yes" ) && ( "$removable" != "Removable" ) ]] || \
@@ -90,34 +97,3 @@ for disk in $DISKS; do
   echo ""
 done
 
-
-"""
-device: /dev/disk0
-displayName: /dev/disk0
-description: "APPLE HDD TOSHIBA MK5065GSXF"
-size: 500107862016
-mountpoints: []
-raw: /dev/rdisk0
-protected: False
-system: True
-
-device: /dev/disk1
-displayName: /dev/disk1
-description: "Macintosh HD - APPLE HDD TOSHIBA MK5065GSXF"
-size: 498876809216
-mountpoints:
-  - path: "/"
-raw: /dev/rdisk1
-protected: False
-system: True
-
-device: /dev/disk2
-displayName: /dev/disk2
-description: "HyperX Fury 3.0"
-size: 31457280000
-mountpoints:
-  - path: "/Volumes/Untitled"
-raw: /dev/rdisk2
-protected: False
-system: False
-"""

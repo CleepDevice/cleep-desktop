@@ -16,6 +16,8 @@ from cleep.utils import CleepremoteModule
 if platform.system()=='Windows':
     from cleep.libs.console import WindowsUacEndlessConsole
     from cleep.libs.windowsdrives import WindowsDrives
+elif platform.system()=='Darwin':
+    from cleep.libs.diskutil import Diskutil
 else:
     from cleep.libs.console import EndlessConsole
     from cleep.libs.lsblk import Lsblk
@@ -93,6 +95,7 @@ class FlashDrive(CleepremoteModule):
             self.udevadm = Udevadm()
         elif self.env=='darwin':
             self.etcher_cmd = self.ETCHER_MAC
+            self.diskutil = Diskutil()
         self.logger.debug('Etcher command line: %s' % self.etcher_cmd)
 
         #sanity clean
@@ -489,7 +492,19 @@ class FlashDrive(CleepremoteModule):
 
         elif self.env=='darwin':
             self.logger.debug('Drives on MacOs')
-            self.logger.error('NOT IMPLEMENTED ON MACOS')
+            #get drives
+            drives = self.diskutil.get_devices_infos()
+            self.logger.debug('drives=%s' % drives)
+
+            #fill flashable drives list
+            for drive in drives:
+                if drives[drive][u'removable']:
+                    #save entry
+                    flashables.append({
+                        'desc': '%s' % drives[drive]['name'],
+                        'path': '%s' % drives[drive]['raw'],
+                        'readonly': drives[drive]['protected']
+                    })
 
         return flashables
 
