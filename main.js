@@ -243,6 +243,10 @@ function createWindow ()
     {
         //require('devtron').install();
         mainWindow.webContents.openDevTools();
+
+        //log electron and chrome versions
+        log.debug('Electron version: ' + process.versions.electron);
+        log.debug('Chrome version: ' + process.versions.chrome);
     }
 
     // Emitted when the window is closed.
