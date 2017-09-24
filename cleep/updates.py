@@ -372,7 +372,8 @@ class Updates(CleepremoteModule):
         c = Console()
         resp = c.command(command, 20.0)
         if resp['error'] or resp['killed']:
-            self.logger.error('Unable to install etcher-cli: %s' % (resp['stdout'] + resp['stderr']))
+            self.logger.error('Unable to install etcher-cli: stdout: %s' % (resp['stdout']))
+            self.logger.error('Unable to install etcher-cli: stderr: %s' % (resp['stderr']))
             return False
 
         return True
