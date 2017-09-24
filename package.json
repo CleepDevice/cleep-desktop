@@ -16,9 +16,9 @@
     "author": "Tanguy Bonneau",
     "license": "GPLv3",
     "devDependencies": {
-        "devtron": "~1.4.0",
-        "electron": "~1.6.2",
-        "electron-builder": "^19.27.3"
+        "devtron": "1.4.x",
+        "electron": "1.7.x",
+        "electron-builder": "19.30.x"
     },
     "dependencies": {
         "detect-port": "^1.2.1",
