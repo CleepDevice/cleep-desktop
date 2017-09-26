@@ -18,6 +18,7 @@ if platform.system()=='Windows':
     from cleep.libs.windowsdrives import WindowsDrives
 elif platform.system()=='Darwin':
     from cleep.libs.diskutil import Diskutil
+    from cleep.libs.console import EndlessConsole
 else:
     from cleep.libs.console import EndlessConsole
     from cleep.libs.lsblk import Lsblk
@@ -47,9 +48,10 @@ class FlashDrive(CleepremoteModule):
 
     ETCHER_LINUX = '/etc/cleep/etcher-cli/etcher-cli.linux %s %s'
     ETCHER_WINDOWS = 'etcher-cli\etcher-cli.windows.bat'
-    ETCHER_MAC = 'etcher-cli/etcher-cli.mac %s %s'
+    ETCHER_MAC = 'etcher-cli/etcher-cli.mac %s %s %s'
     
     CMDLOGGER = 'tools\\cmdlogger\\cmdlogger.exe'
+    CMDLOGGER_MAC = 'tools/cmdlogger-mac/cmdlogger'
 
     RASPBIAN_URL = 'http://downloads.raspberrypi.org/raspbian/images/'
     RASPBIAN_LITE_URL = 'http://downloads.raspberrypi.org/raspbian_lite/images/'
@@ -142,15 +144,17 @@ class FlashDrive(CleepremoteModule):
                     self.update_callback(self.get_status())
                     
                 elif self.cancel:
+                    #handle cancelation
                     self.status = self.STATUS_CANCELED
 
                 else:
-                    self.status = self.STATUS_ERROR
+                    #download failed. Status should already be setted by __download_file function
+                    pass
 
                 #reset everything
                 self.total_percent = 100
                 if self.iso and os.path.exists(self.iso):
-                    os.remove(self.iso)
+                    #os.remove(self.iso)
                     self.logger.debug('File %s deleted' % self.iso)
                     self.iso = None
                 self.drive = None
@@ -610,9 +614,10 @@ class FlashDrive(CleepremoteModule):
             self.logger.debug('No drive or url specified, flash process stopped')
             return False
 
-        #debug purpose, avoid iso downloading
+        #debug purpose, avoid iso downloading. Don't forget to comment file deletion at end of run() process
         #self.iso = 'c:\\cleep_iso_c8bee3ea-bfa4-455e-a554-bc7cf1746da3.zip'
-        #return True
+        self.iso = '/Users/tanguybonneau/raspbian.zip'
+        return True
         
         #prepare iso
         self.iso = os.path.join(self.temp_dir, '%s_%s' % (self.TMP_FILE_PREFIX, str(uuid.uuid4())))
@@ -794,8 +799,16 @@ class FlashDrive(CleepremoteModule):
             self.console = WindowsUacEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
             self.console.set_cmdlogger(self.CMDLOGGER)
             self.console.start()
+
+        elif self.env=='darwin':
+            cmd = self.etcher_cmd % (self.CMDLOGGER_MAC, '/dev/disk1', self.iso)
+            self.logger.debug('Etcher command to execute: %s' % cmd)
+            self.console = EndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
+            self.console.start()
+
         else:
-            cmd = self.etcher_cmd % (self.drive, self.iso)
+            #cmd = self.etcher_cmd % (self.drive, self.iso)
+            cmd = self.etcher_cmd % ('/dev/disk1', self.iso)
             self.logger.debug('Etcher command to execute: %s' % cmd)
             self.console = EndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
             self.console.start()

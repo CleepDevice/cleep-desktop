@@ -13,13 +13,13 @@ import os
 import signal
 import logging
 import re
+import socket
 import platform
 if platform.system()=='Windows':
     #windows console specific import
     import win32api, win32con, win32event, win32process
     from win32com.shell.shell import ShellExecuteEx
     from win32com.shell import shellcon
-    import socket
 
 
 class EndlessConsole(Thread):
@@ -201,8 +201,8 @@ class EndlessConsole(Thread):
         if self.callback_end:
             self.callback_end()
 
-            
-class WindowsUacEndlessConsole(EndlessConsole):
+
+class AdminEndlessConsole(EndlessConsole):
     """
     EndlessConsole version with privilege elevation (UAC) for windows
     How it works: this class launches windows command line with elavated rights.
@@ -249,10 +249,13 @@ class WindowsUacEndlessConsole(EndlessConsole):
         Check running with admin privilege or not
         """
         try:
-            import ctypes
-            # WARNING: requires Windows XP SP2 or higher!
-            return ctypes.windll.shell32.IsUserAnAdmin()
-            
+            if platform.system()=='Windows':
+                import ctypes
+                # WARNING: requires Windows XP SP2 or higher!
+                return ctypes.windll.shell32.IsUserAnAdmin()
+            else:
+                #TODO for Linux and Darwin
+                return False
         except:
             self.logger.exception('Admin check failed, assuming not admin:')
             return False
@@ -286,35 +289,75 @@ class WindowsUacEndlessConsole(EndlessConsole):
             comm_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             comm_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             comm_server.bind((u'', comm_port))
-            comm_server.settimeout(5.0)
+            if platform.system()=='Windows':
+                #short timeout on windows
+                comm_server.settimeout(5.0)
+            else:
+                #longer timeout on other platform due to password request
+                comm_server.settimeout(1.0)
         except:
-            self.logger.exception(u'Unable to get create communication server')
+            self.logger.exception(u'Unable to create communication server')
             self.return_code = self.ERROR_INTERNAL
             return
-        
-        #get command and command arguments
-        user_cmd = u'"%s"' % self.command[0]
-        user_cmd_params = u' '.join([u'"%s"' % (x,) for x in self.command[1:]])
-        self.logger.debug(u'user_cmd=%s user_cmd_params=%s' % (user_cmd, user_cmd_params))
-       
-        #prepare cmdlogger command
-        cmd = self.cmdlogger_path
-        params = u'"%d" %s %s' % (comm_port, user_cmd, user_cmd_params)
-        self.logger.debug(u'cmd=%s params=%s' % (cmd, params))
             
-        #launch Windows command with parameters:
-        # - hidden console
-        # - rise UAC elevation
         self.__start_time = time.time()
-        proc_info = ShellExecuteEx(nShow=win32con.SW_HIDE, fMask=shellcon.SEE_MASK_NOCLOSEPROCESS, lpVerb=u'runas', lpFile=cmd, lpParameters=params)
-        proc_handle = proc_info[u'hProcess']
-        pid = win32process.GetProcessId(proc_handle)
+        if platform.system()=='Windows':
+            #get command and command arguments
+            user_cmd = u'"%s"' % self.command[0]
+            user_cmd_params = u' '.join([u'"%s"' % (x,) for x in self.command[1:]])
+            self.logger.debug(u'user_cmd=%s user_cmd_params=%s' % (user_cmd, user_cmd_params))
+
+            #prepare cmdlogger command
+            cmd = self.cmdlogger_path
+            params = u'"%d" %s %s' % (comm_port, user_cmd, user_cmd_params)
+            self.logger.debug(u'cmd=%s params=%s' % (cmd, params))
+
+            #launch Windows command with parameters:
+            # - hidden console
+            # - rise UAC elevation
+            self.logger.debug('Launch command on Windows')
+            proc_info = ShellExecuteEx(nShow=win32con.SW_HIDE, fMask=shellcon.SEE_MASK_NOCLOSEPROCESS, lpVerb=u'runas', lpFile=cmd, lpParameters=params)
+            proc_handle = proc_info[u'hProcess']
+            pid = win32process.GetProcessId(proc_handle)
+
+        elif platform.system()=='Darwin':
+            #prepare cmdline
+            params = [self.cmdlogger_path, str(comm_port), self.command[0]] + self.command[1:]
+            self.logger.debug('params=%s' % params)
+            cmd_line = 'osascript -e "do shell script \\"%s\\" with administrator privileges"' % u' '.join(params)
+            self.logger.debug('cmdline=%s' % cmd_line)
+
+            #launch command on macos with password popup powered by osascript
+            self.logger.debug('Launch command on Darwin')
+            proc_info = subprocess.Popen(cmd_line, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=self.on_posix)
+            pid = proc_info.pid
+
         self.logger.debug(u'Command pid: %d' % pid)
         
         #wait for cmdlogger connection
         comm_server.listen(1)
-        (cmdlogger, (ip, port)) = comm_server.accept()
-        
+        while True:
+            try:
+                self.logger.debug('Accepting...')
+                (cmdlogger, (ip, port)) = comm_server.accept()
+                #cmdlogger connected, stop statement
+                break
+            except socket.timeout:
+                self.logger.debug('poll')
+                if platform.system()=='Windows':
+                    #TODO on windows check process is stil running
+                    #http://docs.activestate.com/activepython/3.4/pywin32/win32event__WaitForSingleObject_meth.html
+                    wfso = win32event.WaitForSingleObject(proc_handle, 100.0)
+                    self.logger.debug('waitforsingleobj=%s' % wfso)
+                else:
+                    if proc_info.poll() is not None:
+                        #process is terminated with surely execution failure or short time execution
+                        self.logger.warn('No cmdlogger connected. Maybe command execution failed or was too quick')
+                        return
+            except:
+                self.logger.exception('Exception during socket accept:')
+                return
+
         #look for cmdlogger messages
         while True:
             try:
@@ -338,10 +381,13 @@ class WindowsUacEndlessConsole(EndlessConsole):
             except socket.error:
                 pass
                 
-        time.sleep(2.0)
+        time.sleep(1.0)
                 
         #get process return code
-        self.return_code = win32process.GetExitCodeProcess(proc_handle)
+        if platform.system()=='Windows':
+            self.return_code = win32process.GetExitCodeProcess(proc_handle)
+        elif platform.system()=='Darwin':
+            self.return_code = proc_info.returncode
         self.logger.debug('Return code: %s' % self.return_code)
         
         #close comm_server
@@ -570,8 +616,12 @@ if __name__ == '__main__':
             print('Stdout from command: %s' % stdout)
         if stderr:
             print('Stderr from command: %s' % stderr)
-    
-    c = WindowsUacEndlessConsole(['chkdsk'], command_callback, command_terminated)
-    c.set_cmdlogger('c:\\cleep-desktop\\tools\\cmdlogger\\cmdlogger.exe')
+
+    if platform.system()=='Windows':
+        c = WindowsUacEndlessConsole(['chkdsk'], command_callback, command_terminated)
+        c.set_cmdlogger('c:\\cleep-desktop\\tools\\cmdlogger\\cmdlogger.exe')
+    elif platform.system()=='Darwin':
+        c = AdminEndlessConsole(['/Users/tanguybonneau/cleepdesktop/cleep/libs/test.sh'], command_callback, command_terminated)
+        c.set_cmdlogger('/Users/tanguybonneau/cleepdesktop/tools/cmdlogger-mac/cmdlogger')
     c.run()
         
