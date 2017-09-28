@@ -18,9 +18,9 @@ if platform.system()=='Windows':
     from cleep.libs.windowsdrives import WindowsDrives
 elif platform.system()=='Darwin':
     from cleep.libs.diskutil import Diskutil
-    from cleep.libs.console import EndlessConsole
+    from cleep.libs.console import AdminEndlessConsole
 else:
-    from cleep.libs.console import EndlessConsole
+    from cleep.libs.console import AdminEndlessConsole
     from cleep.libs.lsblk import Lsblk
     from cleep.libs.udevadm import Udevadm
     
@@ -48,9 +48,10 @@ class FlashDrive(CleepremoteModule):
 
     ETCHER_LINUX = '/etc/cleep/etcher-cli/etcher-cli.linux %s %s'
     ETCHER_WINDOWS = 'etcher-cli\etcher-cli.windows.bat'
-    ETCHER_MAC = 'etcher-cli/etcher-cli.mac %s %s %s'
+    ETCHER_MAC = 'etcher-cli/etcher-cli.mac'
     
-    CMDLOGGER = 'tools\\cmdlogger\\cmdlogger.exe'
+    CMDLOGGER_LINUX = 'tools/cmdlogger-linux/cmdlogger'
+    CMDLOGGER_WINDOWS = 'tools\\cmdlogger-windows\\cmdlogger.exe'
     CMDLOGGER_MAC = 'tools/cmdlogger-mac/cmdlogger'
 
     RASPBIAN_URL = 'http://downloads.raspberrypi.org/raspbian/images/'
@@ -141,6 +142,7 @@ class FlashDrive(CleepremoteModule):
                         self.status = self.STATUS_DONE
                         
                     #update ui
+                    self.logger.debug('Send status to ui: %s' % self.get_status())
                     self.update_callback(self.get_status())
                     
                 elif self.cancel:
@@ -154,7 +156,7 @@ class FlashDrive(CleepremoteModule):
                 #reset everything
                 self.total_percent = 100
                 if self.iso and os.path.exists(self.iso):
-                    #os.remove(self.iso)
+                    os.remove(self.iso)
                     self.logger.debug('File %s deleted' % self.iso)
                     self.iso = None
                 self.drive = None
@@ -506,7 +508,7 @@ class FlashDrive(CleepremoteModule):
                     #save entry
                     flashables.append({
                         'desc': '%s' % drives[drive]['name'],
-                        'path': '%s' % drives[drive]['raw'],
+                        'path': '%s' % drives[drive]['device'],
                         'readonly': drives[drive]['protected']
                     })
 
@@ -616,8 +618,8 @@ class FlashDrive(CleepremoteModule):
 
         #debug purpose, avoid iso downloading. Don't forget to comment file deletion at end of run() process
         #self.iso = 'c:\\cleep_iso_c8bee3ea-bfa4-455e-a554-bc7cf1746da3.zip'
-        self.iso = '/Users/tanguybonneau/raspbian.zip'
-        return True
+        #self.iso = '/Users/tanguybonneau/raspbian.zip'
+        #return True
         
         #prepare iso
         self.iso = os.path.join(self.temp_dir, '%s_%s' % (self.TMP_FILE_PREFIX, str(uuid.uuid4())))
@@ -793,23 +795,26 @@ class FlashDrive(CleepremoteModule):
             raise Exception(u'Flashing operation is already running')
 
         self.status = self.STATUS_FLASHING
-        if self.env=='windows':
+        try:
             cmd = [self.etcher_cmd, self.drive, self.iso]
             self.logger.debug('Etcher command to execute: %s' % cmd)
-            self.console = WindowsUacEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
-            self.console.set_cmdlogger(self.CMDLOGGER)
-            self.console.start()
+            if self.env=='windows':
+                self.console = AdminEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
+                self.console.set_cmdlogger(self.CMDLOGGER_WINDOWS)
+                self.console.start()
 
-        elif self.env=='darwin':
-            cmd = self.etcher_cmd % (self.CMDLOGGER_MAC, '/dev/disk1', self.iso)
-            self.logger.debug('Etcher command to execute: %s' % cmd)
-            self.console = EndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
-            self.console.start()
+            elif self.env=='darwin':
+                self.console = AdminEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
+                self.console.set_cmdlogger(self.CMDLOGGER_MAC)
+                self.console.start()
 
-        else:
-            #cmd = self.etcher_cmd % (self.drive, self.iso)
-            cmd = self.etcher_cmd % ('/dev/disk1', self.iso)
-            self.logger.debug('Etcher command to execute: %s' % cmd)
-            self.console = EndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
-            self.console.start()
+            elif 'linux':
+                self.console = EndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
+                self.console.set_cmdlogger(self.CMDLOGGER_LINUX)
+                self.console.start()
+
+        except:
+            self.logger.exception('Exception occured during drive flashing:')
+            self.__etcher_output_error = True
+            self.console = None
 

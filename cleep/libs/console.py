@@ -226,7 +226,7 @@ class AdminEndlessConsole(EndlessConsole):
             callback_end (function): callback when process is over
         """
         EndlessConsole.__init__(self, command, callback, callback_end)
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
         
         #members
         self.cmdlogger_path = None
@@ -235,7 +235,7 @@ class AdminEndlessConsole(EndlessConsole):
         #check command
         if not isinstance(command, list):
             raise Exception('Invalid command parameter: must be a list with the program in first position followed by its arguments')
-            
+
     def set_cmdlogger(self, cmdlogger_path):
         """
         Set cmdlogger.exe fullpath
@@ -244,29 +244,37 @@ class AdminEndlessConsole(EndlessConsole):
         if not os.path.exists(self.cmdlogger_path):
             raise Exception('Invalid cmdlogger path. The exe does not exist')
                 
-    def is_admin():
+    #def is_admin():
+    #    """
+    #    Check running with admin privilege or not
+    #    """
+    #    try:
+    #        if platform.system()=='Windows':
+    #            import ctypes
+    #            # WARNING: requires Windows XP SP2 or higher!
+    #            return ctypes.windll.shell32.IsUserAnAdmin()
+    #        else:
+    #            #TODO for Linux and Darwin
+    #            return False
+    #    except:
+    #        self.logger.exception('Admin check failed, assuming not admin:')
+    #        return False
+    
+    def __quit_properly(self, return_code):
         """
-        Check running with admin privilege or not
+        Quit process properly specifying return_code
         """
-        try:
-            if platform.system()=='Windows':
-                import ctypes
-                # WARNING: requires Windows XP SP2 or higher!
-                return ctypes.windll.shell32.IsUserAnAdmin()
-            else:
-                #TODO for Linux and Darwin
-                return False
-        except:
-            self.logger.exception('Admin check failed, assuming not admin:')
-            return False
+        self.return_code = return_code
+        if self.callback_end:
+            self.callback_end()
         
     def run(self):
         """
         Console process
         """
-        
         #check cmdlogger
         if self.cmdlogger_path is None:
+            self.__quit_properly(self.ERROR_INTERNAL)
             raise Exception('Please configure cmdlogger path before launching command')
         
         #get free communication port
@@ -280,7 +288,7 @@ class AdminEndlessConsole(EndlessConsole):
             s.close()
         except:
             self.logger.exception('Unable to get free communication port')
-            self.return_code = self.ERROR_INTERNAL
+            self.__quit_properly(self.ERROR_INTERNAL)
             return
             
         #open communication socket
@@ -297,7 +305,7 @@ class AdminEndlessConsole(EndlessConsole):
                 comm_server.settimeout(1.0)
         except:
             self.logger.exception(u'Unable to create communication server')
-            self.return_code = self.ERROR_INTERNAL
+            self.__quit_properly(self.ERROR_INTERNAL)
             return
             
         self.__start_time = time.time()
@@ -353,9 +361,11 @@ class AdminEndlessConsole(EndlessConsole):
                     if proc_info.poll() is not None:
                         #process is terminated with surely execution failure or short time execution
                         self.logger.warn('No cmdlogger connected. Maybe command execution failed or was too quick')
+                        self.__quit_properly(self.ERROR_INTERNAL)
                         return
             except:
                 self.logger.exception('Exception during socket accept:')
+                self.__quit_properly(self.ERROR_INTERNAL)
                 return
 
         #look for cmdlogger messages
