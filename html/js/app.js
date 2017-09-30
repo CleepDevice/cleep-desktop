@@ -132,9 +132,8 @@ Cleep.config(['$mdThemingProvider', function($mdThemingProvider) {
         .accentPalette('red')
         .backgroundPalette('grey');
     $mdThemingProvider
-        .theme('dark')
-        .primaryPalette('amber')
-        .accentPalette('blue')
+        .theme('alt')
+        .backgroundPalette('blue-grey')
         .dark();
 }]);
 
@@ -200,27 +199,67 @@ var emptyController = function($rootScope, $scope, $state)
 };
 Cleep.controller('emptyController', ['$rootScope', '$scope', '$state', emptyController]);
 
-var cleepController = function($rootScope, $scope, $state, cleepService)
+var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService)
 {
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
+    self.taskFlash = null;
+    self.taskUpdate = null;
 
     //handle 'openPage' menu event
     self.ipcRenderer.on('openPage', function(event, page) {
         $state.go(page);
     });
 
-    //display infos about ended installation
-    /*$rootScope.on('flash', function(event, data) {
+    //jump to updates page
+    self.jumpToUpdates = function() {
+        $state.go('updates');
+    };
+
+    //jump to auto install page
+    self.jumpToAutoInstall = function() {
+        $state.go('installAuto');
+    };
+
+    //add flash task info
+    $rootScope.$on('flash', function(event, data) {
+        if( !data )
+            return;
+
         if( data.status>=5 )
         {
             //flash is terminated
-            toast.info('Installation is terminated');
+            tasksPanelService.removeItem(self.taskFlash);
+            self.taskFlash = null;
         }
-    });*/
+        else if( data.status>0 && !self.taskFlash )
+        {
+            //flash is started
+            self.taskFlash = tasksPanelService.addItem('Installing cleep on drive...', self.jumpToAutoInstall, true, true);
+        }
+    });
+
+    //add update task info
+    $rootScope.$on('updates', function(event, data) {
+        if( !data )
+            return;
+
+        if( data.etcherstatus>=3 || data.cleepstatus>=3 )
+        {
+            //update is terminated
+            tasksPanelService.removeItem(self.taskUpdate);
+            self.taskUpdate = null;
+        }
+        else if( !self.taskUpdate && (data.etcherstatus>0 || data.cleepstatus>0) )
+        {
+            //update is started
+            self.taskUpdate = tasksPanelService.addItem('Updating software version...', self.jumpToUpdates, true, true);
+        }
+    });
 
     //init websocket
     cleepService.connectWebSocket();
+
 };
-Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', cleepController]);
+Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', cleepController]);
 

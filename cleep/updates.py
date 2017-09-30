@@ -288,6 +288,13 @@ class Updates(CleepremoteModule):
                     infos.error = True
                     return infos
 
+                elif not os.path.exists(os.path.join(self.abs_path, 'etcher-cli')):
+                    #nothing installed
+                    self.logger.debug('No etcher-cli found. Installation is necessary')
+                    infos.version = latest['tag_name']
+                    infos.update_available = True
+                    (infos.filename, infos.url, infos.size) = self.__get_latest_etcher_release(latest['assets'])
+
                 elif latest['tag_name']!=etcher_version:
                     #new version available, find cli version for current user platform
                     self.logger.debug('Update available (online version=%s installed version=%s)' % (latest['tag_name'], etcher_version))
