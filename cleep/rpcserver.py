@@ -198,12 +198,12 @@ def updates_update(updates):
     current_updates = updates
     last_updates_update = time.time()
 
-def get_app(abs_path, config_path, config_filename, debug_enabled):
+def get_app(app_path, config_path, config_filename, debug_enabled):
     """
     Return web server instance
 
     Args:
-        abs_path (string): absolute application path
+        app_path (string): absolute application path
         config_path (string): configuration path
         config_filename (string): configuration filename
         debug_enabled (bool): True if debug enabled
@@ -255,7 +255,7 @@ def get_app(abs_path, config_path, config_filename, debug_enabled):
         crash_report.disable()
 
     #launch flash process
-    flashdrive = FlashDrive(flash_update, debug, crash_report)
+    flashdrive = FlashDrive(app_path, flash_update, debug, crash_report)
     flashdrive.start()
 
     #launch devices process
@@ -263,14 +263,14 @@ def get_app(abs_path, config_path, config_filename, debug_enabled):
     devices.start()
 
     #check etcher dir
-    logger.debug('Absolute cleepremote path: %s' % abs_path)
+    logger.debug('Absolute cleepremote path: %s' % app_path)
     etcher_version = config['etcher']['version']
-    if not os.path.exists(os.path.join(abs_path, ETCHER_DIR)):
+    if not os.path.exists(os.path.join(app_path, ETCHER_DIR)):
         logger.info('Etcher-cli not found')
         etcher_version = None
 
     #launch updates process
-    updates = Updates(abs_path, config['cleep']['version'], etcher_version, updates_update, debug, crash_report)
+    updates = Updates(app_path, config['cleep']['version'], etcher_version, updates_update, debug, crash_report)
     updates.start()
 
     return app

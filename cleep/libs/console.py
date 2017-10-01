@@ -226,7 +226,7 @@ class AdminEndlessConsole(EndlessConsole):
             callback_end (function): callback when process is over
         """
         EndlessConsole.__init__(self, command, callback, callback_end)
-        #self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.DEBUG)
         
         #members
         self.cmdlogger_path = None
@@ -335,8 +335,20 @@ class AdminEndlessConsole(EndlessConsole):
             cmd_line = 'osascript -e "do shell script \\"%s\\" with administrator privileges"' % u' '.join(params)
             self.logger.debug('cmdline=%s' % cmd_line)
 
-            #launch command on macos with password popup powered by osascript
+            #launch command on macos with password requested by osascript
             self.logger.debug('Launch command on Darwin')
+            proc_info = subprocess.Popen(cmd_line, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=self.on_posix)
+            pid = proc_info.pid
+
+        elif platform.system()=='Linux':
+            #prepare cmdline
+            params = [self.cmdlogger_path, str(comm_port), self.command[0]] + self.command[1:]
+            self.logger.debug('params=%s' % params)
+            cmd_line = 'pkexec %s' % u' '.join(params)
+            self.logger.debug('cmdline=%s' % cmd_line)
+
+            #launch command on linux with password requested by pkexec
+            self.logger.debug('Launch command on Linux')
             proc_info = subprocess.Popen(cmd_line, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=self.on_posix)
             pid = proc_info.pid
 
@@ -396,7 +408,7 @@ class AdminEndlessConsole(EndlessConsole):
         #get process return code
         if platform.system()=='Windows':
             self.return_code = win32process.GetExitCodeProcess(proc_handle)
-        elif platform.system()=='Darwin':
+        else:
             self.return_code = proc_info.returncode
         self.logger.debug('Return code: %s' % self.return_code)
         

@@ -14,7 +14,7 @@ import requests
 import tempfile
 from cleep.utils import CleepremoteModule
 if platform.system()=='Windows':
-    from cleep.libs.console import WindowsUacEndlessConsole
+    from cleep.libs.console import AdminEndlessConsole
     from cleep.libs.windowsdrives import WindowsDrives
 elif platform.system()=='Darwin':
     from cleep.libs.diskutil import Diskutil
@@ -46,7 +46,7 @@ class FlashDrive(CleepremoteModule):
     STATUS_ERROR_BADCHECKSUM = 9
     STATUS_ERROR_FLASH = 10
 
-    ETCHER_LINUX = '/etc/cleep/etcher-cli/etcher-cli.linux %s %s'
+    ETCHER_LINUX = 'etcher-cli/etcher-cli.linux'
     ETCHER_WINDOWS = 'etcher-cli\etcher-cli.windows.bat'
     ETCHER_MAC = 'etcher-cli/etcher-cli.mac'
     
@@ -57,11 +57,12 @@ class FlashDrive(CleepremoteModule):
     RASPBIAN_URL = 'http://downloads.raspberrypi.org/raspbian/images/'
     RASPBIAN_LITE_URL = 'http://downloads.raspberrypi.org/raspbian_lite/images/'
 
-    def __init__(self, update_callback, debug_enabled, crash_report):
+    def __init__(self, app_path, update_callback, debug_enabled, crash_report):
         """
         Contructor
 
         Args:
+            app_path (string): application path
             update_callback (function): function to call when data need to be pushed to ui
             debug_enabled (bool): True if debug is enabled
             crash_report (CrashReport): crash report instance
@@ -69,6 +70,7 @@ class FlashDrive(CleepremoteModule):
         CleepremoteModule.__init__(self, debug_enabled, crash_report)
 
         #members
+        self.app_path = app_path
         self.env = platform.system().lower()
         self.temp_dir = tempfile.gettempdir()
         self.update_callback = update_callback
@@ -90,14 +92,14 @@ class FlashDrive(CleepremoteModule):
         
         #get etcher command
         if self.env=='windows':
-            self.etcher_cmd = self.ETCHER_WINDOWS
+            self.etcher_cmd = os.path.join(self.app_path, self.ETCHER_WINDOWS)
             self.windowsdrives = WindowsDrives()
         elif self.env=='linux':
-            self.etcher_cmd = self.ETCHER_LINUX
+            self.etcher_cmd = os.path.join(self.app_path, self.ETCHER_LINUX)
             self.lsblk = Lsblk()
             self.udevadm = Udevadm()
         elif self.env=='darwin':
-            self.etcher_cmd = self.ETCHER_MAC
+            self.etcher_cmd = os.path.join(self.app_path, self.ETCHER_MAC)
             self.diskutil = Diskutil()
         self.logger.debug('Etcher command line: %s' % self.etcher_cmd)
 
@@ -796,22 +798,16 @@ class FlashDrive(CleepremoteModule):
 
         self.status = self.STATUS_FLASHING
         try:
-            cmd = [self.etcher_cmd, self.drive, self.iso]
+            cmd = [self.etcher_cmd, self.app_path, self.drive, self.iso]
             self.logger.debug('Etcher command to execute: %s' % cmd)
+            self.console = AdminEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
             if self.env=='windows':
-                self.console = AdminEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
-                self.console.set_cmdlogger(self.CMDLOGGER_WINDOWS)
-                self.console.start()
-
+                self.console.set_cmdlogger(os.path.join(self.app_path, self.CMDLOGGER_WINDOWS))
             elif self.env=='darwin':
-                self.console = AdminEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
-                self.console.set_cmdlogger(self.CMDLOGGER_MAC)
-                self.console.start()
-
-            elif 'linux':
-                self.console = EndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
-                self.console.set_cmdlogger(self.CMDLOGGER_LINUX)
-                self.console.start()
+                self.console.set_cmdlogger(os.path.join(self.app_path, self.CMDLOGGER_MAC))
+            else:
+                self.console.set_cmdlogger(os.path.join(self.app_path, self.CMDLOGGER_LINUX))
+            self.console.start()
 
         except:
             self.logger.exception('Exception occured during drive flashing:')

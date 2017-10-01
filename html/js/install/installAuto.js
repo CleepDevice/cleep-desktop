@@ -76,7 +76,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                 };
                 cleepService.sendCommand('startflash', data)
                     .then(function() {
-                        toast.info('Installation started')
+                        //toast.info('Installation started')
                     });
             });
     };
@@ -114,6 +114,10 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
 
     //flash update recevied
     $rootScope.$on('flash', function(event, data) {
+        if( !data )
+            return;
+
+        //save status
         self.status = data;
 
         //enable flash button
