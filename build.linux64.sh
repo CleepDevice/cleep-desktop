@@ -16,7 +16,7 @@ CLEEPDESKTOPPATH=build/cleepdesktop_tree
 echo
 echo "Packaging cleepremote..."
 echo "------------------------"
-/usr/local/bin/pyinstaller --clean --noconfirm --noupx --debug --log-level INFO cleepremote.linux.spec
+/usr/local/bin/pyinstaller --clean --noconfirm --noupx --debug --log-level INFO cleepremote.linux64.spec
 /bin/mv dist/cleepremote "$CLEEPDESKTOPPATH"
 
 #copy files and dirs

@@ -15,7 +15,7 @@ echo.
 echo.
 echo Packaging cleepremote...
 echo ------------------------
-pyinstaller --clean --noconfirm --noupx --windowed --debug --log-level INFO cleepremote.windows.spec
+pyinstaller --clean --noconfirm --noupx --windowed --debug --log-level INFO cleepremote.windows64.spec
 move dist\cleepremote %CLEEPDESKTOPPATH%
 
 :: copy files and dirs
