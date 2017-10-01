@@ -1,8 +1,13 @@
 #!/bin/sh
 
-/bin/rm -rf $2/etcher-cli
-/usr/bin/tar xzf $1 -C $2
+#params:
+# $1 : archive fullpath
+# $2 : application path
+# $3 : install path
+
+/bin/rm -rf $3/etcher-cli
+/usr/bin/tar xzf $1 -C $3
 /bin/rm $1
-/bin/mv $2/Etcher-cli* $2/etcher-cli
-/bin/cp $2/scripts/etcher-cli.mac $2/etcher-cli
+/bin/mv $3/Etcher-cli* $3/etcher-cli
+/bin/cp $2/scripts/etcher-cli.mac $3/etcher-cli
 

@@ -14,6 +14,7 @@ Rpcserver implements:
 """
 
 import os
+import platform
 import logging
 import sys
 import argparse
@@ -263,14 +264,23 @@ def get_app(app_path, config_path, config_filename, debug_enabled):
     devices.start()
 
     #check etcher dir
-    logger.debug('Absolute cleepremote path: %s' % app_path)
+    logger.debug('Looking for etcher-cli at path: %s' % config_path)
     etcher_version = config['etcher']['version']
-    if not os.path.exists(os.path.join(app_path, ETCHER_DIR)):
-        logger.info('Etcher-cli not found')
+    if not os.path.exists(os.path.join(config_path, ETCHER_DIR)):
+        logger.info('Etcher-cli not found. Etcher install is required')
+        etcher_version = None
+    if platform.system()=='Windows':
+        etcher_script = FlashDrive.ETCHER_WINDOWS
+    elif platform.system()=='Darwin':
+        etcher_script = FlashDrive.ETCHER_MAC
+    else:
+        etcher_script = FlashDrive.ETCHER_LINUX
+    if not os.path.exists(os.path.join(config_path, etcher_script)):
+        logger.info('Etcher-cli script not found. Etcher install is required.')
         etcher_version = None
 
     #launch updates process
-    updates = Updates(app_path, config['cleep']['version'], etcher_version, updates_update, debug, crash_report)
+    updates = Updates(app_path, config_path, config['cleep']['version'], etcher_version, updates_update, debug, crash_report)
     updates.start()
 
     return app

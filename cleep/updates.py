@@ -38,9 +38,9 @@ class Updates(CleepremoteModule):
 
     ETCHER_RELEASES = 'https://api.github.com/repos/resin-io/etcher/releases'
 
-    INSTALL_ETCHER_COMMAND_LINUX = '%s/scripts/install_etcher.linux %s %s'
-    INSTALL_ETCHER_COMMAND_WINDOWS = '%s\\scripts\\install_etcher.windows.bat %s %s'
-    INSTALL_ETCHER_COMMAND_MAC = '%s/scripts/install_etcher.mac %s %s'
+    INSTALL_ETCHER_COMMAND_LINUX = '%s/scripts/install_etcher.linux %s %s %s'
+    INSTALL_ETCHER_COMMAND_WINDOWS = '%s\\scripts\\install_etcher.windows.bat %s %s %s'
+    INSTALL_ETCHER_COMMAND_MAC = '%s/scripts/install_etcher.mac %s %s %s'
 
     STATUS_IDLE = 0
     STATUS_DOWNLOADING = 1
@@ -48,12 +48,13 @@ class Updates(CleepremoteModule):
     STATUS_DONE = 3
     STATUS_ERROR = 4
 
-    def __init__(self, abs_path, cleep_version, etcher_version, update_callback, debug_enabled, crash_report):
+    def __init__(self, app_path, install_path, cleep_version, etcher_version, update_callback, debug_enabled, crash_report):
         """
         Constructor
 
         Args:
-            abs_path (string): absolute application path
+            app_path (string): absolute application path
+            install_path (string): path to install extra tools (etcher)
             cleep_version (string): current cleepdesktop version
             etcher_version (string): current etcher-cli version
             update_callback (function): function to call when data need to be updated on ui
@@ -63,9 +64,10 @@ class Updates(CleepremoteModule):
         CleepremoteModule.__init__(self, debug_enabled, crash_report)
 
         #members
-        self.abs_path = abs_path
-        if len(self.abs_path)==0:
-            self.abs_path = '.'
+        self.app_path = app_path
+        if len(self.app_path)==0:
+            self.app_path = '.'
+        self.install_path = install_path
         self.update_callback = update_callback
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.http = urllib3.PoolManager(num_pools=1)
@@ -288,7 +290,7 @@ class Updates(CleepremoteModule):
                     infos.error = True
                     return infos
 
-                elif not os.path.exists(os.path.join(self.abs_path, 'etcher-cli')):
+                elif not os.path.exists(os.path.join(self.app_path, 'etcher-cli')):
                     #nothing installed
                     self.logger.debug('No etcher-cli found. Installation is necessary')
                     infos.version = latest['tag_name']
@@ -368,11 +370,11 @@ class Updates(CleepremoteModule):
         #prepare command
         command = None
         if self.env=='linux':
-            command = self.INSTALL_ETCHER_COMMAND_LINUX % (self.abs_path, archive_path, self.abs_path)
+            command = self.INSTALL_ETCHER_COMMAND_LINUX % (self.app_path, archive_path, self.app_path, self.install_path)
         elif self.env=='darwin':
-            command = self.INSTALL_ETCHER_COMMAND_MAC % (self.abs_path, archive_path, self.abs_path)
+            command = self.INSTALL_ETCHER_COMMAND_MAC % (self.app_path, archive_path, self.app_path, self.install_path)
         elif self.env=='windows':
-            command = self.INSTALL_ETCHER_COMMAND_WINDOWS % (self.abs_path, archive_path, self.abs_path)
+            command = self.INSTALL_ETCHER_COMMAND_WINDOWS % (self.app_path, archive_path, self.app_path, self.install_path)
         self.logger.debug('Command executed to install etcher: %s' % command)
 
         #execute command

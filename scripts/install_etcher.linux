@@ -2,10 +2,11 @@
 
 #params:
 # $1 : archive fullpath
-# $2 : install path
+# $2 : application path
+# $3 : install path
 
-/bin/rm -rf $2/etcher-cli
-/bin/tar xzvf $1 -C $2
-/bin/mv $2/Etcher-cli* $2/etcher-cli
-/bin/cp $2/scripts/etcher-cli.linux $2/etcher-cli
+/bin/rm -rf $3/etcher-cli
+/bin/tar xzvf $1 -C $3
+/bin/mv $3/Etcher-cli* $3/etcher-cli
+/bin/cp $2/scripts/etcher-cli.linux $3/etcher-cli
 

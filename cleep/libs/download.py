@@ -29,7 +29,7 @@ class Download():
     def __init__(self, status_callback):
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
 
         #members
         self.temp_dir = tempfile.gettempdir()
