@@ -243,7 +243,7 @@ function createWindow ()
 {
     // Create the browser window.
     mainWindow = new BrowserWindow({
-        width:800,
+        width:1024,
         height:600,
         show: false,
         icon:__dirname+'/resources/256x256.png',
@@ -258,14 +258,17 @@ function createWindow ()
     });
 
     // close splashscreen when loaded
+    //mainWindow.once('ready-to-show', () => {
     mainWindow.webContents.on('did-finish-load', function(e) {
-        mainWindow.maximize();
+        mainWindow.show();
+        //mainWindow.maximize();
+        mainWindow.focus();
 
         if( splashScreen )
         {
             let splashScreenBounds = splashScreen.getBounds();
-            mainWindow.setBounds(splashScreenBounds);
-            //splashScreen.close();
+            //mainWindow.setBounds(splashScreenBounds);
+            splashScreen.close();
         }
     });
 
