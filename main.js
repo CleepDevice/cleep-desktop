@@ -1,4 +1,4 @@
-//cleepdesktop version
+//cleepdesktop version (do not touch it, update cleep/__init__.py
 const VERSION = '0.0.0';
 
 //default config
@@ -47,6 +47,7 @@ if( isDev )
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
+let splashScreen
 
 // Parse command line arguments
 function parseArgs()
@@ -213,6 +214,30 @@ function createMenu()
     Menu.setApplicationMenu(menu)
 };
 
+// Create splash screen
+// Code from https://github.com/buz-zard/random/blob/master/electron-compile-1/src/main.js
+function createSplashScreen()
+{
+    //splashScreen = new BrowserWindow(Object.assign(windowParams, {parent: mainWindow}));
+    splashScreen = new BrowserWindow({
+        width: 250,
+        height: 300,
+        show: false,
+        frame: false,
+        parent: mainWindow
+    });
+    //splashScreen.loadURL('file://' + __dirname + '/loading.html');
+    splashScreen.loadURL(url.format({
+        pathname: path.join(__dirname, 'html/loading.html'),
+        protocol: 'file:',
+        slashes: true
+    }), {"extraHeaders" : "pragma: no-cache\n"})
+    splashScreen.on('closed', () => splashScreen = null);
+    splashScreen.webContents.on('did-finish-load', () => {
+        splashScreen.show();
+    });
+};
+
 // Create application main window
 function createWindow ()
 {
@@ -220,15 +245,28 @@ function createWindow ()
     mainWindow = new BrowserWindow({
         width:800,
         height:600,
+        show: false,
         icon:__dirname+'/resources/256x256.png',
         title:'CleepDesktop'
     })
-    mainWindow.maximize();
+    //mainWindow.maximize();
 
     // handle external url
     mainWindow.webContents.on('new-window', function(e, url) {
         e.preventDefault()
         shell.openExternal(url)
+    });
+
+    // close splashscreen when loaded
+    mainWindow.webContents.on('did-finish-load', function(e) {
+        mainWindow.maximize();
+
+        if( splashScreen )
+        {
+            let splashScreenBounds = splashScreen.getBounds();
+            mainWindow.setBounds(splashScreenBounds);
+            //splashScreen.close();
+        }
     });
 
     // and load the index.html of the app.
@@ -309,6 +347,7 @@ app.on('ready', function() {
         settings.set('remote.rpcport', DEFAULT_RPCPORT);
 
         //launch application
+        createSplashScreen();
         createWindow();
         createMenu();
         launchCleepremote(DEFAULT_RPCPORT);
@@ -326,6 +365,7 @@ app.on('ready', function() {
             settings.set('remote.rpcport', rpcport);
 
             //launch application
+            createSplashScreen();
             createWindow();
             createMenu();
             launchCleepremote(rpcport);
