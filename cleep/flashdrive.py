@@ -57,12 +57,13 @@ class FlashDrive(CleepremoteModule):
     RASPBIAN_URL = 'http://downloads.raspberrypi.org/raspbian/images/'
     RASPBIAN_LITE_URL = 'http://downloads.raspberrypi.org/raspbian_lite/images/'
 
-    def __init__(self, app_path, update_callback, debug_enabled, crash_report):
+    def __init__(self, app_path, install_path, update_callback, debug_enabled, crash_report):
         """
         Contructor
 
         Args:
             app_path (string): application path
+            install_path (string): installation path
             update_callback (function): function to call when data need to be pushed to ui
             debug_enabled (bool): True if debug is enabled
             crash_report (CrashReport): crash report instance
@@ -71,6 +72,7 @@ class FlashDrive(CleepremoteModule):
 
         #members
         self.app_path = app_path
+        self.install_path = install_path
         self.env = platform.system().lower()
         self.temp_dir = tempfile.gettempdir()
         self.update_callback = update_callback
@@ -92,14 +94,14 @@ class FlashDrive(CleepremoteModule):
         
         #get etcher command
         if self.env=='windows':
-            self.etcher_cmd = os.path.join(self.app_path, self.ETCHER_WINDOWS)
+            self.etcher_cmd = os.path.join(self.install_path, self.ETCHER_WINDOWS)
             self.windowsdrives = WindowsDrives()
         elif self.env=='linux':
-            self.etcher_cmd = os.path.join(self.app_path, self.ETCHER_LINUX)
+            self.etcher_cmd = os.path.join(self.install_path, self.ETCHER_LINUX)
             self.lsblk = Lsblk()
             self.udevadm = Udevadm()
         elif self.env=='darwin':
-            self.etcher_cmd = os.path.join(self.app_path, self.ETCHER_MAC)
+            self.etcher_cmd = os.path.join(self.install_path, self.ETCHER_MAC)
             self.diskutil = Diskutil()
         self.logger.debug('Etcher command line: %s' % self.etcher_cmd)
 
@@ -542,7 +544,7 @@ class FlashDrive(CleepremoteModule):
         """
         #return isos from cache
         refresh_isos = True
-        if self.timestamp_isos is not None and time.time()-self.timestamp_isos<=self.CACHE_DURATION:
+        if (self.timestamp_isos is not None and time.time()-self.timestamp_isos<=self.CACHE_DURATION) or (len(self.isos)==0):
             #check if raspbian isos are requested
             need_refresh = False
             if not iso_raspbian:
@@ -798,7 +800,7 @@ class FlashDrive(CleepremoteModule):
 
         self.status = self.STATUS_FLASHING
         try:
-            cmd = [self.etcher_cmd, self.app_path, self.drive, self.iso]
+            cmd = [self.etcher_cmd, self.install_path, self.drive, self.iso]
             self.logger.debug('Etcher command to execute: %s' % cmd)
             self.console = AdminEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
             if self.env=='windows':

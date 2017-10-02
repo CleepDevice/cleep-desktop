@@ -38,9 +38,9 @@ class Updates(CleepremoteModule):
 
     ETCHER_RELEASES = 'https://api.github.com/repos/resin-io/etcher/releases'
 
-    INSTALL_ETCHER_COMMAND_LINUX = '%s/scripts/install_etcher.linux %s %s %s'
-    INSTALL_ETCHER_COMMAND_WINDOWS = '%s\\scripts\\install_etcher.windows.bat %s %s %s'
-    INSTALL_ETCHER_COMMAND_MAC = '%s/scripts/install_etcher.mac %s %s %s'
+    INSTALL_ETCHER_COMMAND_LINUX = '%s/scripts/install_etcher.linux "%s" "%s" "%s"'
+    INSTALL_ETCHER_COMMAND_WINDOWS = '%s\\scripts\\install_etcher.windows.bat "%s" "%s" "%s"'
+    INSTALL_ETCHER_COMMAND_MAC = '%s/scripts/install_etcher.mac "%s" "%s" "%s"'
 
     STATUS_IDLE = 0
     STATUS_DOWNLOADING = 1

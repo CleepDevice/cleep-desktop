@@ -256,7 +256,7 @@ def get_app(app_path, config_path, config_filename, debug_enabled):
         crash_report.disable()
 
     #launch flash process
-    flashdrive = FlashDrive(app_path, flash_update, debug, crash_report)
+    flashdrive = FlashDrive(app_path, config_path, flash_update, debug, crash_report)
     flashdrive.start()
 
     #launch devices process

@@ -238,11 +238,11 @@ class AdminEndlessConsole(EndlessConsole):
 
     def set_cmdlogger(self, cmdlogger_path):
         """
-        Set cmdlogger.exe fullpath
+        Set cmdlogger binary fullpath
         """
         self.cmdlogger_path = cmdlogger_path
         if not os.path.exists(self.cmdlogger_path):
-            raise Exception('Invalid cmdlogger path. The exe does not exist')
+            raise Exception('Invalid cmdlogger path. Binary file does not exist')
                 
     #def is_admin():
     #    """
@@ -432,7 +432,8 @@ class AdminEndlessConsole(EndlessConsole):
 
 class Console():
     """
-    Helper class to execute command lines
+    Helper class to execute command line
+    In charge of developper to protect command parameters if necessary
     """
     def __init__(self):
         self.timer = None
