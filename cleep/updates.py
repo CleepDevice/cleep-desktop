@@ -12,6 +12,7 @@ import datetime
 from cleep.libs.download import Download
 from cleep.libs.console import Console
 from cleep.utils import CleepremoteModule
+from cleep.flashdrive import FlashDrive
 
 
 class UpdateInfos():
@@ -48,13 +49,13 @@ class Updates(CleepremoteModule):
     STATUS_DONE = 3
     STATUS_ERROR = 4
 
-    def __init__(self, app_path, install_path, cleep_version, etcher_version, update_callback, debug_enabled, crash_report):
+    def __init__(self, app_path, config_path, cleep_version, etcher_version, update_callback, debug_enabled, crash_report):
         """
         Constructor
 
         Args:
             app_path (string): absolute application path
-            install_path (string): path to install extra tools (etcher)
+            config_path (string): path to install extra tools (etcher)
             cleep_version (string): current cleepdesktop version
             etcher_version (string): current etcher-cli version
             update_callback (function): function to call when data need to be updated on ui
@@ -67,7 +68,7 @@ class Updates(CleepremoteModule):
         self.app_path = app_path
         if len(self.app_path)==0:
             self.app_path = '.'
-        self.install_path = install_path
+        self.config_path = config_path
         self.update_callback = update_callback
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.http = urllib3.PoolManager(num_pools=1)
@@ -282,6 +283,14 @@ class Updates(CleepremoteModule):
                 #response successful, parse data to get current latest version
                 data = json.loads(resp.data.decode('utf-8'))
 
+                #etcher-cli path
+                if self.env=='linux':
+                    etchercli_script_path = FlashDrive.ETCHER_LINUX
+                elif self.env=='darwin':
+                    etchercli_script_path = FlashDrive.ETCHER_MAC
+                elif self.env=='windows':
+                    etchercli_script_path = FlashDrive.ETCHER_WINDOWS
+
                 #compare version (latest release is on top of the list)
                 latest = data[0]
                 #self.logger.debug('latest release: %s' % latest)
@@ -290,9 +299,16 @@ class Updates(CleepremoteModule):
                     infos.error = True
                     return infos
 
-                elif not os.path.exists(os.path.join(self.app_path, 'etcher-cli')):
-                    #nothing installed
+                elif not os.path.exists(os.path.join(self.config_path, 'etcher-cli')):
+                    #etcher-cli is not installed
                     self.logger.debug('No etcher-cli found. Installation is necessary')
+                    infos.version = latest['tag_name']
+                    infos.update_available = True
+                    (infos.filename, infos.url, infos.size) = self.__get_latest_etcher_release(latest['assets'])
+
+                elif not os.path.exists(os.path.join(self.config_path, etchercli_script_path)):
+                    #etcher-cli script is not installed
+                    self.logger.debug('No etcher-cli script found. Installation is necessary')
                     infos.version = latest['tag_name']
                     infos.update_available = True
                     (infos.filename, infos.url, infos.size) = self.__get_latest_etcher_release(latest['assets'])
@@ -305,7 +321,7 @@ class Updates(CleepremoteModule):
                     (infos.filename, infos.url, infos.size) = self.__get_latest_etcher_release(latest['assets'])
 
                 else:
-                    self.logger.debug('No etcher version available')
+                    self.logger.debug('No new etcher version available')
 
             else:
                 self.logger.error('Unable to fetch etcher releases (status=%d)' % resp.status)
@@ -322,7 +338,7 @@ class Updates(CleepremoteModule):
         """
         Check if CleepDesktop updates are available
         """
-        #TODO implement CleepDesktop updates as soon as website is available
+        #TODO implement CleepDesktop updates as soon as github is configured
         pass
 
     def check_updates(self):
@@ -370,11 +386,11 @@ class Updates(CleepremoteModule):
         #prepare command
         command = None
         if self.env=='linux':
-            command = self.INSTALL_ETCHER_COMMAND_LINUX % (self.app_path, archive_path, self.app_path, self.install_path)
+            command = self.INSTALL_ETCHER_COMMAND_LINUX % (self.app_path, archive_path, self.app_path, self.config_path)
         elif self.env=='darwin':
-            command = self.INSTALL_ETCHER_COMMAND_MAC % (self.app_path, archive_path, self.app_path, self.install_path)
+            command = self.INSTALL_ETCHER_COMMAND_MAC % (self.app_path, archive_path, self.app_path, self.config_path)
         elif self.env=='windows':
-            command = self.INSTALL_ETCHER_COMMAND_WINDOWS % (self.app_path, archive_path, self.app_path, self.install_path)
+            command = self.INSTALL_ETCHER_COMMAND_WINDOWS % (self.app_path, archive_path, self.app_path, self.config_path)
         self.logger.debug('Command executed to install etcher: %s' % command)
 
         #execute command
