@@ -28,6 +28,7 @@ const path = require('path')
 const url = require('url')
 const log = require('electron-log')
 const detectPort = require('detect-port');
+const windowStateKeeper = require('electron-window-state');
 
 //variables
 var cleepremotePath = path.join(__dirname, 'cleepremote');
@@ -218,7 +219,7 @@ function createMenu()
 // Code from https://github.com/buz-zard/random/blob/master/electron-compile-1/src/main.js
 function createSplashScreen()
 {
-    //splashScreen = new BrowserWindow(Object.assign(windowParams, {parent: mainWindow}));
+    //create splashscreen window
     splashScreen = new BrowserWindow({
         width: 250,
         height: 300,
@@ -226,12 +227,15 @@ function createSplashScreen()
         frame: false,
         parent: mainWindow
     });
-    //splashScreen.loadURL('file://' + __dirname + '/loading.html');
+
+    //load splashscreen content
     splashScreen.loadURL(url.format({
         pathname: path.join(__dirname, 'html/loading.html'),
         protocol: 'file:',
         slashes: true
     }), {"extraHeaders" : "pragma: no-cache\n"})
+
+    //handle splashscreen events
     splashScreen.on('closed', () => splashScreen = null);
     splashScreen.webContents.on('did-finish-load', () => {
         splashScreen.show();
@@ -241,15 +245,27 @@ function createSplashScreen()
 // Create application main window
 function createWindow ()
 {
+    //windows states manager
+    let mainWindowState = windowStateKeeper({
+        defaultWidth: 1024,
+        defaultHeight: 768
+    });
+
     // Create the browser window.
     mainWindow = new BrowserWindow({
         width:1024,
         height:600,
         show: false,
         icon:__dirname+'/resources/256x256.png',
-        title:'CleepDesktop'
-    })
-    //mainWindow.maximize();
+        title:'CleepDesktop',
+        'x': mainWindowState.x,
+        'y': mainWindowState.y,
+        'width': mainWindowState.width,
+        'height': mainWindowState.height
+    });
+
+    //handle windows states
+    mainWindowState.manage(mainWindow);
 
     // handle external url
     mainWindow.webContents.on('new-window', function(e, url) {
@@ -258,7 +274,6 @@ function createWindow ()
     });
 
     // close splashscreen when loaded
-    //mainWindow.once('ready-to-show', () => {
     mainWindow.webContents.on('did-finish-load', function(e) {
         mainWindow.show();
         //mainWindow.maximize();
