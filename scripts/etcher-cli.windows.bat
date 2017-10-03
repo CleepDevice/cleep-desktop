@@ -1,5 +1,6 @@
 @echo off
 :: params:
-::  %1: drive path
-::  %2: image filepath
-etcher-cli\etcher.exe --yes --drive %1 %2
+:: %1: install path 
+:: %2: drive path
+:: %3: image filepath
+%1\etcher-cli\etcher.exe --yes --drive %2 %3

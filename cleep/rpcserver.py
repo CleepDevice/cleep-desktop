@@ -264,20 +264,22 @@ def get_app(app_path, config_path, config_filename, debug_enabled):
     devices.start()
 
     #check etcher dir
-    logger.debug('Looking for etcher-cli at path: %s' % config_path)
+    # logger.debug('Looking for etcher-cli at path: %s' % config_path)
     etcher_version = config['etcher']['version']
-    if not os.path.exists(os.path.join(config_path, ETCHER_DIR)):
-        logger.info('Etcher-cli not found. Etcher install is required')
-        etcher_version = None
-    if platform.system()=='Windows':
-        etcher_script = FlashDrive.ETCHER_WINDOWS
-    elif platform.system()=='Darwin':
-        etcher_script = FlashDrive.ETCHER_MAC
-    else:
-        etcher_script = FlashDrive.ETCHER_LINUX
-    if not os.path.exists(os.path.join(config_path, etcher_script)):
-        logger.info('Etcher-cli script not found. Etcher install is required.')
-        etcher_version = None
+    # if not os.path.exists(os.path.join(config_path, ETCHER_DIR)):
+    #     logger.info('Etcher-cli not found. Etcher install is required')
+    #     etcher_version = None
+    # if platform.system()=='Windows':
+    #     etcher_script = FlashDrive.ETCHER_WINDOWS
+    # elif platform.system()=='Darwin':
+    #     etcher_script = FlashDrive.ETCHER_MAC
+    # else:
+    #     etcher_script = FlashDrive.ETCHER_LINUX
+    # etchercli_script_path = os.path.join(config_path, etcher_script)
+    # logger.debug('Etcher-cli script path: %s' % etchercli_script_path)
+    # if not os.path.exists(etchercli_script_path):
+    #     logger.info('Etcher-cli script not found. Etcher install is required.')
+    #     etcher_version = None
 
     #launch updates process
     updates = Updates(app_path, config_path, config['cleep']['version'], etcher_version, updates_update, debug, crash_report)

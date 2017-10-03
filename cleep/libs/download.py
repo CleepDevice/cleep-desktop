@@ -13,10 +13,10 @@ import tempfile
 class Download():
     """
     Download file helper
-    http://downloads.raspberrypi.org/raspbian/images/
     """
 
     TMP_FILE_PREFIX = 'cleep_download'
+    CACHED_FILE_PREFIX = 'cleep_cached'
 
     STATUS_IDLE = 0
     STATUS_DOWNLOADING = 1
@@ -27,6 +27,12 @@ class Download():
     STATUS_DONE = 6
 
     def __init__(self, status_callback):
+        """
+        Constructor
+
+        Args:
+            status_callback (function): status callback. Params: status, filesize, percent
+        """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
@@ -47,18 +53,55 @@ class Download():
         """
         self.__cancel = True
 
-    def purge_files(self):
+    def purge_files(self, force_all=False):
         """
         Remove all files that stay from previous processes
+
+        Args:
+            force_all (bool): force deletion of all files (cached ones too)
         """
         for root, dirs, dls in os.walk(self.temp_dir):
             for dl in dls:
+                #delete temp files
                 if os.path.basename(dl).startswith(self.TMP_FILE_PREFIX):
-                    self.logger.debug('Purge existing downloaded file: %s' % dl)
+                    self.logger.debug('Purge existing downloaded temp file: %s' % dl)
                     try:
                         os.remove(os.path.join(self.temp_dir, dl))
                     except:
                         pass
+
+                #delete cached files
+                elif force_all and os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
+                    self.logger.debug('Purge existing downloaded cached file: %s' % dl)
+                    try:
+                        os.remove(os.path.join(self.temp_dir, dl))
+                    except:
+                        pass
+
+    def get_cached_files(self):
+        """
+        Return list of cached files
+
+        Return:
+            list: cached filepaths::
+                [
+                    {filename, filepath}
+                    {filename, filepath}
+                    ...
+                ]
+        """
+        cached = {}
+
+        for root, dirs, dls in os.walk(self.temp_dir):
+            for dl in dls:
+                if os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
+                    filepath = os.path.join(self.temp_dir, dl)
+                    cached.append({
+                        'filename': os.path.basename(filepath),
+                        'filepath': filepath
+                    })
+
+        return cached
 
     def generate_sha1(self, file_path):
         """
@@ -111,23 +154,38 @@ class Download():
 
         return md5.hexdigest()
 
-    def download_from_url(self, url, check_sha1=None, check_sha256=None, check_md5=None):
+    def download_from_url(self, url, check_sha1=None, check_sha256=None, check_md5=None, cache=None):
         """
         Download specified url. Specify key to check if necessary.
+        This function is blocking
 
         Args:
             url (string): url to download
             check_sha1 (string): sha1 key to check
             check_sha256 (string): sha256 key to check
             check_md5 (string): md5 key to check
+            cache (string): specify name to enable file caching (will not be purged automatically). None to disable caching
 
         Returns:
-            string: downloaded filepath (temp filename, it will be deleted during next download)
+            string: downloaded filepath (temp filename, it will be deleted during next download) or None if error occured
         """
-        #prepare iso
-        self.download = os.path.join(self.temp_dir, '%s_%s' % (self.TMP_FILE_PREFIX, str(uuid.uuid4())))
+        #prepare filename
+        if not cache:
+            self.download = os.path.join(self.temp_dir, '%s_%s' % (self.TMP_FILE_PREFIX, str(uuid.uuid4())))
+        else:
+            hashname = hashlib.md5(cache.encode('utf-8')).hexdigest()
+            self.download = os.path.join(self.temp_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, hashname))
         self.logger.debug('File will be saved to "%s"' % self.download)
         download = None
+
+        #check if file is cached
+        if os.path.exists(self.download):
+            #file cached, return it
+            filesize = os.path.getsize(self.download)
+            self.status_callback(self.STATUS_DONE, filesize, 100)
+            return self.download
+        
+        #prepare download
         try:
             download = open(self.download, u'wb')
         except:
@@ -172,14 +230,14 @@ class Download():
             except:
                 self.logger.exception('Unable to write to download file "%s":' % self.download)
                 self.status = self.STATUS_ERROR
-                self.status_callback(self.status, file_size, self.percent)
+                self.status_callback(self.status, downloaded_size, self.percent)
                 download.close()
                 return None
             
             #compute percentage
             if file_size!=0:
                 self.percent = int(float(downloaded_size) / float(file_size) * 100.0)
-                self.status_callback(self.status, file_size, self.percent)
+                self.status_callback(self.status, downloaded_size, self.percent)
                 if not self.percent%5 and last_percent!=self.percent:
                     last_percent = self.percent
                     self.logger.debug('Downloading %s %d%%' % (self.download, self.percent))
@@ -199,7 +257,7 @@ class Download():
         else:
             self.logger.error('Invalid downloaded size %d instead of %d' % (downloaded_size, file_size))
             self.status = self.STATUS_ERROR_INVALIDSIZE
-            self.status_callback(self.status, file_size, self.percent)
+            self.status_callback(self.status, downloaded_size, self.percent)
             return None
 
         #checksum

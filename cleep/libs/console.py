@@ -242,7 +242,7 @@ class AdminEndlessConsole(EndlessConsole):
         """
         self.cmdlogger_path = cmdlogger_path
         if not os.path.exists(self.cmdlogger_path):
-            raise Exception('Invalid cmdlogger path. Binary file does not exist')
+            raise Exception('Invalid cmdlogger path (%s). Binary file does not exist' % cmdlogger_path)
                 
     #def is_admin():
     #    """

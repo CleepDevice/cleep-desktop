@@ -12,6 +12,7 @@ import platform
 import re
 import requests
 import tempfile
+from cleep.libs.download import Download
 from cleep.utils import CleepremoteModule
 if platform.system()=='Windows':
     from cleep.libs.console import AdminEndlessConsole
@@ -57,13 +58,13 @@ class FlashDrive(CleepremoteModule):
     RASPBIAN_URL = 'http://downloads.raspberrypi.org/raspbian/images/'
     RASPBIAN_LITE_URL = 'http://downloads.raspberrypi.org/raspbian_lite/images/'
 
-    def __init__(self, app_path, install_path, update_callback, debug_enabled, crash_report):
+    def __init__(self, app_path, config_path, update_callback, debug_enabled, crash_report):
         """
         Contructor
 
         Args:
             app_path (string): application path
-            install_path (string): installation path
+            config_path (string): installation path
             update_callback (function): function to call when data need to be pushed to ui
             debug_enabled (bool): True if debug is enabled
             crash_report (CrashReport): crash report instance
@@ -72,7 +73,7 @@ class FlashDrive(CleepremoteModule):
 
         #members
         self.app_path = app_path
-        self.install_path = install_path
+        self.config_path = config_path
         self.env = platform.system().lower()
         self.temp_dir = tempfile.gettempdir()
         self.update_callback = update_callback
@@ -94,19 +95,19 @@ class FlashDrive(CleepremoteModule):
         
         #get etcher command
         if self.env=='windows':
-            self.etcher_cmd = os.path.join(self.install_path, self.ETCHER_WINDOWS)
+            self.etcher_cmd = os.path.join(self.config_path, self.ETCHER_WINDOWS)
             self.windowsdrives = WindowsDrives()
         elif self.env=='linux':
-            self.etcher_cmd = os.path.join(self.install_path, self.ETCHER_LINUX)
+            self.etcher_cmd = os.path.join(self.config_path, self.ETCHER_LINUX)
             self.lsblk = Lsblk()
             self.udevadm = Udevadm()
         elif self.env=='darwin':
-            self.etcher_cmd = os.path.join(self.install_path, self.ETCHER_MAC)
+            self.etcher_cmd = os.path.join(self.config_path, self.ETCHER_MAC)
             self.diskutil = Diskutil()
         self.logger.debug('Etcher command line: %s' % self.etcher_cmd)
 
         #sanity clean
-        self.purge_files()
+        #self.purge_files()
 
     def _custom_stop(self):
         """
@@ -160,8 +161,10 @@ class FlashDrive(CleepremoteModule):
                 #reset everything
                 self.total_percent = 100
                 if self.iso and os.path.exists(self.iso):
-                    os.remove(self.iso)
-                    self.logger.debug('File %s deleted' % self.iso)
+                    #os.remove(self.iso)
+                    #self.logger.debug('File %s deleted' % self.iso)
+                    dl = Download(None)
+                    dl.purge_files()
                     self.iso = None
                 self.drive = None
                 self.url = None
@@ -176,35 +179,35 @@ class FlashDrive(CleepremoteModule):
                 #no process, release cpu
                 time.sleep(.25)
 
-    def purge_files(self):
-        """
-        Remove all files that stay from previous processes
-        """
-        for root, dirs, cleeps in os.walk(self.temp_dir):
-            for cleep in cleeps:
-                if os.path.basename(cleep).startswith(self.TMP_FILE_PREFIX):
-                    self.logger.debug('Purge existing iso file: %s' % cleep)
-                    try:
-                        os.remove(os.path.join(self.temp_dir, cleep))
-                    except:
-                        pass
+    # def purge_files(self):
+    #     """
+    #     Remove all files that stay from previous processes
+    #     """
+    #     for root, dirs, cleeps in os.walk(self.temp_dir):
+    #         for cleep in cleeps:
+    #             if os.path.basename(cleep).startswith(self.TMP_FILE_PREFIX):
+    #                 self.logger.debug('Purge existing iso file: %s' % cleep)
+    #                 try:
+    #                     os.remove(os.path.join(self.temp_dir, cleep))
+    #                 except:
+    #                     pass
 
-    def generate_sha1(self, file_path):
-        """
-        Generate SHA1 checksum for specified file
+    # def generate_sha1(self, file_path):
+    #     """
+    #     Generate SHA1 checksum for specified file
 
-        Args:
-            file_path (string): file path
-        """
-        sha1 = hashlib.sha1()
-        with open(file_path, 'rb') as f:
-            while True:
-                buf = f.read(1024)
-                if not buf:
-                    break
-                sha1.update(buf)
+    #     Args:
+    #         file_path (string): file path
+    #     """
+    #     sha1 = hashlib.sha1()
+    #     with open(file_path, 'rb') as f:
+    #         while True:
+    #             buf = f.read(1024)
+    #             if not buf:
+    #                 break
+    #             sha1.update(buf)
 
-        return sha1.hexdigest()
+    #     return sha1.hexdigest()
 
     def __get_raspbian_release_infos(self, release):
         """
@@ -612,10 +615,61 @@ class FlashDrive(CleepremoteModule):
             'raspbian': iso_raspbian
         }
 
+    def __download_callback(self, status, filesize, percent):
+        """
+        Download status callback
+
+        Args:
+            status (int): current download status
+            filesize (int): downloaded filesize
+            percent (int): percent of download
+        """
+        #adjust internal status according to download status
+        if status==Download.STATUS_IDLE:
+            pass
+        elif status==Download.STATUS_DOWNLOADING:
+            self.status = self.STATUS_DOWNLOADING
+        elif status==Download.STATUS_DOWNLOADING_NOSIZE:
+            self.status = self.STATUS_DOWNLOADING_NOSIZE
+        elif status==Download.STATUS_ERROR:
+            self.status = self.STATUS_ERROR
+        elif status==Download.STATUS_ERROR_INVALIDSIZE:
+            self.status = self.STATUS_ERROR_INVALIDSIZE
+        elif status==Download.STATUS_ERROR_BADCHECKSUM:
+            self.status = self.STATUS_ERROR_BADCHECKSUM
+        elif status==Download.STATUS_DONE:
+            pass
+
+        #save current progress percentage 
+        self.percent = percent
+        self.total_percent = int(self.percent / 3)
+
+        #save eta
+        self.eta = '%.1fMo' % (float(filesize)/1000000.0)
+
+        #update ui
+        self.update_callback(self.get_status())
+
     def __download_file(self):
         """
-        Download file
+        Download file task
         """
+        if self.url is None or self.drive is None:
+            self.logger.debug('No drive or url specified, flash process stopped')
+            return False
+
+        #init download helper
+        dl = Download(self.__download_callback)
+
+        #start download
+        self.iso = dl.download_from_url(self.url, check_sha1=self.iso_sha1, cache='flashiso')
+
+        if self.iso is None:
+            return False
+        return True
+
+    """
+    def __download_file(self):
         if self.url is None or self.drive is None:
             self.logger.debug('No drive or url specified, flash process stopped')
             return False
@@ -719,6 +773,7 @@ class FlashDrive(CleepremoteModule):
             self.logger.debug('No checksum to verify')
 
         return True
+    """
 
     def __flash_callback(self, stdout, stderr):
         """
@@ -800,7 +855,7 @@ class FlashDrive(CleepremoteModule):
 
         self.status = self.STATUS_FLASHING
         try:
-            cmd = [self.etcher_cmd, self.install_path, self.drive, self.iso]
+            cmd = [self.etcher_cmd, self.config_path, self.drive, self.iso]
             self.logger.debug('Etcher command to execute: %s' % cmd)
             self.console = AdminEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
             if self.env=='windows':
