@@ -9,13 +9,15 @@ import os
 import hashlib
 import platform
 import tempfile
+import base64
 
 class Download():
     """
     Download file helper
     """
 
-    TMP_FILE_PREFIX = 'cleep_download'
+    TMP_FILE_PREFIX = 'cleep_tmp'
+    DOWNLOAD_FILE_PREFIX = 'cleep_download'
     CACHED_FILE_PREFIX = 'cleep_cached'
 
     STATUS_IDLE = 0
@@ -26,7 +28,7 @@ class Download():
     STATUS_ERROR_BADCHECKSUM = 5
     STATUS_DONE = 6
 
-    def __init__(self, status_callback):
+    def __init__(self, status_callback=None):
         """
         Constructor
 
@@ -63,7 +65,7 @@ class Download():
         for root, dirs, dls in os.walk(self.temp_dir):
             for dl in dls:
                 #delete temp files
-                if os.path.basename(dl).startswith(self.TMP_FILE_PREFIX):
+                if os.path.basename(dl).startswith(self.DOWNLOAD_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded temp file: %s' % dl)
                     try:
                         os.remove(os.path.join(self.temp_dir, dl))
@@ -85,20 +87,23 @@ class Download():
         Return:
             list: cached filepaths::
                 [
-                    {filename, filepath}
-                    {filename, filepath}
+                    {filename, filepath, filesize}
+                    {filename, filepath, filesize}
                     ...
                 ]
         """
-        cached = {}
+        cached = []
 
         for root, dirs, dls in os.walk(self.temp_dir):
             for dl in dls:
                 if os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
                     filepath = os.path.join(self.temp_dir, dl)
+                    filename = os.path.basename(dl).replace(self.CACHED_FILE_PREFIX, '')
+                    filename = base64.b64decode(filename).decode('utf-8')
                     cached.append({
-                        'filename': os.path.basename(filepath),
-                        'filepath': filepath
+                        'filename': filename,
+                        'filepath': filepath,
+                        'filesize': os.path.getsize(filepath)
                     })
 
         return cached
@@ -154,6 +159,18 @@ class Download():
 
         return md5.hexdigest()
 
+    def __status_callback(self, status, size, percent):
+        """
+        Call status callback if configured
+
+        Args:
+            status (int): current download status
+            size (int): downloaded filesize (bytes)
+            percent (int): percentage of download
+        """
+        if self.status_callback:
+            self.status_callback(status, size, percent)
+
     def download_from_url(self, url, check_sha1=None, check_sha256=None, check_md5=None, cache=None):
         """
         Download specified url. Specify key to check if necessary.
@@ -170,11 +187,8 @@ class Download():
             string: downloaded filepath (temp filename, it will be deleted during next download) or None if error occured
         """
         #prepare filename
-        if not cache:
-            self.download = os.path.join(self.temp_dir, '%s_%s' % (self.TMP_FILE_PREFIX, str(uuid.uuid4())))
-        else:
-            hashname = hashlib.md5(cache.encode('utf-8')).hexdigest()
-            self.download = os.path.join(self.temp_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, hashname))
+        download_uuid = str(uuid.uuid4())
+        self.download = os.path.join(self.temp_dir, '%s_%s' % (self.TMP_FILE_PREFIX, download_uuid))
         self.logger.debug('File will be saved to "%s"' % self.download)
         download = None
 
@@ -182,7 +196,7 @@ class Download():
         if os.path.exists(self.download):
             #file cached, return it
             filesize = os.path.getsize(self.download)
-            self.status_callback(self.STATUS_DONE, filesize, 100)
+            self.__status_callback(self.STATUS_DONE, filesize, 100)
             return self.download
         
         #prepare download
@@ -191,7 +205,7 @@ class Download():
         except:
             self.logger.exception('Unable to create file:')
             self.status = self.STATUS_ERROR
-            self.status_callback(self.status, 0, 0)
+            self.__status_callback(self.status, 0, 0)
             return None
 
         #initialize download
@@ -200,7 +214,7 @@ class Download():
         except:
             self.logger.exception('Error initializing http request:')
             self.status = self.STATUS_ERROR
-            self.status_callback(self.status, 0, 0)
+            self.__status_callback(self.status, 0, 0)
             return None
 
         #get file size
@@ -210,7 +224,7 @@ class Download():
             self.status = self.STATUS_DOWNLOADING
         except:
             self.logger.exception('Error getting content-length value from header:')
-        self.status_callback(self.status, 0, 0)
+        self.__status_callback(self.status, 0, 0)
         self.logger.debug('Size to download: %d bytes' % file_size)
 
         #download file
@@ -230,14 +244,14 @@ class Download():
             except:
                 self.logger.exception('Unable to write to download file "%s":' % self.download)
                 self.status = self.STATUS_ERROR
-                self.status_callback(self.status, downloaded_size, self.percent)
+                self.__status_callback(self.status, downloaded_size, self.percent)
                 download.close()
                 return None
             
             #compute percentage
             if file_size!=0:
                 self.percent = int(float(downloaded_size) / float(file_size) * 100.0)
-                self.status_callback(self.status, downloaded_size, self.percent)
+                self.__status_callback(self.status, downloaded_size, self.percent)
                 if not self.percent%5 and last_percent!=self.percent:
                     last_percent = self.percent
                     self.logger.debug('Downloading %s %d%%' % (self.download, self.percent))
@@ -257,7 +271,7 @@ class Download():
         else:
             self.logger.error('Invalid downloaded size %d instead of %d' % (downloaded_size, file_size))
             self.status = self.STATUS_ERROR_INVALIDSIZE
-            self.status_callback(self.status, downloaded_size, self.percent)
+            self.__status_callback(self.status, downloaded_size, self.percent)
             return None
 
         #checksum
@@ -281,14 +295,26 @@ class Download():
             else:
                 self.logger.error('Checksum from downloaded file is invalid (computed=%s provided=%s)' % (checksum_computed, checksum_provided))
                 self.status = self.STATUS_ERROR_BADCHECKSUM
-                self.status_callback(self.status, file_size, self.percent)
+                self.__status_callback(self.status, file_size, self.percent)
                 return None
         else:
             self.logger.debug('No checksum to verify :(')
 
         #last status callback
         self.status = self.STATUS_DONE
-        self.status_callback(self.status, file_size, 100)
+        self.__status_callback(self.status, file_size, 100)
+
+        #rename file
+        if not cache:
+            download = os.path.join(self.temp_dir, '%s_%s' % (self.DOWNLOAD_FILE_PREFIX, download_uuid))
+        else:
+            hashname = base64.urlsafe_b64encode(cache.encode('utf-8')).decode('utf-8')
+            download = os.path.join(self.temp_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, hashname))
+        try:
+            os.rename(self.download, download)
+            self.download = download
+        except:
+            pass
 
         return self.download
 

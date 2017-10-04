@@ -43,6 +43,7 @@ from cleep.flashdrive import FlashDrive
 from cleep.devices import Devices
 from cleep.updates import Updates
 from cleep.libs.crashreport import CrashReport
+from cleep.libs.download import Download
 
 __all__ = ['app']
 
@@ -393,6 +394,13 @@ def execute_command(command, params):
             else:
                 process_config(old_config, get_config())
                 resp.data = True
+        elif command=='getcachedfiles':
+            dl = Download()
+            resp.data = dl.get_cached_files()
+        elif command=='purgecachedfiles':
+            dl = Download()
+            dl.purge_files(force_all=True)
+            resp.data = dl.get_cached_files()
 
         #devices
         elif command=='openDevicePage':
@@ -506,7 +514,7 @@ def handle_cleepwebsocket():
 
             if last_updates_update>=local_last_updates_update:
                 #updates update
-                logger.debug('Send updates update')
+                #logger.debug('Send updates update')
                 #send new devices list
                 send = CleepWebSocketMessage()
                 send.module = 'updates'
@@ -518,7 +526,7 @@ def handle_cleepwebsocket():
 
             if last_flash_update>=local_last_flash_update:
                 #flash update
-                logger.debug('Send flash update')
+                #logger.debug('Send flash update')
                 #send new flash list
                 send = CleepWebSocketMessage()
                 send.module = 'flash'

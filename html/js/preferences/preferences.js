@@ -13,6 +13,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
     self.noproxy = false;
     self.manualproxy = false;
     self.logs = '';
+    self.cacheds = [];
 
     //automatic settings saving when config value changed
     $scope.$watch(function() {
@@ -63,6 +64,11 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
                 //update proxy mode
                 self.updateProxyMode(self.config.proxy.mode);
             });
+
+        cleepService.sendCommand('getcachedfiles')
+            .then(function(resp) {
+                self.cacheds = resp.data;
+            });
     };
 
     //set configuration
@@ -98,6 +104,15 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
     self.openLogs = function()
     {
         self.shell.openItem(self.logs);
+    };
+
+    // Purge cahed files
+    self.purgeCachedFiles = function()
+    {
+        cleepService.sendCommand('purgecachedfiles')
+            .then(function(resp) {
+                self.cacheds = resp.data;
+            });
     };
 
     //init controller
