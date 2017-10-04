@@ -170,7 +170,6 @@ class Updates(CleepremoteModule):
         Start update process. Does nothing until check_updates is called and trigger update if necessary
         """
         self.running = True
-        auto_update = True
         self.logger.debug('Updates thread started')
 
         #check updates at startup
@@ -217,15 +216,6 @@ class Updates(CleepremoteModule):
             if self.__download_cleep:
                 #TODO new CleepDesktop update available
                 pass
-
-            #auto check for updates at noon
-            now = datetime.datetime.now()
-            if not auto_update and now.hour==12 and now.minute==0:
-                auto_update = True
-                self.logger.debug('Auto-update triggered')
-                self.check_updates()
-            elif now.hour==12 and now.minute==1:
-                auto_update = False
 
             #release CPU
             time.sleep(1.0)
