@@ -1,4 +1,4 @@
-![256x256.png](https://bitbucket.org/repo/gkyBXqp/images/3315654916-256x256.png)
+![256x256.png](https://github.com/tangb/CleepDesktop/blob/master/resources/256x256.png)
 
 # Welcome to CleepDesktop
 
