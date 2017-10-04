@@ -647,6 +647,11 @@ class FlashDrive(CleepremoteModule):
         #save eta
         self.eta = '%.1fMo' % (float(filesize)/1000000.0)
 
+        if self.cancel:
+            #cancel download
+            if self.dl:
+                self.dl.cancel()
+
         #update ui
         self.update_callback(self.get_status())
 
@@ -659,10 +664,11 @@ class FlashDrive(CleepremoteModule):
             return False
 
         #init download helper
-        dl = Download(self.__download_callback)
+        self.dl = Download(self.__download_callback)
 
         #start download
-        self.iso = dl.download_from_url(self.url, check_sha1=self.iso_sha1, cache='flashiso')
+        self.iso = self.dl.download_from_url(self.url, check_sha1=self.iso_sha1, cache='flash.iso')
+        self.dl = None
 
         if self.iso is None:
             return False

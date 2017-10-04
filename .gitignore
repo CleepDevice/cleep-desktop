@@ -6,4 +6,5 @@ build/
 node_modules/
 package-lock.json
 cleep/*.pyc
+cleep/libs/*.pyc
 .vscode
