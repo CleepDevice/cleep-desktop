@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from cleep.libs.console import Console
+try:
+    from cleep.libs.console import Console
+except:
+    from console import Console
 import re
 import time
 import logging
@@ -37,7 +40,7 @@ class Lsblk():
             self.partitions = []
 
             #parse data
-            matches = re.finditer(r'^(.*?)\s+(\d+):(\d+)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d+)(\s|.*?)$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
+            matches = re.finditer(r'^(.*?)\s+(\d+):(\d+)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d)\s+(\D*)?\s+(\d+)(\s|.*?)$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
             for matchNum, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==10:
@@ -51,7 +54,7 @@ class Lsblk():
                     current_drive = None
                     if groups[3].find(u'disk')!=-1:
                         current_drive = name
-                        model = groups[9]
+                        model = groups[9].strip()
                         partition = False
                         total_size = groups[5]
                         try:
