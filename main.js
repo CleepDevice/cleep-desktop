@@ -275,16 +275,15 @@ function createWindow ()
 
     // close splashscreen when loaded
     mainWindow.webContents.on('did-finish-load', function(e) {
-        mainWindow.show();
-        //mainWindow.maximize();
-        mainWindow.focus();
-
         if( splashScreen )
         {
             let splashScreenBounds = splashScreen.getBounds();
             //mainWindow.setBounds(splashScreenBounds);
             splashScreen.close();
         }
+
+        mainWindow.show();
+        mainWindow.focus();
     });
 
     // and load the index.html of the app.
