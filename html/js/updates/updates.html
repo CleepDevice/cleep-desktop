@@ -1,0 +1,86 @@
+<div layout="column" layout-fill>
+
+    <!-- menu -->
+    <md-toolbar flex="initial">
+        <div class="md-toolbar-tools">
+            <h2>
+                <md-icon md-font-set="material-icons">update</md-icon>
+                Updates
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+    <md-progress-linear ng-if="!ctl.loading" md-mode="determinate"></md-progress-linear>
+    <md-progress-linear ng-if="ctl.loading" md-mode="indeterminate"></md-progress-linear>
+
+    <!-- page content -->
+    <md-content layout-padding>
+
+        <!-- current versions -->
+        <md-card>
+            <md-card-title>
+                <md-card-title-text>
+                    <span class="md-headline">
+                        <md-icon md-font-set="material-icons">info_outline</md-icon>
+                        Installed versions
+                    </span>
+                </md-card-title-text>
+            </md-card-title>
+            <md-card-content>
+                <md-list>
+                    <md-list-item layout-padding>
+                        <p>Last check for updates made on {{ctl.status.lastcheck | hrDatetime}}</p>
+                        <md-icon class="md-secondary" ng-click="ctl.checkUpdates()" md-font-set="material-icons">
+                            <md-tooltip md-direction="left">Check for updates</md-tooltip>
+                            refresh
+                        </md-icon>
+                    </md-list-item>
+                    <md-divider></md-divider>
+                    <md-list-item layout"row" layout-padding>
+                        <div flex="50">
+                            <span>CleepDesktop version {{ctl.status.cleepversion}} is installed</span>
+                        </div>
+                        <div ng-if="ctl.status.cleepstatus===1 || ctl.status.cleepstatus===2" flex="20" style="text-align:right;">
+                            <span ng-if="ctl.status.cleepstatus===1">Downloading update ({{ctl.status.cleepdownloadpercent}}%)</span>
+                            <span ng-if="ctl.status.cleepstatus===2">Installing update</span>
+                        </div>
+                        <div ng-if="ctl.status.cleepstatus===1 || ctl.status.cleepstatus===2" flex>
+                            <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.status.cleepdownloadpercent}}"></md-progress-linear>
+                        </div>
+                        <div ng-if="ctl.status.cleepstatus===4" flex>
+                            <span>Last update attemps failed (</span>
+                            <span ng-if="ctl.status.cleepdownloadstatus===3">internal error</span>
+                            <span ng-if="ctl.status.cleepdownloadstatus===4">invalid file size</span>
+                            <span ng-if="ctl.status.cleepdownloadstatus===5">downloaded file is corrupted</span>
+                            <span>)</span>
+                        </div>
+                    </md-list-item>
+                    <md-divider></md-divider>
+                    <md-list-item layout="row" layout-padding>
+                        <div flex="40">
+                            <span ng-if="ctl.status.etcherversion!==null">Etcher version {{ctl.status.etcherversion}} is installed</span>
+                            <span ng-if="ctl.status.etcherversion===null">Etcher is not installed</span>
+                        </div>
+                        <div ng-if="ctl.status.etcherstatus===1 || ctl.status.etcherstatus===2" flex="20" style="text-align:right;">
+                            <span ng-if="ctl.status.etcherstatus===1">Downloading update ({{ctl.status.etcherdownloadpercent}}%)</span>
+                            <span ng-if="ctl.status.etcherstatus===2">Installing update</span>
+                        </div>
+                        <div ng-if="ctl.status.etcherstatus===1 || ctl.status.etcherstatus===2" flex>
+                            <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.status.etcherdownloadpercent}}"></md-progress-linear>
+                        </div>
+                        <div ng-if="ctl.status.etcherstatus===4" flex>
+                            <span>Last update attemps failed (</span>
+                            <span ng-if="ctl.status.etcherdownloadstatus===3">internal error</span>
+                            <span ng-if="ctl.status.etcherdownloadstatus===4">invalid file size</span>
+                            <span ng-if="ctl.status.etcherdownloadstatus===5">downloaded file is corrupted</span>
+                            <span>)</span>
+                        </div>
+                    </md-list-item>
+                </md-list>
+            </md-card-content>
+        </md-card>
+
+    </md-content>
+
+</div>
+

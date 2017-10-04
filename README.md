@@ -1,29 +1,15 @@
-# README #
+![256x256.png](https://bitbucket.org/repo/gkyBXqp/images/3315654916-256x256.png)
 
-This README would normally document whatever steps are necessary to get your application up and running.
+# Welcome to CleepDesktop
 
-### What is this repository for? ###
+CleepDesktop is a cross-platform desktop application that helps user to easily detect, configure and monitor your Cleep devices.
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+## How it works
+CleepDesktop discovers Cleep devices on user network and add quick access buttons to configure it.
 
-### How do I get set up? ###
+Application main window is separated in 2 parts:
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+* The left panel displays list of discovered devices (configured and unconfigured ones)
+* The right panel displays selected Cleep device configuration panels and CleepDesktop configurations panels.
 
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+This application is free and open source, based on Electron and Python.

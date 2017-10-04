@@ -1,0 +1,71 @@
+{
+    "name": "CleepDesktop",
+    "version": "0.0.0",
+    "description": "Desktop app to manage your Cleep devices",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron ."
+    },
+    "repository": "https://bitbucket.org/Tangb/CleepDesktop",
+    "keywords": [
+        "cleep",
+        "rasperrypi",
+        "raspi",
+        "desktop"
+    ],
+    "author": "Tanguy Bonneau",
+    "license": "GPLv3",
+    "devDependencies": {
+        "devtron": "1.4.x",
+        "electron": "1.7.8",
+        "electron-builder": "^19.33.0"
+    },
+    "dependencies": {
+        "detect-port": "^1.2.1",
+        "electron-log": "^2.2.9",
+        "electron-settings": "^3.1.2",
+        "electron-window-state": "^4.1.1",
+        "npm": "^5.4.2"
+    },
+    "build": {
+        "appId": "com.cleep.cleepdesktop",
+        "productName": "CleepDesktop",
+        "asar": false,
+        "linux": {
+            "icon": "resources/",
+            "target": [
+                "tar.gz",
+                "deb"
+            ],
+            "category": "Network",
+            "executableName": "cleepdesktop"
+        },
+        "deb": {
+            "icon": "resources/256x256.png",
+            "maintainer": "Tanguy Bonneau <tanguy.bonneau@gmail.com>",
+            "packageCategory": "misc",
+            "priority": "optional",
+            "depends": []
+        },
+        "win": {
+            "icon": "resources/icon",
+            "target": "nsis"
+        },
+        "nsis": {
+            "menuCategory": "Cleep",
+            "shortcutName": "CleepDesktop"
+        },
+        "mac": {
+            "category": "public.app-category.utilities",
+            "target": "dmg",
+            "icon": "resources/icon",
+            "extendInfo": "Info.plist",
+            "binaries": [
+                "TODO set path to generated cleepremote binary"
+            ]
+        },
+        "dmg": {
+            "icon": "resources/icon.icns"
+        }
+    }
+}

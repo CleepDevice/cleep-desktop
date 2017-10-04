@@ -1,0 +1,126 @@
+<div layout="column" layout-fill>
+
+        <!-- menu -->
+        <md-toolbar flex="initial">
+            <div class="md-toolbar-tools">
+                <h2>
+                    <md-icon md-font-set="material-icons">sd_card</md-icon>
+                    Install Cleep easily on your device
+                </h2>
+                <span flex></span>
+            </div>
+        </md-toolbar>
+        <md-progress-linear md-mode="determinate"></md-progress-linear>
+
+        <md-content layout-padding>
+            <div class="note">
+                This is the easiest way to install Cleep on your SD card.<br/>
+                Cleep installation consists of copying Cleep data on removable media.
+            </div>
+
+            <!-- preparation -->
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">
+                            <md-icon md-font-set="material-icons">create</md-icon>
+                            Preparation
+                        </span>
+                    </md-card-title-text>
+                </md-card-title>
+                <md-card-content>
+                    <div layout="row" layout-align="space-between center">
+                        <div>
+                            <md-icon md-font-set="material-icons" class="bullet">label</md-icon>
+                            Select Cleep version you want to install on your SD card:
+                        </div>
+                        <div>
+                            <md-input-container>
+                                <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" ng-disabled="ctl.flashing" required>
+                                    <md-optgroup label="Cleep" ng-if="!ctl.refreshingIsos">
+                                        <md-option ng-if="ctl.noCleepIso" ng-disabled="true">No Cleep version found</md-option>
+                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'cleep'}" ng-value="iso.url">
+                                            {{iso.label}} ({{iso.timestamp | hrDate}})
+                                        </md-option>
+                                    </md-optgroup>
+                                    <md-optgroup label="Raspbian" ng-if="ctl.raspbian">
+                                        <md-option ng-if="ctl.noRaspbianIso" ng-disabled="true">No Raspbian version found</md-option>
+                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'raspbian'}" ng-value="iso.url">
+                                            {{iso.label}} ({{iso.timestamp | hrDate}})
+                                        </md-option>
+                                    </md-optgroup>
+                                </md-select>
+                            </md-input-container>
+                        </div>
+                    </div>
+                    <div layout="row" layout-align="space-between center">
+                        <div>
+                            <md-icon md-font-set="material-icons" class="bullet">label</md-icon>
+                            Plug your SD card or your USB card reader on your computer and select it from drives list:
+                        </div>
+                        <div>
+                            <md-input-container>
+                                <md-select ng-model="ctl.selectedDrive" md-on-open="ctl.refreshDrives()" placeholder="Drive" class="md-no-underline" ng-disabled="ctl.flashing" required>
+                                    <md-option ng-if="ctl.noDrive" ng-disabled="true">No drive found</md-option>
+                                    <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path" ng-disabled="drive.readonly">
+                                        {{drive.desc}} {{drive.readonly ? '[Readonly]' : ''}}
+                                    </md-option>
+                                </md-select>
+                            </md-input-container>
+                        </div>
+                    </div>
+                    <div layout="row" layout-align="space-between center">
+                        <div>
+                            <md-icon md-font-set="material-icons" class="bullet">label</md-icon>
+                            Click on button to install Cleep and wait end of process:
+                        </div>
+                        <div>
+                            <md-button ng-click="ctl.startFlash()" ng-disabled="ctl.flashing" class="md-raised md-accent">Install on selected drive</md-button>
+                        </div>
+                    </div>
+                </md-card-content>
+            </md-card>
+
+            <!-- installation -->
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">
+                            <md-icon md-font-set="material-icons">flag</md-icon>
+                            Installation progress
+                        </span>
+                    </md-card-title-text>
+                </md-card-title>
+                <md-card-content>
+                    <div layout="row" layout-align="space-between center">
+                        <div>
+                            Status: 
+                            <span ng-if="ctl.status.status==0">Idle</span>
+                            <span ng-if="ctl.status.status==1">Downloading file {{ctl.status.percent}}% ({{ctl.status.eta}})</span>
+                            <span ng-if="ctl.status.status==2">Downloading file ({{ctl.status.eta}})</span>
+                            <span ng-if="ctl.status.status==3">Installing on drive {{ctl.status.percent}}% ({{ctl.status.eta}})</span>
+                            <span ng-if="ctl.status.status==4">Validating operation {{ctl.status.percent}}% ({{ctl.status.eta}})</span>
+                            <span ng-if="ctl.status.status==5">Installation completed. You can unplug your SD card.</span>
+                            <span ng-if="ctl.status.status==6">Installation canceled</span>
+                            <span ng-if="ctl.status.status==7">Internal error occured</span>
+                            <span ng-if="ctl.status.status==8">Downloaded file size is invalid</span>
+                            <span ng-if="ctl.status.status==9">Downloaded file seems to be corrupted</span>
+                            <span ng-if="ctl.status.status==10">Problem during data copy on drive</span>
+                        </div>
+                        <div>
+                            <md-button ng-click="ctl.cancelFlash()" class="md-raised md-primary">Cancel</md-button>
+                        </div>
+                    </div>
+                    <div>
+                        <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.status.total_percent}}" style="padding-top: 15px !important;"></md-progress-linear>
+                    </div>
+                    <div layout="row" layout-align="end center" style="padding-top:30px;">
+                        Powered by&nbsp;<a href="https://etcher.io" target="_blank"><img style="height:14px;" src="images/etcher_logo_black.png"/></a>
+                    </div>
+                </md-card-content>
+            </md-card>
+
+        </md-content>
+
+    </div>
+

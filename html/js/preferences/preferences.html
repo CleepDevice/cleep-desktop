@@ -1,0 +1,184 @@
+<div layout="column" layout-fill>
+
+    <!-- menu -->
+    <md-toolbar flex="initial">
+        <div class="md-toolbar-tools">
+            <h2>
+                <md-icon md-font-set="material-icons">settings</md-icon>
+                Preferences
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+    <md-progress-linear md-mode="determinate"></md-progress-linear>
+
+    <md-content>
+
+        <!-- tabs -->
+        <md-nav-bar md-selected-nav-item="ctl.pref" nav-bar-aria-label="Preferences">
+            <md-nav-item md-nav-click="goto('general')" name="general">General</md-nav-item>
+            <md-nav-item md-nav-click="goto('network')" name="network">Network</md-nav-item>
+            <md-nav-item md-nav-click="goto('network')" name="cache">Cache</md-nav-item>
+            <md-nav-item md-nav-click="goto('advanced')" name="advanced">Advanced</md-nav-item>
+        </md-nav-bar>
+
+        <!-- restart required -->
+        <div layout="row" layout-align="end center" class="md-caption" style="padding-top:8px; padding-right:16px;">
+            <span style="color:red">*</span>&nbsp;restart is required
+        </div>
+
+        <!-- general -->
+        <div ng-if="ctl.pref=='general'" layout-padding>
+            <!-- locale --> 
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">
+                            <md-icon md-font-set="material-icons">language</md-icon>
+                            Language
+                        </span>
+                    </md-card-title-text>
+                </md-card-title>
+                <md-card-content>
+                    <md-list>
+                        <md-list-item>
+                            <p>Prefered language <span style="color:red">*</span></p>
+                            <md-select ng-model="ctl.config.cleep.locale" aria-label="Language">
+                                <md-option value="en">English</md-option>
+                            </md-select>
+                        </md-list-item>
+                    </md-list>
+                </md-card-content>
+            </md-card>
+        </div>
+
+        <!-- network -->
+        <div ng-if="ctl.pref=='network'" layout-padding>
+            <!-- proxy -->
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">
+                            <md-icon md-font-set="material-icons">settings_ethernet</md-icon>
+                            Proxy settings
+                        </span>
+                    </md-card-title-text>
+                </md-card-title>
+                <md-card-content>
+                    <md-list>
+                        <md-list-item ng-click="ctl.updateProxyMode('noproxy')">
+                            <p>Direct connection (no proxy)<span style="color:red">*</span></p>
+                            <md-checkbox class="md-secondary" ng-model="ctl.noproxy" ng-click="ctl.updateProxyMode('noproxy')" aria-label="No proxy"></md-checkbox>
+                        </md-list-item>
+                        <md-list-item ng-click="ctl.updateProxyMode('manualproxy')">
+                            <p>Manual proxy<span style="color:red">*</span></p>
+                            <md-checkbox class="md-secondary" ng-model="ctl.manualproxy" ng-click="ctl.updateProxyMode('manualproxy')" aria-label="Manual proxy"></md-checkbox>
+                        </md-list-item>
+                        <div ng-if="ctl.manualproxy">
+                            <md-input-container class="md-block" style="margin-left:15px; margin-right:15px;">
+                                <label>Proxy ip</label>
+                                <input ng-model="ctl.config.proxy.host" ng-disabled="ctl.proxyMode=='noproxy'">
+                            </md-input-container>
+                            <md-input-container class="md-block" style="margin-left:15px; margin-right:15px;">
+                                <label>Proxy port</label>
+                                <input type="number" ng-model="ctl.config.proxy.port" ng-disabled="ctl.proxyMode=='noproxy'">
+                            </md-input-container>
+                        </div>
+                    </md-list>
+                </md-card-content>
+            </md-card>
+        </div>
+
+        <!-- cache -->
+        <div ng-if="ctl.pref=='cache'" layout-padding>
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">
+                            <md-icon md-font-set="material-icons">folder</md-icon>
+                            Cached files
+                        </span>
+                    </md-card-title-text>
+                </md-card-title>
+                <md-card-content>
+                    <div layout="row" layout-align="center center" ng-if="ctl.cacheds.length==0">
+                        <span>No file cached</span>
+                    </div>
+                    <md-list>
+                        <md-list-item ng-repeat="cached in ctl.cacheds">
+                            <p>{{cached.filename}} ({{cached.filesize | hrBytes}})</p>
+                        </md-list-item>
+                    </md-list>
+                    <md-card-actions layout="row" layout-align="end center">
+                        <md-button class="md-raised md-primary" ng-click="ctl.purgeCachedFiles()">Clear all cached files</md-button>
+                    </md-card-actions>
+                </md-card-content>
+            </md-card>
+        </div>
+
+        <!-- advanced -->
+        <div ng-if="ctl.pref=='advanced'" layout-padding>
+            <!-- iso raspbian -->
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">
+                            <md-icon md-font-set="material-icons">file_download</md-icon>
+                            Installation files
+                        </span>
+                    </md-card-title-text>
+                </md-card-title>
+                <md-card-content>
+                    <md-list>
+                        <md-list-item>
+                            <p>Include latest Raspbian versions in installer</p>
+                            <md-switch ng-model="ctl.config.cleep.isoraspbian" aria-label="Raspbian"></md-switch>
+                        </md-list-item>
+                    </md-list>
+                </md-card-content>
+            </md-card>
+            <!-- debug/troubleshoot -->
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">
+                            <md-icon md-font-set="material-icons">bug_report</md-icon>
+                            Debug
+                        </span>
+                    </md-card-title-text>
+                </md-card-title>
+                <md-card-content>
+                    <md-list>
+                        <md-list-item class="md-2-line">
+                            <div class="md-list-item-text">
+                               <h3>Send crash report (no personal information are sent to our server!).</h3>
+                               <p>This software is open-source and enabling crash report will help us improving the application.</p>
+                            </div>
+                            <md-switch ng-model="ctl.config.cleep.crashreport" aria-label="Debug"></md-switch>
+                        </md-list-item>
+                    </md-list>
+                    <md-list>
+                        <md-list-item class="md-2-line">
+                            <div class="md-list-item-text">
+                               <h3>Enable debug mode</h3>
+                               <p>Enabling debug mode add more messages in application log file. This is useful to report a problem.</p>
+                            </div>
+                            <md-switch ng-model="ctl.config.cleep.debug" aria-label="Debug"></md-switch>
+                        </md-list-item>
+                    </md-list>
+                    <md-list>
+                        <md-list-item ng-click="ctl.openLogs()">
+                            <p>Open logs file</p>
+                            <md-button class="md-icon-button md-secondary" aria-label="Open logs" ng-click="ctl.openLogs()">
+                                <md-icon md-font-set="material-icons">insert_drive_file</md-icon>
+                            </md-button>
+                        </md-list-item>
+                    </md-list>
+                </md-card-content>
+            </md-card>
+        </div>
+
+    </md-content>
+
+</div>
+

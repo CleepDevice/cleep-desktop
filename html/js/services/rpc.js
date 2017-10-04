@@ -79,14 +79,14 @@ var rpcService = function($http, $q, $rootScope, $location, toast) {
     };
 
     /**
-     * Get cleep-desktop config
+     * Get CleepDesktop config
      */
     self.getConfig = function() {
         return self.send(self.uriConfig);
     };
 
     /**
-     * Set cleep-desktop config
+     * Set CleepDesktop config
      */
     self.setConfig = function(config) {
         return self.send(self.uriConfig, null, {config:config}, 'PUT');
