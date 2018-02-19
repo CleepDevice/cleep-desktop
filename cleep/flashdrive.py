@@ -13,7 +13,7 @@ import re
 import requests
 import tempfile
 from cleep.libs.download import Download
-from cleep.utils import CleepremoteModule
+from cleep.utils import CleepDesktopModule
 if platform.system()=='Windows':
     from cleep.libs.console import AdminEndlessConsole
     from cleep.libs.windowsdrives import WindowsDrives
@@ -26,7 +26,7 @@ else:
     from cleep.libs.udevadm import Udevadm
     
 
-class FlashDrive(CleepremoteModule):
+class FlashDrive(CleepDesktopModule):
     """
     Flash drive helper
     """
@@ -69,7 +69,7 @@ class FlashDrive(CleepremoteModule):
             debug_enabled (bool): True if debug is enabled
             crash_report (CrashReport): crash report instance
         """
-        CleepremoteModule.__init__(self, debug_enabled, crash_report)
+        CleepDesktopModule.__init__(self, debug_enabled, crash_report)
 
         #members
         self.app_path = app_path

@@ -11,7 +11,7 @@ import json
 import datetime
 from cleep.libs.download import Download
 from cleep.libs.console import Console
-from cleep.utils import CleepremoteModule
+from cleep.utils import CleepDesktopModule
 from cleep.flashdrive import FlashDrive
 
 
@@ -32,7 +32,7 @@ class UpdateInfos():
         return 'UpdateInfos {update_available=%s error=%s filename=%s url=%s version=%s size=%d}' % (self.update_available, self.error, self.filename, self.url, self.version, self.size)
 
 
-class Updates(CleepremoteModule):
+class Updates(CleepDesktopModule):
     """
     Updates manager: it can update etcher-cli and CleepDesktop files
     """
@@ -62,7 +62,7 @@ class Updates(CleepremoteModule):
             debug_enabled (bool): True if debug is enabled
             crash_report (CrashReport): crash report instance
         """
-        CleepremoteModule.__init__(self, debug_enabled, crash_report)
+        CleepDesktopModule.__init__(self, debug_enabled, crash_report)
 
         #members
         self.app_path = app_path
