@@ -3,27 +3,36 @@
 
 import logging
 import os
-from cleep.utils import CleepremoteModule
+import json
+from cleep.version import version as VERSION
+from cleep.utils import CleepDesktopModule
 from cleep.libs.externalbus import PyreBus
 
-class Devices(CleepremoteModule):
+class Devices(CleepDesktopModule):
     """
     Devices module. Handles Cleep devices
     """
 
     CLEEPDESKTOP_HOSTNAME = 'CLEEPDESKTOP'
-    CLEEPDESKTOP_PORT = 0
+    CLEEPDESKTOP_PORT = '0'
 
     def __init__(self, update_callback, debug_enabled, crash_report):
         """
         Constructor
         """
-        CleepremoteModule.__init__(self, debug_enabled, crash_report)
+        CleepDesktopModule.__init__(self, debug_enabled, crash_report)
 
         #members
         self.devices = {}
         self.update_callback = update_callback
-        self.bus = PyreBus(self.on_message_received, self.on_peer_connected, self.on_peer_disconnected, debug_enabled, crash_report)
+        self.external_bus = PyreBus(
+            self.on_message_received, 
+            self.on_peer_connected, 
+            self.on_peer_disconnected, 
+            self.__decode_bus_headers, 
+            debug_enabled, 
+            crash_report
+        )
 
         #debug bus
         #pyre_logger = logging.getLogger("pyre")
@@ -31,21 +40,64 @@ class Devices(CleepremoteModule):
         #pyre_logger.addHandler(logging.StreamHandler())
         #pyre_logger.propagate = False
 
-    def stop(self):
-        if self.bus:
-            self.bus.stop()
-
-    def run(self):
+    def _configure(self):
         """
         Bus process
         """
-        version = '0.0.0'
-        hostname = self.CLEEPDESKTOP_HOSTNAME
-        port = self.CLEEPDESKTOP_PORT
-        ssl = False
+        #configure bus
+        self.external_bus.configure(self.get_bus_headers())
 
-        #launch bus (blocking)
-        self.bus.start(version, hostname, port, ssl)
+    def _custom_process(self):
+        """
+        Custom process for cleep bus: get new message on external bus
+        """
+        self.external_bus.run_once()
+
+    def _custom_stop(self):
+        if self.external_bus:
+            self.external_bus.stop()
+
+    def get_bus_headers(self):
+        """
+        Headers to send at bus connection (values must be in string format)
+
+        Return:
+            dict: dict of headers (only string supported)
+        """
+        macs = self.external_bus.get_mac_addresses()
+        #TODO handle port and ssl when security implemented
+        headers = {
+            'version': VERSION,
+            'hostname': self.CLEEPDESKTOP_HOSTNAME,
+            'port': self.CLEEPDESKTOP_PORT,
+            'macs': json.dumps(macs),
+            'ssl': '0',
+            'cleepdesktop': '1'
+        }
+        self.logger.debug('headers: %s' % headers)
+
+        return headers
+
+    def __decode_bus_headers(self, headers):
+        """
+        Decode bus headers fields
+
+        Args:
+            headers (dict): dict of values as returned by bus
+
+        Return:
+            dict: dict with parsed values
+        """
+        if u'port' in headers.keys():
+            headers[u'port'] = int(headers[u'port'])
+        if u'ssl' in headers.keys():
+            headers[u'ssl'] = bool(eval(headers[u'ssl']))
+        if u'cleepdesktop' in headers.keys():
+            headers[u'cleepdesktop'] = bool(eval(headers[u'cleepdesktop']))
+        if u'macs' in headers.keys():
+            headers[u'macs'] = json.loads(headers[u'macs'])
+
+        return headers
 
     def on_message_received(self, message):
         """
@@ -67,9 +119,9 @@ class Devices(CleepremoteModule):
         """
         self.logger.debug('Peer %s connected: %s' % (peer, infos))
 
-        #drop cleepdesktop connection
-        if infos['hostname']==self.CLEEPDESKTOP_HOSTNAME and infos['port']==self.CLEEPDESKTOP_PORT:
-            self.logger.debug('CleepDesktop connected. Drop it')
+        #drop cleepdesktop connection0
+        if infos['cleepdesktop']:
+            self.logger.debug('CleepDesktop @ %s connected. Drop it' % infos[''])
             return
 
         #append online status and save peer infos
@@ -107,9 +159,13 @@ class Devices(CleepremoteModule):
         #compute unconfigured devices
         unconfigured = len([dev for dev in list(self.devices.values()) if len(dev['hostname'])==0])
 
-        return {
+        #prepare output
+        out = {
             'unconfigured': unconfigured,
             'devices': list(self.devices.values())
         }
+        self.logger.debug('devices: %s' % out)
+
+        return out
 
 

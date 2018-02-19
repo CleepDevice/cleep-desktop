@@ -2,13 +2,16 @@
 # -*- coding: utf-8 -*-
 
 __all__ = ['CommandError', 'CommandInfo', 'NoResponse', 'NoMessageAvailable', 'InvalidParameter', 'MissingParameter', 
-           'InvalidMessage', 'Unauthorized', 'BusError', 'MessageResponse', 'MessageRequest']
+           'InvalidMessage', 'Unauthorized', 'BusError', 'MessageResponse', 'MessageRequest', 'CleepDesktopModule']
 
 from threading import Thread
 import logging
 import time
 
-class CleepremoteModule(Thread):
+class CleepDesktopModule(Thread):
+    """
+    CleepDesktopModule handles default behavior for CleepDesktop module
+    """
     def __init__(self, debug_enabled, crash_report):
         """
         Constructor
@@ -68,9 +71,21 @@ class CleepremoteModule(Thread):
         self._custom_stop()
         self.running = False
 
+    def _configure(self):
+        """
+        Customizable module configuration
+        """
+        pass
+
     def _custom_stop(self):
         """
         Customizable stop
+        """
+        pass
+
+    def _custom_process(self):
+        """
+        Customizable task
         """
         pass
 
@@ -78,8 +93,10 @@ class CleepremoteModule(Thread):
         """
         Default process
         """
+        self._configure()
         while self.running:
-            time.sleep(1.0)
+            self._custom_process()
+            time.sleep(0.10)
     
 
 class CommandError(Exception):
