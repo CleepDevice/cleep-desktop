@@ -1,2 +1,4 @@
-__all__ = ['ui', 'rpcservers', 'comm', 'utils', 'libs', 'flashdrive', 'devices']
-__version__ = "0.0.1"
+from .version import version as VERSION
+
+__all__ = ['rpcserver', 'utils', 'libs', 'flashdrive', 'devices']
+__version__ = VERSION
