@@ -42,7 +42,7 @@ class CrashReport():
         """
         Enable crash report
         """
-        self.logger.debug('Crash report is eabled')
+        self.logger.debug('Crash report is enabled')
         self.enabled = True
 
     def disable(self):
