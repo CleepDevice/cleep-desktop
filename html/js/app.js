@@ -212,6 +212,9 @@ var emptyController = function($rootScope, $scope, $state)
 };
 Cleep.controller('emptyController', ['$rootScope', '$scope', '$state', emptyController]);
 
+/**
+ * Cleep controller
+ */
 var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService)
 {
     var self = this;
