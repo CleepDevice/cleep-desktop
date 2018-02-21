@@ -104,3 +104,7 @@ md-toast.info .md-toast-content {
     color: #FFFFFF;
 }
 
+/* remove input text error spacer */
+.no-error-spacer .md-errors-spacer {
+    min-height: 0px !important;
+}
