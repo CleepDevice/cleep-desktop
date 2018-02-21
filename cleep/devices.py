@@ -121,7 +121,7 @@ class Devices(CleepDesktopModule):
 
         #drop cleepdesktop connection0
         if infos['cleepdesktop']:
-            self.logger.debug('CleepDesktop @ %s connected. Drop it' % infos[''])
+            self.logger.debug('CleepDesktop @ %s connected. Drop it' % infos['ip'])
             return
 
         #append online status and save peer infos
