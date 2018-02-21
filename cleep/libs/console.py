@@ -41,8 +41,8 @@ class EndlessConsole(Thread):
 
         Args:
             command (string): command to execute
-            callback (function): callback when message is received
-            callback_end (function): callback when process is over
+            callback (function): callback when message is received (the function will be called with 2 arguments: stdout (string) and stderr (string))
+            callback_end (function): callback when process is terminated (the function will be called with 2 arguments: return code (string) and killed (bool))
         """
         Thread.__init__(self)
         Thread.daemon = True
@@ -89,7 +89,8 @@ class EndlessConsole(Thread):
             output.close()
         except:
             pass
-            
+        self.logger.debug('Enqueued thread stopped')
+
     def get_duration(self):
         """
         Return command duration
@@ -136,7 +137,7 @@ class EndlessConsole(Thread):
         """
         #launch command
         self.__start_time = time.time()
-        p = subprocess.Popen(self.command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=self.on_posix)
+        p = subprocess.Popen(self.command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=self.on_posix)
         pid = p.pid
         self.logger.debug('Command pid: %d' % pid)
 
@@ -178,7 +179,7 @@ class EndlessConsole(Thread):
             #check end of command
             if p.returncode is not None:
                 self.return_code = p.returncode
-                self.logger.debug('Process is terminated')
+                self.logger.debug('Process is terminated with return code %s' % p.returncode)
                 break
             
             #pause
@@ -187,19 +188,19 @@ class EndlessConsole(Thread):
         #compute command duration
         self.__duration = time.time() - self.__start_time
 
-        #make sure process is killed
+        #make sure process (and child processes) is really killed
         try:
-            self.logger.debug('Kill process with PID %d' % pid)
-            os.kill(pid, signal.SIGKILL)
-        except:
-            pass
+            subprocess.Popen(u'/usr/bin/pkill -9 -P %s 2> /dev/null' % pid, shell=True)
+        except Exception as e:
+            self.logger.debug('Kill exception: %s' % str(e))
 
         #process is over
         self.running = False
 
         #stop callback
         if self.callback_end:
-            self.callback_end()
+            self.callback_end(self.return_code, not self.running)
+
 
 
 class AdminEndlessConsole(EndlessConsole):
@@ -432,10 +433,14 @@ class AdminEndlessConsole(EndlessConsole):
 
 class Console():
     """
-    Helper class to execute command line
-    In charge of developper to protect command parameters if necessary
+    Helper class to execute command lines.
+    You can execute command right now using command method or after a certain amount of time using command_delayed
     """
     def __init__(self):
+        """
+        Constructor
+        """
+        #members
         self.timer = None
         self.__callback = None
         self.encoding = sys.getfilesystemencoding()
@@ -444,6 +449,9 @@ class Console():
         if sys.platform == 'win32':
             self.console_encoding = 'cp850'
             self.on_posix = False
+        self.last_return_code = None
+        self.logger = logging.getLogger(self.__class__.__name__)
+        #self.logger.setLevel(loggging.DEBUG)
 
     def __del__(self):
         """
@@ -463,6 +471,15 @@ class Console():
             list: input list of lines with eol removed
         """
         return [line.decode(self.console_encoding).rstrip() for line in lines]
+
+    def get_last_return_code(self):
+        """
+        Return last executed command return code
+
+        Return:
+            int: return code (can be None)
+        """
+        return self.last_return_code
 
     def command(self, command, timeout=2.0):
         """
@@ -484,26 +501,29 @@ class Console():
         #check params
         if timeout is None or timeout<=0.0:
             raise Exception(u'Timeout is mandatory and must be greater than 0')
-        
+
         #launch command
-        p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=self.on_posix)
+        p = subprocess.Popen(command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=self.on_posix)
         pid = p.pid
 
         #wait for end of command line
         done = False
         start = time.time()
         killed = False
+        returncode = None
         while not done:
             #check if command has finished
             p.poll()
             if p.returncode is not None:
                 #command executed
+                self.last_return_code = p.returncode
                 done = True
                 break
             
             #check timeout
             if time.time()>(start + timeout):
                 #timeout is over, kill command
+                self.logger.debug('Timeout over, kill command %s' % pid)
                 p.kill()
                 killed = True
                 break
@@ -526,12 +546,11 @@ class Console():
             else:
                 result[u'stdout'] = self.__process_lines(p.stdout.readlines())
 
-        #make sure process is really killed
+        #make sure process (and child processes) is really killed
         try:
-            self.logger.debug('Kill process with PID %d' % pid)
-            os.kill(pid, signal.SIGKILL)
-        except:
-            pass
+            subprocess.Popen(u'/usr/bin/pkill -9 -P %s 2> /dev/null' % pid, shell=True)
+        except Exception as e:
+            self.logger.debug('Kill exception: %s' % str(e))
 
         #trigger callback
         if self.__callback:
@@ -565,6 +584,9 @@ class AdvancedConsole(Console):
     Create console with advanced feature like find function
     """
     def __init__(self):
+        """
+        Constructor
+        """
         Console.__init__(self)
 
     def find(self, command, pattern, options=re.UNICODE | re.MULTILINE, timeout=2.0):
@@ -588,7 +610,7 @@ class AdvancedConsole(Console):
         res = self.command(command, timeout)
         if res[u'error'] or res[u'killed']:
             #command failed
-            return {}
+            return []
 
         #parse command output
         content = u'\n'.join(res[u'stdout'])
@@ -608,7 +630,7 @@ class AdvancedConsole(Console):
 
         Args:
             pattern (string): search pattern
-            content (string): string to search in
+            string (string): string to search in
             options (flag): regexp flags (see https://docs.python.org/2/library/re.html#module-contents)
 
         Returns:
@@ -618,8 +640,8 @@ class AdvancedConsole(Console):
                     ...
                 ]
         """
-        result = []
-        matches = re.finditer(pattern, content, options)
+        results = []
+        matches = re.finditer(pattern, string, options)
 
         for matchNum, match in enumerate(matches):
             group = match.group().strip()
