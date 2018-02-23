@@ -29,7 +29,6 @@ const path = require('path')
 const url = require('url')
 const log = require('electron-log')
 const detectPort = require('detect-port');
-const windowStateKeeper = require('electron-window-state');
 
 //variables
 var cleepremotePath = path.join(__dirname, 'cleepremote');
@@ -250,27 +249,16 @@ function createSplashScreen()
 // Create application main window
 function createWindow ()
 {
-    //windows states manager
-    let mainWindowState = windowStateKeeper({
-        defaultWidth: 1024,
-        defaultHeight: 768
-    });
-
     // Create the browser window.
     mainWindow = new BrowserWindow({
         width:1024,
         height:600,
+        minHeight: 640,
+        minWidth: 375,
         show: false,
         icon:__dirname+'/resources/256x256.png',
-        title:'CleepDesktop',
-        'x': mainWindowState.x,
-        'y': mainWindowState.y,
-        'width': mainWindowState.width,
-        'height': mainWindowState.height
+        title:'CleepDesktop'
     });
-
-    //handle windows states
-    mainWindowState.manage(mainWindow);
 
     // handle external url
     mainWindow.webContents.on('new-window', function(e, url) {
@@ -279,16 +267,22 @@ function createWindow ()
     });
 
     // close splashscreen when loaded
-    mainWindow.webContents.on('did-finish-load', function(e) {
+     mainWindow.once('ready-to-show', function(e) {
         if( splashScreen )
         {
             let splashScreenBounds = splashScreen.getBounds();
-            //mainWindow.setBounds(splashScreenBounds);
-            splashScreen.close();
+            setTimeout( function() {
+                splashScreen.close();
+            }, 1000 );
+            
         }
 
-        mainWindow.show();
-        mainWindow.focus();
+        setTimeout( function() {
+            mainWindow.maximize();
+            mainWindow.show();
+            mainWindow.focus();
+        }, 1250 );
+        
     });
 
     // and load the index.html of the app.
@@ -369,8 +363,8 @@ app.on('ready', function() {
         settings.set('remote.rpcport', DEFAULT_RPCPORT);
 
         //launch application
-        createSplashScreen();
         createWindow();
+        createSplashScreen();
         createMenu();
         launchCleepremote(DEFAULT_RPCPORT);
     }
