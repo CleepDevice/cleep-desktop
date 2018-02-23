@@ -227,6 +227,7 @@ def get_app(app_path, config_path, config_filename, debug_enabled):
     #load config
     config_file = os.path.join(config_path, config_filename)
     load_config()
+    logger.debug('Config: %s' % config)
 
     #handle debug
     #force debug in dev mode
@@ -412,12 +413,14 @@ def execute_command(command, params):
         elif command=='getflashstatus':
             resp.data = flashdrive.get_status()
         elif command=='startflash':
-            flashdrive.start_flash(params[u'url'], params[u'drive'], config['cleep']['isoraspbian'])
+            flashdrive.start_flash(params['url'], params['drive'], params['wifi'], config['cleep']['isoraspbian'], config['cleep']['isolocal'])
         elif command=='cancelflash':
             flashdrive.cancel_flash()
         elif command=='getisos':
             #TODO set include_raspbian param from config
-            resp.data = flashdrive.get_isos(config['cleep']['isoraspbian'])
+            resp.data = flashdrive.get_isos(config['cleep']['isoraspbian'], config['cleep']['isolocal'])
+        elif command=='getwifinetworks':
+            resp.data = flashdrive.get_wifi_networks()
 
         #updates
         elif command=='getupdatesstatus':
@@ -439,9 +442,7 @@ def execute_command(command, params):
 
     except Exception as e:
         logger.exception('Error occured during command execution:')
-
         crash_report.report_exception()
-
         resp.error = True
         resp.message = str(e)
 

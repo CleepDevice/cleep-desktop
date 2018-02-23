@@ -49,6 +49,8 @@ class Updates(CleepDesktopModule):
     STATUS_DONE = 3
     STATUS_ERROR = 4
 
+    ETCHER_VERSION_FORCED = "v1.2.0"
+
     def __init__(self, app_path, config_path, cleep_version, etcher_version, update_callback, debug_enabled, crash_report):
         """
         Constructor
@@ -179,39 +181,51 @@ class Updates(CleepDesktopModule):
         while self.running:
 
             if self.__download_etcher:
-                self.logger.info('Downloading Etcher archive %s (%s)' % (self.__download_etcher.filename, self.__download_etcher.url))
-                #update etcher status
-                self.etcher_status = self.STATUS_DOWNLOADING
-                #new etcher update available
-                self.__current_download = Download(self.__download_callback)
-                #download it with no checksum (call is blocking)
-                filepath = self.__current_download.download_from_url(self.__download_etcher.url)
-                #end of dowload, trigger callback and reset member
-                self.__current_download = None
-                #update etcher status
-                if self.etcher_download_status==Download.STATUS_DONE:
-                    self.etcher_status = self.STATUS_INSTALLING
-                else:
-                    self.etcher_status = self.STATUS_ERROR
-                self.update_callback(self.get_status())
-
-                if filepath:
-                    self.logger.debug('Etcher archive downloaded')
-                    #process downloaded archive
-                    if not self.__update_etcher(filepath):
-                        self.etcher_status = self.STATUS_ERROR
-                        self.logger.error('Etcher installation failed')
+                try:
+                    self.logger.info('Downloading Etcher archive %s (%s)' % (self.__download_etcher.filename, self.__download_etcher.url))
+                    #update etcher status
+                    self.etcher_status = self.STATUS_DOWNLOADING
+                    #new etcher update available
+                    self.__current_download = Download(self.__download_callback)
+                    #download it with no checksum (call is blocking)
+                    filepath = self.__current_download.download_from_url(self.__download_etcher.url)
+                    #end of dowload, trigger callback and reset member
+                    self.__current_download = None
+                    #update etcher status
+                    if self.etcher_download_status==Download.STATUS_DONE:
+                        self.etcher_status = self.STATUS_INSTALLING
                     else:
-                        self.etcher_status = self.STATUS_DONE
-                        self.etcher_version = self.__download_etcher.version
-                        self.logger.info('Etcher installation succeed (installed version is now %s)' % self.__download_etcher.version)
+                        self.etcher_status = self.STATUS_ERROR
                     self.update_callback(self.get_status())
 
-                else:
-                    self.logger.error('Failed to download Etcher archive.')
+                    if filepath:
+                        self.logger.debug('Etcher archive downloaded')
+                        #process downloaded archive
+                        if not self.__update_etcher(filepath):
+                            self.etcher_status = self.STATUS_ERROR
+                            self.logger.error('Etcher installation failed')
+                        else:
+                            self.etcher_status = self.STATUS_DONE
+                            self.etcher_version = self.__download_etcher.version
+                            self.logger.info('Etcher installation succeed (installed version is now %s)' % self.__download_etcher.version)
 
-                #end of etcher update process, reset variables
-                self.__download_etcher = None
+                        self.update_callback(self.get_status())
+
+                    else:
+                        #error downloading etcher archive
+                        self.logger.error('Failed to download Etcher archive.')
+                        self.etcher_status = self.STATUS_ERROR
+                        self.update_callback(self.get_status())
+
+                except:
+                    #exception during update
+                    self.logger.exception('Exception during etcher-cli update:')
+                    self.etcher_status = self.STATUS_ERROR
+                    self.update_callback(self.get_status())
+
+                finally:
+                    #end of etcher update process, reset variables
+                    self.__download_etcher = None
 
             if self.__download_cleep:
                 #TODO new CleepDesktop update available
@@ -284,7 +298,32 @@ class Updates(CleepDesktopModule):
                 #compare version (latest release is on top of the list)
                 latest = data[0]
                 #self.logger.debug('latest release: %s' % latest)
-                if 'tag_name' not in latest.keys():
+                if self.ETCHER_VERSION_FORCED is not None and self.ETCHER_VERSION_FORCED!=etcher_version:
+                    #force etcher-cli installation to specific version
+                    self.logger.debug('Force etcher-cli installation (forced version=%s, installed version=%s)' % (self.ETCHER_VERSION_FORCED, etcher_version))
+
+                    #get forced version infos
+                    found = None
+                    for entry in data:
+                        if 'tag_name' in entry.keys() and entry['tag_name']==self.ETCHER_VERSION_FORCED:
+                            #found forced etcher version
+                            found = entry
+                            break
+
+                    if found:
+                        infos.version = self.ETCHER_VERSION_FORCED
+                        infos.update_available = True
+                        (infos.filename, infos.url, infos.size) = self.__get_latest_etcher_release(found['assets'])
+                    else:
+                        #no entry found, stop here
+                        self.logger.error('Forced version %s not found in etcher releases %s' % (self.ETCHER_VERSION_FORCED, self.ETCHER_RELEASES))
+
+                elif self.ETCHER_VERSION_FORCED is not None:
+                    #stop statement
+                    pass
+
+                elif 'tag_name' not in latest.keys():
+                    #no version in entry, content may have changed
                     self.logger.error('No tag "tag_name" found in etcher response (maybe format has changed?). Unable to check latest etcher version.')
                     infos.error = True
                     return infos
@@ -305,7 +344,7 @@ class Updates(CleepDesktopModule):
 
                 elif latest['tag_name']!=etcher_version:
                     #new version available, find cli version for current user platform
-                    self.logger.debug('Update available (online version=%s installed version=%s)' % (latest['tag_name'], etcher_version))
+                    self.logger.debug('Update available (online version=%s, installed version=%s)' % (latest['tag_name'], etcher_version))
                     infos.version = latest['tag_name']
                     infos.update_available = True
                     (infos.filename, infos.url, infos.size) = self.__get_latest_etcher_release(latest['assets'])
@@ -354,6 +393,7 @@ class Updates(CleepDesktopModule):
 
         #TODO check cleepdesktop version
 
+        #prepare output
         update_available = False
         if self.__download_etcher is not None or self.__download_cleep is not None:
             update_available = True

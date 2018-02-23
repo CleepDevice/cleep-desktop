@@ -26,7 +26,8 @@ class Download():
     STATUS_ERROR = 3
     STATUS_ERROR_INVALIDSIZE = 4
     STATUS_ERROR_BADCHECKSUM = 5
-    STATUS_DONE = 6
+    STATUS_ERROR_NETWORK = 6
+    STATUS_DONE = 7
 
     def __init__(self, status_callback=None):
         """
@@ -232,7 +233,15 @@ class Download():
         last_percent = -1
         while True:
             #read data
-            buf = resp.read(1024)
+            try:
+                buf = resp.read(1024)
+            except:
+                self.logger.exception('Network exception:')
+                self.status = self.STATUS_ERROR_NETWORK
+                self.__status_callback(self.status, downloaded_size, self.percent)
+                download.close()
+                return None
+
             if not buf:
                 #download ended or failed, stop statement
                 break

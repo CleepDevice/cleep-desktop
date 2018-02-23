@@ -1,4 +1,6 @@
 var Cleep = angular.module('Cleep');
+const {dialog} = require('electron').remote;
+var path = require('path');
 
 /**
  * Auto install controller
@@ -20,7 +22,18 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     self.selectedIso = null;
     self.noCleepIso = true;
     self.noRaspbianIso = true;
+    self.isoraspbian = false
+    self.isolocal = false
     self.noDrive = true;
+    self.localIso = {
+        url: null,
+        label: 'Select file'
+    };
+    self.wifiNetworks = [];
+    self.noWifiNetwork = false;
+    self.noWifiAdapter = false;
+    self.wifiPassword = null;
+    self.selectedWifiNetwork = null;
 
     //return current flash status
     self.getStatus = function(init)
@@ -28,6 +41,18 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         return cleepService.sendCommand('getflashstatus')
             .then(function(resp) {
                 self.status = resp.data;
+            });
+    };
+
+    //get wifi networks
+    self.refreshWifiNetworks = function()
+    {
+        return cleepService.sendCommand('getwifinetworks')
+            .then(function(resp) {
+                console.log(resp);
+                self.wifiNetworks = resp.data.networks;
+                self.noWifiNetwork = (resp.data.networks.length===0 ? true : false);
+                self.noWifiAdapter = !resp.data.adapter;
             });
     };
 
@@ -50,11 +75,95 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                 self.isos = resp.data.isos;
                 self.noCleepIso = resp.data.cleepIsos===0;
                 self.noRaspbianIso = resp.data.raspbianIsos===0;
-                self.raspbian = resp.data.raspbian;
+                self.isoraspbian = resp.data.isoraspbian;
+                self.isolocal = resp.data.isolocal;
+                self.wifiNetworks = resp.data.wifinetworks;
+
+                //append new item for local iso
+                if( self.isolocal )
+                {
+                    //select file entry
+                    self.isos.push({
+                        category: 'local',
+                        label: 'Select file',
+                        sha1: null,
+                        timestamp: 0,
+                        url: null,
+                        selector: true
+                    });
+
+                    //selected file entry
+                    var url = null;
+                    var label = '-- no file selected --';
+                    if( self.localIso.url ) {
+                        url = self.localIso.url;
+                        label = self.localIso.label;
+                    }
+                    self.isos.push({
+                        category: 'local',
+                        label: label,
+                        sha1: null,
+                        timestamp: 0,
+                        url: url,
+                        selector: false
+                    });
+                }
+
+                //append item id to allow easier selection
+                var id = 0;
+                for( id=0; id<self.isos.length; id++ )
+                {
+                    self.isos[id].id = id;
+                }
             })
             .finally(function() {
                 self.refreshingIsos = false;
             });
+    };
+
+    //select local iso
+    self.selectLocalIso = function(item)
+    {
+        if( !item.selector )
+        {
+            return;
+        }
+
+        var options = {
+            title: 'Select local iso',
+            filters: [
+                {name: 'Iso file', extensions: ['zip', 'iso', 'img', 'dmg', 'raw']}
+            ]
+        };
+        dialog.showOpenDialog(options, function(filenames) {
+            if( filenames===undefined )
+            {
+                //no file selected
+                self.selectedIso = null;
+                return;
+            }
+
+            //save selected file infos
+            self.localIso.url = 'file://' + filenames[0];
+            self.localIso.label = path.parse(filenames[0]).base;
+            selectedIso = null;
+            for( var i=0; i<self.isos.length; i++ )
+            {
+                if( self.isos[i].category==='local' && self.isos[i].selector===false )
+                {
+                    self.isos[i].url = self.localIso.url;
+                    self.isos[i].label = self.localIso.label;
+                    selectedIso = self.isos[i];
+                    break;
+                }
+            }
+
+            //and select entry in md-select
+            $timeout(function() {
+                self.selectedIso = selectedIso;
+            }, 250);
+
+        }); 
     };
 
     //start flash process
@@ -71,8 +180,13 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
             .then(function() {
                 self.flashing = true;
                 var data = {
-                    url: self.selectedIso,
-                    drive: self.selectedDrive
+                    url: self.selectedIso.url,
+                    drive: self.selectedDrive,
+                    wifi: {
+                        network: self.selectedWifiNetwork.network,
+                        password: self.wifiPassword,
+                        encryption: self.selectedWifiNetwork.encryption
+                    }
                 };
                 cleepService.sendCommand('startflash', data)
                     .then(function() {

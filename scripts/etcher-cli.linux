@@ -1,7 +1,27 @@
 #!/bin/sh
 
-#params:
-# $1: drive path
-# $2: image filepath
-etcher-cli/etcher --yes --drive $1 $2
+#script params:
+# $1: install path
+# $2: drive path
+# $3: image filepath
+# $4: wifi config file
 
+#flash drive
+$1/etcher-cli/etcher --yes --drive $2 $3
+
+#copy default wifi config
+if [ ! -z "$4" ]
+then
+    #search root partition
+    partition=`/bin/lsblk --list --noheadings --output NAME $2 | /bin/sed -n 2p`
+    #mount first drive partition (should be root one in fat32)
+    /bin/mkdir /tmp/raspiot_root
+    /bin/mount /dev/$partition /tmp/raspiot_root
+    #then copy file
+    echo "Copy $4 file to /tmp/raspiot_root/cleepwifi.conf"
+    /bin/cp -f "$4" /tmp/raspiot_root/cleepwifi.conf
+    #and umount/clean properly
+    /bin/sync
+    /bin/umount -lf /tmp/raspiot_root
+    /bin/rmdir /tmp/raspiot_root
+fi

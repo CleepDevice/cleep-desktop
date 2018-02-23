@@ -5,7 +5,7 @@
             <div class="md-toolbar-tools">
                 <h2>
                     <md-icon md-font-set="material-icons">sd_card</md-icon>
-                    Install Cleep easily on your device
+                    Guided installation
                 </h2>
                 <span flex></span>
             </div>
@@ -29,37 +29,48 @@
                     </md-card-title-text>
                 </md-card-title>
                 <md-card-content>
+
+                    <!-- iso -->
                     <div layout="row" layout-align="space-between center">
                         <div>
-                            <md-icon md-font-set="material-icons" class="bullet">label</md-icon>
+                            <md-icon md-font-set="material-icons" class="bullet"></md-icon>
                             Select Cleep version you want to install on your SD card:
                         </div>
                         <div>
                             <md-input-container>
-                                <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" ng-disabled="ctl.flashing" required>
+                                <label>Version</label>
+                                <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" ng-disabled="ctl.flashing" required ng-model-options="{trackBy: '$value.id'}"> 
                                     <md-optgroup label="Cleep" ng-if="!ctl.refreshingIsos">
                                         <md-option ng-if="ctl.noCleepIso" ng-disabled="true">No Cleep version found</md-option>
-                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'cleep'}" ng-value="iso.url">
+                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'cleep'}" ng-value="iso">
                                             {{iso.label}} ({{iso.timestamp | hrDate}})
                                         </md-option>
                                     </md-optgroup>
-                                    <md-optgroup label="Raspbian" ng-if="ctl.raspbian">
+                                    <md-optgroup label="Raspbian" ng-if="ctl.isoraspbian">
                                         <md-option ng-if="ctl.noRaspbianIso" ng-disabled="true">No Raspbian version found</md-option>
-                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'raspbian'}" ng-value="iso.url">
+                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'raspbian'}" ng-value="iso">
                                             {{iso.label}} ({{iso.timestamp | hrDate}})
+                                        </md-option>
+                                    </md-optgroup>
+                                    <md-optgroup label="Local" ng-if="ctl.isolocal">
+                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'local'}" ng-click="ctl.selectLocalIso(iso)" ng-value="iso" ng-disabled="iso.url===null && !iso.selector">
+                                            {{iso.label}}
                                         </md-option>
                                     </md-optgroup>
                                 </md-select>
                             </md-input-container>
                         </div>
                     </div>
+
+                    <!-- drive -->
                     <div layout="row" layout-align="space-between center">
                         <div>
-                            <md-icon md-font-set="material-icons" class="bullet">label</md-icon>
+                            <md-icon md-font-set="material-icons" class="bullet"></md-icon>
                             Plug your SD card or your USB card reader on your computer and select it from drives list:
                         </div>
                         <div>
                             <md-input-container>
+                                <label>Drive</label>
                                 <md-select ng-model="ctl.selectedDrive" md-on-open="ctl.refreshDrives()" placeholder="Drive" class="md-no-underline" ng-disabled="ctl.flashing" required>
                                     <md-option ng-if="ctl.noDrive" ng-disabled="true">No drive found</md-option>
                                     <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path" ng-disabled="drive.readonly">
@@ -69,9 +80,35 @@
                             </md-input-container>
                         </div>
                     </div>
+
+                    <!-- wifi network -->
                     <div layout="row" layout-align="space-between center">
                         <div>
-                            <md-icon md-font-set="material-icons" class="bullet">label</md-icon>
+                            <md-icon md-font-set="material-icons" class="bullet"></md-icon>
+                            If your device will connect using wifi, configure it here (your password will be encrypted):
+                        </div>
+                        <div>
+                            <md-input-container>
+                                <label>Wifi network</label>
+                                <md-select ng-model="ctl.selectedWifiNetwork" md-on-open="ctl.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline" ng-disabled="ctl.flashing">
+                                    <md-option ng-if="ctl.noWifiNetwork" ng-disabled="true">No wifi network found</md-option>
+                                    <md-option ng-if="ctl.noWifiAdapter" ng-disabled="true">No wifi adapter</md-option>
+                                    <md-option ng-repeat="wifiNetwork in ctl.wifiNetworks" ng-value="wifiNetwork">
+                                        {{wifiNetwork.network}} ({{wifiNetwork.encryption}})
+                                    </md-option>
+                                </md-select>
+                            </md-input-container>
+                            <md-input-container class="no-error-spacer">
+                                <label>Password</label>
+                                <input type="password" ng-model="ctl.wifiPassword"/>
+                            </md-input-container>
+                        </div>
+                    </div>
+
+                    <!-- button -->
+                    <div layout="row" layout-align="space-between center">
+                        <div>
+                            <md-icon md-font-set="material-icons" class="bullet"></md-icon>
                             Click on button to install Cleep and wait end of process:
                         </div>
                         <div>

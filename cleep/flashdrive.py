@@ -4,6 +4,7 @@
 import logging
 import urllib3
 import uuid
+import io
 import time
 import datetime
 import os
@@ -12,8 +13,11 @@ import platform
 import re
 import requests
 import tempfile
+from cleep.libs.cleepwificonf import CleepWifiConf
 from cleep.libs.download import Download
 from cleep.utils import CleepDesktopModule
+from cleep.libs.iw import Iw
+from cleep.libs.iwlist import Iwlist
 if platform.system()=='Windows':
     from cleep.libs.console import AdminEndlessConsole
     from cleep.libs.windowsdrives import WindowsDrives
@@ -92,6 +96,9 @@ class FlashDrive(CleepDesktopModule):
         self.timestamp_isos = None
         self.__etcher_output_pattern = r'.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)'
         self.__etcher_output_error = False
+        self.iw = Iw()
+        self.iwlist = Iwlist()
+        self.wifi_config = None
         
         #get etcher command
         if self.env=='windows':
@@ -105,9 +112,6 @@ class FlashDrive(CleepDesktopModule):
             self.etcher_cmd = os.path.join(self.config_path, self.ETCHER_MAC)
             self.diskutil = Diskutil()
         self.logger.debug('Etcher command line: %s' % self.etcher_cmd)
-
-        #sanity clean
-        #self.purge_files()
 
     def _custom_stop(self):
         """
@@ -170,6 +174,12 @@ class FlashDrive(CleepDesktopModule):
                 self.url = None
                 self.cancel = False
                 self.console = None
+                try:
+                    #remove temp wifi config file
+                    if self.wifi_config and os.path.exists(self.wifi_config):
+                        os.remove(self.wifi_config)
+                except:
+                    pass
                 self.logger.info('Flash process terminated')
                 
                 #update ui
@@ -177,37 +187,7 @@ class FlashDrive(CleepDesktopModule):
 
             else:
                 #no process, release cpu
-                time.sleep(.25)
-
-    # def purge_files(self):
-    #     """
-    #     Remove all files that stay from previous processes
-    #     """
-    #     for root, dirs, cleeps in os.walk(self.temp_dir):
-    #         for cleep in cleeps:
-    #             if os.path.basename(cleep).startswith(self.TMP_FILE_PREFIX):
-    #                 self.logger.debug('Purge existing iso file: %s' % cleep)
-    #                 try:
-    #                     os.remove(os.path.join(self.temp_dir, cleep))
-    #                 except:
-    #                     pass
-
-    # def generate_sha1(self, file_path):
-    #     """
-    #     Generate SHA1 checksum for specified file
-
-    #     Args:
-    #         file_path (string): file path
-    #     """
-    #     sha1 = hashlib.sha1()
-    #     with open(file_path, 'rb') as f:
-    #         while True:
-    #             buf = f.read(1024)
-    #             if not buf:
-    #                 break
-    #             sha1.update(buf)
-
-    #     return sha1.hexdigest()
+                time.sleep(.5)
 
     def __get_raspbian_release_infos(self, release):
         """
@@ -401,9 +381,16 @@ class FlashDrive(CleepDesktopModule):
             'raspbian_lite': raspbian_lite_infos
         }
 
-    def start_flash(self, url, drive, iso_raspbian):
+    def start_flash(self, url, drive, wifi, iso_raspbian, iso_local):
         """
         Set flash data before launching process
+
+        Args:
+            url (string): url of file to use during flash
+            drive (string): drive to flash
+            wifi (dict): wifi configuration (dict('network':XXX, 'password':XXX, 'encryption':XXX))
+            iso_raspbian (bool): function will also return raspbian isos
+            iso_local (bool): function will set iso_local flag in process data
         """
         if url is None or len(url)==0:
             raise Exception('Invalid Url "%s"' % url)
@@ -413,15 +400,32 @@ class FlashDrive(CleepDesktopModule):
             raise Exception('Installation is already running')
 
         #get sha1
-        isos = self.get_isos(iso_raspbian)
+        isos = self.get_isos(iso_raspbian, iso_local)
         for iso in isos['isos']:
             if iso['url']==url:
                 self.logger.debug('Found sha1 "%s" for iso "%s"' % (iso['sha1'], url))
                 self.iso_sha1 = iso['sha1']
 
+        #generate wifi config file is needed
+        wifi_config = None
+        if wifi['network']:
+            try:
+                wifi_config = '/tmp/%s' % str(uuid.uuid4())
+                wifi_config_file = io.open(wifi_config, 'w+')
+                cleepwificonf = CleepWifiConf()
+                conf = cleepwificonf.create_content(wifi['network'], wifi['password'], wifi['encryption'])
+                self.logger.debug('Generated wifi config file: %s' % conf)
+                wifi_config_file.write(conf)
+                wifi_config_file.close()
+
+            except:
+                self.logger.exception('Unable to store wifi config:')
+                wifi_config = None
+
         #store data
         self.url = url
         self.drive = drive
+        self.wifi_config = wifi_config
 
     def cancel_flash(self):
         """
@@ -521,12 +525,13 @@ class FlashDrive(CleepDesktopModule):
 
         return flashables
 
-    def get_isos(self, iso_raspbian):
+    def get_isos(self, iso_raspbian, iso_local):
         """
         Get list of isos file available
 
         Args:
             iso_raspbian (bool): function will also return raspbian isos
+            iso_local (bool): just return iso local flag
 
         Return:
             dict:
@@ -543,7 +548,9 @@ class FlashDrive(CleepDesktopModule):
                             sha1 (string): sha1 checksum
                         },
                         ...
-                    ]
+                    ],
+                isoraspbian (bool): raspbian iso flag
+                isolocal (bool): local iso flag
         """
         #return isos from cache
         refresh_isos = True
@@ -612,7 +619,8 @@ class FlashDrive(CleepDesktopModule):
             'isos': self.isos,
             'cleepIsos': cleepIsos,
             'raspbianIsos': raspbianIsos,
-            'raspbian': iso_raspbian
+            'isoraspbian': iso_raspbian,
+            'isolocal': iso_local
         }
 
     def __download_callback(self, status, filesize, percent):
@@ -662,6 +670,10 @@ class FlashDrive(CleepDesktopModule):
         if self.url is None or self.drive is None:
             self.logger.debug('No drive or url specified, flash process stopped')
             return False
+        if self.url.startswith('file://'):
+            #local file, nothing to download
+            self.iso = self.url.replace('file://', '')
+            return True
 
         #init download helper
         self.dl = Download(self.__download_callback)
@@ -673,113 +685,6 @@ class FlashDrive(CleepDesktopModule):
         if self.iso is None:
             return False
         return True
-
-    """
-    def __download_file(self):
-        if self.url is None or self.drive is None:
-            self.logger.debug('No drive or url specified, flash process stopped')
-            return False
-
-        #debug purpose, avoid iso downloading. Don't forget to comment file deletion at end of run() process
-        #self.iso = 'c:\\cleep_iso_c8bee3ea-bfa4-455e-a554-bc7cf1746da3.zip'
-        #self.iso = '/Users/tanguybonneau/raspbian.zip'
-        #return True
-        
-        #prepare iso
-        self.iso = os.path.join(self.temp_dir, '%s_%s' % (self.TMP_FILE_PREFIX, str(uuid.uuid4())))
-        self.logger.debug('Iso file will be saved to "%s"' % self.iso)
-        iso = None
-        try:
-            iso = open(self.iso, u'wb')
-        except:
-            self.logger.exception('Unable to create iso file:')
-            self.status = self.STATUS_ERROR
-            return False
-
-        #initialize download
-        try:
-            resp = self.http.request('GET', self.url, preload_content=False)
-        except:
-            self.logger.exception('Error initializing http request:')
-            self.status = self.STATUS_ERROR
-            return False
-
-        #get file size
-        file_size = 0
-        try:
-            file_size = int(resp.getheader('Content-Length'))
-            self.status = self.STATUS_DOWNLOADING
-        except:
-            self.logger.exception('Error getting content-length value from header:')
-            self.status = self.STATUS_DOWNLOADING_NOSIZE
-        self.logger.debug('Size to download: %d bytes' % file_size)
-
-        #download file
-        downloaded_size = 0
-        last_percent = -1
-        start_time = time.time()
-        while True:
-            #read data
-            buf = resp.read(1024)
-            if not buf:
-                #download ended or failed, stop statement
-                break
-
-            #save date to output file
-            downloaded_size += len(buf)
-            try:
-                iso.write(buf)
-            except:
-                self.logger.exception('Unable to write to iso file "%s":' % self.iso)
-                self.status = self.STATUS_ERROR
-                iso.close()
-                return False
-            
-            #compute percentage
-            if file_size!=0:
-                self.percent = int(float(downloaded_size) / float(file_size) * 100.0)
-                self.total_percent = int(self.percent / 3)
-                self.eta = '%.1fMo' % (float(downloaded_size)/1000000.0)
-                if not self.percent%5 and last_percent!=self.percent:
-                    last_percent = self.percent
-                    self.logger.debug('Downloading %s %d%%' % (self.iso, self.percent))
-
-            #cancel download
-            if self.cancel:
-                iso.close()
-                self.logger.debug('Flash process canceled during download')
-                return False
-
-            #update ui
-            self.update_callback(self.get_status())
-
-        #download over
-        iso.close()
-
-        #file size
-        if downloaded_size==file_size:
-            self.logger.debug('File size is valid')
-        else:
-            self.logger.error('Invalid downloaded size %d instead of %d' % (downloaded_size, file_size))
-            self.status = self.STATUS_ERROR_INVALIDSIZE
-
-            return False
-
-        #checksum
-        if self.iso_sha1:
-            sha1 = self.generate_sha1(self.iso)
-            self.logger.debug('Sha1 for %s: %s' % (self.iso, sha1))
-            if self.iso_sha1==sha1:
-                self.logger.debug('Sha1 checksum is valid')
-            else:
-                self.logger.error('Sha1 from downloaded file is invalid (%s!=%s)' % (self.iso_sha1, sha1))
-                self.status = self.STATUS_ERROR_BADCHECKSUM
-                return False
-        else:
-            self.logger.debug('No checksum to verify')
-
-        return True
-    """
 
     def __flash_callback(self, stdout, stderr):
         """
@@ -861,8 +766,16 @@ class FlashDrive(CleepDesktopModule):
 
         self.status = self.STATUS_FLASHING
         try:
-            cmd = [self.etcher_cmd, self.config_path, self.drive, self.iso]
+            #fix wifi config value, must be string
+            wifi_config = self.wifi_config
+            if wifi_config is None:
+                wifi_config = ''
+
+            #prepare command line
+            cmd = [self.etcher_cmd, self.config_path, self.drive, self.iso, self.wifi_config]
             self.logger.debug('Etcher command to execute: %s' % cmd)
+
+            #start command in admin endless console
             self.console = AdminEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
             if self.env=='windows':
                 self.console.set_cmdlogger(os.path.join(self.app_path, self.CMDLOGGER_WINDOWS))
@@ -876,4 +789,38 @@ class FlashDrive(CleepDesktopModule):
             self.logger.exception('Exception occured during drive flashing:')
             self.__etcher_output_error = True
             self.console = None
+
+    def get_wifi_networks(self):
+        """
+        Return wifi networks and wifi infos
+
+        Return:
+            dict: wifi infos::
+                {
+                    network (list): networks list
+                    adapter (bool): True if wifi adapter found
+                }
+        """
+        #get wifi interfaces
+        wifi_connections = []
+        if self.iw.is_installed():
+            wifi_connections = self.iw.get_connections()
+            self.logger.debug('wifi_connections: %s' % wifi_connections)
+
+        #get wifi networks
+        wifi_networks = []
+        if len(wifi_connections.keys())>0 and self.iwlist.is_installed():
+            #keep only first wifi interface
+            interface = list(wifi_connections.keys())[0]
+            networks = self.iwlist.get_networks(interface)
+
+            #flatten dict
+            wifi_networks = [v for k,v in networks.items()]
+        
+        #build output
+        return {
+            'networks': wifi_networks,
+            'adapter': len(wifi_connections.keys())>0
+        }
+
 

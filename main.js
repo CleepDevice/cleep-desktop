@@ -5,6 +5,7 @@ const VERSION = '0.0.0';
 const DEFAULT_RPCPORT = 5610;
 const DEFAULT_DEBUG = false;
 const DEFAULT_ISORASPBIAN = false;
+const DEFAULT_ISOLOCAL = false;
 const DEFAULT_LOCALE = 'en';
 const DEFAULT_PROXYMODE = 'noproxy';
 const DEFAULT_PROXYHOST = 'localhost';
@@ -117,6 +118,10 @@ function createConfig()
     if( !settings.has('cleep.isoraspbian') )
     {
         settings.set('cleep.isoraspbian', DEFAULT_ISORASPBIAN);
+    }
+    if( !settings.has('cleep.isolocal') )
+    {
+        settings.set('cleep.isolocal', DEFAULT_ISOLOCAL);
     }
     if( !settings.has('cleep.locale') )
     {
