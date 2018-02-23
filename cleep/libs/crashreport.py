@@ -28,15 +28,16 @@ class CrashReport():
         user_context['product'] = product
         user_context['product_version'] = product_version
         self.client.user_context(user_context)
-
-        #bind
-        self.report_exception = self.client.captureException
+        self.report_exception = self.__unbinded_report_exception
 
         #attach exception hook
         sys.excepthook = self.crash_report
 
-    #def report_exception(self):
-    #    function is directly connected to Raven client instance
+    def __unbinded_report_exception(self):
+        """
+        Unbinded report exception when sentry is disabled
+        """
+        pass
 
     def enable(self):
         """
@@ -45,12 +46,18 @@ class CrashReport():
         self.logger.debug('Crash report is enabled')
         self.enabled = True
 
+        #bind report_exception
+        self.report_exception = self.client.captureException
+
     def disable(self):
         """
         Disable crash report
         """
         self.logger.debug('Crash report is disabled')
         self.enabled = False
+
+        #unbind report exception
+        self.reporrt_exception = self.__unbinded_report_exception
 
     def crash_report(self, type, value, tb):
         """
