@@ -108,3 +108,9 @@ md-toast.info .md-toast-content {
 .no-error-spacer .md-errors-spacer {
     min-height: 0px !important;
 }
+
+/* white circular progress */
+.progress-circular-white svg path {
+    stroke: white;
+}
+

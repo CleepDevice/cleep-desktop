@@ -121,7 +121,7 @@ var tasksPanelService = function($mdPanel) {
                       '    <md-list>' +
                       '        <md-list-item ng-repeat="item in ctl.items">' +
                       '            <div style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">' +
-                      '                <md-progress-circular md-mode="indeterminate" md-diameter="20px" class="md-accent" style="float:left; padding-right:10px;" ng-if="item.loader"></md-progress-circular>' +
+                      '                <md-progress-circular md-mode="indeterminate" md-diameter="20px" class="progress-circular-white" style="float:left; padding-right:10px;" ng-if="item.loader"></md-progress-circular>' +
                       '                {{item.label}}' +
                       '            </div>' +
                       '            <md-icon md-font-set="material-icons" class="md-secondary" ng-if="item.action" ng-click="ctl.click(item.action)">' +
