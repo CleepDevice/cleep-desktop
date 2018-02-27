@@ -243,7 +243,7 @@ class Updates(CleepDesktopModule):
         Search for file to download for current user environment
 
         Args:
-            release (dict): release data
+            asset (dict): release assets
 
         Returns:
             tuple (string, string, int): release filename, release url (ready to download) and filesize (in bytes)
@@ -305,7 +305,7 @@ class Updates(CleepDesktopModule):
                 release = github.get_release(self.ETCHER_VERSION_FORCED)
 
                 #get download url
-                (infos.filename, infos.url, infos.size) = self.__get_etcher_version_infos(release)
+                (infos.filename, infos.url, infos.size) = self.__get_etcher_version_infos(release['assets'])
                 infos.version = self.ETCHER_VERSION_FORCED
                 infos.update_available = True
 
