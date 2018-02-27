@@ -11,6 +11,7 @@ import json
 import datetime
 from cleep.libs.download import Download
 from cleep.libs.console import Console
+from cleep.libs.github import Github
 from cleep.utils import CleepDesktopModule
 from cleep.flashdrive import FlashDrive
 
@@ -38,6 +39,7 @@ class Updates(CleepDesktopModule):
     """
 
     ETCHER_RELEASES = 'https://api.github.com/repos/resin-io/etcher/releases'
+    CLEEPDESKTOP_RELEASES = 'https://api.github.com/repos/tangb/CleepDesktop/releases'
 
     INSTALL_ETCHER_COMMAND_LINUX = '%s/scripts/install_etcher.linux "%s" "%s" "%s"'
     INSTALL_ETCHER_COMMAND_WINDOWS = '%s\\scripts\\install_etcher.windows.bat "%s" "%s" "%s"'
@@ -236,12 +238,12 @@ class Updates(CleepDesktopModule):
 
         self.logger.debug('Updates thread stopped')
 
-    def __get_latest_etcher_release(self, releases):
+    def __get_etcher_version_infos(self, assets):
         """
         Search for file to download for current user environment
 
         Args:
-            releases (list): list of available files for a release
+            release (dict): release data
 
         Returns:
             tuple (string, string, int): release filename, release url (ready to download) and filesize (in bytes)
@@ -261,105 +263,84 @@ class Updates(CleepDesktopModule):
         self.logger.debug('Search release using pattern: %s' % pattern)
 
         #search for release
-        for release in releases:
-            if 'browser_download_url' and 'size' and 'name' in release.keys():
-                name = release['name'].lower()
+        for asset in assets:
+            if 'browser_download_url' and 'size' and 'name' in asset.keys():
+                name = asset['name'].lower()
                 if name.find('etcher')>=0 and name.find('cli')>=0 and name.find(pattern)>=0:
                     #version found, return infos
-                    self.logger.debug('Found release: %s' % release)
-                    return release['name'], release['browser_download_url'], release['size']
+                    self.logger.debug('Found release: %s' % asset)
+                    return asset['name'], asset['browser_download_url'], asset['size']
 
         #nothing found
-        return None, 0
+        raise Exception('No release info found')
 
     def __check_etcher_updates(self, etcher_version):
         """
         Check if etcher updates are available
 
+        Args:
+            etcher_version (string): current installed etcher version
+
         Returns:
             UpdateInfos: UpdateInfos instance
         """
         infos = UpdateInfos()
+        github = Github('resin-io', 'etcher')
 
+        #etcher-cli path for test it is installed
+        if self.env=='linux':
+            etchercli_script_path = FlashDrive.ETCHER_LINUX
+        elif self.env=='darwin':
+            etchercli_script_path = FlashDrive.ETCHER_MAC
+        elif self.env=='windows':
+            etchercli_script_path = FlashDrive.ETCHER_WINDOWS
+
+        #handle forced version
+        if self.ETCHER_VERSION_FORCED is not None and self.ETCHER_VERSION_FORCED!=etcher_version:
+            #force etcher-cli installation to specific version
+            self.logger.debug('Force etcher-cli installation (forced version=%s, installed version=%s)' % (self.ETCHER_VERSION_FORCED, etcher_version))
+
+            try:
+                #get forced release
+                release = github.get_release(self.ETCHER_VERSION_FORCED)
+
+                #get download url
+                (infos.filename, infos.url, infos.size) = self.__get_etcher_version_infos(release)
+                infos.version = self.ETCHER_VERSION_FORCED
+                infos.update_available = True
+
+            except:
+                self.logger.exception('Forced Etcher-cli release not found:')
+
+            return infos
+
+        elif self.ETCHER_VERSION_FORCED is not None:
+            #forced version already installed, stop statement
+            return infos
+
+        #handle latest release
         try:
-            resp = self.http.urlopen('GET', self.ETCHER_RELEASES, headers=self.http_headers)
-            if resp.status==200:
-                #response successful, parse data to get current latest version
-                data = json.loads(resp.data.decode('utf-8'))
+            latest = github.get_latest_release()
 
-                #etcher-cli path
-                if self.env=='linux':
-                    etchercli_script_path = FlashDrive.ETCHER_LINUX
-                elif self.env=='darwin':
-                    etchercli_script_path = FlashDrive.ETCHER_MAC
-                elif self.env=='windows':
-                    etchercli_script_path = FlashDrive.ETCHER_WINDOWS
+            if not os.path.exists(os.path.join(self.config_path, 'etcher-cli')) or not os.path.exists(os.path.join(self.config_path, etchercli_script_path)):
+                #etcher-cli is not installed
+                self.logger.debug('No etcher-cli found. Installation is necessary')
+                infos.version = latest['tag_name']
+                infos.update_available = True
+                (infos.filename, infos.url, infos.size) = self.__get_etcher_version_infos(latest['assets'])
 
-                #compare version (latest release is on top of the list)
-                latest = data[0]
-                #self.logger.debug('latest release: %s' % latest)
-                if self.ETCHER_VERSION_FORCED is not None and self.ETCHER_VERSION_FORCED!=etcher_version:
-                    #force etcher-cli installation to specific version
-                    self.logger.debug('Force etcher-cli installation (forced version=%s, installed version=%s)' % (self.ETCHER_VERSION_FORCED, etcher_version))
-
-                    #get forced version infos
-                    found = None
-                    for entry in data:
-                        if 'tag_name' in entry.keys() and entry['tag_name']==self.ETCHER_VERSION_FORCED:
-                            #found forced etcher version
-                            found = entry
-                            break
-
-                    if found:
-                        infos.version = self.ETCHER_VERSION_FORCED
-                        infos.update_available = True
-                        (infos.filename, infos.url, infos.size) = self.__get_latest_etcher_release(found['assets'])
-                    else:
-                        #no entry found, stop here
-                        self.logger.error('Forced version %s not found in etcher releases %s' % (self.ETCHER_VERSION_FORCED, self.ETCHER_RELEASES))
-
-                elif self.ETCHER_VERSION_FORCED is not None:
-                    #stop statement
-                    pass
-
-                elif 'tag_name' not in latest.keys():
-                    #no version in entry, content may have changed
-                    self.logger.error('No tag "tag_name" found in etcher response (maybe format has changed?). Unable to check latest etcher version.')
-                    infos.error = True
-                    return infos
-
-                elif not os.path.exists(os.path.join(self.config_path, 'etcher-cli')):
-                    #etcher-cli is not installed
-                    self.logger.debug('No etcher-cli found. Installation is necessary')
-                    infos.version = latest['tag_name']
-                    infos.update_available = True
-                    (infos.filename, infos.url, infos.size) = self.__get_latest_etcher_release(latest['assets'])
-
-                elif not os.path.exists(os.path.join(self.config_path, etchercli_script_path)):
-                    #etcher-cli script is not installed
-                    self.logger.debug('No etcher-cli script found. Installation is necessary')
-                    infos.version = latest['tag_name']
-                    infos.update_available = True
-                    (infos.filename, infos.url, infos.size) = self.__get_latest_etcher_release(latest['assets'])
-
-                elif latest['tag_name']!=etcher_version:
-                    #new version available, find cli version for current user platform
-                    self.logger.debug('Update available (online version=%s, installed version=%s)' % (latest['tag_name'], etcher_version))
-                    infos.version = latest['tag_name']
-                    infos.update_available = True
-                    (infos.filename, infos.url, infos.size) = self.__get_latest_etcher_release(latest['assets'])
-
-                else:
-                    self.logger.debug('No new etcher version available')
+            elif latest['tag_name']!=etcher_version:
+                #new version available, find cli version for current user platform
+                self.logger.debug('Update available (online version=%s, installed version=%s)' % (latest['tag_name'], etcher_version))
+                infos.version = latest['tag_name']
+                infos.update_available = True
+                (infos.filename, infos.url, infos.size) = self.__get_etcher_version_infos(latest['assets'])
 
             else:
-                self.logger.error('Unable to fetch etcher releases (status=%d)' % resp.status)
-                self.logger.error('Etcher request data: %s' % resp.data)
-                infos.error= True
+                self.logger.debug('No new etcher version available')
 
         except:
-            self.crash_report.report_exception()
-            self.logger.exception('Unable to get etcher releases:')
+            self.logger.exception('Latest Etcher-cli release not found:')
 
         return infos
 
