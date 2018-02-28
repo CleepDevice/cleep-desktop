@@ -33,6 +33,7 @@ class Devices(CleepDesktopModule):
             debug_enabled, 
             crash_report
         )
+        self.peers_uuids = {}
 
         #debug bus
         #pyre_logger = logging.getLogger("pyre")
@@ -124,9 +125,17 @@ class Devices(CleepDesktopModule):
             self.logger.debug('CleepDesktop @ %s connected. Drop it' % infos['ip'])
             return
 
-        #append online status and save peer infos
+        #update mapping (useful for disconnection)
+        self.peers_uuids[peer] = infos['uuid']
+
+        #append extra data
         infos['online'] = True
-        self.devices[peer] = infos
+        infos['configured'] = False
+        if len(infos['hostname'].strip())>0:
+            infos['configured'] = True
+
+        #save peer infos
+        self.devices[infos['uuid']] = infos
 
         #update ui
         self.update_callback(self.get_devices())
@@ -140,9 +149,14 @@ class Devices(CleepDesktopModule):
         """
         self.logger.debug('Peer %s disconnected' % peer)
 
+        #get peer uuid
+        device_uuid = None
+        if peer in self.peers_uuids.keys():
+            device_uuid = self.peers_uuids[peer]
+
         #keep peer entry locally but update its online status
-        if peer in self.devices.keys():
-            self.devices[peer]['online'] = False
+        if device_uuid:
+            self.devices[device_uuid]['online'] = False
         else:
             self.logger.info('Unknown peer %s disconnected (surely CleepDesktop instance)' % peer)
 

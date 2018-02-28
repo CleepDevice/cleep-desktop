@@ -11,7 +11,7 @@ var devicesController = function($rootScope, $scope, $timeout, cleepService, $st
     self.configured = 0;
     self.loading = true;
 
-    //synchronize devices
+    //synchronize devices updating existing devices and adding new ones to avoir ui flickering
     self.syncDevices = function(devices)
     {
         if( devices )
@@ -28,10 +28,13 @@ var devicesController = function($rootScope, $scope, $timeout, cleepService, $st
                         found = true;
 
                         //update device infos
+                        self.devices[j].configured = devices[i].configured;
                         self.devices[j].hostname = devices[i].hostname;
                         self.devices[j].ip = devices[i].ip;
-                        self.devices[j].port = devices[i].port;
                         self.devices[j].online = devices[i].online;
+                        self.devices[j].port = devices[i].port;
+                        self.devices[j].ssl = devices[i].ssl;
+                        self.devices[j].version = devices[i].version;
 
                         break;
                     }
@@ -40,45 +43,12 @@ var devicesController = function($rootScope, $scope, $timeout, cleepService, $st
                 //add new device
                 if( !found )
                 {
-                    //set device configured flag
-                    if( devices[i].hostname.length>0 )
-                        devices[i].configured = true;
-                    else
-                        devices[i].configured = false;
-
                     //save entry
                     self.devices.push(devices[i]);
                 }
             }
         }
     };
-
-    //get devices
-    /*self.getDevices = function()
-    {
-        rpcService.getDevices()
-            .then(function(resp) {
-                if( resp && !resp.error )
-                {
-                    self.loading = false;
-
-                    self.syncDevices(resp.data.devices);
-                    self.unconfigured = resp.data.unconfigured;
-                    self.configured = self.devices.length - self.unconfigured;
-                }
-            });
-    };*/
-
-    //watch for devices
-    /*self.watchDevices = function()
-    {
-        $timeout(function() {
-            self.getDevices();
-        }, 1000)
-            .then(function() {
-                self.watchDevices();
-            });
-    };*/
 
     //open device page
     self.openDevicePage = function(device)
@@ -97,19 +67,21 @@ var devicesController = function($rootScope, $scope, $timeout, cleepService, $st
         }
     };
 
-    //init controller
-    //self.watchDevices();
-    
+    //update devices list
     self.updateDevices = function(data) 
     {
         $timeout(function() {
+            //sync devices
             self.syncDevices(data.devices);
+
+            //update some controller members value
             self.unconfigured = data.unconfigured;
             self.configured = self.devices.length - self.unconfigured;
             self.loading = false;
         }, 0);
     };
 
+    //TODO
     self.openDevice = function()
     {
         //leftPanel.attr('src', self.src);
@@ -117,9 +89,7 @@ var devicesController = function($rootScope, $scope, $timeout, cleepService, $st
         cleepService.send('coucou', {});
     };
 
-    //start devices websocket
-    //rpcService.devicesWebSocket(self.updateDevices);
-    
+    //watch for devices event to refresh devices list
     $rootScope.$on('devices', function(event, data)
     {
         self.updateDevices(data);
