@@ -35,7 +35,7 @@ echo "Done"
 echo
 echo "Packaging cleepdesktop..."
 echo "-------------------------"
-GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP ./node_modules/.bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH" --publish always
+GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP ./node_modules/.bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH" --publish onTagOrDraft
 
 #cleaning
 echo
