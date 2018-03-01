@@ -12,8 +12,17 @@ const DEFAULT_PROXYHOST = 'localhost';
 const DEFAULT_PROXYPORT = 8080;
 const DEFAULT_CRASHREPORT = true;
 
+//logger
+const logger = require('electron-log')
+global.logger = logger
+
 //electron
 const electron = require('electron')
+
+//electron updater
+const {autoUpdater} = require('electron-updater');
+autoUpdater.logger = logger;
+global.appUpdater = autoUpdater;
 
 //create default variables
 const app = electron.app
@@ -23,12 +32,11 @@ const argv = process.argv.slice(1)
 
 //imports
 const Menu = require('electron').Menu
-const shell = require('electron').shell;
-const settings = require('electron-settings');
+const shell = require('electron').shell
+const settings = require('electron-settings')
 const path = require('path')
 const url = require('url')
-const log = require('electron-log')
-const detectPort = require('detect-port');
+const detectPort = require('detect-port')
 
 //variables
 var cleepremotePath = path.join(__dirname, 'cleepremote');
@@ -36,13 +44,14 @@ let isDev = !require('fs').existsSync(cleepremotePath);
 let cleepremoteProcess = null;
 let cleepremoteDisabled = false;
 
-//log
-log.transports.file.level = 'warn';
-log.transports.console.level = false;
+//logger configuration
+logger.transports.file.level = 'warn';
+logger.transports.file.maxSize = 5 * 1024 * 1024;
+logger.transports.console.level = 'info';
 if( isDev )
 {
     //enable console during development (can be overwritten by args)
-    log.transports.console.level = 'debug';
+    logger.transports.console.level = 'debug';
 }
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -63,21 +72,21 @@ function parseArgs()
         else if( argv[i].match(/^--logfile=/) )
         {
             //log to file
-            log.transports.file.level = false;
+            logger.transports.file.level = false;
             var level = argv[i].split('=')[1];
             if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' )
             {
-                log.transports.file.level = level;
+                logger.transports.file.level = level;
             }
             else if( level==='no' )
             {
                 //disable log
-                log.transports.file.level = false;
+                logger.transports.file.level = false;
             }
             else
             {
                 //invalid log level, set to default 'info'
-                log.transports.file.level = 'info';
+                logger.transports.file.level = 'info';
             }
         }
         else if( argv[i].match(/^--logconsole=/) )
@@ -86,17 +95,17 @@ function parseArgs()
             var level = argv[i].split('=')[1];
             if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' )
             {
-                log.transports.console.level = level;
+                logger.transports.console.level = level;
             }
             else if( level==='no' )
             {
                 //disable log
-                log.transports.console.level = false;
+                logger.transports.console.level = false;
             }
             else
             {
                 //invalid log level, set to default 'info'
-                log.transports.console.level = 'info';
+                logger.transports.console.level = 'info';
             }
         }
     }
@@ -274,7 +283,6 @@ function createWindow ()
             setTimeout( function() {
                 splashScreen.close();
             }, 1000 );
-            
         }
 
         setTimeout( function() {
@@ -299,8 +307,8 @@ function createWindow ()
         mainWindow.webContents.openDevTools();
 
         //log electron and chrome versions
-        log.debug('Electron version: ' + process.versions.electron);
-        log.debug('Chrome version: ' + process.versions.chrome);
+        logger.debug('Electron version: ' + process.versions.electron);
+        logger.debug('Chrome version: ' + process.versions.chrome);
     }
 
     // Emitted when the window is closed.
@@ -318,29 +326,29 @@ function launchCleepremote(rpcport)
 {
     if( cleepremoteDisabled )
     {
-        log.debug('Cleepremote disabled');
+        logger.debug('Cleepremote disabled');
         return;
     }
 
     //get config file path
     var configFile = settings.file();
-    log.debug('Config path: '+configFile);
+    logger.debug('Config path: '+configFile);
     var configPath = path.dirname(configFile);
     var configFilename = path.basename(configFile);
 
     if( !isDev )
     {
         //launch release
-        log.debug('Launch release mode');
+        logger.debug('Launch release mode');
         let commandline = path.join(__dirname, 'cleepremote/cleepremote');
-        log.debug('Cleepremote commandline: '+commandline+' ' + rpcport + ' ' + configPath + ' ' + configFilename + ' release');
+        logger.debug('Cleepremote commandline: '+commandline+' ' + rpcport + ' ' + configPath + ' ' + configFilename + ' release');
         cleepremoteProcess = require('child_process').spawn(commandline, [rpcport, configPath, configFilename, 'release']);
     }
     else
     {
         //launch dev
-        log.debug('Launch development mode');
-        log.debug('Cleepremote commandline: python3 cleepremote.py ' + rpcport + ' ' + configPath + ' ' + configFilename + ' debug');
+        logger.debug('Launch development mode');
+        logger.debug('Cleepremote commandline: python3 cleepremote.py ' + rpcport + ' ' + configPath + ' ' + configFilename + ' debug');
         cleepremoteProcess = require('child_process').spawn('python3', ['cleepremote.py', rpcport, configPath, configFilename, 'debug']);
     }
 };
@@ -374,7 +382,7 @@ app.on('ready', function() {
         detectPort(null, (err, rpcport) => {
             if( err )
             {
-                log.error('Error detecting available port:', err);
+                logger.error('Error detecting available port:', err);
             }
 
             //save rpcport to config to be used in js app
@@ -396,7 +404,7 @@ app.on('window-all-closed', function () {
     if (process.platform !== 'darwin') {
         if( cleepremoteProcess )
         {
-            log.debug('Kill cleepremote');
+            logger.debug('Kill cleepremote');
             cleepremoteProcess.kill('SIGTERM')
         }
         app.quit()

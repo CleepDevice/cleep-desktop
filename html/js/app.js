@@ -1,81 +1,14 @@
-//var log = require('electron-log');
+const electron = require('electron');
+const {remote} = electron;
+const logger = remote.getGlobal('logger');
+const appUpdater = remote.getGlobal('appUpdater');
 
-
-/*var left = document.getElementById('leftPanel');
-var leftPanel = angular.element(left);
-leftPanel.attr('src', 'http://localhost:5610/devices.html');*/
-
-/*setTimeout(function() {
-log.info('plouf');
-var right = document.getElementById('rightPanel');
-var rightPanel = angular.element(right);
-console.log(rightPanel);
-//rightPanel.attr('src', 'http://localhost:5610/homepage.html');
-//right.loadURL('http://localhost:5610/homepage.html');
-//right.reloadIgnoringCache()
-//right.loadUrlL('http://www.google.fr');
-}, 1000);*/
-
-/*var net = require('net');
-var s = new net.Socket();
-s.on('data', function(data) {
-    log.info('received data ', data);
-});
-s.connect(5611, function() {
-    var test = {
-        command: 'helloworld',
-        params: {
-            param1: 'yop',
-            param2: 'ploum'
-        }
-    };
-    var j = JSON.stringify(test);
-    s.write(j);
-});*/
-
-//https://github.com/socketio/socket.io-client
-/*var socket = io.connect('http://localhost:5611');
-socket.on('connect', function() {
-    log.info('connected');
-});
-socket.on('disconnect', function() {
-    log.info('disconnect');
-});
-socket.on('event', function(data) {
-    log.info('event', data);
-});
-function mysend() {
-    log.info('->send data');
-    log.info(socket.emit('pouet'));
-    setTimeout(function(){ mysend(); }, 1000);
-}
-mysend();*/
-
-
-/*doens't work
-document.addEventListener('DOMContentLoaded', function () {
-    log.info('ok');
-    document.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        setTimeout(function () {
-            var path = e.target.href;
-            //ipcRenderer.sendToHost('element-clicked', path);
-            log.info('click handled');
-        }, 100);
-        return false;
-    }, true);
-});*/
-
-/*right.addEventListener('will-navigate', function(event) {
-    log.info('wv navigate');
-});
-right.addEventListener('new-window', function() {
-    log.info('wv new window');
-});*/
-
+//declare angular module
 var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router', 'ngSanitize', 'ngWebSocket']);
 
+//inject electron values
+Cleep.value('logger', logger)
+    .value('appUpdater', appUpdater);
 
 /**
  * Timestamp to human readable string
@@ -123,7 +56,7 @@ Cleep.filter('hrDate', function($filter) {
 });
 
 /**
- * Bytes to human readble
+ * Bytes to human readable
  * Code copied from https://gist.github.com/thomseddon/3511330
  */
 Cleep.filter('hrBytes', function($filter) {
@@ -150,6 +83,9 @@ Cleep.config(['$mdThemingProvider', function($mdThemingProvider) {
         .dark();
 }]);
 
+/**
+ * Routes configuration
+ */
 Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
     $stateProvider
         .state('default', {
@@ -237,7 +173,7 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         $state.go('installAuto');
     };
 
-    //add flash task info
+    //add flash task panel info
     $rootScope.$on('flash', function(event, data) {
         if( !data )
             return;
@@ -255,7 +191,7 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         }
     });
 
-    //add update task info
+    //add update task panel info
     $rootScope.$on('updates', function(event, data) {
         if( !data )
             return;
