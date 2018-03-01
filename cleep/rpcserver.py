@@ -7,7 +7,7 @@ Rpcserver implements:
  - authentication (login, password)
  - HTTP and HTTPS support
  - file upload and download
- - poll requests
+ - websocket requests
  - command requests
  - module configs requests
  - devices list requests
@@ -187,14 +187,10 @@ def updates_update(updates):
     global current_updates, last_updates_update, config
 
     #check software versions and store new versions on config file
-    if updates['etcherversion']!=config['etcher']['version']:
+    #TODO move this part of code to updates.js after having put config in global and set it in angular (see appUpdater)
+    if updates['etcherstatus']['version']!=config['etcher']['version']:
         logger.debug('New etcher version installed. Update config')
-        config['etcher']['version'] = updates['etcherversion']
-        save_config(config)
-
-    elif updates['cleepversion']!=config['cleep']['version']:
-        logger.debug('New cleep version installed. Update config')
-        config['cleep']['version'] = updates['cleepversion']
+        config['etcher']['version'] = updates['etcherstatus']['version']
         save_config(config)
 
     current_updates = updates
@@ -462,7 +458,7 @@ def enable_cors():
 @app.route('/command', method=['OPTIONS', 'POST'])
 def command():
     """
-    Communication way between javascript and rpcserver
+    Communication between javascript and python
     """
     #logger.debug('Command (method=%s)' % bottle.request.method)
     if bottle.request.method=='OPTIONS':
@@ -484,7 +480,7 @@ def command():
 @app.route('/cleepws')
 def handle_cleepwebsocket():
     """
-    Devices websocket. Used to update ui when devices list is updated
+    Devices websocket. Communication between python and javascript
     """
     global current_devices, last_devices_update, current_updates, last_updates_update
 
