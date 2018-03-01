@@ -41,11 +41,12 @@
                             <span>CleepDesktop version {{ctl.cleepdesktopStatus.version}} is installed</span>
                         </div>
                         <div ng-if="ctl.cleepdesktopStatus.status===1 || ctl.cleepdesktopStatus.status===2" flex="20" style="text-align:right;">
-                            <span ng-if="ctl.cleepdesktopStatus.status===1">Downloading update ({{ctl.cleepdesktopStatus.downloadpercent}}%)</span>
+                            <span ng-if="ctl.cleepdesktopStatus.status===1">Downloading update</span>
                             <span ng-if="ctl.cleepdesktopStatus.status===2">Installing update</span>
                         </div>
                         <div ng-if="ctl.cleepdesktopStatus.status===1 || ctl.cleepdesktopStatus.status===2" flex>
-                            <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.cleepdesktopStatus.downloadpercent}}"></md-progress-linear>
+                            <md-progress-linear ng-if="ctl.cleepdesktopStatus.downloadpercent!==null" md-mode="determinate" class="md-accent" value="{{ctl.cleepdesktopStatus.downloadpercent}}"></md-progress-linear>
+                            <md-progress-linear ng-if="ctl.cleepdesktopStatus.downloadpercent===null" md-mode="indeterminate" class="md-accent"></md-progress-linear>
                         </div>
                         <div ng-if="ctl.cleepdesktopStatus.status===4" flex>
                             <span>Last update attemps failed (</span>

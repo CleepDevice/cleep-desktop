@@ -3,7 +3,7 @@ var Cleep = angular.module('Cleep')
 /**
  * Updates controller
  */
-var updatesController = function($rootScope, $scope, cleepService, toast, logger, appUpdater)
+var updatesController = function($rootScope, $scope, cleepService, toast, logger, appUpdater, $timeout)
 {
     var self = this;
 
@@ -15,14 +15,14 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
     self.STATUS_ERROR = 4;
 
     //status from libs/download.py
-    self.DOWNLOAD_IDLE = 0
-    self.DOWNLOAD_DOWNLOADING = 1
-    self.DOWNLOAD_DOWNLOADING_NOSIZE = 2
-    self.DOWNLOAD_ERROR = 3
-    self.DOWNLOAD_ERROR_INVALIDSIZE = 4
-    self.DOWNLOAD_ERROR_BADCHECKSUM = 5
-    self.DOWNLOAD_ERROR_NETWORK = 6
-    self.DOWNLOAD_DONE = 7
+    self.DOWNLOAD_IDLE = 0;
+    self.DOWNLOAD_DOWNLOADING = 1;
+    self.DOWNLOAD_DOWNLOADING_NOSIZE = 2;
+    self.DOWNLOAD_ERROR = 3;
+    self.DOWNLOAD_ERROR_INVALIDSIZE = 4;
+    self.DOWNLOAD_ERROR_BADCHECKSUM = 5;
+    self.DOWNLOAD_ERROR_NETWORK = 6;
+    self.DOWNLOAD_DONE = 7;
 
     self.lastcheck = null;
     self.etcherStatus = null;
@@ -33,8 +33,6 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
         downloadpercent: 0
     };
     self.loading = false;
-    self.updatingCleepDesktop = false;
-    self.cleepdesktopMessageUpdate = '';
 
     //check for updates
     self.checkUpdates = function() {
@@ -68,26 +66,41 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
     };
 
     //updater events
-    appUpdater.addListener('checking-for-update', function(event) {
+    appUpdater.addListener('checking-for-update', function() {
         logger.info('Checking for CleepDesktop updates...');
     });
-    appUpdater.addListener('update-available', function(event, info) {
+    appUpdater.addListener('update-available', function(info) {
         logger.info('CleepDesktop update available', info);
-        self.cleepdesktopMessageUpdate = 'Update available';
+        $timeout(function() {
+            self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
+            self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
+            self.cleepdesktopStatus.downloadpercent = null;
+        }, 500);
     });
-    appUpdater.addListener('update-not-available', function(event, info) {
+    appUpdater.addListener('update-not-available', function(info) {
         logger.info('No CleepDesktop update available', info);
-        self.cleepdesktopMessageUpdate = 'Update not available';
     });
-    appUpdater.addListener('update-downloaded', function(event, info) {
+    appUpdater.addListener('update-downloaded', function(info) {
         logger.info('CleepDesktop update downloaded', info);
-        self.cleepdesktopMessageUpdate = 'Update downloaded';
+        $timeout(function() {
+            self.cleepdesktopStatus.status = self.STATUS_DONE;
+            self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DONE;
+            self.cleepdesktopStatus.downloadpercent = 100;
+        }, 500);
     });
-    appUpdater.addListener('error', function(event, error) {
+    appUpdater.addListener('error', function(error) {
         logger.error('Error occured during CleepDesktop update:' + error);
+        $timeout(function() {
+            self.cleepdesktopStatus.status = self.STATUS_ERROR;
+            self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_ERROR;
+            self.cleepdesktopStatus.downloadpercent = 100;
+        }, 500);
     });
-    appUpdater.addListener('download-progress', function(event, progress) {
+    appUpdater.addListener('download-progress', function(progress) {
         logger.info('Update download progress: ' + progress.percent);
+        self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
+        self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
+        self.cleepdesktopStatus.downloadpercent = progress.percent;
     });
 
     //init controller
@@ -111,5 +124,5 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
     });
 
 };
-Cleep.controller('updatesController', ['$rootScope', '$scope', 'cleepService', 'toastService', 'logger', 'appUpdater', updatesController]);
+Cleep.controller('updatesController', ['$rootScope', '$scope', 'cleepService', 'toastService', 'logger', 'appUpdater', '$timeout', updatesController]);
 
