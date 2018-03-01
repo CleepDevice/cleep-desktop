@@ -5,7 +5,7 @@ import logging
 from threading import Thread
 import time
 import os
-import urllib3
+#import urllib3
 import platform
 import json
 import datetime
@@ -38,8 +38,10 @@ class Updates(CleepDesktopModule):
     Updates manager: it can update etcher-cli and CleepDesktop files
     """
 
-    ETCHER_RELEASES = 'https://api.github.com/repos/resin-io/etcher/releases'
-    CLEEPDESKTOP_RELEASES = 'https://api.github.com/repos/tangb/CleepDesktop/releases'
+    ETCHER_REPO = {
+        'owner': 'resin-io',
+        'repo': 'etcher'
+    }
 
     INSTALL_ETCHER_COMMAND_LINUX = '%s/scripts/install_etcher.linux "%s" "%s" "%s"'
     INSTALL_ETCHER_COMMAND_WINDOWS = '%s\\scripts\\install_etcher.windows.bat "%s" "%s" "%s"'
@@ -51,7 +53,8 @@ class Updates(CleepDesktopModule):
     STATUS_DONE = 3
     STATUS_ERROR = 4
 
-    ETCHER_VERSION_FORCED = "v1.2.0"
+    #ETCHER_VERSION_FORCED = "v1.2.0"
+    ETCHER_VERSION_FORCED = None
 
     def __init__(self, app_path, config_path, cleep_version, etcher_version, update_callback, debug_enabled, crash_report):
         """
@@ -74,21 +77,13 @@ class Updates(CleepDesktopModule):
             self.app_path = '.'
         self.config_path = config_path
         self.update_callback = update_callback
-        self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
-        self.http = urllib3.PoolManager(num_pools=1)
         self.__download_etcher = None
-        self.__download_cleep = None
         self.__current_download = None
 
         self.etcher_version = etcher_version
         self.etcher_status = self.STATUS_IDLE
         self.etcher_download_status = Download.STATUS_IDLE
         self.etcher_download_percent = 0
-
-        self.cleep_version = cleep_version
-        self.cleep_status = self.STATUS_IDLE
-        self.cleep_download_status = Download.STATUS_IDLE
-        self.cleep_download_percent = 0
         
         #running env
         self.env = platform.system().lower()
@@ -110,7 +105,6 @@ class Updates(CleepDesktopModule):
         self.logger.debug('Cancel download')
         #reset update flags
         self.__download_etcher = None
-        self.__download_cleep = None
 
         #and cancel current download
         if self.__current_download:
@@ -123,28 +117,23 @@ class Updates(CleepDesktopModule):
         Returns:
             dict: current update status informations::
                 {
-                    etcherstatus (int): current etcher update status (see Updates.STATUS_*)
-                    etcherdownload (int): etcher download status (see Download.STATUS_*)
-                    etcherpercent (int): etcher current download percentage
-                    etcherversion (string): current etcher version
-                    cleepstatus (int): current cleep update status (see Updates.STATUS_*)
-                    cleepdownload (int): cleep download status (see Download.STATUS_*)
-                    cleeppercent (int): cleep current download percentage
-                    cleepversion (string): current cleep version,
+                    etcherstatus (dict): etcher update status ::
+                        {
+                            version (int),
+                            status (int),
+                            downloadstatus (int),
+                            downloadpercent (int)
+                        }
                     lastcheck (int): timestamp of last check
                 }
         """
         return {
-            'etcherversion': self.etcher_version,
-            'etcherstatus': self.etcher_status,
-            'etcherdownloadstatus': self.etcher_download_status,
-            'etcherdownloadpercent': self.etcher_download_percent,
-
-            'cleepversion': self.cleep_version,
-            'cleepstatus': self.cleep_status,
-            'cleepdownloadstatus': self.cleep_download_status,
-            'cleepdownloadpercent': self.cleep_download_percent,
-
+            'etcherstatus': {
+                'version': self.etcher_version,
+                'status': self.etcher_status,
+                'downloadstatus': self.etcher_download_status,
+                'downloadpercent': self.etcher_download_percent
+            },
             'lastcheck': self.last_check
         }
 
@@ -161,10 +150,6 @@ class Updates(CleepDesktopModule):
         if self.etcher_status==self.STATUS_DOWNLOADING:
             self.etcher_download_status = status
             self.etcher_download_percent = percent
-    
-        elif self.cleep_status==self.STATUS_DOWNLOADING:
-            self.cleep_download_status = status
-            self.cleep_download_percent = percent
         
         #update ui
         self.update_callback(self.get_status())
@@ -229,10 +214,6 @@ class Updates(CleepDesktopModule):
                     #end of etcher update process, reset variables
                     self.__download_etcher = None
 
-            if self.__download_cleep:
-                #TODO new CleepDesktop update available
-                pass
-
             #release CPU
             time.sleep(1.0)
 
@@ -285,7 +266,7 @@ class Updates(CleepDesktopModule):
             UpdateInfos: UpdateInfos instance
         """
         infos = UpdateInfos()
-        github = Github('resin-io', 'etcher')
+        github = Github(self.ETCHER_REPO['owner'], self.ETCHER_REPO['repo'])
 
         #etcher-cli path for test it is installed
         if self.env=='linux':
@@ -344,13 +325,6 @@ class Updates(CleepDesktopModule):
 
         return infos
 
-    def __check_cleepdesktop_updates(self):
-        """
-        Check if CleepDesktop updates are available
-        """
-        #TODO implement CleepDesktop updates as soon as github is configured
-        pass
-
     def check_updates(self):
         """
         Check for available updates
@@ -372,11 +346,9 @@ class Updates(CleepDesktopModule):
             #set member to trigger download in run function
             self.__download_etcher = infos
 
-        #TODO check cleepdesktop version
-
         #prepare output
         update_available = False
-        if self.__download_etcher is not None or self.__download_cleep is not None:
+        if self.__download_etcher is not None:
             update_available = True
 
         return {
@@ -413,15 +385,3 @@ class Updates(CleepDesktopModule):
             return False
 
         return True
-
-#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
-#u = Updates()
-#u.start()
-#u.check_updates(None, None)
-#
-#try:
-#    while True:
-#        time.sleep(.125)
-#except:
-#    pass
-#u.stop()
