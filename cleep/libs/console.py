@@ -190,7 +190,10 @@ class EndlessConsole(Thread):
 
         #make sure process (and child processes) is really killed
         try:
-            subprocess.Popen(u'/usr/bin/pkill -9 -P %s 2> /dev/null' % pid, shell=True)
+            if sys.platform == 'win32':
+                subprocess.Popen(u'taskkill /PID %s /F > nul 2>&1' % pid, shell=True)
+            else:
+                subprocess.Popen(u'/usr/bin/pkill -9 -P %s 2> /dev/null' % pid, shell=True)
         except Exception as e:
             self.logger.debug('Kill exception: %s' % str(e))
 
@@ -548,7 +551,10 @@ class Console():
 
         #make sure process (and child processes) is really killed
         try:
-            subprocess.Popen(u'/usr/bin/pkill -9 -P %s 2> /dev/null' % pid, shell=True)
+            if sys.platform == 'win32':
+                subprocess.Popen(u'taskkill /PID %s /F > nul 2>&1' % pid, shell=True)
+            else:
+                subprocess.Popen(u'/usr/bin/pkill -9 -P %s 2> /dev/null' % pid, shell=True)
         except Exception as e:
             self.logger.debug('Kill exception: %s' % str(e))
 
