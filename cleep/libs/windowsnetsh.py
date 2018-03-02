@@ -45,6 +45,7 @@ class WindowsNetsh(AdvancedConsole):
 
         self.__last_scanned_interface = interface
         results = self.find(self._command, r'SSID\s+\d+\s+:\s+(.*)|Authentication\s+:\s+(.*)', timeout=15.0)
+        self.logger.debug(results)
 
         #handle invalid interface for wifi scanning
         if len(results)==0 and self.get_last_return_code()!=0:
@@ -55,22 +56,32 @@ class WindowsNetsh(AdvancedConsole):
         #parse results
         current_entry = None
         entries = {}
+        self.logger.debug(results)
         for group, groups in results:
             #filter None values
             groups = list(filter(None, groups))
 
             if group.startswith(u'SSID'):
+                #save previous entry
+                if current_entry is not None:
+                    entries[current_entry[u'network']] = current_entry
+
+                #prepare new entry
                 current_entry = {
                     u'interface': interface,
                     u'network': groups[0],
                     u'encryption': None,
                     u'signallevel': 0
                 }
-            elif group.startswith(u'Authentication') and groups[0].lower().find(u'wpa2')
+            elif group.startswith(u'Authentication') and groups[0].lower().find(u'wpa2'):
                 current_entry[u'encryption'] = WpaSupplicantConf.ENCRYPTION_TYPE_WPA2
-            elif group.startswith(u'Authentication') and groups[0].lower().find(u'wpa')
+            elif group.startswith(u'Authentication') and groups[0].lower().find(u'wpa'):
                 current_entry[u'encryption'] = WpaSupplicantConf.ENCRYPTION_TYPE_WPA
             #TODO other encryptions
+
+        #save current filled entry
+        if current_entry is not None:
+            entries[current_entry[u'network']] = current_entry
 
         #save networks and error
         self.networks = entries
@@ -112,3 +123,12 @@ class WindowsNetsh(AdvancedConsole):
 
         return self.networks
 
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    import pprint
+    pp = pprint.PrettyPrinter(indent=2)
+    
+    d = WindowsNetsh()
+    networks = d.get_networks('Wifi')
+    pp.pprint(networks)
+    print('error=%s' % d.has_error())
