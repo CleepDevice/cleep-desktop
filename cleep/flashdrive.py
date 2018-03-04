@@ -21,6 +21,8 @@ from cleep.libs.iwlist import Iwlist
 if platform.system()=='Windows':
     from cleep.libs.console import AdminEndlessConsole
     from cleep.libs.windowsdrives import WindowsDrives
+    from cleep.libs.windowswirelessinterfaces import WindowsWirelessInterfaces
+    from cleep.libs.windowswirelessnetworks import WindowsWirelessNetworks
 elif platform.system()=='Darwin':
     from cleep.libs.diskutil import Diskutil
     from cleep.libs.console import AdminEndlessConsole
@@ -104,6 +106,8 @@ class FlashDrive(CleepDesktopModule):
         if self.env=='windows':
             self.etcher_cmd = os.path.join(self.config_path, self.ETCHER_WINDOWS)
             self.windowsdrives = WindowsDrives()
+            self.windowswirelessinterfaces = WindowsWirelessInterfaces()
+            self.windowswirelessnetworks = WindowsWirelessNetworks()
         elif self.env=='linux':
             self.etcher_cmd = os.path.join(self.config_path, self.ETCHER_LINUX)
             self.lsblk = Lsblk()
@@ -801,15 +805,41 @@ class FlashDrive(CleepDesktopModule):
                     adapter (bool): True if wifi adapter found
                 }
         """
+        if self.env=='windows':
+            networks = self.__get_wifi_networks_windows()
+        elif self.env=='darwin':
+            #TODO
+            raise Exception('Not implemented on mac yet')
+        else:
+            networks = self.__get_wifi_networks_linux()
+
+        self.logger.debug('wifi networks: %s' % networks)
+        return networks
+
+    def __get_wifi_networks_linux(self):
+        """
+        Return wifi networks and wifi infos for linux
+
+        Return:
+            dict: wifi infos::
+                {
+                    network (list): networks list
+                    adapter (bool): True if wifi adapter found
+                }
+        """
+        #system check
+        if not self.iw.is_installed():
+            raise Exception('Iw command not found on your system')
+        elif not self.iwlist.is_installed():
+            raise Exception('Iwlist command not found on your system')
+
         #get wifi interfaces
-        wifi_connections = []
-        if self.iw.is_installed():
-            wifi_connections = self.iw.get_connections()
-            self.logger.debug('wifi_connections: %s' % wifi_connections)
+        wifi_connections = self.iw.get_connections()
+        self.logger.debug('wifi_connections: %s' % wifi_connections)
 
         #get wifi networks
         wifi_networks = []
-        if len(wifi_connections.keys())>0 and self.iwlist.is_installed():
+        if len(wifi_connections.keys())>0:
             #keep only first wifi interface
             interface = list(wifi_connections.keys())[0]
             networks = self.iwlist.get_networks(interface)
@@ -823,4 +853,33 @@ class FlashDrive(CleepDesktopModule):
             'adapter': len(wifi_connections.keys())>0
         }
 
+    def __get_wifi_networks_windows(self):
+        """
+        Return wifi networks and wifi infos for windows
 
+        Return:
+            dict: wifi infos::
+                {
+                    network (list): networks list
+                    adapter (bool): True if wifi adapter found
+                }
+        """
+        #get wifi interfaces
+        wifi_interfaces = self.windowswirelessinterfaces.get_interfaces()
+        self.logger.debug('wifi_interfaces: %s' % wifi_interfaces)
+
+        #get wifi networks
+        wifi_networks = []
+        if len(wifi_interfaces)>0:
+            interface = wifi_interfaces[0]
+            networks = self.windowswirelessnetworks.get_networks(interface)
+            self.logger.debug('networks: %s' % networks)
+
+            #flatten dict
+            wifi_networks = [v for k,v in networks.items()]
+        
+        #build output
+        return {
+            'networks': wifi_networks,
+            'adapter': len(wifi_interfaces)>0
+        }
