@@ -73,7 +73,7 @@
             "category": "public.app-category.utilities",
             "target": "dmg",
             "icon": "resources/icon",
-            "extendInfo": "Info.plist",
+            "extendInfo": "config/Info.plist",
             "binaries": [
                 "TODO set path to generated cleepremote binary"
             ]
