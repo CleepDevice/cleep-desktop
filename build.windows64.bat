@@ -42,7 +42,8 @@ echo -------------------------
 :: electron-builder is launched in other command line because it stop this script at end of process
 :: to debug electron-builder uncomment line below
 :: set DEBUG=electron-builder,electron-builder:*
-cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH%"
+set "GH_TOKEN=%GH_TOKEN_CLEEPDESKTOP%"
+cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH%" --publish always
 
 :: cleaning
 echo.
@@ -51,7 +52,7 @@ echo Finalizing...
 echo -------------
 ping 127.0.0.1 -n 2 > nul
 mkdir dist
-xcopy /S %CLEEPDESKTOPPATH%\dist dist
+xcopy /Q /S %CLEEPDESKTOPPATH%\dist dist
 rmdir /Q /S build
 rmdir /Q /S __pycache__
 rmdir /Q /S cleep\__pycache__
