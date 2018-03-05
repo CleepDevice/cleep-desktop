@@ -93,16 +93,14 @@ class FlashDrive(CleepDesktopModule):
         self.iso_sha1 = None
         self.isos = []
         self.url = None
-        self.http = urllib3.PoolManager(num_pools=1)
         self.cancel = False
         self.timestamp_isos = None
         self.__etcher_output_pattern = r'.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)'
         self.__etcher_output_error = False
-        self.iw = Iw()
-        self.iwlist = Iwlist()
         self.wifi_config = None
-        
-        #get etcher command
+        self.flashable_drives = []
+       
+        #prepare specific tools and etcher commands
         if self.env=='windows':
             self.etcher_cmd = os.path.join(self.config_path, self.ETCHER_WINDOWS)
             self.windowsdrives = WindowsDrives()
@@ -110,6 +108,8 @@ class FlashDrive(CleepDesktopModule):
             self.windowswirelessnetworks = WindowsWirelessNetworks()
         elif self.env=='linux':
             self.etcher_cmd = os.path.join(self.config_path, self.ETCHER_LINUX)
+            self.iw = Iw()
+            self.iwlist = Iwlist()
             self.lsblk = Lsblk()
             self.udevadm = Udevadm()
         elif self.env=='darwin':
@@ -466,66 +466,122 @@ class FlashDrive(CleepDesktopModule):
                     ...
                 ]
         """
-        flashables = []
-        
         if self.env=='windows':
-            self.logger.debug('Drives on Windows')
-            #get system drives
-            drives = self.windowsdrives.get_drives()
-            self.logger.debug('drives=%s' % drives)
-            
-            #fill flashable drives list
-            for drive in drives:
-                if drive['deviceType']==WindowsDrives.DEVICE_TYPE_REMOVABLE:
-                    #save entry
-                    flashables.append({
-                        'desc': '%s (%s)' % (drive['description'], drive['displayName']),
-                        'path': '%s' % drive['device'],
-                        'readonly': drive['protected']
-                    })
-        
+            self.flashable_drives = self.__get_flashable_drives_windows()
         elif self.env=='linux':
-            self.logger.debug('Drives on Linux')
-            #get system drives
-            drives = self.lsblk.get_drives()
-            self.logger.debug('drives=%s' % drives)
-
-            #get drives types
-            for drive in drives:
-                device_type = self.udevadm.get_device_type('/dev/%s' % drive)
-                if device_type in (self.udevadm.TYPE_USB, self.udevadm.TYPE_SDCARD):
-                    #get human readble name for drive
-                    model = drives[drive]['drivemodel']
-                    if model is None or len(model)==0:
-                        if device_type==self.udevadm.TYPE_USB:
-                            desc = 'Unknown USB (/dev/%s)' % drive
-                        if device_type==self.udevadm.TYPE_SDCARD:
-                            desc = 'Unknown SD Card (/dev/%s)' % drive
-                    else:
-                        desc = '%s (/dev/%s)' % (model, drive)
-
-                    #save entry
-                    flashables.append({
-                        'desc': desc,
-                        'path': '/dev/%s' % drive,
-                        'readonly': drives[drive]['readonly']
-                    })
-
+            self.flashable_drives = self.__get_flashable_drives_linux()
         elif self.env=='darwin':
-            self.logger.debug('Drives on MacOs')
-            #get drives
-            drives = self.diskutil.get_devices_infos()
-            self.logger.debug('drives=%s' % drives)
+            self.flashable_drives = self.__get_flashable_drives_mac()
 
-            #fill flashable drives list
-            for drive in drives:
-                if drives[drive][u'removable']:
-                    #save entry
-                    flashables.append({
-                        'desc': '%s' % drives[drive]['name'],
-                        'path': '%s' % drives[drive]['device'],
-                        'readonly': drives[drive]['protected']
-                    })
+        return self.flashable_drives
+
+    def __get_flashable_drives_mac(self):
+        """
+        Return list of flashbable drives on windows
+
+        Returns:
+            list: removable drives list
+                [
+                    {
+                        desc (string): drive description
+                        path (string): drive path
+                        readonly (bool): True if drive is readonly
+                    },
+                    ...
+                ]
+        """
+        flashables = []
+
+        #get drives
+        drives = self.diskutil.get_devices_infos()
+        self.logger.debug('drives=%s' % drives)
+
+        #fill flashable drives list
+        for drive in drives:
+            if drives[drive][u'removable']:
+                #save entry
+                flashables.append({
+                    'desc': '%s' % drives[drive]['name'],
+                    'path': '%s' % drives[drive]['device'],
+                    'readonly': drives[drive]['protected']
+                })
+
+        return flashables
+
+    def __get_flashable_drives_windows(self):
+        """
+        Return list of flashbable drives on windows
+
+        Returns:
+            list: removable drives list
+                [
+                    {
+                        desc (string): drive description
+                        path (string): drive path
+                        readonly (bool): True if drive is readonly
+                    },
+                    ...
+                ]
+        """
+        flashables = []
+
+        #get system drives
+        drives = self.windowsdrives.get_drives()
+        self.logger.debug('drives=%s' % drives)
+        
+        #fill flashable drives list
+        for drive in drives:
+            if drive['deviceType']==WindowsDrives.DEVICE_TYPE_REMOVABLE:
+                #save entry
+                flashables.append({
+                    'desc': '%s (%s)' % (drive['description'], drive['displayName']),
+                    'path': '%s' % drive['device'],
+                    'readonly': drive['protected']
+                })
+
+        return flashables
+
+    def __get_flashable_drives_linux(self):
+        """
+        Return list of flashbable drives on linux
+
+        Returns:
+            list: removable drives list
+                [
+                    {
+                        desc (string): drive description
+                        path (string): drive path
+                        readonly (bool): True if drive is readonly
+                    },
+                    ...
+                ]
+        """
+        flashables = []
+
+        #get system drives
+        drives = self.lsblk.get_drives()
+        self.logger.debug('drives=%s' % drives)
+
+        #get drives types
+        for drive in drives:
+            device_type = self.udevadm.get_device_type('/dev/%s' % drive)
+            if device_type in (self.udevadm.TYPE_USB, self.udevadm.TYPE_SDCARD):
+                #get human readble name for drive
+                model = drives[drive]['drivemodel']
+                if model is None or len(model)==0:
+                    if device_type==self.udevadm.TYPE_USB:
+                        desc = 'Unknown USB (/dev/%s)' % drive
+                    if device_type==self.udevadm.TYPE_SDCARD:
+                        desc = 'Unknown SD Card (/dev/%s)' % drive
+                else:
+                    desc = '%s (/dev/%s)' % (model, drive)
+
+                #save entry
+                flashables.append({
+                    'desc': desc,
+                    'path': '/dev/%s' % drive,
+                    'readonly': drives[drive]['readonly']
+                })
 
         return flashables
 

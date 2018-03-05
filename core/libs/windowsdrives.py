@@ -14,7 +14,7 @@ class WindowsDrives():
     Devices output list is similar to https://github.com/resin-io-modules/drivelist (except form deviceType) because 
     scripts for other environements are copied from drivelist project
     """
-    
+  
     CACHE_DURATION = 2.0
     
     #https://msdn.microsoft.com/fr-fr/library/windows/desktop/aa364939(v=vs.85).aspx
@@ -31,6 +31,7 @@ class WindowsDrives():
         Constructor
         """
         self.logger = logging.getLogger(self.__class__.__name__)
+        #self.logger.setLevel(logging.DEBUG)
         self.timestamp = None
         self.devices = {}
         client = win32com.client.Dispatch('WbemScripting.SWbemLocator')
@@ -79,6 +80,7 @@ class WindowsDrives():
                 'protected': False,
                 'system': None,
                 'deviceType': None,
+                'guid': None,
                 'temp_partitions': [],
                 'temp_displayname': []
             }
@@ -115,20 +117,31 @@ class WindowsDrives():
                     self.logger.debug('%s == %s' % (partition, str(logical.Antecedent)))
                     if partition in str(logical.Antecedent):
                         mountpoint = logical.Dependent.split('=')[1].replace('"', '')
+
                         #save system
                         if mountpoint==system_drive:
                             devices[device]['system'] = True
                         else:
                             devices[device]['system'] = False
-                        #save mountpoint
+
+                        #save mountpoint (and its guid to allow mouting it)
+                        guid = None
+                        try:
+                            guid = win32file.GetVolumeNameForVolumeMountPoint('%s\\\\' % mountpoint).replace('\\\\', '\\')
+                        except:
+                            self.logger.exception('Exception during GetVolumeNameForVolumeMountPoint:')
                         devices[device]['mountpoints'].append({
-                            'path': mountpoint
+                            'path': mountpoint,
+                            'guid': guid
                         })
+
                         #save displayName
                         devices[device]['temp_displayname'].append(mountpoint)
+
                         #save device type
                         if devices[device]['deviceType'] is None:
                             devices[device]['deviceType'] = win32file.GetDriveType(mountpoint)
+                            
                         #save protected
                         try:
                             #https://msdn.microsoft.com/en-us/library/windows/desktop/aa364993(v=vs.85).aspx
@@ -187,6 +200,8 @@ class WindowsDrives():
 if __name__ == '__main__':
     import pprint
     pp = pprint.PrettyPrinter(indent=2)
+
+    logging.basicConfig(level=logging.INFO)
     
     d = WindowsDrives()
     devices = d.get_drives()
