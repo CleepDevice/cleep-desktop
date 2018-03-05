@@ -10,6 +10,10 @@
         "build-mac32": "scripts/build-mac32.sh",
         "build-windows64": "scripts/build-windows64.bat",
 
+        "publish-linux64": "scripts/publish-linux64.sh",
+        "publish-mac32": "scripts/publish-mac32.sh",
+        "publish-windows64": "scripts/publish-windows64.bat",
+
         "ui-linux": "scripts/launch-ui-linux.sh",
         "ui-mac": "scripts/launch-ui-mac.sh",
         "ui-windows": "scripts/launch-ui-windows.sh",

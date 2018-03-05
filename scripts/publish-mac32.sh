@@ -31,6 +31,23 @@ echo "------------------------"
 /bin/cp -a resources "$CLEEPDESKTOPPATH"
 echo "Done"
 
+#electron-builder
 echo
-echo "CleepDesktop built into $CLEEPDESKTOPPATH"
+echo "Packaging cleepdesktop..."
+echo "-------------------------"
+#DEBUG=electron-builder,electron-builder:* /usr/bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH"
+node_modules/.bin/electron-builder --mac --x64 --projectDir "$CLEEPDESKTOPPATH"
+
+#cleaning
+echo
+echo "Finalizing..."
+echo "-------------"
+/bin/sleep 1
+/bin/mv "./$CLEEPDESKTOPPATH/dist" .
+/bin/rm -rf build
+/bin/rm -rf __pycache__
+/bin/rm -rf cleep/__pycache__
+/bin/rm -rf cleep/libs/__pycache__
+
+echo "Done"
 

@@ -31,21 +31,6 @@ echo "------------------------"
 /bin/cp -a resources "$CLEEPDESKTOPPATH"
 echo "Done"
 
-#electron-builder
 echo
-echo "Packaging cleepdesktop..."
-echo "-------------------------"
-GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP ./node_modules/.bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH" --publish onTag
-#cleaning
-echo
-echo "Finalizing..."
-echo "-------------"
-/bin/sleep 1
-/bin/mv "./$CLEEPDESKTOPPATH/dist" .
-/bin/rm -rf build
-/bin/rm -rf __pycache__
-/bin/rm -rf cleep/__pycache__
-/bin/rm -rf cleep/libs/__pycache__
-
-echo "Done"
+echo "CleepDesktop built into $CLEEPDESKTOPPATH"
 
