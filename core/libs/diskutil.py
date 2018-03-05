@@ -4,7 +4,7 @@
 try:
     from console import Console
 except:
-    from cleep.libs.console import Console
+    from core.libs.console import Console
 import re
 import time
 import logging

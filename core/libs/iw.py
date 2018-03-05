@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
     
 import logging
-from cleep.libs.console import AdvancedConsole, Console
+from core.libs.console import AdvancedConsole, Console
 import time
 import os
 

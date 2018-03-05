@@ -5,15 +5,14 @@ import logging
 from threading import Thread
 import time
 import os
-#import urllib3
 import platform
 import json
 import datetime
-from cleep.libs.download import Download
-from cleep.libs.console import Console
-from cleep.libs.github import Github
-from cleep.utils import CleepDesktopModule
-from cleep.flashdrive import FlashDrive
+from core.libs.download import Download
+from core.libs.console import Console
+from core.libs.github import Github
+from core.utils import CleepDesktopModule
+from core.flashdrive import FlashDrive
 
 
 class UpdateInfos():

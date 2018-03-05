@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from cleep import rpcserver
+from core import rpcserver
 import sys
 import os
 

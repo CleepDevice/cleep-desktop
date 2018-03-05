@@ -13,23 +13,23 @@ import platform
 import re
 import requests
 import tempfile
-from cleep.libs.cleepwificonf import CleepWifiConf
-from cleep.libs.download import Download
-from cleep.utils import CleepDesktopModule
-from cleep.libs.iw import Iw
-from cleep.libs.iwlist import Iwlist
+from core.libs.cleepwificonf import CleepWifiConf
+from core.libs.download import Download
+from core.utils import CleepDesktopModule
+from core.libs.iw import Iw
+from core.libs.iwlist import Iwlist
 if platform.system()=='Windows':
-    from cleep.libs.console import AdminEndlessConsole
-    from cleep.libs.windowsdrives import WindowsDrives
-    from cleep.libs.windowswirelessinterfaces import WindowsWirelessInterfaces
-    from cleep.libs.windowswirelessnetworks import WindowsWirelessNetworks
+    from core.libs.console import AdminEndlessConsole
+    from core.libs.windowsdrives import WindowsDrives
+    from core.libs.windowswirelessinterfaces import WindowsWirelessInterfaces
+    from core.libs.windowswirelessnetworks import WindowsWirelessNetworks
 elif platform.system()=='Darwin':
-    from cleep.libs.diskutil import Diskutil
-    from cleep.libs.console import AdminEndlessConsole
+    from core.libs.diskutil import Diskutil
+    from core.libs.console import AdminEndlessConsole
 else:
-    from cleep.libs.console import AdminEndlessConsole
-    from cleep.libs.lsblk import Lsblk
-    from cleep.libs.udevadm import Udevadm
+    from core.libs.console import AdminEndlessConsole
+    from core.libs.lsblk import Lsblk
+    from core.libs.udevadm import Udevadm
     
 
 class FlashDrive(CleepDesktopModule):

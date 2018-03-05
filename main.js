@@ -39,10 +39,10 @@ const url = require('url')
 const detectPort = require('detect-port')
 
 //variables
-var cleepremotePath = path.join(__dirname, 'cleepremote');
-let isDev = !require('fs').existsSync(cleepremotePath);
-let cleepremoteProcess = null;
-let cleepremoteDisabled = false;
+var corePath = path.join(__dirname, 'cleepdesktopcore');
+let isDev = !require('fs').existsSync(corePath);
+let coreProcess = null;
+let coreDisabled = false;
 
 //logger configuration
 logger.transports.file.level = 'warn';
@@ -66,8 +66,8 @@ function parseArgs()
     {
         if( argv[i]==='--norpc' )
         {
-            //disable cleepremote. Useful to debug python aside
-            cleepremoteDisabled = true;
+            //disable core. Useful to debug python aside
+            coreDisabled = true;
         }
         else if( argv[i].match(/^--logfile=/) )
         {
@@ -321,12 +321,12 @@ function createWindow ()
 
 };
 
-// Launch cleepremote python application
-function launchCleepremote(rpcport)
+// Launch core python application
+function launchCore(rpcport)
 {
-    if( cleepremoteDisabled )
+    if( coreDisabled )
     {
-        logger.debug('Cleepremote disabled');
+        logger.debug('Core disabled');
         return;
     }
 
@@ -340,16 +340,16 @@ function launchCleepremote(rpcport)
     {
         //launch release
         logger.debug('Launch release mode');
-        let commandline = path.join(__dirname, 'cleepremote/cleepremote');
-        logger.debug('Cleepremote commandline: '+commandline+' ' + rpcport + ' ' + configPath + ' ' + configFilename + ' release');
-        cleepremoteProcess = require('child_process').spawn(commandline, [rpcport, configPath, configFilename, 'release']);
+        let commandline = path.join(__dirname, 'cleepdesktopcore/cleepdesktopcore');
+        logger.debug('Core commandline: '+commandline+' ' + rpcport + ' ' + configPath + ' ' + configFilename + ' release');
+        coreProcess = require('child_process').spawn(commandline, [rpcport, configPath, configFilename, 'release']);
     }
     else
     {
         //launch dev
         logger.debug('Launch development mode');
-        logger.debug('Cleepremote commandline: python3 cleepremote.py ' + rpcport + ' ' + configPath + ' ' + configFilename + ' debug');
-        cleepremoteProcess = require('child_process').spawn('python3', ['cleepremote.py', rpcport, configPath, configFilename, 'debug']);
+        logger.debug('Core commandline: python3 cleepdesktopcore.py ' + rpcport + ' ' + configPath + ' ' + configFilename + ' debug');
+        coreProcess = require('child_process').spawn('python3', ['cleepdesktopcore.py', rpcport, configPath, configFilename, 'debug']);
     }
 };
 
@@ -374,7 +374,7 @@ app.on('ready', function() {
         createWindow();
         createSplashScreen();
         createMenu();
-        launchCleepremote(DEFAULT_RPCPORT);
+        launchCore(DEFAULT_RPCPORT);
     }
     else
     {
@@ -392,7 +392,7 @@ app.on('ready', function() {
             createSplashScreen();
             createWindow();
             createMenu();
-            launchCleepremote(rpcport);
+            launchCore(rpcport);
         });
     }
 });
@@ -402,10 +402,10 @@ app.on('window-all-closed', function () {
     // On OS X it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
     if (process.platform !== 'darwin') {
-        if( cleepremoteProcess )
+        if( coreProcess )
         {
-            logger.debug('Kill cleepremote');
-            cleepremoteProcess.kill('SIGTERM')
+            logger.debug('Kill core');
+            coreProcess.kill('SIGTERM')
         }
         app.quit()
     }

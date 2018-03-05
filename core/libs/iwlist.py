@@ -3,9 +3,9 @@
     
 import logging
 import time
-from cleep.libs.console import AdvancedConsole, Console
-from cleep.libs.wpasupplicantconf import WpaSupplicantConf
-import cleep.libs.converters as Converters
+from core.libs.console import AdvancedConsole, Console
+from core.libs.wpasupplicantconf import WpaSupplicantConf
+import core.libs.converters as Converters
 import os
 
 class Iwlist(AdvancedConsole):

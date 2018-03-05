@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 try:
-    from cleep.libs.console import Console
+    from core.libs.console import Console
 except:
     from console import Console
 import re

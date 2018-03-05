@@ -5,6 +5,6 @@ dist/
 build/
 node_modules/
 package-lock.json
-cleep/*.pyc
-cleep/libs/*.pyc
+core/*.pyc
+core/libs/*.pyc
 .vscode

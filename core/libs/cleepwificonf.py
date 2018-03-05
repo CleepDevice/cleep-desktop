@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from cleep.libs.config import Config
-import cleep.libs.converters as converters
+from core.libs.config import Config
+import core.libs.converters as converters
 import os
 import json
 import logging

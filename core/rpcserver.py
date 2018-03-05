@@ -38,12 +38,12 @@ from passlib import __version__ as passlib_version
 from passlib.hash import sha256_crypt
 from requests import __version__ as requests_version
 
-from cleep.utils import MessageResponse
-from cleep.flashdrive import FlashDrive
-from cleep.devices import Devices
-from cleep.updates import Updates
-from cleep.libs.crashreport import CrashReport
-from cleep.libs.download import Download
+from core.utils import MessageResponse
+from core.flashdrive import FlashDrive
+from core.devices import Devices
+from core.updates import Updates
+from core.libs.crashreport import CrashReport
+from core.libs.download import Download
 
 __all__ = ['app']
 

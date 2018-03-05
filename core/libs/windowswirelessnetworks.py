@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from win32wifi import Win32Wifi
-from cleep.libs.wpasupplicantconf import WpaSupplicantConf
-import cleep.libs.converters as Converters
+from core.libs.wpasupplicantconf import WpaSupplicantConf
 import time
 import logging
 

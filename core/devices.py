@@ -4,9 +4,9 @@
 import logging
 import os
 import json
-from cleep.version import version as VERSION
-from cleep.utils import CleepDesktopModule
-from cleep.libs.externalbus import PyreBus
+from core.version import version as VERSION
+from core.utils import CleepDesktopModule
+from core.libs.externalbus import PyreBus
 
 class Devices(CleepDesktopModule):
     """
