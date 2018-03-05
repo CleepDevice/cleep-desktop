@@ -8,3 +8,5 @@ package-lock.json
 core/*.pyc
 core/libs/*.pyc
 .vscode
+tools/cmdlogger-linux
+tools/cmdlogger-mac
