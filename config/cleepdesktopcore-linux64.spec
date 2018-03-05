@@ -2,7 +2,7 @@
 
 block_cipher = None
 
-a = Analysis(['cleepremote.py'],
+a = Analysis(['../cleepdesktopcore.py'],
              pathex=[],
              binaries=[],
              datas=[
@@ -23,7 +23,7 @@ pyz = PYZ(a.pure, a.zipped_data,
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name='cleepremote',
+          name='cleepdesktopcore',
           debug=False,
           strip=False,
           upx=False,
@@ -34,4 +34,4 @@ coll = COLLECT(exe,
                a.datas,
                strip=False,
                upx=False,
-               name='cleepremote')
+               name='cleepdesktopcore')

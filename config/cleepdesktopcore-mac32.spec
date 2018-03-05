@@ -2,15 +2,14 @@
 
 block_cipher = None
 
-a = Analysis(['cleepremote.py'],
+a = Analysis(['../cleepdesktopcore.py'],
              pathex=[],
              binaries=[],
              datas=[
                 ('cleep', 'cleep'),
-                ('tools/etcher-cli.windows.bat', 'scripts/etcher-cli.windows.bat'),
-                ('tools/install-etcher.windows.bat', 'scripts/install-etcher.windows.bat'),
-                ('tools/7z', 'tools/7z'),
-                ('tools/cmdlogger-windows64', 'tools/cmdlogger-windows')
+                ('tools/etcher-cli.mac', 'scripts/etcher-cli.mac'),
+                ('tools/install-etcher.mac', 'scripts/install-etcher.mac'),
+                ('tools/cmdlogger-mac32', 'tools/cmdlogger-mac')
              ],
              hiddenimports=[],
              hookspath=[],
@@ -24,7 +23,7 @@ pyz = PYZ(a.pure, a.zipped_data,
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name='cleepremote',
+          name='cleepdesktopcore',
           debug=False,
           strip=False,
           upx=False,
@@ -35,4 +34,4 @@ coll = COLLECT(exe,
                a.datas,
                strip=False,
                upx=False,
-               name='cleepremote')
+               name='cleepdesktopcore')

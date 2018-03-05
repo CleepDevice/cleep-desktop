@@ -13,10 +13,10 @@ mkdir dist
 :: pyinstaller
 echo.
 echo.
-echo Packaging cleepremote...
+echo Packaging cleepdesktopcore...
 echo ------------------------
-pyinstaller --clean --noconfirm --noupx --windowed --debug --log-level INFO cleepremote.windows64.spec
-move dist\cleepremote %CLEEPDESKTOPPATH%
+pyinstaller --clean --noconfirm --noupx --windowed --debug --log-level INFO cleepdesktopcore-windows64.spec
+move dist\cleepdesktopcore %CLEEPDESKTOPPATH%
 
 :: copy files and dirs
 echo.

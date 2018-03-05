@@ -14,10 +14,10 @@ CLEEPDESKTOPPATH=build/cleepdesktop_tree
 
 #pyinstaller
 echo
-echo "Packaging cleepremote..."
+echo "Packaging cleepdesktopcore..."
 echo "------------------------"
-/usr/local/bin/pyinstaller --clean --noconfirm --noupx --debug --log-level INFO cleepremote.mac32.spec
-/bin/mv dist/cleepremote "$CLEEPDESKTOPPATH"
+/usr/local/bin/pyinstaller --clean --noconfirm --noupx --debug --log-level INFO config/cleepdesktopcore-mac32.spec
+/bin/mv dist/cleepdesktopcore "$CLEEPDESKTOPPATH"
 
 #copy files and dirs
 echo
