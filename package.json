@@ -4,7 +4,19 @@
     "description": "Desktop application to manage your Cleep devices",
     "main": "main.js",
     "scripts": {
-        "start": "electron ."
+        "start": "electron .",
+
+        "build-linux64": "scripts/build-linux64.sh",
+        "build-mac32": "scripts/build-mac32.sh",
+        "build-windows64": "scripts/build-windows64.bat",
+
+        "ui-linux": "scripts/launch-ui-linux.sh",
+        "ui-mac": "scripts/launch-ui-mac.sh",
+        "ui-windows": "scripts/launch-ui-windows.sh",
+
+        "core-linux": "scripts/launch-core-linux.sh",
+        "core-mac": "scripts/launch-core-mac.sh",
+        "core-windows": "scripts/launch-core-windows.sh"
     },
     "repository": "https://github.com/tangb/CleepDesktop",
     "keywords": [

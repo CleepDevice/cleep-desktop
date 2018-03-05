@@ -43,9 +43,9 @@ class Updates(CleepDesktopModule):
         'repo': 'etcher'
     }
 
-    INSTALL_ETCHER_COMMAND_LINUX = '%s/scripts/install_etcher.linux "%s" "%s" "%s"'
-    INSTALL_ETCHER_COMMAND_WINDOWS = '%s\\scripts\\install_etcher.windows.bat "%s" "%s" "%s"'
-    INSTALL_ETCHER_COMMAND_MAC = '%s/scripts/install_etcher.mac "%s" "%s" "%s"'
+    INSTALL_ETCHER_COMMAND_LINUX = '%s/scripts/install-etcher.linux "%s" "%s" "%s"'
+    INSTALL_ETCHER_COMMAND_WINDOWS = '%s\\scripts\\install-etcher.windows.bat "%s" "%s" "%s"'
+    INSTALL_ETCHER_COMMAND_MAC = '%s/scripts/install-etcher.mac "%s" "%s" "%s"'
 
     STATUS_IDLE = 0
     STATUS_DOWNLOADING = 1

@@ -5,7 +5,12 @@ block_cipher = None
 a = Analysis(['cleepremote.py'],
              pathex=[],
              binaries=[],
-             datas=[('cleep', 'cleep'), ('scripts', 'scripts'), ('tools/cmdlogger-linux64', 'tools/cmdlogger-linux')],
+             datas=[
+                ('cleep', 'cleep'),
+                ('tools/install-etcher.linux', 'scripts/install-etcher.linux'),
+                ('tools/etcher-cli.linux', 'scripts/etcher-cli.linux'),
+                ('tools/cmdlogger-linux64', 'tools/cmdlogger-linux')
+             ],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
