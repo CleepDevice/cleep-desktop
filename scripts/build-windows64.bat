@@ -14,8 +14,10 @@ mkdir dist
 echo.
 echo.
 echo Packaging cleepdesktopcore...
-echo ------------------------
+echo -----------------------------
+xcopy /Q /Y config\cleepdesktopcore-windows64.spec .
 pyinstaller --clean --noconfirm --noupx --windowed --debug --log-level INFO cleepdesktopcore-windows64.spec
+del /Q cleepdesktopcore-windows64.spec
 move dist\cleepdesktopcore %CLEEPDESKTOPPATH%
 
 :: copy files and dirs
@@ -33,17 +35,6 @@ xcopy README.md %CLEEPDESKTOPPATH%\
 mkdir %CLEEPDESKTOPPATH%\resources
 xcopy /S resources %CLEEPDESKTOPPATH%\resources
 echo Done
-
-:: electron-builder
-echo.
-echo.
-echo Packaging cleepdesktop...
-echo -------------------------
-:: electron-builder is launched in other command line because it stop this script at end of process
-:: to debug electron-builder uncomment line below
-:: set DEBUG=electron-builder,electron-builder:*
-set "GH_TOKEN=%GH_TOKEN_CLEEPDESKTOP%"
-cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH%" --publish always
 
 echo.
 echo.
