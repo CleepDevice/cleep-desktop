@@ -2,7 +2,7 @@
     "name": "CleepDesktop",
     "version": "0.0.1",
     "description": "Desktop application to manage your Cleep devices",
-    "main": "main.js",
+    "main": "cleepdesktop.js",
     "scripts": {
         "start": "electron .",
 
