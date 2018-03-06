@@ -7,7 +7,7 @@ import os
 
 #parameters
 if len(sys.argv)!=5:
-    print('Missing parameter. Usage: cleepremote <rpcport> <config path> <config filename> <debug|release>')
+    print('Missing parameter. Usage: cleepdesktopcore <rpcport> <config path> <config filename> <debug|release>')
     sys.exit(2)
 try:
     rpcport = int(sys.argv[1])
@@ -21,7 +21,7 @@ debug = False
 if mode=='debug':
     debug = True
 
-#absolute cleepremote path
+#absolute cleepdesktopcore path
 app_path = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 #get rpc application

@@ -3,14 +3,14 @@
  
 from setuptools import setup, find_packages
  
-import Cleep
+import core
  
 setup(
-    name = 'cleepremote',
-    version = cleep.__version__,
+    name = 'cleepdesktopcore',
+    version = core.__version__,
     packages = find_packages(),
     author = 'Tanguy Bonneau',
-    author_email = 'tanguy.bonneau+raspiot@gmail.com',
+    author_email = 'tanguy.bonneau@gmail.com',
     description = 'CleepDesktop python core',
     long_description = open('README.md').read(),
     install_requires = open('requirements.txt').readlines(),

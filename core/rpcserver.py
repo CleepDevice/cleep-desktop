@@ -213,7 +213,7 @@ def get_app(app_path, config_path, config_filename, debug_enabled):
 
     #logging
     debug = False
-    logs_file = os.path.join(config_path, 'cleepremote.log')
+    logs_file = os.path.join(config_path, 'core.log')
     if debug_enabled:
         logging.basicConfig(level=logging.WARN, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
     else:
@@ -398,11 +398,7 @@ def execute_command(command, params):
             dl = Download()
             dl.purge_files(force_all=True)
             resp.data = dl.get_cached_files()
-
-        #devices
-        elif command=='openDevicePage':
-            resp.data = open_device_page(params)
-        
+      
         #flashdrive
         elif command=='getflashdrives':
             resp.data = flashdrive.get_flashable_drives()

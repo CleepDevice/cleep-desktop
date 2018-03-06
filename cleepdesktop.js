@@ -64,7 +64,7 @@ function parseArgs()
 {
     for (let i = 0; i < argv.length; i++)
     {
-        if( argv[i]==='--norpc' )
+        if( argv[i]==='--nocore' )
         {
             //disable core. Useful to debug python aside
             coreDisabled = true;
