@@ -5,7 +5,7 @@ var path = require('path');
 /**
  * Auto install controller
  */
-var autoInstallController = function($rootScope, $scope, cleepService, $timeout, toast, confirm, $filter)
+var autoInstallController = function($rootScope, $scope, cleepService, $timeout, toast, confirm, $filter, logger)
 {
     var self = this;
     self.status = {
@@ -33,7 +33,12 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     self.noWifiNetwork = false;
     self.noWifiAdapter = false;
     self.wifiPassword = null;
-    self.selectedWifiNetwork = null;
+    self.selectedWifiNetwork = {
+        network: null,
+        interface: null,
+        encryption: null,
+        signallevel: 0
+    };
 
     //return current flash status
     self.getStatus = function(init)
@@ -188,9 +193,12 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                         encryption: self.selectedWifiNetwork.encryption
                     }
                 };
+                logger.debug('Flash data:', data);
                 cleepService.sendCommand('startflash', data)
                     .then(function() {
-                        //toast.info('Installation started')
+                        toast.info('Installation started');
+                    }, function(err) {
+                        toast.error('Unable to start installation.');
                     });
             });
     };
@@ -201,6 +209,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         //check if process is running
         if( self.status && self.status.status>=5 )
         {
+            self.logger.debug('CancelFlash: invalid status (' + self.status.status + ') do nothing');
             return;
         }
 
@@ -223,6 +232,10 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                             toast.info('Installation canceled');
                         });
                 });
+        }
+        else
+        {
+            logger.debug('Nothing to do with status (' + self.status.status + ')'); 
         }
     };
 
@@ -250,6 +263,6 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
 
 };
 
-Cleep.controller('autoInstallController', ['$rootScope', '$scope', 'cleepService', '$timeout', 'toastService', 'confirmService', '$filter', autoInstallController]);
+Cleep.controller('autoInstallController', ['$rootScope', '$scope', 'cleepService', '$timeout', 'toastService', 'confirmService', '$filter', 'logger', autoInstallController]);
 
 
