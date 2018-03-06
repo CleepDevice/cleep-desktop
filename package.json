@@ -5,19 +5,15 @@
     "main": "cleepdesktop.js",
     "scripts": {
         "start": "electron .",
-
         "build-linux64": "scripts/build-linux64.sh",
         "build-mac32": "scripts/build-mac32.sh",
         "build-windows64": "scripts\\build-windows64.bat",
-
-        "publish-linux64": "scripts/publish-linux64.sh",
-        "publish-mac32": "scripts/publish-mac32.sh",
-        "publish-windows64": "scripts\\publish-windows64.bat",
-
+        "publish-linux64": "scripts/build-linux64.sh publish",
+        "publish-mac32": "scripts/build-mac32.sh publish",
+        "publish-windows64": "scripts\\build-windows64.bat publish",
         "ui-linux": "scripts/launch-ui-linux.sh",
         "ui-mac": "scripts/launch-ui-mac.sh",
         "ui-windows": "scripts\\launch-ui-windows.sh",
-
         "core-linux": "scripts/launch-core-linux.sh",
         "core-mac": "scripts/launch-core-mac.sh",
         "core-windows": "scripts\\launch-core-windows.sh"
@@ -33,7 +29,7 @@
     "devDependencies": {
         "devtron": "1.4.x",
         "electron": "1.8.2",
-        "electron-builder": "19.56.2"
+        "electron-builder": "20.3.1"
     },
     "dependencies": {
         "detect-port": "1.2.2",

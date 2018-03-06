@@ -36,7 +36,35 @@ mkdir %CLEEPDESKTOPPATH%\resources
 xcopy /S resources %CLEEPDESKTOPPATH%\resources
 echo Done
 
+:: electron-builder
 echo.
 echo.
-echo "CleepDesktop built into %CLEEPDESKTOPPATH%"
+:: to debug electron-builder uncomment line below
+:: set DEBUG=electron-builder,electron-builder:*
+if "%1" == "publish" (
+    echo Publishing cleepdesktop...
+    echo --------------------------
+    set "GH_TOKEN=%GH_TOKEN_CLEEPDESKTOP%"
+    cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH%" --publish onTagOrDraft
+) else (
+    echo Packaging cleepdesktop...
+    echo -------------------------
+    cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH%"
+)
 
+:: cleaning
+echo.
+echo.
+echo Finalizing...
+echo -------------
+ping 127.0.0.1 -n 2 > nul
+mkdir dist
+xcopy /Q /S %CLEEPDESKTOPPATH%\dist dist
+rmdir /Q /S build
+rmdir /Q /S __pycache__
+rmdir /Q /S cleep\__pycache__
+rmdir /Q /S cleep\libs\__pycache__
+echo Done
+
+echo
+echo Build result in dist/ folder
