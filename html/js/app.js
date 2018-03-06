@@ -92,6 +92,10 @@ Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $
             url: '/',
             templateUrl: 'js/welcome/welcome.html'
         })
+        .state('help', {
+            url: '/appHelp',
+            templateUrl: 'js/welcome/welcome.html'
+        })
         .state('preferences', {
             url: '/preferences',
             controller: 'preferencesController',

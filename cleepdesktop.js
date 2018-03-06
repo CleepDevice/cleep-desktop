@@ -216,9 +216,16 @@ function createMenu()
         label: 'Help',
         submenu: [
             {
-                label: 'About',
+                label: 'About CleepDesktop',
                 click: () => {
                     mainWindow.webContents.send('openPage', 'about');
+                }
+            }, {
+                type: 'separator'
+            }, {
+                label: 'Application help',
+                click: () => {
+                    mainWindow.webContents.send('openPage', 'help');
                 }
             }
         ]
