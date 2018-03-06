@@ -181,7 +181,10 @@ class FlashDrive(CleepDesktopModule):
                 try:
                     #remove temp wifi config file
                     if self.wifi_config and os.path.exists(self.wifi_config):
-                        os.remove(self.wifi_config)
+                        try:
+                            os.remove(self.wifi_config)
+                        except:
+                            self.logger.exception('Unable to delete wifi config file %s:' % self.wifi_config)
                 except:
                     pass
                 self.logger.info('Flash process terminated')
@@ -414,11 +417,14 @@ class FlashDrive(CleepDesktopModule):
         wifi_config = None
         if wifi['network']:
             try:
-                wifi_config = '/tmp/%s' % str(uuid.uuid4())
-                wifi_config_file = io.open(wifi_config, 'w+')
+                #prepare content
                 cleepwificonf = CleepWifiConf()
                 conf = cleepwificonf.create_content(wifi['network'], wifi['password'], wifi['encryption'])
                 self.logger.debug('Generated wifi config file: %s' % conf)
+
+                #write content
+                wifi_config_file = tempfile.NamedTemporaryFile(mode='w+', delete=False)
+                wifi_config = wifi_config_file.name
                 wifi_config_file.write(conf)
                 wifi_config_file.close()
 
@@ -731,8 +737,12 @@ class FlashDrive(CleepDesktopModule):
             self.logger.debug('No drive or url specified, flash process stopped')
             return False
         if self.url.startswith('file://'):
-            #local file, nothing to download
+            #local file, nothing to download but fake download values
             self.iso = self.url.replace('file://', '')
+            self.status = self.STATUS_DOWNLOADING
+            self.percent = 100
+            self.total_percent = int(self.percent / 3)
+
             return True
 
         #init download helper
@@ -832,7 +842,7 @@ class FlashDrive(CleepDesktopModule):
                 wifi_config = ''
 
             #prepare command line
-            cmd = [self.etcher_cmd, self.config_path, self.drive, self.iso, self.wifi_config]
+            cmd = [self.etcher_cmd, self.config_path, self.drive, self.iso, wifi_config]
             self.logger.debug('Etcher command to execute: %s' % cmd)
 
             #start command in admin endless console

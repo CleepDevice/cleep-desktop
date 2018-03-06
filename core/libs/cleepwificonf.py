@@ -45,7 +45,7 @@ class CleepWifiConf(Config):
 
     def create_content(self, network, password, encryption):
         """
-        Write cleepwifi.conf file content to awaited format. Encrypt password if necessary (wpa, wpa2)
+        Generate cleepwifi.conf file content to awaited format. Encrypt password if necessary (wpa, wpa2)
 
         Args:
             network (string): network name
