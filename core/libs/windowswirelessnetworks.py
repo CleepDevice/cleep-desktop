@@ -59,9 +59,14 @@ class WindowsWirelessNetworks():
                 #wpa2
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WPA2
 
-            networks[network.ssid] = {
+            #network ssid
+            ssid = network.ssid.decode('utf-8')
+            if not ssid or len(ssid)==0:
+                ssid = 'Masked name'
+
+            networks[ssid] = {
                 'interface': interface.guid_string,
-                'network': network.ssid.decode('utf-8'),
+                'network': ssid,
                 'encryption': encryption,
                 'signallevel': signal_level
             }
