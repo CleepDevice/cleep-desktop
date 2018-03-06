@@ -13,10 +13,10 @@
         "publish-windows64": "scripts\\build-windows64.bat publish",
         "ui-linux": "scripts/launch-ui-linux.sh",
         "ui-mac": "scripts/launch-ui-mac.sh",
-        "ui-windows": "scripts\\launch-ui-windows.sh",
+        "ui-windows": "scripts\\launch-ui-windows.bat",
         "core-linux": "scripts/launch-core-linux.sh",
         "core-mac": "scripts/launch-core-mac.sh",
-        "core-windows": "scripts\\launch-core-windows.sh"
+        "core-windows": "scripts\\launch-core-windows.bat"
     },
     "repository": "https://github.com/tangb/CleepDesktop",
     "keywords": [
@@ -75,7 +75,7 @@
             "icon": "resources/icon",
             "extendInfo": "config/Info.plist",
             "binaries": [
-                "TODO set path to generated cleepremote binary"
+                "TODO set path to generated cleepdesktopcore binary"
             ]
         },
         "dmg": {
