@@ -80,14 +80,15 @@ class WindowsDrives():
                 'protected': False,
                 'system': None,
                 'deviceType': None,
-                'guid': None,
                 'temp_partitions': [],
-                'temp_displayname': []
+                'temp_displayname': [],
+                'temp_device': None
             }
             
             for property in disk.Properties_:
                 if property.Name=='DeviceID':
-                    current_device['device'] = property.Value
+                    current_device['temp_device'] = property.Value
+                    current_device['device'] = property.Value.replace('PHYSICALDRIVE', 'PhysicalDrive')
                     current_device['raw'] = property.Value
                 elif property.Name=='Caption':
                     current_device['description'] = property.Value
@@ -98,7 +99,7 @@ class WindowsDrives():
                         current_device['size'] = 0
                 self.logger.debug(property.Name, " = ", property.Value)
                 
-            devices[current_device['device']] = current_device
+            devices[current_device['temp_device']] = current_device
             
         #get infos from DiskDriveToDiskPartitions command
         partitions = self.winService.ExecQuery('SELECT * FROM Win32_DiskDriveToDiskPartition')
@@ -160,6 +161,7 @@ class WindowsDrives():
             devices[device]['displayName'] = u', '.join(devices[device]['temp_displayname'])
             del devices[device]['temp_displayname']
             del devices[device]['temp_partitions']
+            del devices[device]['temp_device']
        
         #save devices
         self.devices = list(devices.values())
