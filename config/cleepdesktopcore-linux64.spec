@@ -2,11 +2,11 @@
 
 block_cipher = None
 
-a = Analysis(['../cleepdesktopcore.py'],
+a = Analysis(['cleepdesktopcore.py'],
              pathex=[],
              binaries=[],
              datas=[
-                ('cleep', 'cleep'),
+                ('core', 'core'),
                 ('tools/install-etcher.linux', 'scripts/install-etcher.linux'),
                 ('tools/etcher-cli.linux', 'scripts/etcher-cli.linux'),
                 ('tools/cmdlogger-linux64', 'tools/cmdlogger-linux')

@@ -15,8 +15,10 @@ CLEEPDESKTOPPATH=build/cleepdesktop_tree
 #pyinstaller
 echo
 echo "Packaging cleepdesktopcore..."
-echo "------------------------"
-/usr/local/bin/pyinstaller --clean --noconfirm --noupx --debug --log-level INFO config/cleepdesktopcore-linux64.spec
+echo "-----------------------------"
+/bin/cp config/cleepdesktopcore-linux64.spec cleepdesktopcore-linux64.spec
+/usr/local/bin/pyinstaller --clean --noconfirm --noupx --debug --log-level INFO cleepdesktopcore-linux64.spec
+/bin/rm cleepdesktopcore-linux64.spec
 /bin/mv dist/cleepdesktopcore "$CLEEPDESKTOPPATH"
 
 #copy files and dirs
@@ -35,7 +37,7 @@ echo "Done"
 echo
 echo "Packaging cleepdesktop..."
 echo "-------------------------"
-GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP ./node_modules/.bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH" --publish onTag
+GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP ./node_modules/.bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH" --publish always
 #cleaning
 echo
 echo "Finalizing..."

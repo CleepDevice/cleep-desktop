@@ -15,8 +15,10 @@ CLEEPDESKTOPPATH=build/cleepdesktop_tree
 #pyinstaller
 echo
 echo "Packaging cleepdesktopcore..."
-echo "------------------------"
-/usr/local/bin/pyinstaller --clean --noconfirm --noupx --debug --log-level INFO config/cleepdesktopcore-linux64.spec
+echo "-----------------------------"
+/bin/cp config/cleepdesktopcore-linux64.spec .
+/usr/local/bin/pyinstaller --clean --noconfirm --noupx --debug --log-level INFO cleepdesktopcore-linux64.spec
+/bin/rm cleepdesktopcore-linux64.spec
 /bin/mv dist/cleepdesktopcore "$CLEEPDESKTOPPATH"
 
 #copy files and dirs
