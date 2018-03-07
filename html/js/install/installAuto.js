@@ -39,6 +39,8 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         encryption: null,
         signallevel: 0
     };
+    self.wifiNetworkName = '';
+    self.wifiNetworkEncryption = 'wpa2';
 
     //return current flash status
     self.getStatus = function(init)
@@ -180,6 +182,37 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
             toast.error('Please select a Cleep version and a drive');
             return;
         }
+        if( self.noWifiAdapter && self.wifiNetworkName && self.wifiNetworkEncryption!='unsecured' && !self.wifiPassword )
+        {
+            toast.error('Please specify wifi password');
+            return;
+        }
+        if( !self.noWifiAdapter && self.selectedWifiNetwork.network && self.selectedWifiNetwork.encryption!='unsecured' && !self.wifiPassword )
+        {
+            toast.error('Please specify wifi password');
+            return;
+        }
+
+        //wifi config
+        wifiConfig = {
+            network: null,
+            encryption: null,
+            password: null
+        }
+        if( self.noWifiAdapter && self.wifiNetworkName && self.wifiNetworkEncryption )
+        {
+            //fill wifi config from manual values
+            wifiConfig.network = self.wifiNetworkName;
+            wifiConfig.encryption = self.wifiNetworkEncryption;
+            wifiConfig.password = self.wifiPassword;
+        }
+        else if( !self.noWifiAdapter && self.selectedWifiNetwork.network )
+        {
+            //fill wifi config from automatic values
+            wifiConfig.network = self.selectedWifiNetwork.network;
+            wifiConfig.encryption = self.selectedWifiNetwork.encryption;
+            wifiConfig.password = self.selectedWifiNetwork.password;
+        }
         
         confirm.open('Confirm installation?', 'Installation will erase all drive content. This operation cannot be reversed!<br/>Please note that admin permissions may be requested after file download.', 'Yes, install', 'No')
             .then(function() {
@@ -239,6 +272,16 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         }
     };
 
+    //initialize
+    self.init = function()
+    {
+        //get wifi networks to choose proper input (select when wifi adapter available or input when not available)
+        self.refreshWifiNetworks();
+
+        //get flash status
+        self.getStatus();
+    };
+
     //flash update recevied
     $rootScope.$on('flash', function(event, data) {
         if( !data )
@@ -259,7 +302,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     });
 
     //init controller
-    self.getStatus();
+    self.init();
 
 };
 

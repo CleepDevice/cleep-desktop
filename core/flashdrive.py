@@ -921,7 +921,7 @@ class FlashDrive(CleepDesktopModule):
 
     def __get_wifi_networks_windows(self):
         """
-        Return wifi networks and wifi infos for windows
+        Return wifi networks and wifi infos for windows 10 and above only
 
         Return:
             dict: wifi infos::
@@ -930,6 +930,20 @@ class FlashDrive(CleepDesktopModule):
                     adapter (bool): True if wifi adapter found
                 }
         """
+        #handle supported windows version
+        supported = False
+        try:
+            release = int(platform.release())
+            if release>=10:
+                supported = True
+        except:
+            pass
+        if not supported:
+            return {
+                'network': [],
+                'adapter': False
+            }
+
         #get wifi interfaces
         wifi_interfaces = self.windowswirelessinterfaces.get_interfaces()
         self.logger.debug('wifi_interfaces: %s' % wifi_interfaces)

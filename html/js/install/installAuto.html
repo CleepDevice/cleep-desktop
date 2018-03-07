@@ -102,16 +102,33 @@
                             If your device will connect using wifi, configure it here (your password will be encrypted):
                         </div>
                         <div>
-                            <md-input-container>
+                            <!-- no wifi adapter: manual input -->
+                            <md-input-container ng-if="ctl.noWifiAdapter">
+                                <label>Wifi network name</label>
+                                <input type="text" ng-model="ctl.wifiNetworkName" ng-disabled="ctl.flashing"/>
+                            </md-input-container>
+                            <md-input-container ng-if="ctl.noWifiAdapter">
+                                <label>Wifi network encryption</label>
+                                <md-select ng-model="ctl.wifiNetworkEncryption" placeholder="Wifi network encryption" class="md-no-underline" ng-disabled="ctl.flashing">
+                                    <md-option value="wpa2">WPA2</md-option>
+                                    <md-option value="wpa">WPA</md-option>
+                                    <md-option value="wep">WEP</md-option>
+                                    <md-option value="unsecured">Unsecured</md-option>
+                                </md-select>
+                            </md-input-container>
+
+                            <!-- wifi adapter: guided input -->
+                            <md-input-container ng-if="!ctl.noWifiAdapter">
                                 <label>Wifi network</label>
                                 <md-select ng-model="ctl.selectedWifiNetwork" md-on-open="ctl.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline" ng-disabled="ctl.flashing">
                                     <md-option ng-if="ctl.noWifiNetwork" ng-disabled="true">No wifi network found</md-option>
-                                    <md-option ng-if="ctl.noWifiAdapter" ng-disabled="true">No wifi adapter</md-option>
                                     <md-option ng-repeat="wifiNetwork in ctl.wifiNetworks" ng-value="wifiNetwork">
                                         {{wifiNetwork.network}} ({{wifiNetwork.encryption}})
                                     </md-option>
                                 </md-select>
                             </md-input-container>
+
+                            <!-- wifi password -->
                             <md-input-container class="no-error-spacer">
                                 <label>Password</label>
                                 <input type="password" ng-model="ctl.wifiPassword" ng-disabled="ctl.flashing"/>
