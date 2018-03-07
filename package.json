@@ -20,7 +20,8 @@
         "ui-windows": "scripts\\launch-ui-windows.bat",
         "core-linux": "scripts/launch-core-linux.sh",
         "core-mac": "scripts/launch-core-mac.sh",
-        "core-windows": "scripts\\launch-core-windows.bat"
+        "core-windows": "scripts\\launch-core-windows.bat",
+        "linux-archive": "scripts/linux-archive.sh"
     },
     "repository": "https://github.com/tangb/CleepDesktop",
     "keywords": [
