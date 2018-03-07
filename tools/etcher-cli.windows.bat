@@ -11,7 +11,7 @@ echo %date% %time% >> %logfile%
 echo params=%1 %2 %3 %4 >> %logfile%
 
 :: flash drive
-::%1\etcher-cli\etcher.exe --unmount false --yes --drive %2 %3
+%1\etcher-cli\etcher.exe --unmount false --yes --drive %2 %3
 echo etcher-cli returncode=%ERRORLEVEL% >> %logfile%
 
 :: no wifi config specified jump to end of script
