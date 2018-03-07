@@ -356,7 +356,15 @@ function launchCore(rpcport)
         //launch dev
         logger.debug('Launch development mode');
         logger.debug('Core commandline: python3 cleepdesktopcore.py ' + rpcport + ' ' + configPath + ' ' + configFilename + ' debug');
-        coreProcess = require('child_process').spawn('python3', ['cleepdesktopcore.py', rpcport, configPath, configFilename, 'debug']);
+		logger.debug('platform: ' + process.platform);
+		var python_bin = 'python3'
+		var python_args = ['cleepdesktopcore.py', rpcport, configPath, configFilename, 'debug']
+		if( process.platform=='win32' )
+		{
+			python_bin = 'py';
+			python_args.unshift('-3');
+		}
+        coreProcess = require('child_process').spawn(python_bin, python_args);
     }
 };
 
