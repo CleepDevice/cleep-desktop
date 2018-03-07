@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
     
 import logging
-from core.libs.console import AdvancedConsole, Console
+try:
+    from core.libs.console import AdvancedConsole, Console
+except:
+    from console import AdvancedConsole, Console
 import time
 import os
 
@@ -83,4 +86,15 @@ class Iw(AdvancedConsole):
         self.__refresh()
 
         return self.connections
+
+
+if __name__ == '__main__':
+    import pprint
+    pp = pprint.PrettyPrinter(indent=2)
+
+    logging.basicConfig(level=logging.DEBUG)
+        
+    i = Iw()
+    c = i.get_connections()
+    pp.pprint(c)
 
