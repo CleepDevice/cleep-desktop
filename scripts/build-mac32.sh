@@ -44,11 +44,11 @@ if [ "$1" == "publish" ]
 then
     echo "Publishing cleepdesktop..."
     echo "--------------------------"
-    GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP node_modules/.bin/electron-builder --mac --x64 --projectDir "$CLEEPDESKTOPPATH" --publish onTagOrDraft
+    GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP node_modules/.bin/electron-builder --mac --ia32 --projectDir "$CLEEPDESKTOPPATH" --publish onTagOrDraft
 else
     echo "Packaging cleepdesktop..."
     echo "-------------------------"
-    node_modules/.bin/electron-builder --mac --x64 --projectDir "$CLEEPDESKTOPPATH"
+    node_modules/.bin/electron-builder --mac --ia32 --projectDir "$CLEEPDESKTOPPATH"
 fi
 
 #cleaning

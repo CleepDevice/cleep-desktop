@@ -1,1 +1,1 @@
-python3 cleepdesktopcore.py 5610 C:\Users\tbonneau\AppData\Roaming\CleepDesktop Settings debug
+py -3 cleepdesktopcore.py 5610 C:\Users\%username%\AppData\Roaming\CleepDesktop Settings debug
