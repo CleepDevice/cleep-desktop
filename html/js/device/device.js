@@ -9,7 +9,7 @@ var deviceController = function($rootScope, $scope, $stateParams, $timeout)
     self.shell = require('electron').shell;
     self.deviceUrl = $stateParams.url;
     self.wv = document.getElementById('deviceWv');
-    self.loading = false;
+    self.loading = true;
 
     //handle external link
     self.wv.addEventListener('new-window', function(event) {
@@ -19,16 +19,14 @@ var deviceController = function($rootScope, $scope, $stateParams, $timeout)
     
     //device loading
     self.wv.addEventListener('did-start-loading', function() {
-        console.log('Start loading device');
         self.loading = true;
     });
 
     //device loaded
     self.wv.addEventListener('did-stop-loading', function() {
-        console.log('Finish loading device');
         $timeout(function() {
             self.loading = false;
-        }, 2000);
+        }, 1000);
     });
 
     //configure webview src

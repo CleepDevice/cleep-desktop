@@ -3,7 +3,7 @@
     <!-- loader -->
     <div ng-if="ctl.loading" layout="column" layout-sm="column" layout-align="center center" layout-fill>
         <div>
-            <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+            <md-progress-circular md-mode="indeterminate"></md-progress-circular>   
         </div>
         <div style="padding-top:15px;">
             Connecting to device...
@@ -11,7 +11,7 @@
     </div>
     
     <!-- device content -->
-    <webview ng-show="!ctl.loading" id="deviceWv" src="" style="height:100%; width:100%;"></webview>
+    <webview id="deviceWv" src="" style="height:100%; width:100%;"></webview>
     
 </div>
 
