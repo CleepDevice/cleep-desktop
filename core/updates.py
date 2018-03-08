@@ -42,9 +42,9 @@ class Updates(CleepDesktopModule):
         'repo': 'etcher'
     }
 
-    INSTALL_ETCHER_COMMAND_LINUX = '%s/scripts/install-etcher.linux "%s" "%s" "%s"'
-    INSTALL_ETCHER_COMMAND_WINDOWS = '%s\\scripts\\install-etcher.windows.bat "%s" "%s" "%s"'
-    INSTALL_ETCHER_COMMAND_MAC = '%s/scripts/install-etcher.mac "%s" "%s" "%s"'
+    INSTALL_ETCHER_COMMAND_LINUX = '%s/tools/install-etcher.linux "%s" "%s" "%s"'
+    INSTALL_ETCHER_COMMAND_WINDOWS = '%s\\tools\\install-etcher.windows.bat "%s" "%s" "%s"'
+    INSTALL_ETCHER_COMMAND_MAC = '%s/tools/install-etcher.mac "%s" "%s" "%s"'
 
     STATUS_IDLE = 0
     STATUS_DOWNLOADING = 1
@@ -52,8 +52,8 @@ class Updates(CleepDesktopModule):
     STATUS_DONE = 3
     STATUS_ERROR = 4
 
-    #ETCHER_VERSION_FORCED = "v1.2.0"
-    ETCHER_VERSION_FORCED = None
+    ETCHER_VERSION_FORCED = "v1.2.0"
+    #ETCHER_VERSION_FORCED = None
 
     def __init__(self, app_path, config_path, cleep_version, etcher_version, update_callback, debug_enabled, crash_report):
         """
@@ -379,8 +379,7 @@ class Updates(CleepDesktopModule):
         c = Console()
         resp = c.command(command, 20.0)
         if resp['error'] or resp['killed']:
-            self.logger.error('Unable to install etcher-cli: stdout: %s' % (resp['stdout']))
-            self.logger.error('Unable to install etcher-cli: stderr: %s' % (resp['stderr']))
+            self.logger.error('Unable to install etcher-cli: stdout: %s' % resp)
             return False
 
         return True

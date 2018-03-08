@@ -49,7 +49,7 @@
                             <md-progress-linear ng-if="ctl.cleepdesktopStatus.downloadpercent===null" md-mode="indeterminate" class="md-accent"></md-progress-linear>
                         </div>
                         <div ng-if="ctl.cleepdesktopStatus.status===4" flex>
-                            <span>Last update attemps failed (</span>
+                            <span>Update failed (</span>
                             <span ng-if="ctl.cleepdesktopStatus.downloadstatus===3">internal error</span>
                             <span ng-if="ctl.cleepdesktopStatus.downloadstatus===4">invalid file size</span>
                             <span ng-if="ctl.cleepdesktopStatus.downloadstatus===5">downloaded file is corrupted</span>
@@ -71,11 +71,12 @@
                             <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.etcherStatus.downloadpercent}}"></md-progress-linear>
                         </div>
                         <div ng-if="ctl.etcherStatus.status===4" flex>
-                            <span>Last update attemps failed (</span>
-                            <span ng-if="ctl.etcherStatus.downloadstatus===6">network error</span>
+                            <span>Update failed (</span>
                             <span ng-if="ctl.etcherStatus.downloadstatus===3">internal error</span>
                             <span ng-if="ctl.etcherStatus.downloadstatus===4">invalid file size</span>
                             <span ng-if="ctl.etcherStatus.downloadstatus===5">downloaded file is corrupted</span>
+                            <span ng-if="ctl.etcherStatus.downloadstatus===6">network error</span>
+                            <span ng-if="ctl.etcherStatus.downloadstatus===7">internal error</span>
                             <span>)</span>
                         </div>
                     </md-list-item>

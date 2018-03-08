@@ -3,7 +3,7 @@ var Cleep = angular.module('Cleep')
 /**
  * Updates controller
  */
-var updatesController = function($rootScope, $scope, cleepService, toast, logger, appUpdater, $timeout)
+var updatesController = function($rootScope, $scope, cleepService, toast, logger, appUpdater, $timeout, cleepdesktopVersion)
 {
     var self = this;
 
@@ -37,31 +37,43 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
     //check for updates
     self.checkUpdates = function() {
         self.loading = true;
+        self.etcherUpdate = false;
+        self.cleepdesktopUpdate = false;
 
         //check etcher updates
         cleepService.sendCommand('checkupdates')
             .then(function(resp) {
-                if( resp.data.updateavailable===false )
-                {
-                    logger.info('No etcher update available');
-                    toast.info('No update available');
-                }
-                else
-                {
-                    toast.sucess('Etcher update available');
-                }
+                //save resp
+                self.etcherUpdate = resp.data.updateavailable;
                 self.lastcheck = resp.data.lastcheck;
 
                 //check CleepDesktop updates now
                 return appUpdater.checkForUpdates();
+            }, function(error) {
+                logger.error('Error checking etcher updates:' + error);
+                toast.error('Error checking updates');
             })
             .then(function(update) {
-                
+                logger.debug('app-updater result: ' + JSON.stringify(update));
+                if( update && update.versionInfo && update.versionInfo.version && update.versionInfo.version!==cleepdesktopVersion )
+                {
+                    self.cleepdesktopUpdate = true;
+                }
             }, function(error) {
-                logger.error('Error checking CleepDesktop updates: ' + error);
+                logger.error('Error checking cleepdesktop updates:' + error);
+                toast.error('Error checking updates');
             })
             .finally(function() {
                 self.loading = false;
+
+                if( self.etcherUpdate || self.cleepdesktopUpdate )
+                {
+                    toast.info('Update available. Update will start.');
+                }
+                else
+                {
+                    toast.info('No update available');
+                }
             });
     };
 
@@ -124,5 +136,6 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
     });
 
 };
-Cleep.controller('updatesController', ['$rootScope', '$scope', 'cleepService', 'toastService', 'logger', 'appUpdater', '$timeout', updatesController]);
+Cleep.controller('updatesController', ['$rootScope', '$scope', 'cleepService', 'toastService', 'logger', 'appUpdater', 
+                                        '$timeout', 'cleepdesktopVersion', updatesController]);
 

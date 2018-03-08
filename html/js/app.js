@@ -1,5 +1,6 @@
 const electron = require('electron');
 const {remote} = electron;
+const cleepdesktopVersion = remote.getGlobal('cleepdesktopVersion');
 const logger = remote.getGlobal('logger');
 const appUpdater = remote.getGlobal('appUpdater');
 
@@ -8,7 +9,8 @@ var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'u
 
 //inject electron values
 Cleep.value('logger', logger)
-    .value('appUpdater', appUpdater);
+    .value('appUpdater', appUpdater)
+    .value('cleepdesktopVersion', cleepdesktopVersion);
 
 /**
  * Timestamp to human readable string

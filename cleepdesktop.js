@@ -23,6 +23,7 @@ global.appUpdater = autoUpdater;
 
 //create default variables
 const app = electron.app
+global.cleepdesktopVersion = app.getVersion();
 app.setName('CleepDesktop')
 const BrowserWindow = electron.BrowserWindow
 const argv = process.argv.slice(1)
