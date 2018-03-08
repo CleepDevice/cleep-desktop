@@ -200,16 +200,16 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         if( !data )
             return;
 
-        if( data.etcherstatus>=3 || data.cleepstatus>=3 )
+        if( data.etcherstatus.status>=3 )
         {
             //update is terminated
             tasksPanelService.removeItem(self.taskUpdate);
             self.taskUpdate = null;
         }
-        else if( !self.taskUpdate && (data.etcherstatus>0 || data.cleepstatus>0) )
+        else if( !self.taskUpdate && data.etcherstatus.status>0 )
         {
             //update is started
-            self.taskUpdate = tasksPanelService.addItem('Updating software version...', self.jumpToUpdates, true, true);
+            self.taskUpdate = tasksPanelService.addItem('Updating software...', self.jumpToUpdates, true, true);
         }
     });
 
