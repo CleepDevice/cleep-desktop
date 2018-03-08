@@ -3,17 +3,29 @@
     
 import logging
 import time
-from core.libs.console import AdvancedConsole, Console
-from core.libs.wpasupplicantconf import WpaSupplicantConf
-import core.libs.converters as Converters
 import os
+try:
+    from core.libs.console import AdvancedConsole, Console
+except:
+    from console import AdvancedConsole, Console
+try:
+    from core.libs.wpasupplicantconf import WpaSupplicantConf
+except:
+    from wpasupplicantconf import WpaSupplicantConf
+try:
+    import core.libs.converters as Converters
+except:
+    import converters as Converters
+
 
 class Iwlist(AdvancedConsole):
     """
     Command /sbin/iwlist helper
     """
 
-    CACHE_DURATION = 5.0
+    CACHE_DURATION = 10.0
+    MAX_RETRY = 30
+    NO_SCAN_RESULTS = u'No scan results'
 
     def __init__(self):
         """
@@ -29,6 +41,7 @@ class Iwlist(AdvancedConsole):
         self.networks = {}
         self.error = False
         self.__last_scanned_interface = None
+        self.__cache = {}
 
     def __refresh(self, interface):
         """
@@ -36,26 +49,34 @@ class Iwlist(AdvancedConsole):
 
         Args:
             interface (string): interface to scan
+
+        Return:
+            bool: True if scan ok, False if scan need to be done again (no scan result), None if no refresh performed
         """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             self.logger.debug('Don\'t refresh')
-            return
+            return None
 
         self.__last_scanned_interface = interface
-        results = self.find(self._command % interface, r'Cell \d+|ESSID:\"(.*?)\"|IE:\s*(.*)|Encryption key:(.*)|Signal level=(\d{1,3})/100|Signal level=(-\d+) dBm', timeout=15.0)
+        results = self.find(self._command % interface, r'Cell \d+|ESSID:\"(.*?)\"|IE:\s*(.*)|Encryption key:(.*)|Signal level=(\d{1,3})/100|Signal level=(-\d+) dBm|(No scan results)', timeout=15.0)
 
         #handle invalid interface for wifi scanning
         if len(results)==0 and self.get_last_return_code()!=0:
             self.networks = {}
             self.error = True
-            return
+            return None
 
         current_entry = None
         entries = {}
         for group, groups in results:
             #filter None values
             groups = list(filter(None, groups))
+
+            #handle "no scan results"
+            if group==self.NO_SCAN_RESULTS:
+                #need to retry
+                return False
 
             if group.startswith(u'Cell'):
                 current_entry = {
@@ -116,6 +137,8 @@ class Iwlist(AdvancedConsole):
         #update timestamp
         self.timestamp = time.time()
 
+        return True
+
     def is_installed(self):
         """
         Return True if command is installed
@@ -151,7 +174,33 @@ class Iwlist(AdvancedConsole):
                 }
             bool: True if interface is not able to scan wifi
         """
-        self.__refresh(interface)
+        for i in range(self.MAX_RETRY):
+            if self.__refresh(interface) is True or None:
+                #scan successful, stop statement
+                break
+            else:
+                self.logger.debug('"No scan results" returned')
+                time.sleep(1)
 
-        return self.networks
+        #sometimes iwlist returns no network because it was run without root privileges
+        #in that case return cached results
+        if len(self.networks.keys())==0 and len(self.__cache.keys())>0:
+            #no network scanned, return cache content
+            return self.__cache
 
+        else:
+            #update cache
+            self.__cache = self.networks
+
+            #and return found networks
+            return self.networks
+
+if __name__ == '__main__':
+    import pprint
+    pp = pprint.PrettyPrinter(indent=2)
+
+    logging.basicConfig(level=logging.DEBUG)
+    
+    i = Iwlist()
+    networks = i.get_networks('wlan0')
+    pp.pprint(networks)
