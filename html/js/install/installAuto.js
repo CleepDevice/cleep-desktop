@@ -213,6 +213,9 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
             wifiConfig.encryption = self.selectedWifiNetwork.encryption;
             wifiConfig.password = self.selectedWifiNetwork.password;
         }
+        logger.debug('url=' + self.selectedIso.url);
+        logger.debug('drive=' + self.selectedDrive);
+        logger.debug('wifi=' + JSON.stringify(wifiConfig));
         
         confirm.open('Confirm installation?', 'Installation will erase all drive content. This operation cannot be reversed!<br/>Please note that admin permissions may be requested after file download.', 'Yes, install', 'No')
             .then(function() {
@@ -221,9 +224,9 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                     url: self.selectedIso.url,
                     drive: self.selectedDrive,
                     wifi: {
-                        network: self.selectedWifiNetwork.network,
-                        password: self.wifiPassword,
-                        encryption: self.selectedWifiNetwork.encryption
+                        network: wifiConfig.network,
+                        password: wifiConfig.password,
+                        encryption: wifiConfig.encryption
                     }
                 };
                 logger.debug('Flash data:', data);

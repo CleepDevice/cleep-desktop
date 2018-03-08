@@ -138,6 +138,7 @@ class FlashDrive(CleepDesktopModule):
 
                     #file downloaded successfully, launch flash+validation
                     self.__flash_drive()
+                    #wait until end of flash (or if user cancel it)
                     while self.console is not None:
                         if self.cancel:
                             break
@@ -149,6 +150,7 @@ class FlashDrive(CleepDesktopModule):
                         self.status = self.STATUS_ERROR_FLASH
                     elif self.cancel:
                         #process canceled
+                        self.console.kill()
                         self.status = self.STATUS_CANCELED
                     else:
                         #installation succeed

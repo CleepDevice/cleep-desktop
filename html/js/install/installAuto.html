@@ -99,17 +99,17 @@
                     <div layout="row" layout-align="space-between center">
                         <div>
                             <md-icon md-font-set="material-icons" class="bullet"></md-icon>
-                            If your device will connect using wifi, configure it here (your password will be encrypted):
+                            If your device will connect through wifi, configure it here (your password will be encrypted):
                         </div>
                         <div>
-                            <!-- no wifi adapter: manual input -->
-                            <md-input-container ng-if="ctl.noWifiAdapter">
+                            <!-- without wifi adapter -->
+                            <md-input-container ng-if="ctl.noWifiAdapter" class="no-error-spacer">
                                 <label>Wifi network name</label>
                                 <input type="text" ng-model="ctl.wifiNetworkName" ng-disabled="ctl.flashing"/>
                             </md-input-container>
                             <md-input-container ng-if="ctl.noWifiAdapter">
-                                <label>Wifi network encryption</label>
-                                <md-select ng-model="ctl.wifiNetworkEncryption" placeholder="Wifi network encryption" class="md-no-underline" ng-disabled="ctl.flashing">
+                                <label>Encryption</label>
+                                <md-select ng-model="ctl.wifiNetworkEncryption" placeholder="Encryption" class="md-no-underline" ng-disabled="ctl.flashing">
                                     <md-option value="wpa2">WPA2</md-option>
                                     <md-option value="wpa">WPA</md-option>
                                     <md-option value="wep">WEP</md-option>
@@ -117,7 +117,7 @@
                                 </md-select>
                             </md-input-container>
 
-                            <!-- wifi adapter: guided input -->
+                            <!-- with wifi adapter -->
                             <md-input-container ng-if="!ctl.noWifiAdapter">
                                 <label>Wifi network</label>
                                 <md-select ng-model="ctl.selectedWifiNetwork" md-on-open="ctl.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline" ng-disabled="ctl.flashing">
