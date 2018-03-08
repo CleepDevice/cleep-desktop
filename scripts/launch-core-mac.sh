@@ -1,1 +1,1 @@
-python3 cleepdesktopcore.py 5610 ~/Library/Application\ Support/CleepDesktop/ Settings debug
+python3 cleepdesktopcore.py 5610 ~/Library/Application\ Support/CleepDesktop/ Settings debug true

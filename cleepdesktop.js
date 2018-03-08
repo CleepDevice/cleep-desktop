@@ -1,6 +1,3 @@
-//cleepdesktop version (do not touch it, update cleep/__init__.py
-const VERSION = '0.0.0';
-
 //default config
 const DEFAULT_RPCPORT = 5610;
 const DEFAULT_DEBUG = false;
@@ -45,13 +42,27 @@ let coreProcess = null;
 let coreDisabled = false;
 
 //logger configuration
-logger.transports.file.level = 'warn';
+logger.transports.file.level = 'info';
 logger.transports.file.maxSize = 5 * 1024 * 1024;
 logger.transports.console.level = 'info';
 if( isDev )
 {
     //enable console during development (can be overwritten by args)
     logger.transports.console.level = 'debug';
+    logger.transports.file.level = 'debug';
+    logger.info('Dev mode enabled');
+}
+else if( require('fs').existsSync(settings.file()) && settings.has('cleep.debug') && settings.get('cleep.debug') )
+{
+    //user enables debug mode
+    logger.transports.console.level = 'debug';
+    logger.transports.file.level = 'debug';
+    logger.info('Debug mode enabled');
+}
+else
+{
+    //release mode, disable console log
+    logger.transports.console.level = false;
 }
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -115,14 +126,7 @@ function parseArgs()
 function createConfig()
 {
     //cleep
-    if( !settings.has('cleep.version') )
-    {
-        settings.set('cleep.version', VERSION);
-    }
-    else if( settings.get('cleep.version')!=VERSION )
-    {
-        settings.set('cleep.version', VERSION);
-    }
+    settings.set('cleep.version', app.getVersion());
     if( !settings.has('cleep.isoraspbian') )
     {
         settings.set('cleep.isoraspbian', DEFAULT_ISORASPBIAN);
@@ -348,17 +352,17 @@ function launchCore(rpcport)
         //launch release
         logger.debug('Launch release mode');
         let commandline = path.join(__dirname, 'cleepdesktopcore/cleepdesktopcore');
-        logger.debug('Core commandline: '+commandline+' ' + rpcport + ' ' + configPath + ' ' + configFilename + ' release');
-        coreProcess = require('child_process').spawn(commandline, [rpcport, configPath, configFilename, 'release']);
+        let debug = settings.has('cleep.debug') && settings.get('cleep.debug') ? 'debug' : 'release';
+        logger.debug('Core commandline: '+commandline+' ' + rpcport + ' ' + configPath + ' ' + configFilename + ' ' + debug);
+        coreProcess = require('child_process').spawn(commandline, [rpcport, configPath, configFilename, 'release', 'false']);
     }
     else
     {
         //launch dev
         logger.debug('Launch development mode');
         logger.debug('Core commandline: python3 cleepdesktopcore.py ' + rpcport + ' ' + configPath + ' ' + configFilename + ' debug');
-		logger.debug('platform: ' + process.platform);
 		var python_bin = 'python3'
-		var python_args = ['cleepdesktopcore.py', rpcport, configPath, configFilename, 'debug']
+		var python_args = ['cleepdesktopcore.py', rpcport, configPath, configFilename, 'debug', 'true']
 		if( process.platform=='win32' )
 		{
 			python_bin = 'py';
@@ -372,6 +376,12 @@ function launchCore(rpcport)
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', function() {
+    logger.info('===== CleepDesktop started =====');
+    logger.info('Platform: ' + process.platform);
+    var display = electron.screen.getPrimaryDisplay();
+    logger.info('Display: ' + display.size.width + 'x' + display.size.height);
+    logger.info('Version: ' + app.getVersion());
+
     //parse command line arguments
     parseArgs();
 

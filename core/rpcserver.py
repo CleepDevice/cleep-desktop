@@ -196,7 +196,7 @@ def updates_update(updates):
     current_updates = updates
     last_updates_update = time.time()
 
-def get_app(app_path, config_path, config_filename, debug_enabled):
+def get_app(app_path, config_path, config_filename, debug, is_dev):
     """
     Return web server instance
 
@@ -204,21 +204,38 @@ def get_app(app_path, config_path, config_filename, debug_enabled):
         app_path (string): absolute application path
         config_path (string): configuration path
         config_filename (string): configuration filename
-        debug_enabled (bool): True if debug enabled
-
+        debug (bool): True if debug enabled
+        is_dev (bool): True if launch in dev mode
     Returns:
         object: bottle instance
     """
     global logger, app, config, config_file, logs_file, flashdrive, devices, updates, crash_report
 
     #logging
-    debug = False
-    logs_file = os.path.join(config_path, 'core.log')
-    if debug_enabled:
-        logging.basicConfig(level=logging.WARN, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
+    logging_formatter = logging.Formatter('%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
+    root_logger = logging.getLogger()
+    log_file = os.path.join(config_path, 'cleepdesktopcore.log')
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(logging_formatter)
+    if is_dev:
+        #dev mode: log to file and console with DEBUG level
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(logging_formatter)
+        root_logger.addHandler(file_handler)
+        root_logger.addHandler(console_handler)
+        root_logger.setLevel(logging.DEBUG)
+    elif debug:
+        #debug mode: log to file with DEBUG level
+        root_logger.addHandler(file_handler)
+        root_logger.setLevel(logging.DEBUG)
     else:
-        logging.basicConfig(level=logging.WARN, filename=logs_file, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
+        #other mode: log to file with INFO level
+        root_logger.addHandler(file_handler)
+        root_logger.setLevel(logging.INFO)
+
+    #set rpclogger
     logger = logging.getLogger('RpcServer')
+    logger.info('===== CleepDesktopCore started =====')
 
     #load config
     config_file = os.path.join(config_path, config_filename)
@@ -226,8 +243,9 @@ def get_app(app_path, config_path, config_filename, debug_enabled):
     logger.debug('Config: %s' % config)
 
     #handle debug
-    #force debug in dev mode
+    debug = False
     if config['cleep']['isdev']:
+        #force debug in dev mode (update config file to sync ui and core)
         config['cleep']['debug'] = True
     #update logger level
     if config['cleep']['debug']:
