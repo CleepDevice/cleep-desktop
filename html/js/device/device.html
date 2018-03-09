@@ -1,17 +1,30 @@
 <div layout="column" layout-fill>
 
     <!-- loader -->
-    <div ng-if="ctl.loading" layout="column" layout-sm="column" layout-align="center center" layout-fill>
-        <div>
-            <md-progress-circular md-mode="indeterminate"></md-progress-circular>   
-        </div>
-        <div style="padding-top:15px;">
-            Connecting to device...
-        </div>
+    <div ng-if="ctl.loading">
+        <md-toolbar flex="initial">
+            <div class="md-toolbar-tools">
+                <h2>
+                    Connecting to device...
+                </h2>
+                <span flex></span>
+            </div>
+        </md-toolbar>
+        <md-progress-linear md-mode="indeterminate"></md-progress-linear>
+
+        <md-content layout-padding>
+            <div layout="column" layout-sm="column" layout-align="center center" layout-fill>
+                <div>
+                    <md-progress-circular md-mode="indeterminate"></md-progress-circular>   
+                </div>
+                <!--<div style="padding-top:15px;">
+                    Connecting to device...
+                </div>-->
+            </div>
+        </md-content>
     </div>
-    
+
     <!-- device content -->
     <webview id="deviceWv" src="" style="height:100%; width:100%;"></webview>
-    
-</div>
 
+</div>
