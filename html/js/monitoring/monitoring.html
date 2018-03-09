@@ -1,0 +1,62 @@
+<div layout="column" layout-fill>
+
+    <!-- menu -->
+    <md-toolbar flex="initial">
+        <div class="md-toolbar-tools">
+            <h2>
+                <md-icon md-font-set="material-icons">message</md-icon>
+                Devices monitoring
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+    <md-progress-linear md-mode="determinate"></md-progress-linear>
+
+    <!-- page content -->
+    <md-content layout-padding>
+
+        <!-- infos -->
+        <md-card>
+            <md-card-title>
+                <md-card-title-text>
+                    <span class="md-headline">
+                        <md-icon md-font-set="material-icons">info_outline</md-icon>
+                        Info
+                    </span>
+                </md-card-title-text>
+            </md-card-title>
+            <md-card-content>
+                Display all messages received from all devices connected to your network since CleepDesktop is launched.
+                <br/>
+                It means when you quit application no message will be kept on a history.
+            </md-card-content>
+        </md-card>
+
+        <!-- messages -->
+        <md-card>
+            <md-card-title>
+                <md-card-title-text>
+                    <span class="md-headline">
+                        <md-icon md-font-set="material-icons">message</md-icon>
+                        Messages
+                    </span>
+                </md-card-title-text>
+            </md-card-title>
+            <md-card-content>
+                <md-list>
+                    <md-list-item ng-repeat="message in ctl.messages" class="md-2-line" ng-click="null">
+                        <md-icon md-font-set="material-icons">announcement</md-icon>
+                        <div class="md-list-item-text">
+                            <h3>{{message.peer_hostname}}: {{message.event}}</h3>
+                            <p ng-if="message.params" ng-bind="message.params"></p>
+                        </div>
+                        <md-button class="md-secondary" ng-click="null">{{message.timestamp | hrDatetime}}</md-button>
+                    </md-list-item>
+                </md-list>
+            </md-card-content>
+        </md-card>
+
+    </md-content>
+
+</div>
+

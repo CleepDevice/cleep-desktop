@@ -215,6 +215,13 @@ function createMenu()
                 click: () => {
                     mainWindow.webContents.send('openPage', 'installManually');
                 }
+            }, {
+                type: 'separator'
+            }, {
+                label: 'Monitoring',
+                click: () => {
+                    mainWindow.webContents.send('openPage', 'monitoring');
+                }
             }
         ]
     },{

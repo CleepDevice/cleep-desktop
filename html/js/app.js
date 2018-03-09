@@ -134,6 +134,12 @@ Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $
             controller: 'deviceController',
             controllerAs: 'ctl',
             templateUrl: 'js/device/device.html'
+        })
+        .state('monitoring', {
+            url: '/monitoring',
+            controller: 'monitoringController',
+            controllerAs: 'ctl',
+            templateUrl: 'js/monitoring/monitoring.html'
         });
 
     $urlRouterProvider.otherwise('/');

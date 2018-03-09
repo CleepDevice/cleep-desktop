@@ -4,6 +4,7 @@
 import logging
 import os
 import json
+import time
 from core.version import version as VERSION
 from core.utils import CleepDesktopModule
 from core.libs.externalbus import PyreBus
@@ -16,15 +17,22 @@ class Devices(CleepDesktopModule):
     CLEEPDESKTOP_HOSTNAME = 'CLEEPDESKTOP'
     CLEEPDESKTOP_PORT = '0'
 
-    def __init__(self, update_callback, debug_enabled, crash_report):
+    def __init__(self, update_callback, message_callback, debug_enabled, crash_report):
         """
         Constructor
+
+        Args:
+            update_callback (function): function called when device connects/disconnects
+            message_callback (function): function called when message is received on bus
+            debug_enabled (bool): True to enable module debug
+            crash_report (bool): True if crash report is enabled
         """
         CleepDesktopModule.__init__(self, debug_enabled, crash_report)
 
         #members
         self.devices = {}
         self.update_callback = update_callback
+        self.message_callback = message_callback
         self.external_bus = PyreBus(
             self.on_message_received, 
             self.on_peer_connected, 
@@ -55,6 +63,9 @@ class Devices(CleepDesktopModule):
         self.external_bus.run_once()
 
     def _custom_stop(self):
+        """
+        Custom module stop. Close external bus
+        """
         if self.external_bus:
             self.external_bus.stop()
 
@@ -108,7 +119,12 @@ class Devices(CleepDesktopModule):
             message (??): received message
         """
         self.logger.debug('Received message: %s' % message)
-        #TODO
+
+        #convert message to dict and inject current timestamp
+        msg = message.to_dict()
+        msg['timestamp'] = int(time.time())
+
+        self.message_callback(msg)
 
     def on_peer_connected(self, peer, infos):
         """

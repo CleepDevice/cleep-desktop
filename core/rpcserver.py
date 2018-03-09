@@ -65,15 +65,15 @@ flashdrive = None
 devices = None
 crash_report = None
 
+#websocket variables
 current_devices = None
 last_devices_update = 0
-
 current_updates = None
 last_updates_update = 0
-
 current_flash = None
 last_flash_update = 0
-
+current_message = None
+last_message_update = 0
 
 
 class CleepWebSocketMessage():
@@ -170,6 +170,15 @@ def devices_update(devices):
 
     current_devices = devices
     last_devices_update = time.time()
+
+def message_update(message):
+    """
+    This function is triggered by Devices module when message on bus is received
+    """
+    global current_message, last_message_update
+
+    current_message = message
+    last_message_update = time.time()
 
 def flash_update(status):
     """
@@ -276,7 +285,7 @@ def get_app(app_path, config_path, config_filename, debug, is_dev):
     flashdrive.start()
 
     #launch devices process
-    devices = Devices(devices_update, debug, crash_report)
+    devices = Devices(devices_update, message_update, debug, crash_report)
     devices.start()
 
     #check etcher dir
@@ -508,13 +517,13 @@ def handle_cleepwebsocket():
     local_last_devices_update = 0
     local_last_updates_update = 0
     local_last_flash_update = 0
+    local_last_message_update = 0
     while True:
 
         try:
             if last_devices_update>=local_last_devices_update:
-                #devices update
-                logger.debug('Send device update')
-                #send new devices list
+                #send devices list
+                #logger.debug('Send device update: %s' % current_devices)
                 send = CleepWebSocketMessage()
                 send.module = 'devices'
                 send.data = current_devices
@@ -524,9 +533,8 @@ def handle_cleepwebsocket():
                 local_last_devices_update = time.time()
 
             if last_updates_update>=local_last_updates_update:
-                #updates update
-                #logger.debug('Send updates update')
                 #send new devices list
+                #logger.debug('Send updates update: %s' % current_updates)
                 send = CleepWebSocketMessage()
                 send.module = 'updates'
                 send.data = current_updates
@@ -536,9 +544,8 @@ def handle_cleepwebsocket():
                 local_last_updates_update = time.time()
 
             if last_flash_update>=local_last_flash_update:
-                #flash update
-                #logger.debug('Send flash update')
                 #send new flash list
+                #logger.debug('Send flash update: %s' % current_flash)
                 send = CleepWebSocketMessage()
                 send.module = 'flash'
                 send.data = current_flash
@@ -546,6 +553,17 @@ def handle_cleepwebsocket():
             
                 #update local update
                 local_last_flash_update = time.time()
+
+            if last_message_update>=local_last_message_update:
+                #send new message
+                #logger.debug('Send message update: %s' % current_message)
+                send = CleepWebSocketMessage()
+                send.module = 'message'
+                send.data = current_message
+                wsock.send(send.to_json())
+            
+                #update local update
+                local_last_message_update = time.time()
 
         except WebSocketError:
             #logger.exception('WebSocket error:')

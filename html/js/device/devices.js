@@ -81,14 +81,6 @@ var devicesController = function($rootScope, $scope, $timeout, cleepService, $st
         }, 0);
     };
 
-    //TODO
-    self.openDevice = function()
-    {
-        //leftPanel.attr('src', self.src);
-
-        cleepService.send('coucou', {});
-    };
-
     //watch for devices event to refresh devices list
     $rootScope.$on('devices', function(event, data)
     {
