@@ -7,6 +7,10 @@ const appUpdater = remote.getGlobal('appUpdater');
 //declare angular module
 var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router', 'ngSanitize', 'ngWebSocket']);
 
+//globals
+//keep track of all devices messages while CleepDesktop is running
+Cleep.value('deviceMessages', []);
+
 //inject electron values
 Cleep.value('logger', logger)
     .value('appUpdater', appUpdater)
@@ -163,7 +167,7 @@ Cleep.controller('emptyController', ['$rootScope', '$scope', '$state', emptyCont
 /**
  * Cleep controller
  */
-var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService, modalService)
+var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService, modalService, deviceMessages)
 {
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
@@ -226,9 +230,19 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         }
     });
 
+    //watch for device messages event to append them in global value deviceMessages
+    $rootScope.$on('message', function(event, data) {
+        if( !data )
+            return;
+
+        //append at beginning new message
+        logger.debug('New message:', data);
+        deviceMessages.unshift(data);
+    });
+
     //Init websocket
     cleepService.connectWebSocket();
 
 };
-Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', 'modalService', cleepController]);
+Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 'deviceMessages', cleepController]);
 
