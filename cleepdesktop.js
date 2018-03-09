@@ -300,8 +300,9 @@ function createWindow ()
         {
             let splashScreenBounds = splashScreen.getBounds();
             setTimeout( function() {
+                logger.info('--> close spashscreen');
                 splashScreen.close();
-            }, 1000 );
+            }, 1500 );
         }
 
         setTimeout( function() {
