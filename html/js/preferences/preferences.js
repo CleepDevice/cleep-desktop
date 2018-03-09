@@ -3,7 +3,7 @@ var Cleep = angular.module('Cleep');
 /**
  * Preferences controller
  */
-var preferencesController = function($rootScope, $scope, cleepService, debounce)
+var preferencesController = function($rootScope, $scope, cleepService, debounce, closeModal)
 {
     var self = this;
 
@@ -14,6 +14,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
     self.manualproxy = false;
     self.logs = '';
     self.cacheds = [];
+    self.closeModal = closeModal;
 
     //automatic settings saving when config value changed
     $scope.$watch(function() {
@@ -118,5 +119,5 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce)
     //init controller
     self.getConfig();
 };
-Cleep.controller('preferencesController', ['$rootScope', '$scope', 'cleepService', 'debounceService', preferencesController]);
+Cleep.controller('preferencesController', ['$rootScope', '$scope', 'cleepService', 'debounceService', 'closeModal', preferencesController]);
 

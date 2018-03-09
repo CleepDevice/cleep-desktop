@@ -157,29 +157,34 @@ Cleep.controller('emptyController', ['$rootScope', '$scope', '$state', emptyCont
 /**
  * Cleep controller
  */
-var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService)
+var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService, modalService)
 {
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
     self.taskFlash = null;
     self.taskUpdate = null;
 
-    //handle 'openPage' menu event
+    //Open page in content area (right side) handling 'openPage' event
     self.ipcRenderer.on('openPage', function(event, page) {
         $state.go(page);
     });
 
-    //jump to updates page
+    //Open modal handling 'openModal' event
+    self.ipcRenderer.on('openModal', function(event, controllerName, templateUrl) {
+        modalService.open(controllerName, templateUrl);
+    });
+
+    //Jump to updates page
     self.jumpToUpdates = function() {
         $state.go('updates');
     };
 
-    //jump to auto install page
-    self.jumpToAutoInstall = function() {
+    //Jump to auto install page
+    self.jumpToInstallAuto = function() {
         $state.go('installAuto');
     };
 
-    //add flash task panel info
+    //Add flash task panel info
     $rootScope.$on('flash', function(event, data) {
         if( !data )
             return;
@@ -193,11 +198,11 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         else if( data.status>0 && !self.taskFlash )
         {
             //flash is started
-            self.taskFlash = tasksPanelService.addItem('Installing cleep on drive...', self.jumpToAutoInstall, true, true);
+            self.taskFlash = tasksPanelService.addItem('Installing cleep on drive...', self.jumpToInstallAuto, true, true);
         }
     });
 
-    //add update task panel info
+    //Add update task panel info
     $rootScope.$on('updates', function(event, data) {
         if( !data )
             return;
@@ -215,9 +220,9 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         }
     });
 
-    //init websocket
+    //Init websocket
     cleepService.connectWebSocket();
 
 };
-Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', cleepController]);
+Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', 'modalService', cleepController]);
 
