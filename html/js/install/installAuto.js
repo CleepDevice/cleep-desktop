@@ -56,7 +56,6 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     {
         return cleepService.sendCommand('getwifinetworks')
             .then(function(resp) {
-                console.log(resp);
                 self.wifiNetworks = resp.data.networks;
                 self.noWifiNetwork = (resp.data.networks.length===0 ? true : false);
                 self.noWifiAdapter = !resp.data.adapter;

@@ -10,7 +10,7 @@
 
 var settings = require('electron-settings');
 
-var cleepService = function($http, $q, $rootScope, toast, $websocket) {
+var cleepService = function($http, $q, $rootScope, toast, $websocket, logger) {
 
     var self = this;
 
@@ -30,10 +30,10 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket) {
             self.__ws = $websocket('ws://localhost:'+self.port+'/cleepws', null, {reconnectIfNotNormalClose: true});
             self.__ws.onMessage(self.__receive);
             self.__ws.onClose(function() {
-                console.log('Websocket closed');
+                logger.debug('Websocket closed');
             });
             self.__ws.onOpen(function() {
-                console.log('Websocket opened');
+                logger.debug('Websocket opened');
             });
         }
     };
@@ -120,5 +120,5 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket) {
 };
 
 var Cleep = angular.module('Cleep');
-Cleep.service('cleepService', ['$http', '$q', '$rootScope', 'toastService', '$websocket', cleepService]);
+Cleep.service('cleepService', ['$http', '$q', '$rootScope', 'toastService', '$websocket', 'logger', cleepService]);
 
