@@ -41,6 +41,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     };
     self.wifiNetworkName = '';
     self.wifiNetworkEncryption = 'wpa2';
+    self.disableCancel = true;
 
     //return current flash status
     self.getStatus = function(init)
@@ -301,6 +302,19 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         {
             self.flashing = true;
         }
+
+        //disable cancel button when really flashing sdcard
+        //no way to cancel process because launched with root privileges while
+        //CleepDesktop is running only with user ones
+        if( self.status.status==1 || self.status.status==2 )
+        {
+            self.disableCancel = false;
+        }
+        else
+        {
+            self.disableCancel = true;
+        }
+
     });
 
     //init controller

@@ -810,6 +810,10 @@ class FlashDrive(CleepDesktopModule):
         """
         Flash process ended callback
         """
+        if self.console is None:
+            #process surely canceled
+            return
+
         #get console return code
         return_code = self.console.get_return_code()
         self.logger.info('Flash operation terminated with return code %s' % return_code)

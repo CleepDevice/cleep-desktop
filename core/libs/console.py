@@ -122,6 +122,7 @@ class EndlessConsole(Thread):
         """
         Stop command line execution (kill it)
         """
+        self.logger.debug(u'Stop process requested')
         self.return_code = self.ERROR_STOPPED
         self.running = False
 
@@ -129,6 +130,7 @@ class EndlessConsole(Thread):
         """
         Stop command line execution
         """
+        self.logger.debug(u'Kill process requested')
         self.stop()
 
     def run(self):
@@ -248,22 +250,6 @@ class AdminEndlessConsole(EndlessConsole):
         if not os.path.exists(self.cmdlogger_path):
             raise Exception('Invalid cmdlogger path (%s). Binary file does not exist' % cmdlogger_path)
                 
-    #def is_admin():
-    #    """
-    #    Check running with admin privilege or not
-    #    """
-    #    try:
-    #        if platform.system()=='Windows':
-    #            import ctypes
-    #            # WARNING: requires Windows XP SP2 or higher!
-    #            return ctypes.windll.shell32.IsUserAnAdmin()
-    #        else:
-    #            #TODO for Linux and Darwin
-    #            return False
-    #    except:
-    #        self.logger.exception('Admin check failed, assuming not admin:')
-    #        return False
-    
     def __quit_properly(self, return_code):
         """
         Quit process properly specifying return_code
@@ -360,12 +346,13 @@ class AdminEndlessConsole(EndlessConsole):
         
         #wait for cmdlogger connection
         comm_server.listen(1)
-        while True:
+        while self.running:
             try:
                 self.logger.debug('Accepting...')
                 (cmdlogger, (ip, port)) = comm_server.accept()
                 #cmdlogger connected, stop statement
                 break
+
             except socket.timeout:
                 self.logger.debug('poll')
                 if platform.system()=='Windows':
@@ -373,19 +360,27 @@ class AdminEndlessConsole(EndlessConsole):
                     #http://docs.activestate.com/activepython/3.4/pywin32/win32event__WaitForSingleObject_meth.html
                     wfso = win32event.WaitForSingleObject(proc_handle, 100.0)
                     self.logger.debug('waitforsingleobj=%s' % wfso)
+
                 else:
                     if proc_info.poll() is not None:
                         #process is terminated with surely execution failure or short time execution
                         self.logger.warn('No cmdlogger connected. Maybe command execution failed or was too quick')
                         self.__quit_properly(self.ERROR_INTERNAL)
                         return
+
             except:
                 self.logger.exception('Exception during socket accept:')
                 self.__quit_properly(self.ERROR_INTERNAL)
                 return
+        
+        #debug
+        if self.running:
+            self.logger.debug(u'Cmdlogger connected')
+        else:
+            self.logger.debug(u'Process canceled during cmdlogger sync')
 
         #look for cmdlogger messages
-        while True:
+        while self.running:
             try:
                 message = cmdlogger.recv(4096)
                 self.logger.debug(u'Message received: %s' % message)
@@ -404,13 +399,23 @@ class AdminEndlessConsole(EndlessConsole):
                     else:
                         #stderr
                         self.callback(None, message.replace(u'STDERR:', u''))
+
             except socket.error:
                 pass
+
+        #debug
+        if self.running:
+            self.logger.debug(u'Command terminated')
+        else:
+            self.logger.debug(u'Process canceled during command execution')
                 
         time.sleep(1.0)
                 
         #get process return code
-        if platform.system()=='Windows':
+        if self.return_code == self.ERROR_STOPPED:
+            #nothing to do, just avoid to update return code
+            self.logger.debug(u'Process canceled')
+        elif platform.system()=='Windows':
             self.return_code = win32process.GetExitCodeProcess(proc_handle)
         else:
             self.return_code = proc_info.returncode
@@ -421,8 +426,13 @@ class AdminEndlessConsole(EndlessConsole):
         
         #make sure process is killed
         try:
-            self.logger.debug('Kill process with pid %d' % pid)
-            os.kill(pid, signal.SIGKILL)
+            if sys.platform == 'win32':
+                cmd = u'taskkill /PID %s /F > nul 2>&1' % pid
+            else:
+                cmd = u'/usr/bin/pkill -9 -P %s 2> /dev/null' % pid
+                
+            self.logger.debug(u'Kill command: %s' % cmd)
+            subprocess.Popen(cmd, shell=True)
         except:
             pass
 
