@@ -42,15 +42,15 @@
                         </span>
                     </md-card-title-text>
                 </md-card-title>
-                <md-card-content>
 
+                <md-card-content>
                     <!-- iso -->
-                    <div layout="row" layout-align="space-between center">
+                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
                         <div>
-                            <md-icon md-font-set="material-icons" class="bullet"></md-icon>
-                            Select Cleep version you want to install on your SD card:
+                            <md-icon md-font-set="material-icons">chevron_right</md-icon>
+                            <span>Select Cleep version you want to install on your SD card</span>
                         </div>
-                        <div>
+                        <div layout="row">
                             <md-input-container>
                                 <label>Version</label>
                                 <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" ng-disabled="ctl.flashing" required ng-model-options="{trackBy: '$value.id'}"> 
@@ -75,14 +75,13 @@
                             </md-input-container>
                         </div>
                     </div>
-
                     <!-- drive -->
-                    <div layout="row" layout-align="space-between center">
+                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
                         <div>
-                            <md-icon md-font-set="material-icons" class="bullet"></md-icon>
-                            Plug your SD card or your USB card reader on your computer and select it from drives list:
+                            <md-icon md-font-set="material-icons">chevron_right</md-icon>
+                            <span>Plug your SD card or your USB card reader on your computer and select it from drives list</span>
                         </div>
-                        <div>
+                        <div layout="row">
                             <md-input-container>
                                 <label>Drive</label>
                                 <md-select ng-model="ctl.selectedDrive" md-on-open="ctl.refreshDrives()" placeholder="Drive" class="md-no-underline" ng-disabled="ctl.flashing" required>
@@ -94,14 +93,13 @@
                             </md-input-container>
                         </div>
                     </div>
-
                     <!-- wifi network -->
-                    <div layout="row" layout-align="space-between center">
+                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
                         <div>
-                            <md-icon md-font-set="material-icons" class="bullet"></md-icon>
-                            If your device will connect through wifi, configure it here (your password will be encrypted):
+                            <md-icon md-font-set="material-icons">chevron_right</md-icon>
+                            <span>If your device will connect through wifi, configure it here (your password will be encrypted)</span>
                         </div>
-                        <div>
+                        <div layout="row">
                             <!-- without wifi adapter -->
                             <md-input-container ng-if="ctl.noWifiAdapter" class="no-error-spacer">
                                 <label>Wifi network name</label>
@@ -135,14 +133,13 @@
                             </md-input-container>
                         </div>
                     </div>
-
-                    <!-- button -->
-                    <div layout="row" layout-align="space-between center">
+                    <!-- drive -->
+                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
                         <div>
-                            <md-icon md-font-set="material-icons" class="bullet"></md-icon>
-                            Click on button to install Cleep and wait end of process:
+                            <md-icon md-font-set="material-icons">chevron_right</md-icon>
+                            <span>Click on button to install Cleep and wait end of process</span>
                         </div>
-                        <div>
+                        <div layout="row">
                             <md-button ng-click="ctl.startFlash()" ng-disabled="ctl.flashing" class="md-raised md-accent">Install on selected drive</md-button>
                         </div>
                     </div>
