@@ -4,7 +4,7 @@
     <md-toolbar flex="initial">
         <div class="md-toolbar-tools">
             <h2>
-                <md-icon md-font-set="material-icons">update</md-icon>
+                <md-icon md-svg-icon="update"></md-icon>
                 Updates
             </h2>
             <span flex></span>
@@ -21,7 +21,7 @@
             <md-card-title>
                 <md-card-title-text>
                     <span class="md-headline">
-                        <md-icon md-font-set="material-icons">info_outline</md-icon>
+                        <md-icon md-svg-icon="information-outline"></md-icon>
                         Installed versions
                     </span>
                 </md-card-title-text>
@@ -30,9 +30,8 @@
                 <md-list>
                     <md-list-item layout-padding>
                         <p>Last check for updates made on {{ctl.lastcheck | hrDatetime}}</p>
-                        <md-icon class="md-secondary" ng-click="ctl.checkUpdates()" md-font-set="material-icons">
+                        <md-icon class="md-secondary" ng-click="ctl.checkUpdates()" md-svg-icon="refresh">
                             <md-tooltip md-direction="left">Check for updates</md-tooltip>
-                            refresh
                         </md-icon>
                     </md-list-item>
                     <md-divider></md-divider>

@@ -4,7 +4,7 @@
     <md-toolbar flex="initial">
         <div class="md-toolbar-tools">
             <h2>
-                <md-icon md-font-set="material-icons">message</md-icon>
+                <md-icon md-svg-icon="message-text-outline"></md-icon>
                 Devices monitoring
             </h2>
             <span flex></span>
@@ -20,7 +20,7 @@
             <md-card-title>
                 <md-card-title-text>
                     <span class="md-headline">
-                        <md-icon md-font-set="material-icons">info_outline</md-icon>
+                        <md-icon md-svg-icon="information-outline"></md-icon>
                         Infos
                     </span>
                 </md-card-title-text>
@@ -37,7 +37,7 @@
             <md-card-title>
                 <md-card-title-text>
                     <span class="md-headline">
-                        <md-icon md-font-set="material-icons">message</md-icon>
+                        <md-icon md-svg-icon="message"></md-icon>
                         Messages
                     </span>
                 </md-card-title-text>
@@ -45,7 +45,7 @@
             <md-card-content>
                 <md-list>
                     <md-list-item ng-repeat="message in ctl.messages" class="md-2-line" ng-click="null">
-                        <md-icon md-font-set="material-icons">announcement</md-icon>
+                        <md-icon md-svg-icon="message-text"></md-icon>
                         <div class="md-list-item-text">
                             <h3>{{message.peer_hostname}}: {{message.event}}</h3>
                             <p ng-if="message.params" ng-bind="message.params"></p>

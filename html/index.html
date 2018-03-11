@@ -16,7 +16,7 @@
             <md-toolbar flex="initial" class="fix-toolbar">
                 <div class="md-toolbar-tools">
                     <h2>
-                        <md-icon md-font-set="material-icons">stay_current_portrait</md-icon>
+                        <md-icon md-svg-icon="cellphone"></md-icon>
                         Cleep devices
                     </h2>
                     <span flex></span>
@@ -40,13 +40,11 @@
                     <!-- unconfigured devices -->
                     <md-subheader ng-if="ctl.unconfigured>0" class="md-no-sticky">Unconfigured devices</md-subheader>
                     <md-list-item ng-repeat="device in ctl.devices | filter: {configured:false}" ng-if="ctl.unconfigured>0" ng-click="ctl.openDevicePage(device)">
-                        <md-icon ng-if="device.online" md-font-set="material-icons" class="icon-margin">
+                        <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin">
                             <md-tooltip md-direction="right">Unconfigured</md-tooltip>
-                            phonelink_setup
                         </md-icon>
-                        <md-icon ng-if="!device.online" md-font-set="material-icons" class="icon-margin">
+                        <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin">
                             <md-tooltip md-direction="right">Offline</md-tooltip>
-                            phonelink_erase
                         </md-icon>
                     </md-list-item>
 
@@ -55,20 +53,18 @@
                     <!-- configured devices -->
                     <md-subheader>Devices</md-subheader>
                     <md-list-item ng-repeat="device in ctl.devices | filter: {configured:true}" ng-click="ctl.openDevicePage(device)">
-                        <md-icon ng-if="device.online" md-font-set="material-icons" class="icon-margin">
+                        <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin">
                             <md-tooltip md-direction="right">Online</md-tooltip>
-                            stay_current_portrait
                         </md-icon>
-                        <md-icon ng-if="!device.online" md-font-set="material-icons" class="icon-margin">
+                        <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin">
                             <md-tooltip md-direction="right">Offline</md-tooltip>
-                            phonelink_erase
                         </md-icon>
                         <p>{{device.hostname}}</p>
                     </md-list-item>
 
                     <!-- no device -->
                     <md-list-item ng-if="ctl.configured==0">
-                        <md-icon md-font-set="material-icons" class="no-device icon-margin">highlight_off</md-icon>
+                        <md-icon md-svg-icon="close-circle-outline" class="no-device icon-margin"></md-icon>
                         <p class="no-device">No device found</p>
                     </md-list-item>
 

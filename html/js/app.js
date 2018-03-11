@@ -90,6 +90,13 @@ Cleep.config(['$mdThemingProvider', function($mdThemingProvider) {
 }]);
 
 /**
+ * MDI font configuration
+ */
+Cleep.config(['$mdIconProvider', function($mdIconProvider) {
+    $mdIconProvider.defaultIconSet('fonts/mdi.svg')
+}]);
+
+/**
  * Routes configuration
  */
 Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {

@@ -124,13 +124,11 @@ var tasksPanelService = function($mdPanel) {
                       '                <md-progress-circular md-mode="indeterminate" md-diameter="20px" class="progress-circular-white" style="float:left; padding-right:10px;" ng-if="item.loader"></md-progress-circular>' +
                       '                {{item.label}}' +
                       '            </div>' +
-                      '            <md-icon md-font-set="material-icons" class="md-secondary" ng-if="item.action" ng-click="ctl.click(item.action)">' +
+                      '            <md-icon md-svg-icon="magnify" class="md-secondary" ng-if="item.action" ng-click="ctl.click(item.action)">' +
                       '                <md-tooltip md-direction="top">See task</md-tooltip>' +
-                      '                forward' +
                       '            </md-icon>' +
-                      '            <md-icon md-font-set="material-icons" class="md-secondary" ng-if="item.id" ng-click="ctl.close(item.id)">' +
+                      '            <md-icon md-svg-icon="close" class="md-secondary" ng-if="item.id" ng-click="ctl.close(item.id)">' +
                       '                <md-tooltip md-direction="top">Close</md-tooltip>' +
-                      '                close' +
                       '            </md-icon>' +
                       '            <md-divider ng-if="!$last"></md-divider>' +
                       '        </md-list-item>' +

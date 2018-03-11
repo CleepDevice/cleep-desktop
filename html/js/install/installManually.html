@@ -4,7 +4,7 @@
     <md-toolbar flex="initial">
         <div class="md-toolbar-tools">
             <h2>
-                <md-icon md-font-set="material-icons">sd_card</md-icon>
+                <md-icon md-svg-icon="sd"></md-icon>
                 Install Cleep manually on your device
             </h2>
             <span flex></span>
@@ -19,28 +19,28 @@
             <md-card-title>
                 <md-card-title-text>
                     <span class="md-headline">
-                        <md-icon md-font-set="material-icons">build</md-icon>
+                        <md-icon md-svg-icon="wrench">build</md-icon>
                         Install Cleep image on SD card manually
                     </span>
                 </md-card-title-text>
             </md-card-title>
             <md-card-content>
                 <div>
-                    <md-icon md-font-set="material-icons bullet">label</md-icon>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
                     You can install Cleep manually downloading image file directly from <a href="https://www.cleep.me/downloads" target="_blank">Cleep website</a>.
                 </div>
                 <div>
-                    <md-icon md-font-set="material-icons bullet">label</md-icon>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
                     Once downloaded, burn image with your favorite SD card burner application or use <a href="https://etcher.io/" target="_blank">Etcher</a>
                     (Cross plaftorm software adviced by Raspberry Pi fundation).
                 </div>
                 <img src="images/etcher.png" alt="Etcher screenshot" title="Etcher screenshot" style="padding: 15px 30px 15px 30px;"/>
                 <div>
-                    <md-icon md-font-set="material-icons bullet">label</md-icon>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
                     Plug the SD card in your Raspberry Pi and connect it to power supply.
                 </div>
                 <div>
-                    <md-icon md-font-set="material-icons bullet">label</md-icon>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
                     Wait few seconds and you should see a new device appear in the left "Devices" panel.
                 </div>
             </md-card-content>
@@ -51,7 +51,7 @@
             <md-card-title>
                 <md-card-title-text>
                     <span class="md-headline">
-                        <md-icon md-font-set="material-icons">insert_drive_file</md-icon>
+                        <md-icon md-svg-icon="file"></md-icon>
                         Install Cleep package on existing operating system
                     </span>
                 </md-card-title-text>
@@ -61,26 +61,26 @@
                     Cleep is running exclusively on Raspbian operating system.
                 </div>
                 <div>
-                    <md-icon md-font-set="material-icons bullet">label</md-icon>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
                     Connect to your Raspberry Pi via SSH
                 </div>
                 <div>
-                    <md-icon md-font-set="material-icons bullet">label</md-icon>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
                     Download Raspiot package from <a href="http://www.google.com" target="_blank">Cleep website</a>:
                     <code>wget http://www.cleep.me/downloads/raspiot_X.X.X_armhf.deb</code>
                 </div>
                 <div>
-                    <md-icon md-font-set="material-icons bullet">label</md-icon>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
                     Install tools:
                     <code>aptitude update; aptitude install ?</code>
                 </div>
                 <div>
-                    <md-icon md-font-set="material-icons bullet">label</md-icon>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
                     Install dependencies:
                     <code>aptitude install ?</code>
                 </div>
                 <div>
-                    <md-icon md-font-set="material-icons bullet">label</md-icon>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
                     And install Cleep package:
                     <code>dpkg -i raspiot_X.X.X_armhf.deb</code>
                 </div>
