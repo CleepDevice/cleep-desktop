@@ -55,7 +55,8 @@
             "maintainer": "Tanguy Bonneau <tanguy.bonneau@gmail.com>",
             "category": "Network",
             "executableName": "cleepdesktop",
-            "synopsis": "Cleep devices manager"
+            "synopsis": "Cleep devices manager",
+            "artifactName": "${productName}-${version}-${os}-${arch}"
         },
         "appImage": {
             "systemIntegration": "ask"
@@ -68,7 +69,8 @@
         },
         "win": {
             "icon": "resources/icon",
-            "target": "nsis"
+            "target": "nsis",
+            "artifactName": "${productName}-${version}-${os}-${arch}"
         },
         "nsis": {
             "menuCategory": "Cleep",
@@ -81,7 +83,8 @@
             "extendInfo": "config/Info.plist",
             "binaries": [
                 "TODO set path to generated cleepdesktopcore binary"
-            ]
+            ],
+            "artifactName": "${productName}-${version}-${os}-${arch}"
         },
         "dmg": {
             "icon": "resources/icon.icns"
