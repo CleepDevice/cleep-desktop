@@ -38,8 +38,8 @@ class Updates(CleepDesktopModule):
     """
 
     ETCHER_REPO = {
-        'owner': 'resin-io',
-        'repo': 'etcher'
+        'owner': 'tangb',
+        'repo': 'etcher-cli'
     }
 
     INSTALL_ETCHER_COMMAND_LINUX = '%s/tools/install-etcher.linux "%s" "%s" "%s"'
@@ -52,8 +52,8 @@ class Updates(CleepDesktopModule):
     STATUS_DONE = 3
     STATUS_ERROR = 4
 
-    ETCHER_VERSION_FORCED = "v1.2.0"
-    #ETCHER_VERSION_FORCED = None
+    #ETCHER_VERSION_FORCED = "v1.2.0"
+    ETCHER_VERSION_FORCED = None
 
     def __init__(self, app_path, config_path, cleep_version, etcher_version, update_callback, debug_enabled, crash_report):
         """
