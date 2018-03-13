@@ -46,7 +46,7 @@
     "build": {
         "appId": "com.cleep.cleepdesktop",
         "productName": "CleepDesktop",
-        "asar": false,
+        "asar": true,
         "linux": {
             "icon": "resources/",
             "target": [
@@ -56,7 +56,10 @@
             "category": "Network",
             "executableName": "cleepdesktop",
             "synopsis": "Cleep devices manager",
-            "artifactName": "${productName}-${version}-${os}-${arch}"
+            "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+            "asarUnpack": [
+                "cleepdesktopcore/**"
+            ]
         },
         "appImage": {
             "systemIntegration": "ask"
@@ -70,7 +73,7 @@
         "win": {
             "icon": "resources/icon",
             "target": "nsis",
-            "artifactName": "${productName}-${version}-${os}-${arch}"
+            "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
         },
         "nsis": {
             "menuCategory": "Cleep",
@@ -84,7 +87,7 @@
             "binaries": [
                 "TODO set path to generated cleepdesktopcore binary"
             ],
-            "artifactName": "${productName}-${version}-${os}-${arch}"
+            "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
         },
         "dmg": {
             "icon": "resources/icon.icns"

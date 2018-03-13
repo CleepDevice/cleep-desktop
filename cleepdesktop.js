@@ -37,8 +37,9 @@ const url = require('url')
 const detectPort = require('detect-port')
 
 //variables
-var corePath = path.join(__dirname, 'cleepdesktopcore');
-let isDev = !require('fs').existsSync(corePath);
+var corePath = path.join(__dirname, 'cleepdesktopcore.py');
+let isDev = require('fs').existsSync(corePath);
+logger.info('Check if ' + corePath + ' exists: ' + isDev);
 let coreProcess = null;
 let coreDisabled = false;
 
@@ -48,22 +49,22 @@ logger.transports.file.maxSize = 5 * 1024 * 1024;
 logger.transports.console.level = 'info';
 if( isDev )
 {
-    //enable console during development (can be overwritten by args)
+    //during development always enable debug on both console and log file
     logger.transports.console.level = 'debug';
     logger.transports.file.level = 'debug';
     logger.info('Dev mode enabled');
 }
 else if( require('fs').existsSync(settings.file()) && settings.has('cleep.debug') && settings.get('cleep.debug') )
 {
-    //user enables debug mode
+    //release mode with debug enabled
     logger.transports.console.level = 'debug';
     logger.transports.file.level = 'debug';
     logger.info('Debug mode enabled');
 }
 else
 {
-    //release mode, disable console log
-    logger.transports.console.level = false;
+    //release mode without debug, enable only info on console and do not touch log file config
+    //logger.transports.console.level = 'info';
 }
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -359,7 +360,13 @@ function launchCore(rpcport)
     {
         //launch release
         logger.debug('Launch release mode');
-        let commandline = path.join(__dirname, 'cleepdesktopcore/cleepdesktopcore');
+        let commandline = path.join(__dirname + '.unpacked/', 'cleepdesktopcore/cleepdesktopcore');
+        logger.info('cmdline with asar: ' + commandline);
+        if( !require('fs').existsSync(commandline) )
+        {
+            commandline = path.join(__dirname, 'cleepdesktopcore/cleepdesktopcore');
+            logger.info('cmdline without asar: ' + commandline);
+        }
         let debug = settings.has('cleep.debug') && settings.get('cleep.debug') ? 'debug' : 'release';
         logger.debug('Core commandline: '+commandline+' ' + rpcport + ' ' + configPath + ' ' + configFilename + ' ' + debug);
         coreProcess = require('child_process').spawn(commandline, [rpcport, configPath, configFilename, 'release', 'false']);
