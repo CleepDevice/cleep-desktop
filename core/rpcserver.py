@@ -245,7 +245,10 @@ def get_app(app_path, config_path, config_filename, debug, is_dev):
     #set rpclogger
     logger = logging.getLogger('RpcServer')
     logger.info('===== CleepDesktopCore started =====')
-
+    logger.info('Python version: %s' % platform.python_version())
+    logger.info('Application path: %s' % app_path)
+    logger.info('Configuration path: %s' % config_path)
+    
     #load config
     config_file = os.path.join(config_path, config_filename)
     load_config()
