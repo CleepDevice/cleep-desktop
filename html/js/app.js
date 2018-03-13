@@ -179,7 +179,9 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
     self.taskFlashPanel = null;
+    self.taskFlashPanelClosed = false;
     self.taskUpdatePanel = null;
+    self.taskUpdatePanelClosed = false;
     self.cleepdesktopUpdating = false;
     self.etcherUpdating = false;
 
@@ -208,6 +210,7 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
     {
         //reset variable
         self.taskFlashPanel = null;
+        self.taskFlashPanelClosed = true;
     };
 
     //On close update task panel
@@ -215,6 +218,7 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
     {
         //reset variable
         self.taskUpdatePanel = null;
+        self.taskUpdatePanelClosed = true;
     };
 
     //On close restart required task panel
@@ -244,6 +248,11 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
             //flash is terminated
             tasksPanelService.removeItem(self.taskFlashPanel);
             self.taskFlashPanel = null;
+            self.taskFlashPanelClosed = false;
+        }
+        else if( self.taskFlashPanelClosed )
+        {
+            //flash task panel closed by user, do not open it again
         }
         else if( data.status>0 && !self.taskFlashPanel )
         {
@@ -267,10 +276,19 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
     //handle opening/closing of update task panel according to current cleepdesktop and etcher update status
     self.handleUpdateTaskPanel = function()
     {
-        if( (self.cleepdesktopUpdating || self.etcherUpdating) && !self.taskUpdatePanel )
+        if( (self.cleepdesktopUpdating || self.etcherUpdating) && self.taskUpdatePanelClosed )
+        {
+            //update task panel closed by user, do not open again
+        }
+        else if( !self.cleepdesktopUpdating && !self.etcherUpdating && self.taskUpdatePanelClosed )
+        {
+            //update task panel closed by user but updates terminated, reset flag
+            self.taskUpdatePanelClosed = false;
+        }
+        else if( (self.cleepdesktopUpdating || self.etcherUpdating) && !self.taskUpdatePanel )
         {
             //no update task panel opened yet while update is in progress, open it
-            self.taskUpdate = tasksPanelService.addItem(
+            self.taskUpdatePanel = tasksPanelService.addItem(
                 'Updating application...', 
                 {
                     onAction: self.jumpToUpdates,
@@ -289,6 +307,7 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
             //no update is running and task panel is opened, close it
             tasksPanelService.removeItem(self.taskUpdatePanel);
             self.taskUpdatePanel = null;
+            self.taskUpdatePanelClosed = false;
         }
     };
 
@@ -302,7 +321,7 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
             //update is terminated
             self.etcherUpdating = false;
         }
-        else if( !self.taskUpdate && data.etcherstatus.status>0 )
+        else if( !self.taskUpdatePanel && data.etcherstatus.status>0 )
         {
             //update is started
             self.etcherUpdating = true;
@@ -354,7 +373,7 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
                 'Restart application to apply changes.', 
                 {
                     onAction: self.restartApplication,
-                    tooltip: 'Restart now',
+                    tooltip: 'Restart now!',
                     icon: 'restart'
                 },
                 {
