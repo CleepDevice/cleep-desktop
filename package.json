@@ -47,6 +47,9 @@
         "appId": "com.cleep.cleepdesktop",
         "productName": "CleepDesktop",
         "asar": true,
+        "asarUnpack": [
+            "cleepdesktopcore/**"
+        ],
         "linux": {
             "icon": "resources/",
             "target": [
@@ -56,10 +59,7 @@
             "category": "Network",
             "executableName": "cleepdesktop",
             "synopsis": "Cleep devices manager",
-            "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
-            "asarUnpack": [
-                "cleepdesktopcore/**"
-            ]
+            "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
         },
         "appImage": {
             "systemIntegration": "ask"
