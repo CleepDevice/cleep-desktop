@@ -45,11 +45,11 @@ if "%1" == "publish" (
     echo Publishing cleepdesktop...
     echo --------------------------
     set "GH_TOKEN=%GH_TOKEN_CLEEPDESKTOP%"
-    cmd /C "node_modules\.bin\electron-builder --windows --ia32 --projectDir %CLEEPDESKTOPPATH%" --publish onTagOrDraft
+    cmd /C "node_modules\.bin\electron-builder --windows --ia32 --x64 --projectDir %CLEEPDESKTOPPATH%" --publish onTagOrDraft
 ) else (
     echo Packaging cleepdesktop...
     echo -------------------------
-    cmd /C "node_modules\.bin\electron-builder --windows --ia32 --projectDir %CLEEPDESKTOPPATH%"
+    cmd /C "node_modules\.bin\electron-builder --windows --ia32 --x64 --projectDir %CLEEPDESKTOPPATH%"
 )
 
 :: cleaning
