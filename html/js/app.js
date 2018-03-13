@@ -235,7 +235,9 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         remote.app.relaunch();
 
         //introduce small sleep to not hurt user
-        remote.app.quit();
+        $timeout(function() {
+            remote.app.quit();
+        }, 750);
     };
 
     //Add flash task panel info
@@ -385,8 +387,20 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         }
     });
 
-    //Init websocket
-    cleepService.connectWebSocket();
+    //Controller init
+    self.init = function()
+    {
+        //init websocket asap
+        cleepService.connectWebSocket();
+
+        //trigger application update check few seconds after startup
+        $timeout(function() {
+            logger.info('Check for CleepDesktop update');
+            appUpdater.checkForUpdates();
+        }, 30000);
+    };
+
+    self.init();
 
 };
 Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 
