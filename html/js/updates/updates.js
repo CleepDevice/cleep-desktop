@@ -82,7 +82,8 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
         logger.info('Checking for CleepDesktop updates...');
     });
     appUpdater.addListener('update-available', function(info) {
-        logger.info('CleepDesktop update available', info);
+        logger.info('CleepDesktop update available');
+        logger.debug(info);
         $timeout(function() {
             self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
             self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
@@ -90,14 +91,20 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
         }, 500);
     });
     appUpdater.addListener('update-not-available', function(info) {
-        logger.info('No CleepDesktop update available', info);
+        logger.info('No CleepDesktop update available');
+        logger.debug(info);
     });
     appUpdater.addListener('update-downloaded', function(info) {
-        logger.info('CleepDesktop update downloaded', info);
+        logger.info('CleepDesktop update downloaded');
+        logger.debug(info);
         $timeout(function() {
             self.cleepdesktopStatus.status = self.STATUS_DONE;
             self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DONE;
             self.cleepdesktopStatus.downloadpercent = 100;
+
+            //emit restart required event
+            $rootScope.$broadcast('restartrequired');
+
         }, 500);
     });
     appUpdater.addListener('error', function(error) {
@@ -109,7 +116,7 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
         }, 500);
     });
     appUpdater.addListener('download-progress', function(progress) {
-        logger.info('Update download progress: ' + progress.percent);
+        logger.debug('Update download progress: ' + progress.percent);
         self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
         self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
         self.cleepdesktopStatus.downloadpercent = progress.percent;

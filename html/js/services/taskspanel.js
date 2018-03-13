@@ -33,10 +33,18 @@ var tasksPanelService = function($mdPanel) {
             //remove specified item
             if( self.items.length>1 )
             {
+                //search for item to remove it
                 for( i=0; i<self.items.length; i++ )
                 {
                     if( self.items[i].id===id )
                     {
+                        //close callback
+                        if( self.items[i].close.onClose )
+                        {
+                            self.items[i].close.onClose(self.items[i].id);
+                        }
+
+                        //remove item
                         self.items.splice(i, 1);
                         break;
                     }
@@ -44,7 +52,13 @@ var tasksPanelService = function($mdPanel) {
             }
             else
             {
-                //hide panel if no more item
+                //close callback
+                if( self.items[0].close.onClose )
+                {
+                    self.items[0].close.onClose(self.items[0].id);
+                }
+                
+                //hide panel
                 self.__hidePanel();
             }
         };
@@ -124,10 +138,10 @@ var tasksPanelService = function($mdPanel) {
                       '                <md-progress-circular md-mode="indeterminate" md-diameter="20px" class="progress-circular-white" style="float:left; padding-right:10px;" ng-if="item.loader"></md-progress-circular>' +
                       '                {{item.label}}' +
                       '            </div>' +
-                      '            <md-icon md-svg-icon="magnify" class="md-secondary" ng-if="item.action" ng-click="ctl.click(item.action)">' +
-                      '                <md-tooltip md-direction="top">See task</md-tooltip>' +
+                      '            <md-icon md-svg-icon="{{item.action.icon}}" class="md-secondary" ng-if="item.action" ng-click="ctl.click(item.action.onAction)">' +
+                      '                <md-tooltip md-direction="top">{{item.action.tooltip}}</md-tooltip>' +
                       '            </md-icon>' +
-                      '            <md-icon md-svg-icon="close" class="md-secondary" ng-if="item.id" ng-click="ctl.close(item.id)">' +
+                      '            <md-icon md-svg-icon="close" class="md-secondary" ng-if="!item.close.disabled" ng-click="ctl.close(item.id)">' +
                       '                <md-tooltip md-direction="top">Close</md-tooltip>' +
                       '            </md-icon>' +
                       '            <md-divider ng-if="!$last"></md-divider>' +
@@ -141,17 +155,31 @@ var tasksPanelService = function($mdPanel) {
     //add item to panel
     //panel will popup if it's the first item
     //@param label (string): item label (can be html)
-    //@param action (callback): callback on label click
-    //@param close (bool): display a close button
+    //@param action (obj): action object describes available user action (null if no action)::
+    //                      {
+    //                          onAction (function): callback on button click,
+    //                          tooltip (string): button tooltip,
+    //                          icon (string): button icon (use mdi icon pack string format)
+    //                      }
+    //@param close (function): close object describes action when user click on close button::
+    //                      {
+    //                          onClose (function): callback on button click
+    //                          disabled (bool): true to disable close button
+    //                      }
     //@param loader (bool): display a circular progress
     //@return item identifier to close it programmatically
     self.addItem = function(label, action, close, loader)
     {
+        var defaultClose = {
+            onClose: null,
+            disabled: false
+        };
+
         var item = {
             id: new Date().valueOf(),
             action: action,
             label: label,
-            close: close,
+            close: close || defaultClose,
             loader: loader
         };
         self.items.push(item);

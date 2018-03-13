@@ -451,16 +451,22 @@ app.on('ready', function() {
     }
 });
 
-// Quit when all windows are closed.
-app.on('window-all-closed', function () {
-    // On OS X it is common for applications and their menu bar
-    // to stay active until the user quits explicitly with Cmd + Q
+// Before to quit application kill cleepdesktopcore
+app.on('before-quit', function() {
     if (process.platform !== 'darwin') {
         if( coreProcess )
         {
             logger.debug('Kill core');
             coreProcess.kill('SIGTERM')
         }
+    }
+});
+
+// Quit when all windows are closed.
+app.on('window-all-closed', function () {
+    // On OS X it is common for applications and their menu bar
+    // to stay active until the user quits explicitly with Cmd + Q
+    if (process.platform !== 'darwin') {
         app.quit()
     }
 });

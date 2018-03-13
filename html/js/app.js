@@ -174,12 +174,14 @@ Cleep.controller('emptyController', ['$rootScope', '$scope', '$state', emptyCont
 /**
  * Cleep controller
  */
-var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService, modalService, deviceMessages)
+var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService, modalService, deviceMessages, $timeout)
 {
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
-    self.taskFlash = null;
-    self.taskUpdate = null;
+    self.taskFlashPanel = null;
+    self.taskUpdatePanel = null;
+    self.cleepdesktopUpdating = false;
+    self.etcherUpdating = false;
 
     //Open page in content area (right side) handling 'openPage' event
     self.ipcRenderer.on('openPage', function(event, page) {
@@ -201,6 +203,37 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         $state.go('installAuto');
     };
 
+    //On close flash task panel
+    self.onCloseFlashTaskPanel = function()
+    {
+        //reset variable
+        self.taskFlashPanel = null;
+    };
+
+    //On close update task panel
+    self.onCloseUpdateTaskPanel = function()
+    {
+        //reset variable
+        self.taskUpdatePanel = null;
+    };
+
+    //On close restart required task panel
+    self.onCloseRestartRequiredTaskPanel = function()
+    {
+        //reset variable
+        self.taskRestartRequiredPanel = null;
+    };
+
+    //Restart appliation
+    self.restartApplication = function()
+    {
+        //trigger application restart after exit
+        remote.app.relaunch();
+
+        //introduce small sleep to not hurt user
+        remote.app.quit();
+    };
+
     //Add flash task panel info
     $rootScope.$on('flash', function(event, data) {
         if( !data )
@@ -209,17 +242,57 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         if( data.status>=5 )
         {
             //flash is terminated
-            tasksPanelService.removeItem(self.taskFlash);
-            self.taskFlash = null;
+            tasksPanelService.removeItem(self.taskFlashPanel);
+            self.taskFlashPanel = null;
         }
-        else if( data.status>0 && !self.taskFlash )
+        else if( data.status>0 && !self.taskFlashPanel )
         {
             //flash is started
-            self.taskFlash = tasksPanelService.addItem('Installing cleep on drive...', self.jumpToInstallAuto, true, true);
+            self.taskFlashPanel = tasksPanelService.addItem(
+                'Installing cleep on drive...', 
+                {
+                    onAction: self.jumpToInstallAuto,
+                    tooltip: 'Go to install',
+                    icon: 'sd'
+                },
+                {
+                    onClose: self.onCloseFlashTaskPanel,
+                    disabled: false
+                },
+                true
+            );
         }
     });
 
-    //Add update task panel info
+    //handle opening/closing of update task panel according to current cleepdesktop and etcher update status
+    self.handleUpdateTaskPanel = function()
+    {
+        if( (self.cleepdesktopUpdating || self.etcherUpdating) && !self.taskUpdatePanel )
+        {
+            //no update task panel opened yet while update is in progress, open it
+            self.taskUpdate = tasksPanelService.addItem(
+                'Updating application...', 
+                {
+                    onAction: self.jumpToUpdates,
+                    tooltip: 'Go to updates',
+                    icon: 'update'
+                },
+                {
+                    onClose: self.onCloseUpdateTaskPanel,
+                    disabled: false
+                },
+                true
+            );
+        }
+        else if( !self.cleepdesktopUpdating && !self.etcherUpdating && self.taskUpdatePanel )
+        {
+            //no update is running and task panel is opened, close it
+            tasksPanelService.removeItem(self.taskUpdatePanel);
+            self.taskUpdatePanel = null;
+        }
+    };
+
+    //Handle etcher update here to add update task panel
     $rootScope.$on('updates', function(event, data) {
         if( !data )
             return;
@@ -227,17 +300,43 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         if( data.etcherstatus.status>=3 )
         {
             //update is terminated
-            tasksPanelService.removeItem(self.taskUpdate);
-            self.taskUpdate = null;
+            self.etcherUpdating = false;
         }
         else if( !self.taskUpdate && data.etcherstatus.status>0 )
         {
             //update is started
-            self.taskUpdate = tasksPanelService.addItem('Updating software...', self.jumpToUpdates, true, true);
+            self.etcherUpdating = true;
         }
+
+        //update task panel
+        self.handleUpdateTaskPanel();
     });
 
-    //watch for device messages event to append them in global value deviceMessages
+    //Handle cleepdesktop update here to add update task panel
+    appUpdater.addListener('update-available', function(info) {
+        //update available, open task panel if necessary
+        self.cleepdesktopUpdating = true;
+
+        //update task panel
+        self.handleUpdateTaskPanel();
+    });
+    appUpdater.addListener('update-downloaded', function(info) {
+        //update downloaded, close task panel
+        self.cleepdesktopUpdating = false;
+
+        //update task panel
+        self.handleUpdateTaskPanel();
+    });
+    appUpdater.addListener('error', function(error) {
+        //error during update, close task panel
+        self.cleepdesktopUpdating = false;
+
+        //update task panel
+        self.handleUpdateTaskPanel();
+    });
+
+    //Watch for device messages event to append them in global value deviceMessages
+    //message are handled in main application to keep the messages alive.
     $rootScope.$on('message', function(event, data) {
         if( !data )
             return;
@@ -247,9 +346,30 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         deviceMessages.unshift(data);
     });
 
+    //Handle restart required event adding a task panel
+    $rootScope.$on('restartrequired', function(event, data) {
+        if( !self.taskRestartRequired )
+        {
+            self.taskRestartRequired = tasksPanelService.addItem(
+                'Restart application to apply changes.', 
+                {
+                    onAction: self.restartApplication,
+                    tooltip: 'Restart now',
+                    icon: 'restart'
+                },
+                {
+                    onClose: self.onCloseRestartRequiredTaskPanel,
+                    disabled: false
+                },
+                false
+            );
+        }
+    });
+
     //Init websocket
     cleepService.connectWebSocket();
 
 };
-Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 'deviceMessages', cleepController]);
+Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 
+                                    'deviceMessages', '$timeout', cleepController]);
 
