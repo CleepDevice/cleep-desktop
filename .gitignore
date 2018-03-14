@@ -10,3 +10,4 @@ core/libs/*.pyc
 .vscode
 tools/cmdlogger-linux
 tools/cmdlogger-mac
+npm-debug.log
