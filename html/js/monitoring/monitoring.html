@@ -43,7 +43,14 @@
                 </md-card-title-text>
             </md-card-title>
             <md-card-content>
-                <md-list>
+
+                <!-- no message -->
+                <div layout="row" ng-if="ctl.messages.length==0" layout-align="center center">
+                    <span style="padding-bottom:50px;">No message received yet</span>
+                </div>
+
+                <!-- messages list -->
+                <md-list ng-if="ctl.messages.length>0">
                     <md-list-item ng-repeat="message in ctl.messages" class="md-2-line" ng-click="null">
                         <md-icon md-svg-icon="message-text"></md-icon>
                         <div class="md-list-item-text">
@@ -53,6 +60,7 @@
                         <md-button class="md-secondary" ng-click="null">{{message.timestamp | hrDatetime}}</md-button>
                     </md-list-item>
                 </md-list>
+
             </md-card-content>
         </md-card>
 
