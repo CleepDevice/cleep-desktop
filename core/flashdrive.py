@@ -26,6 +26,8 @@ if platform.system()=='Windows':
 elif platform.system()=='Darwin':
     from core.libs.diskutil import Diskutil
     from core.libs.console import AdminEndlessConsole
+    from core.libs.macwirelessinterfaces import MacWirelessInterfaces
+    from core.libs.macwirelessnetworks import MacWirelessNetworks
 else:
     from core.libs.console import AdminEndlessConsole
     from core.libs.lsblk import Lsblk
@@ -115,6 +117,8 @@ class FlashDrive(CleepDesktopModule):
         elif self.env=='darwin':
             self.etcher_cmd = os.path.join(self.config_path, self.ETCHER_MAC)
             self.diskutil = Diskutil()
+            self.macwirelessinterfaces = MacWirelessInterfaces()
+            self.macwirelessnetworks = MacWirelessNetworks()
         self.logger.debug('Etcher command line: %s' % self.etcher_cmd)
 
     def _custom_stop(self):
@@ -880,8 +884,7 @@ class FlashDrive(CleepDesktopModule):
         if self.env=='windows':
             networks = self.__get_wifi_networks_windows()
         elif self.env=='darwin':
-            #TODO
-            raise Exception('Not implemented on mac yet')
+            networks = self.__get_wifi_networks_mac()
         else:
             networks = self.__get_wifi_networks_linux()
 
@@ -980,4 +983,49 @@ class FlashDrive(CleepDesktopModule):
         return {
             'networks': wifi_networks,
             'adapter': len(wifi_interfaces)>0
+        }
+
+    def __get_wifi_networks_mac(self):
+        """
+        Return wifi networks and wifi infos for macos
+
+        Return:
+            dict: wifi infos::
+                {
+                    networks (list): networks list
+                    adapter (bool): True if wifi adapter found
+                }
+        """
+        default = {
+            'networks': [],
+            'adapter': False
+        }
+
+        #system check
+        if not self.macwirelessinterfaces.is_installed():
+            self.logger.warning('MacWirelessInterfaces associated command not found on your system, unable to get list of wifi networks')
+            return default
+
+        elif not self.macwirelessnetworks.is_installed():
+            self.logger.warning('MacWirelessNetworks associated command not found on your system, unable to get list of wifi networks')
+            return default
+
+        #get wifi interfaces
+        wifi_interfaces = self.macwirelessinterfaces.get_interfaces()
+        self.logger.debug('wifi_interfaces: %s' % wifi_interfaces)
+
+        #get wifi networks
+        wifi_networks = []
+        if len(wifi_interfaces)>0:
+            #keep only first wifi interface
+            interface = wifi_interfaces[0]
+            networks = self.macwirelessnetworks.get_networks(interface)
+
+            #flatten dict
+            wifi_networks = [v for k,v in networks.items()]
+        
+        #build output
+        return {
+            'networks': wifi_networks,
+            'adapter': len(wifi_interfaces.keys())>0
         }
