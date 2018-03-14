@@ -296,7 +296,7 @@ function createWindow ()
     });
 
     // close splashscreen when loaded
-     mainWindow.once('ready-to-show', function(e) {
+    mainWindow.once('ready-to-show', function(e) {
         if( splashScreen )
         {
             let splashScreenBounds = splashScreen.getBounds();
@@ -310,7 +310,6 @@ function createWindow ()
             mainWindow.show();
             mainWindow.focus();
         }, 1250 );
-        
     });
 
     // and load the index.html of the app.
@@ -425,8 +424,8 @@ app.on('ready', function() {
         settings.set('remote.rpcport', DEFAULT_RPCPORT);
 
         //launch application
-        createWindow();
         createSplashScreen();
+        createWindow();
         createMenu();
         launchCore(DEFAULT_RPCPORT);
     }
@@ -451,14 +450,12 @@ app.on('ready', function() {
     }
 });
 
-// Before to quit application kill cleepdesktopcore
-app.on('before-quit', function() {
-    if (process.platform !== 'darwin') {
-        if( coreProcess )
-        {
-            logger.debug('Kill core');
-            coreProcess.kill('SIGTERM')
-        }
+// Application will quit, kill python process
+app.on('will-quit', function() {
+    if( coreProcess )
+    {
+        logger.debug('Kill core');
+        coreProcess.kill('SIGTERM')
     }
 });
 
@@ -466,7 +463,8 @@ app.on('before-quit', function() {
 app.on('window-all-closed', function () {
     // On OS X it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
-    if (process.platform !== 'darwin') {
+    if( process.platform!=='darwin' )
+    {
         app.quit()
     }
 });
@@ -474,7 +472,8 @@ app.on('window-all-closed', function () {
 app.on('activate', function () {
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (mainWindow === null) {
+    if (mainWindow === null)
+    {
         createWindow()
     }
 });
