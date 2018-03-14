@@ -13,16 +13,13 @@ echo "$dt" >> $LOGFILE
 echo "params=$1 $2 $3 $4" >> $LOGFILE
 
 #flash drive
-$1/etcher-cli/etcher --yes --drive $2 $3
+$1/etcher-cli/etcher --yes --unmount --drive $2 $3
 ret=$?
 echo "etcher-cli returncode=$ret" >> $LOGFILE
 if [ $ret != 0 ]
 then
-    echo "ko"
     exit $ret
 fi
-echo "ok"
-exit 0
 
 #copy default wifi config
 if [ ! -z "$4" ]
