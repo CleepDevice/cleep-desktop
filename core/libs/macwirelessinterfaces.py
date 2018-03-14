@@ -4,6 +4,7 @@
 import logging
 import time
 import re
+import os
 try:
     from core.libs.console import AdvancedConsole
 except:

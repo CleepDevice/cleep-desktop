@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import os
 try:
     from core.libs.console import AdvancedConsole
 except:

@@ -1027,5 +1027,5 @@ class FlashDrive(CleepDesktopModule):
         #build output
         return {
             'networks': wifi_networks,
-            'adapter': len(wifi_interfaces.keys())>0
+            'adapter': len(wifi_interfaces)>0
         }
