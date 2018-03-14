@@ -101,7 +101,7 @@ class Github():
         if resp.status==200:
             #response successful, parse data to get current latest version
             data = json.loads(resp.data.decode('utf-8'))
-            self.logger.debug('Data: %s' % data)
+            #self.logger.debug('Data: %s' % data)
             return data
 
         elif resp.status==404:
