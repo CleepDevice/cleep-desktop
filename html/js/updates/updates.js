@@ -3,7 +3,7 @@ var Cleep = angular.module('Cleep')
 /**
  * Updates controller
  */
-var updatesController = function($rootScope, $scope, cleepService, toast, logger, appUpdater, $timeout, cleepdesktopVersion)
+var updatesController = function($rootScope, $scope, cleepService, toast, logger, appUpdater, $timeout, cleepdesktopVersion, cleepGlobals)
 {
     var self = this;
 
@@ -77,7 +77,7 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
             });
     };
 
-    //updater events
+    //appUpdater events
     appUpdater.addListener('checking-for-update', function() {
         logger.info('Checking for CleepDesktop updates...');
     });
@@ -124,12 +124,20 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
 
     //init controller
     self.init = function() {
-        //get current status
+        //get current etcher status
         cleepService.sendCommand('getupdatesstatus')
             .then(function(resp) {
                 self.etcherStatus = resp.data.etcherstatus;
                 self.lastcheck = resp.data.lastcheck;
             });
+
+        //get current cleepdesktop status
+        if( cleepGlobals.updatingCleepdesktop )
+        {
+            self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
+            self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
+            self.cleepdesktopStatus.downloadpercent = null;
+        }
     };
     self.init();
 
@@ -144,5 +152,5 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
 
 };
 Cleep.controller('updatesController', ['$rootScope', '$scope', 'cleepService', 'toastService', 'logger', 'appUpdater', 
-                                        '$timeout', 'cleepdesktopVersion', updatesController]);
+                                        '$timeout', 'cleepdesktopVersion', 'cleepGlobals', updatesController]);
 
