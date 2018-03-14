@@ -895,15 +895,23 @@ class FlashDrive(CleepDesktopModule):
         Return:
             dict: wifi infos::
                 {
-                    network (list): networks list
+                    networks (list): networks list
                     adapter (bool): True if wifi adapter found
                 }
         """
+        default = {
+            'networks': [],
+            'adapter': False
+        }
+
         #system check
         if not self.iw.is_installed():
-            raise Exception('Iw command not found on your system')
+            self.logger.warning('Iw command not found on your system, unable to get list of wifi networks')
+            return default
+
         elif not self.iwlist.is_installed():
-            raise Exception('Iwlist command not found on your system')
+            self.logger.warning('Iwlist command not found on your system, unable to get list of wifi networks')
+            return default
 
         #get wifi interfaces
         wifi_connections = self.iw.get_connections()
@@ -932,23 +940,27 @@ class FlashDrive(CleepDesktopModule):
         Return:
             dict: wifi infos::
                 {
-                    network (list): networks list
+                    networks (list): networks list
                     adapter (bool): True if wifi adapter found
                 }
         """
+        default = {
+            'networks': [],
+            'adapter': False
+        }
+
         #handle supported windows version
         supported = False
         try:
             release = int(platform.release())
             if release>=10:
                 supported = True
+            else:
+                self.logger.warning('Unable to get list of wifi networks, only windows>=10 is supported')
         except:
-            pass
+            self.logger.exception('Unable to get list of wifi networks:')
         if not supported:
-            return {
-                'network': [],
-                'adapter': False
-            }
+            return default
 
         #get wifi interfaces
         wifi_interfaces = self.windowswirelessinterfaces.get_interfaces()
