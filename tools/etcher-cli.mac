@@ -25,7 +25,6 @@ fi
 if [ ! -z "$4" ]
 then
     #search root partition
-    partition=
     partition=`/usr/sbin/diskutil list | grep boot | awk '{print $(NF)}'`
     echo "partition=$partition" >> $LOGFILE
 
