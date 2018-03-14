@@ -25,12 +25,13 @@ fi
 if [ ! -z "$4" ]
 then
     #search root partition
-    partition=`/bin/lsblk --list --noheadings --output NAME $2 | /bin/sed -n 2p`
+    partition=
+    partition=`/usr/sbin/diskutil list | grep boot | awk '{print $(NF)}'`
     echo "partition=$partition" >> $LOGFILE
 
     #mount first drive partition (should be root one in fat32)
     /bin/mkdir /tmp/raspiot_root
-    /bin/mount /dev/$partition /tmp/raspiot_root
+    /sbin/mount /dev/$partition /tmp/raspiot_root
 
     #then copy file
     echo "Copy $4 file to /tmp/raspiot_root/cleepwifi.conf" >> $LOGFILE
@@ -38,7 +39,7 @@ then
 
     #and umount/clean properly
     /bin/sync
-    /bin/umount -lf /tmp/raspiot_root
+    /bin/sumount -lf /tmp/raspiot_root
     /bin/rmdir /tmp/raspiot_root
 fi
 
