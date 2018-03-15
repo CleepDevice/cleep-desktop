@@ -9,11 +9,11 @@
 LOGFILE="$1/etcher-cli.log"
 
 dt=$(date '+%d/%m/%Y %H:%M')
-echo "$dt" >> $LOGFILE
+echo "START $dt" >> $LOGFILE
 echo "params=$1 $2 $3 $4" >> $LOGFILE
 
 #flash drive
-$1/etcher-cli/etcher --yes --unmount --drive $2 $3
+"$1/etcher-cli/etcher" --yes --unmount --drive $2 $3
 ret=$?
 echo "etcher-cli returncode=$ret" >> $LOGFILE
 if [ $ret != 0 ]
@@ -29,16 +29,19 @@ then
     echo "partition=$partition" >> $LOGFILE
 
     #mount first drive partition (should be root one in fat32)
-    /bin/mkdir /tmp/raspiot_root
-    /sbin/mount /dev/$partition /tmp/raspiot_root
+    /bin/mkdir /tmp/cleep_root
+    /sbin/mount -t msdos /dev/$partition /tmp/cleep_root
 
     #then copy file
-    echo "Copy $4 file to /tmp/raspiot_root/cleepwifi.conf" >> $LOGFILE
-    /bin/cp -f "$4" /tmp/raspiot_root/cleepwifi.conf >> $LOGFILE
+    echo "Copy $4 file to /tmp/cleep_root/cleepwifi.conf" >> $LOGFILE
+    /bin/cp -f "$4" /tmp/cleep_root/cleepwifi.conf >> $LOGFILE
 
     #and umount/clean properly
     /bin/sync
-    /bin/sumount -lf /tmp/raspiot_root
-    /bin/rmdir /tmp/raspiot_root
+    /sbin/umount -f /tmp/cleep_root
+    /bin/rmdir /tmp/cleep_root
 fi
+
+dt=$(date '+%d/%m/%Y %H:%M')
+echo "END $dt" >> $LOGFILE
 
