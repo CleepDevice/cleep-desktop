@@ -67,8 +67,8 @@
                             <md-icon md-svg-icon="chevron-right"></md-icon></md-list-item>
                         </div>
                         <div flex="50">
-                            <span ng-if="ctl.etcherStatus.version!==null">Etcher version {{ctl.etcherStatus.version}} is installed</span>
-                            <span ng-if="ctl.etcherStatus.version===null">Etcher is not installed</span>
+                            <span ng-if="ctl.etcherStatus.version!=='v0.0.0'">Etcher version {{ctl.etcherStatus.version}} is installed</span>
+                            <span ng-if="ctl.etcherStatus.version==='v0.0.0'">Etcher is not installed</span>
                         </div>
                         <div ng-if="ctl.etcherStatus.status===1 || ctl.etcherStatus.status===2" flex="20" style="text-align:right;">
                             <span ng-if="ctl.etcherStatus.status===1">Downloading update ({{ctl.etcherStatus.downloadpercent}}%)</span>

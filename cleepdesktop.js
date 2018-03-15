@@ -154,7 +154,7 @@ function createConfig()
     //etcher
     if( !settings.has('etcher.version') )
     {
-        settings.set('etcher.version', 'v0.0');
+        settings.set('etcher.version', 'v0.0.0');
     }
 
     //remote
