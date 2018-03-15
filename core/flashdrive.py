@@ -755,7 +755,7 @@ class FlashDrive(CleepDesktopModule):
         self.dl = Download(self.__download_callback)
 
         #start download
-        self.iso = self.dl.download_from_url(self.url, check_sha1=self.iso_sha1, cache='flash.iso')
+        self.iso = self.dl.download_from_url(self.url, check_sha1=self.iso_sha1, cache=True)
         self.dl = None
 
         if self.iso is None:
@@ -877,7 +877,7 @@ class FlashDrive(CleepDesktopModule):
         Return:
             dict: wifi infos::
                 {
-                    network (list): networks list
+                    networks (list): networks list
                     adapter (bool): True if wifi adapter found
                 }
         """
@@ -887,6 +887,9 @@ class FlashDrive(CleepDesktopModule):
             networks = self.__get_wifi_networks_mac()
         else:
             networks = self.__get_wifi_networks_linux()
+
+        #sort wifi networks by name
+        networks['networks'] = sorted(networks['networks'], key=lambda x: x['network'])
 
         self.logger.debug('wifi networks: %s' % networks)
         return networks

@@ -107,7 +107,16 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
         self.shell.openItem(self.logs);
     };
 
-    // Purge cahed files
+    // Delete specified cached file
+    self.purgeCacheFile = function(filename)
+    {
+        cleepService.sendCommand('deletecachedfile', {filename:filename})
+            .then(function(resp) {
+                self.cacheds = resp.data;
+            });
+    };
+
+    // Purge all cached files
     self.purgeCachedFiles = function()
     {
         cleepService.sendCommand('purgecachedfiles')

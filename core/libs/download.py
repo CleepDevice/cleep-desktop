@@ -46,6 +46,7 @@ class Download():
         self.__cancel = False
         self.status_callback = status_callback
         self.http = urllib3.PoolManager(num_pools=1)
+        self.percent = 0
 
         #purge previously downloaded files
         self.purge_files()
@@ -56,9 +57,28 @@ class Download():
         """
         self.__cancel = True
 
+    def delete_cached_file(self, filename):
+        """
+        Delete specified cached file
+
+        Args:
+            filename: filename to delete
+        """
+        cached_filename = self.__get_cached_filename_by_filename(filename)
+        self.logger.debug('Trying to delete cached filename %s (with real name %s)' % (cached_filename, filename))
+        for root, dirs, dls in os.walk(self.temp_dir):
+            for dl in dls:
+                #delete cached file
+                if os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX) and os.path.basename(dl).endswith(cached_filename):
+                    self.logger.debug('Delete existing cached file: %s' % dl)
+                    try:
+                        os.remove(os.path.join(self.temp_dir, dl))
+                    except:
+                        pass
+
     def purge_files(self, force_all=False):
         """
-        Remove all files that stay from previous processes
+        Delete all files that stay from previous processes
 
         Args:
             force_all (bool): force deletion of all files (cached ones too)
@@ -156,7 +176,7 @@ class Download():
                 buf = f.read(1024)
                 if not buf:
                     break
-                sha1.update(buf)
+                md5.update(buf)
 
         return md5.hexdigest()
 
@@ -172,7 +192,7 @@ class Download():
         if self.status_callback:
             self.status_callback(status, size, percent)
 
-    def download_from_url(self, url, check_sha1=None, check_sha256=None, check_md5=None, cache=None):
+    def download_from_url(self, url, check_sha1=None, check_sha256=None, check_md5=None, cache=False):
         """
         Download specified url. Specify key to check if necessary.
         This function is blocking
@@ -182,7 +202,7 @@ class Download():
             check_sha1 (string): sha1 key to check
             check_sha256 (string): sha256 key to check
             check_md5 (string): md5 key to check
-            cache (string): specify name to enable file caching (will not be purged automatically). None to disable caching
+            cache (bool): if True and file exists return cached file with no download, if True and no file download it. If False do not cache file
 
         Returns:
             string: downloaded filepath (temp filename, it will be deleted during next download) or None if error occured
@@ -191,16 +211,20 @@ class Download():
         download_uuid = str(uuid.uuid4())
         self.download = os.path.join(self.temp_dir, '%s_%s' % (self.TMP_FILE_PREFIX, download_uuid))
         self.logger.debug('File will be saved to "%s"' % self.download)
-        download = None
 
         #check if file is cached
-        if os.path.exists(self.download):
+        cached_filename = self.__get_cached_filename_by_url(url)
+        cached_download = os.path.join(self.temp_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, cached_filename))
+        if cache and os.path.exists(cached_download):
             #file cached, return it
-            filesize = os.path.getsize(self.download)
+            self.logger.debug('Return cached file (%s)' % cached_download)
+            filesize = os.path.getsize(cached_download)
+            self.download = cached_download
             self.__status_callback(self.STATUS_DONE, filesize, 100)
             return self.download
         
         #prepare download
+        download = None
         try:
             download = open(self.download, u'wb')
         except:
@@ -271,7 +295,7 @@ class Download():
                 self.logger.debug('Flash process canceled during download')
                 return None
 
-        #download over
+        #download terminated
         download.close()
 
         #file size
@@ -315,17 +339,52 @@ class Download():
 
         #rename file
         if not cache:
+            #no cache, rename file with download prefix
             download = os.path.join(self.temp_dir, '%s_%s' % (self.DOWNLOAD_FILE_PREFIX, download_uuid))
         else:
-            hashname = base64.urlsafe_b64encode(cache.encode('utf-8')).decode('utf-8')
-            download = os.path.join(self.temp_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, hashname))
+            #cache file, rename file with cache prefix
+            download = os.path.join(self.temp_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, cached_filename))
         try:
             os.rename(self.download, download)
             self.download = download
         except:
-            pass
+            self.logger.exception(u'Unable to rename downloaded file:')
 
         return self.download
+
+    def __get_cached_filename_by_url(self, url):
+        """
+        Return cached filename based on url
+
+        Args:
+            url (string): file url to download
+
+        Return:
+            string: cached filename
+        """
+        #consider last part of url as filename
+        url_parsed = urllib3.util.parse_url(url)
+        filename = url_parsed.path.split(u'/')[-1]
+
+        #encode filename for safety
+        safe_filename = base64.urlsafe_b64encode(filename.encode('utf-8')).decode('utf-8')
+
+        return safe_filename
+
+    def __get_cached_filename_by_filename(self, filename):
+        """
+        Return cached filename based on real filename
+
+        Args:
+            filename (string): filename to encode
+
+        Return:
+            string: cached filename
+        """
+        #encode filename for safety
+        safe_filename = base64.urlsafe_b64encode(filename.encode('utf-8')).decode('utf-8')
+
+        return safe_filename
 
 #last_percent = 0
 #def cb(status, size, percent):

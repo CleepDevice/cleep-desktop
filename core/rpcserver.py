@@ -424,6 +424,10 @@ def execute_command(command, params):
         elif command=='getcachedfiles':
             dl = Download()
             resp.data = dl.get_cached_files()
+        elif command=='deletecachedfile':
+            dl = Download()
+            dl.delete_cached_file(params['filename'])
+            resp.data = dl.get_cached_files()
         elif command=='purgecachedfiles':
             dl = Download()
             dl.purge_files(force_all=True)
