@@ -42,9 +42,9 @@ class Updates(CleepDesktopModule):
         'repo': 'etcher-cli'
     }
 
-    INSTALL_ETCHER_COMMAND_LINUX = '%s/tools/install-etcher.linux "%s" "%s" "%s"'
+    INSTALL_ETCHER_COMMAND_LINUX = '%s/tools/install-etcher.linux.sh "%s" "%s" "%s"'
     INSTALL_ETCHER_COMMAND_WINDOWS = '%s\\tools\\install-etcher.windows.bat "%s" "%s" "%s"'
-    INSTALL_ETCHER_COMMAND_MAC = '%s/tools/install-etcher.mac "%s" "%s" "%s"'
+    INSTALL_ETCHER_COMMAND_MAC = '%s/tools/install-etcher.mac.sh "%s" "%s" "%s"'
 
     STATUS_IDLE = 0
     STATUS_DOWNLOADING = 1
@@ -269,11 +269,11 @@ class Updates(CleepDesktopModule):
 
         #etcher-cli path for test it is installed
         if self.env=='linux':
-            etchercli_script_path = FlashDrive.ETCHER_LINUX
+            etchercli_script_path = FlashDrive.FLASH_LINUX
         elif self.env=='darwin':
-            etchercli_script_path = FlashDrive.ETCHER_MAC
+            etchercli_script_path = FlashDrive.FLASH_MAC
         elif self.env=='windows':
-            etchercli_script_path = FlashDrive.ETCHER_WINDOWS
+            etchercli_script_path = FlashDrive.FLASH_WINDOWS
 
         #handle forced version
         if self.ETCHER_VERSION_FORCED is not None and self.ETCHER_VERSION_FORCED!=etcher_version:

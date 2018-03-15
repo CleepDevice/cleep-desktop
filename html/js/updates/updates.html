@@ -29,13 +29,18 @@
             <md-card-content>
                 <md-list>
                     <md-list-item layout-padding>
+                        <div flex="1">
+                            <md-icon md-svg-icon="chevron-right"></md-icon></md-list-item>
+                        </div>
                         <p>Last check for updates made on {{ctl.lastcheck | hrDatetime}}</p>
                         <md-icon class="md-secondary" ng-click="ctl.checkUpdates()" md-svg-icon="refresh">
                             <md-tooltip md-direction="left">Check for updates</md-tooltip>
                         </md-icon>
                     </md-list-item>
-                    <md-divider></md-divider>
                     <md-list-item layout"row" layout-padding>
+                        <div flex="1">
+                            <md-icon md-svg-icon="chevron-right"></md-icon></md-list-item>
+                        </div>
                         <div flex="50">
                             <span>CleepDesktop version {{ctl.cleepdesktopStatus.version}} is installed</span>
                         </div>
@@ -57,8 +62,10 @@
                             <span>)</span>
                         </div>
                     </md-list-item>
-                    <md-divider></md-divider>
                     <md-list-item layout="row" layout-padding>
+                        <div flex="1">
+                            <md-icon md-svg-icon="chevron-right"></md-icon></md-list-item>
+                        </div>
                         <div flex="50">
                             <span ng-if="ctl.etcherStatus.version!==null">Etcher version {{ctl.etcherStatus.version}} is installed</span>
                             <span ng-if="ctl.etcherStatus.version===null">Etcher is not installed</span>
