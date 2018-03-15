@@ -55,9 +55,9 @@ class FlashDrive(CleepDesktopModule):
     STATUS_ERROR_BADCHECKSUM = 9
     STATUS_ERROR_FLASH = 10
 
-    ETCHER_LINUX = 'etcher-cli/etcher-cli.linux'
-    ETCHER_WINDOWS = 'etcher-cli\etcher-cli.windows.bat'
-    ETCHER_MAC = 'etcher-cli/etcher-cli.mac'
+    FLASH_LINUX = 'etcher-cli/flash.sh'
+    FLASH_WINDOWS = 'etcher-cli\flash.bat'
+    FLASH_MAC = 'etcher-cli/flash.sh'
     
     CMDLOGGER_LINUX = 'tools/cmdlogger-linux/cmdlogger'
     CMDLOGGER_WINDOWS = 'tools\\cmdlogger-windows\\cmdlogger.exe'
@@ -104,22 +104,22 @@ class FlashDrive(CleepDesktopModule):
        
         #prepare specific tools and etcher commands
         if self.env=='windows':
-            self.etcher_cmd = os.path.join(self.config_path, self.ETCHER_WINDOWS)
+            self.flash_cmd = os.path.join(self.config_path, self.FLASH_WINDOWS)
             self.windowsdrives = WindowsDrives()
             self.windowswirelessinterfaces = WindowsWirelessInterfaces()
             self.windowswirelessnetworks = WindowsWirelessNetworks()
         elif self.env=='linux':
-            self.etcher_cmd = os.path.join(self.config_path, self.ETCHER_LINUX)
+            self.flash_cmd = os.path.join(self.config_path, self.FLASH_LINUX)
             self.iw = Iw()
             self.iwlist = Iwlist()
             self.lsblk = Lsblk()
             self.udevadm = Udevadm()
         elif self.env=='darwin':
-            self.etcher_cmd = os.path.join(self.config_path, self.ETCHER_MAC)
+            self.flash_cmd = os.path.join(self.config_path, self.FLASH_MAC)
             self.diskutil = Diskutil()
             self.macwirelessinterfaces = MacWirelessInterfaces()
             self.macwirelessnetworks = MacWirelessNetworks()
-        self.logger.debug('Etcher command line: %s' % self.etcher_cmd)
+        self.logger.debug('Etcher command line: %s' % self.flash_cmd)
 
     def _custom_stop(self):
         """
@@ -852,7 +852,7 @@ class FlashDrive(CleepDesktopModule):
                 wifi_config = ''
 
             #prepare command line
-            cmd = [self.etcher_cmd, self.config_path, self.drive, self.iso, wifi_config]
+            cmd = [self.flash_cmd, self.config_path, self.drive, self.iso, wifi_config]
             self.logger.debug('Etcher command to execute: %s' % cmd)
 
             #start command in admin endless console

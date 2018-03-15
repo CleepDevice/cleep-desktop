@@ -7,7 +7,7 @@ a = Analysis(['cleepdesktopcore.py'],
              binaries=[],
              datas=[
                 ('core', 'core'),
-                ('tools/etcher-cli.windows.bat', 'tools/'),
+                ('tools/flash.windows.bat', 'tools/'),
                 ('tools/install-etcher.windows.bat', 'tools/'),
                 ('tools/7z', 'tools/7z'),
                 ('tools/cmdlogger-windows64', 'tools/cmdlogger-windows')

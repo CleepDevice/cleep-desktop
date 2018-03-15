@@ -7,8 +7,8 @@ a = Analysis(['cleepdesktopcore.py'],
              binaries=[],
              datas=[
                 ('core', 'core'),
-                ('tools/etcher-cli.mac', 'tools/'),
-                ('tools/install-etcher.mac', 'tools/'),
+                ('tools/flash.mac.sh', 'tools/'),
+                ('tools/install-etcher.sh', 'tools/'),
                 ('tools/cmdlogger-mac32', 'tools/cmdlogger-mac')
              ],
              hiddenimports=[],
