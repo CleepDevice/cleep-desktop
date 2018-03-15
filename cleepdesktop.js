@@ -198,6 +198,7 @@ function createMenu()
                 type: 'separator'
             }, {
                 label: 'Quit',
+                accelerator: 'CmdOrCtrl+Q',
                 click: () => {
                     app.quit();
                 }
