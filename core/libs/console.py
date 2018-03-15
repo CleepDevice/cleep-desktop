@@ -289,7 +289,7 @@ class AdminEndlessConsole(EndlessConsole):
             comm_server.bind((u'', comm_port))
             if platform.system()=='Windows':
                 #short timeout on windows
-                comm_server.settimeout(5.0)
+                comm_server.settimeout(1.0)
             else:
                 #longer timeout on other platform due to password request
                 comm_server.settimeout(1.0)
@@ -320,7 +320,8 @@ class AdminEndlessConsole(EndlessConsole):
 
         elif platform.system()=='Darwin':
             #prepare cmdline
-            params = [self.cmdlogger_path, str(comm_port), self.command[0]] + self.command[1:]
+            command_params = [u"'%s'" % (x,) for x in self.command]
+            params = [self.cmdlogger_path, str(comm_port), command_params[0]] + command_params[1:]
             self.logger.debug('params=%s' % params)
             cmd_line = 'osascript -e "do shell script \\"%s\\" with administrator privileges"' % u' '.join(params)
             self.logger.debug('cmdline=%s' % cmd_line)
@@ -332,6 +333,7 @@ class AdminEndlessConsole(EndlessConsole):
 
         elif platform.system()=='Linux':
             #prepare cmdline
+            command_params = [u"'%s'" % (x,) for x in self.command]
             params = [self.cmdlogger_path, str(comm_port), self.command[0]] + self.command[1:]
             self.logger.debug('params=%s' % params)
             cmd_line = 'pkexec %s' % u' '.join(params)
