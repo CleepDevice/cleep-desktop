@@ -9,11 +9,11 @@
 LOGFILE="$1/etcher-cli.log"
 
 dt=$(date '+%d/%m/%Y %H:%M')
-echo "$dt" >> $LOGFILE
+echo "START $dt" >> $LOGFILE
 echo "params=$1 $2 $3 $4" >> $LOGFILE
 
 #flash drive
-$1/etcher-cli/etcher --yes --unmount --drive $2 $3
+"$1/etcher-cli/etcher" --yes --unmount --drive $2 $3
 ret=$?
 echo "etcher-cli returncode=$ret" >> $LOGFILE
 if [ $ret != 0 ]
@@ -42,3 +42,5 @@ then
     /bin/rmdir /tmp/raspiot_root
 fi
 
+dt=$(date '+%d/%m/%Y %H:%M')
+echo "END $dt" >> $LOGFILE

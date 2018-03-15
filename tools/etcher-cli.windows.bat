@@ -7,7 +7,7 @@
 
 set logfile=%1\etcher-cli.log
 
-echo %date% %time% >> %logfile%
+echo START %date% %time% >> %logfile%
 echo params=%1 %2 %3 %4 >> %logfile%
 
 :: flash drive
@@ -33,3 +33,4 @@ xcopy /Y /F "%4" %bootvolume%\cleepwifi.conf >> %logfile%
 
 :END
 echo returncode=%ERRORLEVEL% >> %logfile%
+echo END %date% %time% >> %logfile%
