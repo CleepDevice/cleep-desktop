@@ -29,7 +29,7 @@ echo bootvolume=%bootvolume% >> %logfile%
     
 :: copy wifi config to boot volume
 echo > %bootvolume%\cleepwifi.conf
-xcopy /Y /F "%4" %bootvolume%\cleepwifi.conf >> %logfile%
+copy "%4" %bootvolume%\cleepwifi.conf >> %logfile%
 
 :END
 echo returncode=%ERRORLEVEL% >> %logfile%
