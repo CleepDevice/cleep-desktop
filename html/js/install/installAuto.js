@@ -84,8 +84,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                 self.noRaspbianIso = resp.data.raspbianIsos===0;
                 self.isoraspbian = resp.data.isoraspbian;
                 self.isolocal = resp.data.isolocal;
-                self.wifiNetworks = resp.data.wifinetworks;
-
+                
                 //append new item for local iso
                 if( self.isolocal )
                 {
@@ -280,9 +279,6 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     //initialize
     self.init = function()
     {
-        //get wifi networks to choose proper input (select when wifi adapter available or input when not available)
-        self.refreshWifiNetworks();
-
         //get flash status
         self.getStatus();
     };
