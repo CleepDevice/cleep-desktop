@@ -1,0 +1,18 @@
+LINUX
+-----
+Make or generate 1024x1024 PNG image
+
+WINDOWS
+-------
+Download and install http://www.nongnu.org/icoutils/ under linux
+Execute command: icontool -c 1024x1024.png > icon.ico
+
+MACOS
+-----
+Download script from https://github.com/daveish/png2icns under mac
+Exceute command: png2icns.sh 1024x1024.png
+
+INFOS
+-----
+All those informations come from https://blog.avocode.com/4-must-know-tips-for-building-cross-platform-electron-apps-f3ae9c2bffff
+
