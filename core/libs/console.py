@@ -246,9 +246,12 @@ class AdminEndlessConsole(EndlessConsole):
         """
         Set cmdlogger binary fullpath
         """
-        self.cmdlogger_path = cmdlogger_path
-        if not os.path.exists(self.cmdlogger_path):
+        #check path validity        
+        if not os.path.exists(cmdlogger_path):
             raise Exception('Invalid cmdlogger path (%s). Binary file does not exist' % cmdlogger_path)
+
+        #set cmdlogger path with spaces protection
+        self.cmdlogger_path = "'%s'" % cmdlogger_path
                 
     def __quit_properly(self, return_code):
         """
@@ -282,6 +285,7 @@ class AdminEndlessConsole(EndlessConsole):
             return
             
         #open communication socket
+        self.logger.debug('Start communication server')
         comm_server = None
         try:
             comm_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -292,15 +296,18 @@ class AdminEndlessConsole(EndlessConsole):
                 comm_server.settimeout(1.0)
             else:
                 #longer timeout on other platform due to password request
-                comm_server.settimeout(1.0)
+                comm_server.settimeout(2.0)
+
         except:
             self.logger.exception(u'Unable to create communication server')
             self.__quit_properly(self.ERROR_INTERNAL)
             return
+
+        self.logger.debug('Communication server started')
             
         self.__start_time = time.time()
         if platform.system()=='Windows':
-            #get command and command arguments
+            #get command and command arguments (and protect arguments from spaces)
             user_cmd = u'"%s"' % self.command[0]
             user_cmd_params = u' '.join([u'"%s"' % (x,) for x in self.command[1:]])
             self.logger.debug(u'user_cmd=%s user_cmd_params=%s' % (user_cmd, user_cmd_params))
@@ -319,8 +326,10 @@ class AdminEndlessConsole(EndlessConsole):
             pid = win32process.GetProcessId(proc_handle)
 
         elif platform.system()=='Darwin':
-            #prepare cmdline
+            #protect cmdline arguments from spaces
             command_params = [u"'%s'" % (x,) for x in self.command]
+
+            #prepare cmdline
             params = [self.cmdlogger_path, str(comm_port), command_params[0]] + command_params[1:]
             self.logger.debug('params=%s' % params)
             cmd_line = 'osascript -e "do shell script \\"%s\\" with administrator privileges"' % u' '.join(params)
@@ -332,9 +341,11 @@ class AdminEndlessConsole(EndlessConsole):
             pid = proc_info.pid
 
         elif platform.system()=='Linux':
-            #prepare cmdline
+            #protect cmdline arguments from spaces
             command_params = [u"'%s'" % (x,) for x in self.command]
-            params = [self.cmdlogger_path, str(comm_port), self.command[0]] + self.command[1:]
+
+            #prepare cmdline
+            params = [self.cmdlogger_path, str(comm_port), command_params[0]] + command_params[1:]
             self.logger.debug('params=%s' % params)
             cmd_line = 'pkexec %s' % u' '.join(params)
             self.logger.debug('cmdline=%s' % cmd_line)
@@ -382,6 +393,7 @@ class AdminEndlessConsole(EndlessConsole):
             self.logger.debug(u'Process canceled during cmdlogger sync')
 
         #look for cmdlogger messages
+        self.logger.debug('Start listening command output through communication server')
         while self.running:
             try:
                 message = cmdlogger.recv(4096)
