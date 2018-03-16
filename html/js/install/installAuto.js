@@ -211,7 +211,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
             //fill wifi config from automatic values
             wifiConfig.network = self.selectedWifiNetwork.network;
             wifiConfig.encryption = self.selectedWifiNetwork.encryption;
-            wifiConfig.password = self.selectedWifiNetwork.password;
+            wifiConfig.password = self.wifiPassword;
         }
         logger.debug('url=' + self.selectedIso.url);
         logger.debug('drive=' + self.selectedDrive);
@@ -234,7 +234,9 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                     .then(function() {
                         toast.info('Installation started');
                     }, function(err) {
-                        toast.error('Unable to start installation.');
+                        //no toast here, if error occured with command, it should return an exception that is catched
+                        //and toasted by cleepService
+                        self.flashing = false;
                     });
             });
     };

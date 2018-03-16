@@ -411,6 +411,8 @@ class FlashDrive(CleepDesktopModule):
             raise Exception('Invalid drive "%s"' % url)
         if self.url is not None or self.drive is not None:
             raise Exception('Installation is already running')
+        if wifi and 'network' in wifi and (not 'password' in wifi or not 'encryption' in wifi):
+            raise Exception('Missing wifi password or encryption value')
 
         #get sha1
         isos = self.get_isos(iso_raspbian, iso_local)
