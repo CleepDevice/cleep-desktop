@@ -45,7 +45,7 @@ let coreDisabled = false;
 
 //logger configuration
 logger.transports.file.level = 'info';
-logger.transports.file.maxSize = 5 * 1024 * 1024;
+logger.transports.file.maxSize = 1 * 1024 * 1024;
 logger.transports.console.level = 'info';
 if( isDev )
 {
@@ -213,11 +213,6 @@ function createMenu()
                     mainWindow.webContents.send('openPage', 'installAuto');
                 }
             }, {
-            /*    label: 'Manual install',
-                click: () => {
-                    mainWindow.webContents.send('openPage', 'installManually');
-                }
-            }, {*/
                 type: 'separator'
             }, {
                 label: 'Monitoring',
