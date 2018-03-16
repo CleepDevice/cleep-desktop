@@ -397,7 +397,7 @@ class AdminEndlessConsole(EndlessConsole):
         while self.running:
             try:
                 message = cmdlogger.recv(4096)
-                self.logger.debug(u'Message received: %s' % message)
+                #self.logger.debug(u'Message received: %s' % message)
                 if isinstance(message, bytes):
                     message = message.decode(self.console_encoding).rstrip()
             
