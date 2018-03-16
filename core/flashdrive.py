@@ -98,11 +98,11 @@ class FlashDrive(CleepDesktopModule):
         self.cancel = False
         self.timestamp_isos = None
         self.__etcher_output_pattern = r'.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)'
-        self.__etcher_output_error = False
+        self.__flash_output_error = False
         self.wifi_config = None
         self.flashable_drives = []
        
-        #prepare specific tools and etcher commands
+        #prepare specific tools and flash commands
         if self.env=='windows':
             self.flash_cmd = os.path.join(self.config_path, self.FLASH_WINDOWS)
             self.windowsdrives = WindowsDrives()
@@ -119,7 +119,7 @@ class FlashDrive(CleepDesktopModule):
             self.diskutil = Diskutil()
             self.macwirelessinterfaces = MacWirelessInterfaces()
             self.macwirelessnetworks = MacWirelessNetworks()
-        self.logger.debug('Etcher command line: %s' % self.flash_cmd)
+        self.logger.debug('Flash command line: %s' % self.flash_cmd)
 
     def _custom_stop(self):
         """
@@ -131,6 +131,9 @@ class FlashDrive(CleepDesktopModule):
         """
         Start flash process. Does nothing until start_flash is called
         """
+        #precache wifi networks at startup
+        self.get_wifi_networks()
+
         while self.running:
             #check if process requested
             if self.url and self.drive:
@@ -138,6 +141,7 @@ class FlashDrive(CleepDesktopModule):
 
                 if self.__download_file():
                     #update ui
+                    self.logger.debug('Status after download: %s' % self.get_status())
                     self.update_callback(self.get_status())
 
                     #file downloaded successfully, launch flash+validation
@@ -149,7 +153,7 @@ class FlashDrive(CleepDesktopModule):
                         time.sleep(0.25)
                         
                     #end of process
-                    if self.__etcher_output_error:
+                    if self.__flash_output_error:
                         #error occured during flash
                         self.status = self.STATUS_ERROR_FLASH
                     elif self.cancel:
@@ -424,6 +428,7 @@ class FlashDrive(CleepDesktopModule):
         #generate wifi config file is needed
         wifi_config = None
         if wifi['network']:
+            self.logger.debug('Start flash: wifi infos available')
             try:
                 #prepare content
                 cleepwificonf = CleepWifiConf()
@@ -439,11 +444,14 @@ class FlashDrive(CleepDesktopModule):
             except:
                 self.logger.exception('Unable to store wifi config:')
                 wifi_config = None
+        else:
+            self.logger.debug('Start flash: no wifi info specified')
 
-        #store data
+        #store data (setting self.url and self.drive will trigger flashing in run method)
         self.url = url
         self.drive = drive
         self.wifi_config = wifi_config
+        self.logger.debug('Start flash: flash will start with values: %s %s %s' % (self.url, self.drive, self.wifi_config))
 
     def cancel_flash(self):
         """
@@ -708,7 +716,7 @@ class FlashDrive(CleepDesktopModule):
         """
         #adjust internal status according to download status
         if status==Download.STATUS_IDLE:
-            pass
+            self.status = self.STATUS_DOWNLOADING
         elif status==Download.STATUS_DOWNLOADING:
             self.status = self.STATUS_DOWNLOADING
         elif status==Download.STATUS_DOWNLOADING_NOSIZE:
@@ -720,7 +728,7 @@ class FlashDrive(CleepDesktopModule):
         elif status==Download.STATUS_ERROR_BADCHECKSUM:
             self.status = self.STATUS_ERROR_BADCHECKSUM
         elif status==Download.STATUS_DONE:
-            pass
+            self.status = self.STATUS_DOWNLOADING
 
         #save current progress percentage 
         self.percent = percent
@@ -741,9 +749,12 @@ class FlashDrive(CleepDesktopModule):
         """
         Download file task
         """
+        #check values
         if self.url is None or self.drive is None:
             self.logger.debug('No drive or url specified, flash process stopped')
             return False
+
+        #check if it is local file
         if self.url.startswith('file://'):
             #local file, nothing to download but fake download values
             self.iso = self.url.replace('file://', '')
@@ -807,10 +818,10 @@ class FlashDrive(CleepDesktopModule):
                     #update ui
                     self.update_callback(self.get_status())
         except:
-            if not self.__etcher_output_error:
+            if not self.__flash_output_error:
                 self.crash_report.report_exception()
-                self.logger.exception('Exception occured during etcher status:')
-                self.__etcher_output_error = True
+                self.logger.exception('Exception occured during flash callback:')
+                self.__flash_output_error = True
 
     def __flash_end_callback(self):
         """
@@ -828,10 +839,10 @@ class FlashDrive(CleepDesktopModule):
         if return_code!=0:
             #flash failed
             self.logger.error('Flash failed. Return code awaited is 0, received %s' % return_code)
-            self.__etcher_output_error = True
+            self.__flash_output_error = True
         else:
             #reset console and set status
-            self.__etcher_output_error = False
+            self.__flash_output_error = False
 
         #update ui
         self.update_callback(self.get_status())
@@ -855,7 +866,7 @@ class FlashDrive(CleepDesktopModule):
 
             #prepare command line
             cmd = [self.flash_cmd, self.config_path, self.drive, self.iso, wifi_config]
-            self.logger.debug('Etcher command to execute: %s' % cmd)
+            self.logger.debug('Flash command to execute: %s' % cmd)
 
             #start command in admin endless console
             self.console = AdminEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
@@ -869,7 +880,7 @@ class FlashDrive(CleepDesktopModule):
 
         except:
             self.logger.exception('Exception occured during drive flashing:')
-            self.__etcher_output_error = True
+            self.__flash_output_error = True
             self.console = None
 
     def get_wifi_networks(self):
