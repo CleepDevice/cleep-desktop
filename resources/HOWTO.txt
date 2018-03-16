@@ -1,16 +1,16 @@
 LINUX
 -----
-Make or generate 1024x1024 PNG image
+Make or generate 1024x1024 and 256x256 PNG images
 
 WINDOWS
 -------
 Download and install http://www.nongnu.org/icoutils/ under linux
-Execute command: icontool -c 1024x1024.png > icon.ico
+Execute command: icontool -c 256x256.png > icon.ico (why 256? because 1024 generates too huge file ~4Mo)
 
 MACOS
 -----
 Download script from https://github.com/daveish/png2icns under mac
-Exceute command: png2icns.sh 1024x1024.png
+Execute command: png2icns.sh 1024x1024.png. It generates 1024x1024.icns file
 
 INFOS
 -----
