@@ -23,7 +23,7 @@ class Iwlist(AdvancedConsole):
     Command /sbin/iwlist helper
     """
 
-    CACHE_DURATION = 10.0
+    CACHE_DURATION = 30.0
     MAX_RETRY = 30
     NO_SCAN_RESULTS = u'No scan results'
 
@@ -156,7 +156,11 @@ class Iwlist(AdvancedConsole):
 
     def get_networks(self, interface):
         """
-        Return all wifi networks scanned
+        Return all wifi networks scanned using iwlist.
+
+        Note:
+            If iwlist is run without root privileges it returns sometimes no result. To prevent a long
+            wait we cache previous scan results. It could be not up to date, but there is no solution for now.
 
         Args:
             interface (string): interface name
@@ -174,26 +178,38 @@ class Iwlist(AdvancedConsole):
                 }
             bool: True if interface is not able to scan wifi
         """
-        for i in range(self.MAX_RETRY):
-            if self.__refresh(interface) is True or None:
-                #scan successful, stop statement
-                break
-            else:
-                self.logger.debug('"No scan results" returned')
-                time.sleep(1)
+        if len(self.__cache.keys())==0:
+            #first run, no cache yet, try until networks are returned by iwlist command
+            self.logger.debug('No cache yet, try until networks are returned')
+            for i in range(self.MAX_RETRY):
+                if self.__refresh(interface) is True or None:
+                    #scan successful, update cache
+                    self.logger.debug('Refresh returns networks. Fill cache')
+                    self.__cache = self.networks
 
-        #sometimes iwlist returns no network because it was run without root privileges
-        #in that case return cached results
-        if len(self.networks.keys())==0 and len(self.__cache.keys())>0:
-            #no network scanned, return cache content
-            return self.__cache
+                    #and stop statement
+                    break
+
+                else:
+                    #no network found, retry
+                    self.logger.debug('"No scan results" returned')
+                    time.sleep(1)
 
         else:
-            #update cache
-            self.__cache = self.networks
+            #cache available, try to scan only once
+            self.logger.debug('Cache available, try to refresh once')
+            if self.__refresh(interface) is True or None:
+                #scan was successful, cache refreshed list
+                self.__cache = self.networks
 
-            #and return found networks
-            return self.networks
+            else:
+                #refresh failed, return cached networks
+                self.logger.debug('Refresh failed, return cached networks')
+                pass
+        
+        #always return cache
+        return self.__cache
+
 
 if __name__ == '__main__':
     import pprint
