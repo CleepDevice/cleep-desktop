@@ -208,16 +208,16 @@ function createMenu()
         label: 'Device',
         submenu: [
             {
-                label: 'Automatic install',
+                label: 'Install',
                 click: () => {
                     mainWindow.webContents.send('openPage', 'installAuto');
                 }
             }, {
-                label: 'Manual install',
+            /*    label: 'Manual install',
                 click: () => {
                     mainWindow.webContents.send('openPage', 'installManually');
                 }
-            }, {
+            }, {*/
                 type: 'separator'
             }, {
                 label: 'Monitoring',
@@ -230,16 +230,16 @@ function createMenu()
         label: 'Help',
         submenu: [
             {
-                label: 'About CleepDesktop',
+                label: 'Application help',
                 click: () => {
-                    mainWindow.webContents.send('openPage', 'about');
+                    mainWindow.webContents.send('openPage', 'help');
                 }
             }, {
                 type: 'separator'
             }, {
-                label: 'Application help',
+                label: 'About',
                 click: () => {
-                    mainWindow.webContents.send('openPage', 'help');
+                    mainWindow.webContents.send('openPage', 'about');
                 }
             }
         ]
@@ -256,10 +256,11 @@ function createSplashScreen()
     //create splashscreen window
     splashScreen = new BrowserWindow({
         width: 250,
-        height: 300,
+        height: 350,
         show: false,
         frame: false,
-        parent: mainWindow
+        parent: mainWindow,
+        icon:__dirname+'/resources/256x256.png'
     });
 
     //load splashscreen content

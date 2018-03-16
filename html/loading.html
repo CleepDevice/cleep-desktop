@@ -556,6 +556,11 @@ body {
     background-color: #607d8b;
     color: white;
     overflow:hidden;
+    font-family: roboto;
+}
+
+.noselect {
+  -webkit-user-select: none;
 }
 
 </style>
@@ -566,12 +571,9 @@ body {
 </div>
 
 <center>
-    <br/>
-    <img id="loadingimg" class="tada-animation" src="images/cleep-loading.png"/>
-    <br/><br/>
-    <span>CleepDesktop</span>
-    <br/ >
-    <span>loading...</span>
+    <img id="loadingimg" style="padding-top:15px; padding-bottom:15px;" src="images/cleep-loading.png"/>
+    <h3 class="noselect">CleepDesktop</h3>
+    <span class="noselect">loading...</span>
 </center>
 
 <script type="text/javascript">
