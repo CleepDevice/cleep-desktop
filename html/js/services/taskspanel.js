@@ -179,7 +179,7 @@ var tasksPanelService = function($mdPanel, logger) {
             action: action,
             label: label,
             close: close || defaultClose,
-            loader: loader
+            loader: loader || false
         };
         self.items.push(item);
 
