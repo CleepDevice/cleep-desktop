@@ -3,11 +3,9 @@ const {remote} = electron;
 const cleepdesktopVersion = remote.getGlobal('cleepdesktopVersion');
 const logger = remote.getGlobal('logger');
 const appUpdater = remote.getGlobal('appUpdater');
-//Use global variable to store cleepdesktop update because on linux env appUpdater does not send
-//download progress, so when opening update page the cleepdesktop update progress shows nothing.
-//This trick will be removed after electron-updater support download-progress event on linux.
-let cleepGlobals = {
-    updatingCleepdesktop: false
+let cleepUi = {
+    openPage: null,
+    openModal: null
 };
 
 //declare angular module
@@ -21,7 +19,7 @@ Cleep.value('deviceMessages', []);
 Cleep.value('logger', logger)
     .value('appUpdater', appUpdater)
     .value('cleepdesktopVersion', cleepdesktopVersion)
-    .value('cleepGlobals', cleepGlobals);
+    .value('cleepUi', cleepUi);
 
 /**
  * Timestamp to human readable string
@@ -181,31 +179,33 @@ Cleep.controller('emptyController', ['$rootScope', '$scope', '$state', emptyCont
 /**
  * Cleep controller
  */
-var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService, modalService, deviceMessages, $timeout, cleepGlobals)
+var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService, modalService, deviceMessages, 
+                            updateService, cleepUi)
 {
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
     self.taskFlashPanel = null;
     self.taskFlashPanelClosed = false;
-    self.taskUpdatePanel = null;
-    self.taskUpdatePanelClosed = false;
-    self.updatingCleepdesktop = false;
-    self.updatingEtcher = false;
 
     //Open page in content area (right side) handling 'openPage' event
-    self.ipcRenderer.on('openPage', function(event, page) {
+    self.openPage = function(page)
+    {
         $state.go(page);
+    };
+    cleepUi.openPage = self.openPage;
+    self.ipcRenderer.on('openPage', function(event, page) {
+        self.openPage(page);
     });
 
     //Open modal handling 'openModal' event
-    self.ipcRenderer.on('openModal', function(event, controllerName, templateUrl) {
+    self.openModal = function(controllerName, templateUrl)
+    {
         modalService.open(controllerName, templateUrl);
-    });
-
-    //Jump to updates page
-    self.jumpToUpdates = function() {
-        $state.go('updates');
     };
+    cleepUi.openModal = self.openModal;
+    self.ipcRenderer.on('openModal', function(event, controllerName, templateUrl) {
+        self.openModal(controllerName, templateUrl);
+    });
 
     //Jump to auto install page
     self.jumpToInstallAuto = function() {
@@ -220,13 +220,7 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         self.taskFlashPanelClosed = true;
     };
 
-    //On close update task panel
-    self.onCloseUpdateTaskPanel = function()
-    {
-        //reset variable
-        self.taskUpdatePanel = null;
-        self.taskUpdatePanelClosed = true;
-    };
+
 
     //On close restart required task panel
     self.onCloseRestartRequiredTaskPanel = function()
@@ -282,93 +276,6 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         }
     });
 
-    //handle opening/closing of update task panel according to current cleepdesktop and etcher update status
-    self.handleUpdateTaskPanel = function()
-    {
-        if( (self.updatingCleepdesktop || self.updatingEtcher) && self.taskUpdatePanelClosed )
-        {
-            //update task panel closed by user, do not open again
-        }
-        else if( !self.updatingCleepdesktop && !self.updatingEtcher && self.taskUpdatePanelClosed )
-        {
-            //update task panel closed by user but updates terminated, reset flag
-            self.taskUpdatePanelClosed = false;
-        }
-        else if( (self.updatingCleepdesktop || self.updatingEtcher) && !self.taskUpdatePanel )
-        {
-            //no update task panel opened yet while update is in progress, open it
-            self.taskUpdatePanel = tasksPanelService.addItem(
-                'Updating application...', 
-                {
-                    onAction: self.jumpToUpdates,
-                    tooltip: 'Go to updates',
-                    icon: 'update'
-                },
-                {
-                    onClose: self.onCloseUpdateTaskPanel,
-                    disabled: false
-                },
-                true
-            );
-        }
-        else if( !self.updatingCleepdesktop && !self.updatingEtcher && self.taskUpdatePanel )
-        {
-            //no update is running and task panel is opened, close it
-            tasksPanelService.removeItem(self.taskUpdatePanel);
-            self.taskUpdatePanel = null;
-            self.taskUpdatePanelClosed = false;
-        }
-    };
-
-    //Handle etcher update here to add update task panel
-    $rootScope.$on('updates', function(event, data) {
-        if( !data )
-            return;
-
-        if( data.etcherstatus.status>=3 )
-        {
-            //update is terminated
-            self.updatingEtcher = false;
-        }
-        else if( !self.taskUpdatePanel && data.etcherstatus.status>0 )
-        {
-            //update is started
-            self.updatingEtcher = true;
-        }
-
-        //update task panel
-        self.handleUpdateTaskPanel();
-    });
-
-    //Handle cleepdesktop update here to add update task panel
-    appUpdater.addListener('update-available', function(info) {
-        //update available, open task panel if necessary
-        logger.debug('--> AppUpdater: update-available');
-        self.updatingCleepdesktop = true;
-        cleepGlobals.updatingCleepdesktop = true;
-
-        //update task panel
-        self.handleUpdateTaskPanel();
-    });
-    appUpdater.addListener('update-downloaded', function(info) {
-        //update downloaded, close task panel
-        logger.debug('--> AppUpdater: update-downloaded');
-        self.updatingCleepdesktop = false;
-        cleepGlobals.updatingCleepdesktop = false;
-
-        //update task panel
-        self.handleUpdateTaskPanel();
-    });
-    appUpdater.addListener('error', function(error) {
-        //error during update, close task panel
-        logger.debug('--> AppUpdater: error');
-        self.updatingCleepdesktop = false;
-        cleepGlobals.updatingCleepdesktop = false;
-
-        //update task panel
-        self.handleUpdateTaskPanel();
-    });
-
     //Watch for device messages event to append them in global value deviceMessages
     //message are handled in main application to keep the messages alive.
     $rootScope.$on('message', function(event, data) {
@@ -406,16 +313,15 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         //init websocket asap
         cleepService.connectWebSocket();
 
-        //trigger application update check few seconds after startup
-        $timeout(function() {
-            logger.info('Check for CleepDesktop update');
-            appUpdater.checkForUpdates();
-        }, 30000);
+        //init update service
+        updateService.init();
+        //and check for updates
+        updateService.checkForUpdates();
     };
 
     self.init();
 
 };
 Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 
-                                    'deviceMessages', '$timeout', 'cleepGlobals', cleepController]);
+                                    'deviceMessages', 'updateService', 'cleepUi', cleepController]);
 

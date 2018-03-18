@@ -3,7 +3,8 @@ var Cleep = angular.module('Cleep')
 /**
  * Updates controller
  */
-var updatesController = function($rootScope, $scope, cleepService, toast, logger, appUpdater, $timeout, cleepdesktopVersion, cleepGlobals)
+var updatesController = function($rootScope, $scope, cleepService, toast, logger, appUpdater, $timeout, 
+    cleepdesktopVersion, updateService)
 {
     var self = this;
 
@@ -34,6 +35,12 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
     };
     self.loading = false;
 
+    //Get last error from cleepdesktop update (from updateService)
+    self.getLastCleepdesktopUpdateError = function() {
+        console.log(updateService.getLastCleepdesktopUpdateError());
+        return updateService.getLastCleepdesktopUpdateError();
+    };
+
     //check for updates
     self.checkUpdates = function() {
         self.loading = true;
@@ -48,7 +55,7 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
                 self.lastcheck = resp.data.lastcheck;
 
                 //check CleepDesktop updates now
-                return appUpdater.checkForUpdates();
+                return updateService.checkForUpdates();
             }, function(error) {
                 logger.error('Error checking etcher updates:' + error);
                 toast.error('Error checking updates');
@@ -132,12 +139,19 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
             });
 
         //get current cleepdesktop status
-        if( cleepGlobals.updatingCleepdesktop )
+        if( updateService.isUpdatingCleepdesktop() )
         {
             self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
             self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
             self.cleepdesktopStatus.downloadpercent = null;
         }
+        else if( updateService.getLastCleepdesktopUpdateError() )
+        {
+            self.cleepdesktopStatus.status = self.STATUS_ERROR;
+            self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_ERROR;
+            self.cleepdesktopStatus.downloadpercent = 100;
+        }
+
     };
     self.init();
 
@@ -152,5 +166,5 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
 
 };
 Cleep.controller('updatesController', ['$rootScope', '$scope', 'cleepService', 'toastService', 'logger', 'appUpdater', 
-                                        '$timeout', 'cleepdesktopVersion', 'cleepGlobals', updatesController]);
+                                        '$timeout', 'cleepdesktopVersion', 'updateService', updatesController]);
 
