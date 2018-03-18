@@ -57,6 +57,10 @@
                             <span>Update failed:</span>
                             <span>{{ctl.getLastCleepdesktopUpdateError()}}</span>
                         </div>
+                        <div ng-if="ctl.isCleepdesktopUpdatesAvailable() && ctl.isCleepdesktopUpdatesDisabled()" flex>
+                            <span>Update available:</span>
+                            <span>Please download latest version <a href="https://github.com/tangb/CleepDesktop/releases" target="_blank">here</a></span>
+                        </div>
                     </md-list-item>
                     <md-list-item layout="row" layout-padding>
                         <div flex="1">

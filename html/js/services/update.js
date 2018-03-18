@@ -11,6 +11,8 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
     self.updatingCleepdesktop = false;
     self.updatingEtcher = false;
     self.lastCleepdesktopUpdateError = '';
+    self.cleepdesktopUpdatesDisabled = false;
+    self.cleepdesktopUpdateAvailable = false;
 
     //Go to updates page
     self.__goToUpdates = function()
@@ -67,6 +69,15 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
     //Init update service adding appUpdater and cleepdesktopcore events handlers
     self.init = function()
     {
+        if( process.platform==='darwin' )
+        {
+            //disable auto updates on macos due to missing certification key that is needed :(
+            self.cleepdesktopUpdatesDisabled = true;
+            appUpdater.autoDownload = false;
+            logger.info('Updates are disabled on MacOs because we need to pay 99$ to get Apple Developper ID. ' +
+            'If Cleep project earns money one day, we will reconsider that.');
+        }
+
         //Handle etcher update here to add update task panel
         $rootScope.$on('updates', function(event, data) {
             if( !data )
@@ -91,29 +102,58 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
         appUpdater.addListener('update-available', function(info) {
             //update available, open task panel if necessary
             logger.debug('AppUpdater: update-available');
-            self.updatingCleepdesktop = true;
 
-            //update task panel
-            self.__handleUpdateTaskPanel();
+            //update new version available flag
+            self.cleepdesktopUpdateAvailable = true;
+
+            if( !self.cleepdesktopUpdatesDisabled )
+            {
+                //update downloading flag
+                self.updatingCleepdesktop = true;
+
+                //update task panel
+                self.__handleUpdateTaskPanel();
+            }
+            else
+            {
+                //update is disabled, show message to user
+                self.taskUpdatePanel = tasksPanelService.addItem(
+                    'New CleepDesktop version available.', 
+                    {
+                        onAction: self.goToUpdates,
+                        tooltip: 'Go to updates',
+                        icon: 'update'
+                    }
+                );
+            }
         });
         appUpdater.addListener('update-downloaded', function(info) {
             //update downloaded, close task panel
             logger.debug('AppUpdater: update-downloaded');
-            self.updatingCleepdesktop = false;
+            if( !self.cleepdesktopUpdatesDisabled )
+            {
+                //update flags
+                self.updatingCleepdesktop = false;
+                self.cleepdesktopUpdateAvailable = false;
 
-            //update task panel
-            self.__handleUpdateTaskPanel();
+                //update task panel
+                self.__handleUpdateTaskPanel();
+            }
         });
         appUpdater.addListener('error', function(error) {
             //error during update, close task panel
-            logger.error('AppUpdater: error ' + error.message);
-            self.updatingCleepdesktop = false;
-            self.lastCleepdesktopUpdateError = error.message;
+            if( !self.cleepdesktopUpdatesDisabled )
+            {
+                //update flags
+                logger.error('AppUpdater: error ' + error.message);
+                self.updatingCleepdesktop = false;
+                self.lastCleepdesktopUpdateError = error.message;
 
-            //update task panel (delay it to make sure taskpanel is displayed)
-            $timeout(function() {
-                self.__handleUpdateTaskPanel();
-            }, 1500);
+                //update task panel (delay it to make sure taskpanel is displayed)
+                $timeout(function() {
+                    self.__handleUpdateTaskPanel();
+                }, 1500);
+            }
         });
     };
 
@@ -148,6 +188,18 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
     self.isUpdatingEtcher = function()
     {
         return self.updatingEtcher;
+    };
+
+    //Is cleepdesktop updates disabled
+    self.isCleepdesktopUpdatesDisabled = function()
+    {
+        return self.cleepdesktopUpdatesDisabled;
+    };
+
+    //Is cleepdesktop updates available
+    self.isCleepdesktopUpdatesAvailable = function()
+    {
+        return self.cleepdesktopUpdateAvailable;
     };
 
 };

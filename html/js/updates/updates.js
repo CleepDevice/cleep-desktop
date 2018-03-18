@@ -37,8 +37,19 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
 
     //Get last error from cleepdesktop update (from updateService)
     self.getLastCleepdesktopUpdateError = function() {
-        console.log(updateService.getLastCleepdesktopUpdateError());
         return updateService.getLastCleepdesktopUpdateError();
+    };
+
+    //Is cleepdesktop updates disabled
+    self.isCleepdesktopUpdatesDisabled = function()
+    {
+        return updateService.isCleepdesktopUpdatesDisabled();
+    };
+    
+    //Is cleepdesktop updates disabled
+    self.isCleepdesktopUpdatesAvailable = function()
+    {
+        return updateService.isCleepdesktopUpdatesAvailable();
     };
 
     //check for updates
