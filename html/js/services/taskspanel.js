@@ -5,7 +5,7 @@
  * This panel can display a progress linebar to display action in progress
  */
 
-var tasksPanelService = function($mdPanel) {
+var tasksPanelService = function($mdPanel, logger) {
     var self = this;
     self.mdPanelRef = null;
     self.items = [];
@@ -151,7 +151,6 @@ var tasksPanelService = function($mdPanel) {
         });
     };
 
-
     //add item to panel
     //panel will popup if it's the first item
     //@param label (string): item label (can be html)
@@ -196,10 +195,12 @@ var tasksPanelService = function($mdPanel) {
     {
         if( self.items.length>1 )
         {
-            for( item in self.items )
+            for( i=0; i<self.items.length; i++ )
             {
-                if( item.id===itemId )
+                if( self.items[i].id===itemId )
                 {
+                    //remove item
+                    self.items.splice(i, 1);
                     break;
                 }
             }
@@ -214,5 +215,5 @@ var tasksPanelService = function($mdPanel) {
 };
     
 var Cleep = angular.module('Cleep');
-Cleep.service('tasksPanelService', ['$mdPanel', tasksPanelService]);
+Cleep.service('tasksPanelService', ['$mdPanel', 'logger', tasksPanelService]);
 
