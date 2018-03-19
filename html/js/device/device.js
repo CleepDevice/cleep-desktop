@@ -3,7 +3,7 @@ var Cleep = angular.module('Cleep')
 /**
  * Device controller
  */
-var deviceController = function($rootScope, $scope, $stateParams, $timeout, logger)
+var deviceController = function($rootScope, $scope, $stateParams, logger, $document)
 {
     var self = this;
     self.shell = require('electron').shell;
@@ -32,13 +32,13 @@ var deviceController = function($rootScope, $scope, $stateParams, $timeout, logg
         }, 1000);
     });
 
-    //configure webview src
-    $timeout(function() {
+    //configure webview src as soon as document is ready
+    $document.ready(function() {
         logger.debug('Opening "'+$stateParams.hostname+'" device url: '+$stateParams.url);
         self.wvAngular = angular.element(self.wv);
         self.wvAngular.attr('src', $stateParams.url);
-    }, 500);
+    });
 
 };
-Cleep.controller('deviceController', ['$rootScope', '$scope', '$stateParams', '$timeout', 'logger', deviceController]);
+Cleep.controller('deviceController', ['$rootScope', '$scope', '$stateParams', 'logger', '$document', deviceController]);
 
