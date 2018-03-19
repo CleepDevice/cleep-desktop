@@ -33,8 +33,8 @@
     "license": "GPLv3",
     "devDependencies": {
         "devtron": "1.4.x",
-        "electron": "1.8.2",
-        "electron-builder": "20.3.1"
+        "electron": "1.8.4",
+        "electron-builder": "20.5.1"
     },
     "dependencies": {
         "detect-port": "1.2.2",
