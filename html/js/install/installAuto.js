@@ -80,10 +80,10 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         return cleepService.sendCommand('getisos')
             .then(function(resp) {
                 self.isos = resp.data.isos;
-                self.noCleepIso = resp.data.cleepIsos===0;
-                self.noRaspbianIso = resp.data.raspbianIsos===0;
-                self.isoraspbian = resp.data.isoraspbian;
-                self.isolocal = resp.data.isolocal;
+                self.noCleepIso = resp.data.cleepisos===0;
+                self.noRaspbianIso = resp.data.raspbianisos===0;
+                self.isoraspbian = resp.data.withraspbianiso;
+                self.isolocal = resp.data.withlocaliso;
                 
                 //append new item for local iso
                 if( self.isolocal )

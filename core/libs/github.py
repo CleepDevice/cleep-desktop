@@ -5,6 +5,7 @@ import logging
 import time
 import urllib3
 import json
+from datetime import datetime
 
 class Github():
     """
@@ -30,7 +31,7 @@ class Github():
 
         #members
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
-        self.http = urllib3.PoolManager(num_pools=1)
+        self.http = urllib3.PoolManager(num_pools=3)
         self.owner = owner
         self.repository = repository
 
@@ -62,8 +63,12 @@ class Github():
         Return:
             list of dict: list of assets infos (name, url, size)::
                 [
-                    {name (string), url (string), size (int)},
-                    {name (string), url (string), size (int)},
+                    {
+                        name (string): filename,
+                        url (string): full download url,
+                        size (int): file size
+                        timestamp (int): updated time (UTC)
+                    },
                     ...
                 ]
         """
@@ -75,10 +80,19 @@ class Github():
         out = []
         for asset in release[u'assets']:
             if u'browser_download_url' and u'size' and u'name' in asset.keys():
+                #convert universal time to timestamp
+                updated_at = 0
+                try:
+                    updated_at = int(datetime.strptime(asset[u'updated_at'], '%Y-%m-%dT%H:%M:%SZ').timestamp())
+                except:
+                    self.logger.exception('Unable to parse updated_at time "%s"' % asset[u'updated_at'])
+
+                #store entry
                 out.append({
                     u'name': asset[u'name'],
                     u'url': asset[u'browser_download_url'],
-                    u'size': asset[u'size']
+                    u'size': asset[u'size'],
+                    u'timestamp': updated_at
                 })
 
         return out
@@ -105,11 +119,13 @@ class Github():
             return data
 
         elif resp.status==404:
-            raise Exception(u'Invalid request: not found')
+            self.logger.warning(u'No release found (404)')
+            return None
 
         else:
             #invalid request
-            raise Exception(u'Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
+            self.logger.error(u'Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
+            return None
 
     def get_releases(self):
         """
@@ -151,5 +167,44 @@ class Github():
             
         #request
         return self.__request_github(url)
-    
 
+    def get_file_content(self, url):
+        """
+        Return specified url content
+        Useful to get shaX content
+
+        Args:
+            url (string): url to retrieve content of
+
+        Return:
+            string: url request content or None if error occured
+        """
+        resp = self.http.urlopen('GET', url, headers=self.http_headers)
+        if resp.status==200:
+            #response successful, parse data to get current latest version
+            data = resp.data.decode('utf-8')
+            #self.logger.debug('Data: %s' % data)
+            return data
+
+        elif resp.status==404:
+            self.logger.warning(u'Nothing found at %s (404)' % url)
+            return None
+
+        else:
+            #invalid request
+            self.logger.error(u'Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
+            return None
+    
+if __name__=='__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    import pprint
+
+    pp = pprint.PrettyPrinter(indent=2)
+
+    g = Github('tangb', 'raspiot')
+    release = g.get_latest_release()
+    pp.pprint(release)
+    pp.pprint('===============================')
+
+    infos = g.get_release_assets_infos(release)
+    pp.pprint(infos)
