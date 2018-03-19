@@ -145,7 +145,8 @@ Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $
         .state('device', {
             url: '/device',
             params: {
-                url: null
+                url: null,
+                hostname: null
             },
             controller: 'deviceController',
             controllerAs: 'ctl',

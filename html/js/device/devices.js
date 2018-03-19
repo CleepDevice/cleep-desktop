@@ -6,10 +6,10 @@ var Cleep = angular.module('Cleep')
 var devicesController = function($rootScope, $scope, $timeout, cleepService, $state)
 {
     var self = this;
-    self.devices = [];
     self.unconfigured = 0;
     self.configured = 0;
     self.loading = true;
+    self.devices = [];
 
     //synchronize devices updating existing devices and adding new ones to avoir ui flickering
     self.syncDevices = function(devices)
@@ -63,7 +63,7 @@ var devicesController = function($rootScope, $scope, $timeout, cleepService, $st
                 url = 'http://' + url;
 
             //open device page on right panel
-            $state.go('device', {url:url});
+            $state.go('device', {url:url, hostname:device.hostname});
         }
     };
 
@@ -86,6 +86,7 @@ var devicesController = function($rootScope, $scope, $timeout, cleepService, $st
     {
         self.updateDevices(data);
     });
+
 };
 Cleep.controller('devicesController', ['$rootScope', '$scope', '$timeout', 'cleepService', '$state', devicesController]);
 
