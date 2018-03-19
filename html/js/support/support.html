@@ -4,6 +4,7 @@
     <md-toolbar flex="initial">
         <div class="md-toolbar-tools">
             <h2>
+                <md-icon md-svg-icon="lifebuoy"></md-icon>
                 Get support
             </h2>
             <span flex></span>
@@ -17,22 +18,18 @@
         <md-card>
             <md-card-content>
                 <md-list>
+
+                    <!-- bugs -->
                     <md-list-item class="md-2-line">
                         <md-icon md-svg-icon="bug"></md-icon>
                         <div class="md-list-item-text">
                             <h3>You discover a bug?</h3>
                             <p>Please declare it in dedicated bugs page</p>
                         </div>
-                        <md-button class="md-secondary" ng-href="https://github.com/tangb/CleepDesktop/issues" target="_blank">Declare a bug</md-button>
+                        <md-button class="md-secondary" ng-href="https://github.com/tangb/CleepDesktop/issues" target="_blank">Create a bug</md-button>
                     </md-list-item>
-                    <md-list-item class="md-2-line">
-                        <md-icon md-svg-icon="slack"></md-icon>
-                        <div class="md-list-item-text">
-                            <h3>You want to discuss about CleepDesktop?</h3>
-                            <p>Please feel free to join us on our Slack channel (you'll need to create an account).</p>
-                        </div>
-                        <md-button class="md-secondary" ng-href="https://cleep.slack.com/messages/C32JBPELW/" target="_blank">Open slack</md-button>
-                    </md-list-item>
+
+                    <!-- forum -->
                     <md-list-item class="md-2-line">
                         <md-icon md-svg-icon="forum"></md-icon>
                         <div class="md-list-item-text">
@@ -41,6 +38,27 @@
                         </div>
                         <md-button class="md-secondary" ng-disabled="true">Coming soon</md-button>
                     </md-list-item>
+
+                    <!-- tutorials -->
+                    <md-list-item class="md-2-line">
+                        <md-icon md-svg-icon="video"></md-icon>
+                        <div class="md-list-item-text">
+                            <h3>You are lost building your device?</h3>
+                            <p>Feel inspiration watching our tutorials.</p>
+                        </div>
+                        <md-button class="md-secondary" ng-disabled="true">Coming soon</md-button>
+                    </md-list-item>
+
+                    <!-- slack -->
+                    <md-list-item class="md-2-line">
+                        <md-icon md-svg-icon="slack"></md-icon>
+                        <div class="md-list-item-text">
+                            <h3>You want to discuss about CleepDesktop?</h3>
+                            <p>Please feel free to join us on our Slack channel (you'll need to create an account).</p>
+                        </div>
+                        <md-button class="md-secondary" ng-href="https://cleep.slack.com/messages/C32JBPELW/" target="_blank">Open slack</md-button>
+                    </md-list-item>
+
                 </md-list>
             </md-card-content>
         </md-card>
