@@ -1,132 +1,169 @@
 
 <div ng-controller="emptyController as ctl" layout="column" layout-fill>
 
-        <!-- menu -->
-        <md-toolbar flex="initial">
-            <div class="md-toolbar-tools">
-                <h2>
-                    Welcome
-                </h2>
-                <span flex></span>
-            </div>
-        </md-toolbar>
-        <md-progress-linear md-mode="determinate"></md-progress-linear>
+    <!-- menu -->
+    <md-toolbar flex="initial">
+        <div class="md-toolbar-tools">
+            <h2>
+                Application help
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+    <md-progress-linear md-mode="determinate"></md-progress-linear>
 
-        <!-- page content -->
-        <md-content layout-padding>
+    <!-- page content -->
+    <md-content layout-padding>
 
-            <!-- cleepdesktop -->
-            <md-card>
-
-                <md-card-content>
-
-                    <!-- panels -->
-                    <div layout="row" layout-padding layout-align="start center">
-                        <div class="md-headline">
-                            <img src="images/cleep-logo.png" style=""/>
-                        </div>
-                        <div class="md-headline">
-                            Welcome to CleepDesktop!
-                        </div>
+        <!-- introduction -->
+        <md-card>
+            <md-card-content>
+                <div layout="row" layout-padding layout-align="start center">
+                    <div class="md-headline">
+                        <img src="images/cleep-3d.png" style="width:100px; height:100px;"/>
                     </div>
-                    <p>
-                        CleepDesktop is an application that allows you to detect, configure and monitor your Cleep devices easily.
-                    </p>
-
-                    <!-- window description -->
-                    <p class="md-title" style="margin-top:50px;">
-                        <md-icon md-svg-icon="chevron-right"></md-icon>
-                        Main window
-                    </p>
-                    <p class="md-subhead">
-                        Left panel
-                    </p>
-                    <div layout="row" layout-padding layout-align="start center">
-                        <div>
-                            <img src="images/cleep-left-panel.png" style="padding-right:25px;"/>
-                        </div>
-                        <div>
-                            The left panel is the <b>devices</b> panel. It allows you to select a device to access its configuration.
-                            <br/><br/>
-                            Cleep devices  are automatically discovered by CleepDesktop as soon as they have started.
-                            <br/><br/>
-                            You will find different sections in this devices panel:
-                            <ul>
-                                <li>An <i>unconfigured device section</i> that shows you your new devices ready to be configured</li>
-                                <li>A <i>devices section</i> that displays your configured devices with their name you give them</li>
-                            </ul>
-                            <br/><br/>
-                            On the left of each devices, you will see an icon that represents device status. Icons signification:
-                            <ul>
-                                <li><md-icon md-svg-icon="cellphone-link-off"></md-icon> for device that is not accessible (ie powered off or disconnected from network)</li>
-                                <li><md-icon md-svg-icon="cellphone-link"></md-icon> for online device</li>
-                            </ul>
-                        </div>
+                    <div>
+                        <p class="md-headline">
+                            CleepDesktop
+                        </p>
+                        <p>
+                            The application that allows you to install, detect and configure your Cleep devices as simply as possible.
+                        </p>
+                         
                     </div>
-                    <p class="md-subhead">
-                        Right panel
-                    </p>
-                    <div layout="row" layout-padding>
-                        <div>
-                            <img src="images/cleep-right-panel.png" style="padding-right:25px;"/>
-                        </div>
-                        <div>
-                            All different application views are displayed in the right panel.
-                            <br/>
-                            In this panel will be displayed:
-                            <ul>
-                                <li>Application preferences</li>
-                                <li>Device configuration pages</li>
-                                <li>Cleep installation pages</li>
-                                <li>...</li>
-                            </ul>
-                        </div>
+                </div>
+            </md-card-content>
+        </md-card>
+
+        <!-- ui -->
+        <md-card>
+            <md-card-title>
+                <md-card-title-text>
+                    <span class="md-headline">
+                        <md-icon md-svg-icon="application"></md-icon>
+                        Application window
+                    </span>
+                </md-card-title-text>
+            </md-card-title>
+            <md-card-content>
+                <p class="md-title">
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    Left panel
+                </p>
+                <div layout="row" layout-padding layout-align="start center">
+                    <div>
+                        <img src="images/cleep-left-panel.png" style="padding-right:25px;"/>
                     </div>
-
-                    <!-- cleep installation -->
-                    <p class="md-title" style="margin-top:50px;">
-                        <md-icon md-svg-icon="chevron-right"></md-icon>
-                        Cleep software installation
-                    </p>
-                    <div layout="row" layout-padding>
-                        <div>
-                            <b>Cleep install menu</b> gives you access to different way to install Cleep on your Raspberry pi:
-                            <ul>
-                                <li><i>Easy install menu</i> guides you to install easily Cleep software on your Raspberry pi SD card directly from CleepDesktop.</li>
-                                <li>While <i>Manual install menu</i> will explain you all steps to install manually Cleep software on existing installation.</li>
-                            </ul>
-                        </div>
+                    <div>
+                        The left panel is the <b>devices</b> panel. It allows you to select a device to access its configuration.
+                        <br/><br/>
+                        Cleep devices are automatically discovered by CleepDesktop as soon as they have started.
+                        <br/><br/>
+                        You will find different sections in this devices panel:
+                        <ul>
+                            <li>An <i>unconfigured device section</i> that shows you your new devices ready to be configured</li>
+                            <li>A <i>devices section</i> that displays your configured devices with their name you give them</li>
+                        </ul>
+                        <br/><br/>
+                        On the left of each devices, you will see an icon that represents device status. Icons signification:
+                        <ul>
+                            <li><md-icon md-svg-icon="cellphone-link-off"></md-icon> for device that is not accessible (ie powered off or disconnected from network)</li>
+                            <li><md-icon md-svg-icon="cellphone-link"></md-icon> for online device</li>
+                        </ul>
                     </div>
-
-                    <!-- need help -->
-                    <p class="md-title" style="margin-top:50px;">
-                        <md-icon md-svg-icon="chevron-right"></md-icon>
-                        Need help ?
-                    </p>
-                    <div layout="row" layout-padding>
-                        <div>
-                            <img src="images/cleep-help.png" style="padding-right:25px;"/>
-                        </div>
-                        <div>
-                            You are lost or need some help, you can post messages on Cleep forum directly accessible from help menu.
-                            <br/><br/>
-                            You found a bug? You have quick access to Cleep tracking bugs page directly from help menu.
-                        </div>
+                </div>
+                <br/>
+                <p class="md-title">
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    Right panel
+                </p>
+                <div layout="row" layout-padding>
+                    <div>
+                        <img src="images/cleep-right-panel.png" style="padding-right:25px;"/>
                     </div>
-
-                    <!-- social -->
-                    <p class="md-title" style="margin-top:50px;">
-                        <md-icon md-svg-icon="chevron-right"></md-icon>
-                        Follow Cleep
-                    </p>
-                    <div layout="row" layout-padding>
-                        <div>
-                            If you want to follow Cleep on social network, please feel free to register to our Facebook page.
-                        </div>
+                    <div>
+                        The right panel is the dynamic one. It will display different application pages such as;
+                        <ul>
+                            <li>Application updates</li>
+                            <li>Device pages</li>
+                            <li>Device installation</li>
+                            <li>Help infos (like this page)</li>
+                            <li>...</li>
+                        </ul>
                     </div>
+                </div>
+            </md-card-content>
+        </md-card>
 
-                </md-card-content>
-            </md-card>
+        <!-- file menu -->
+        <md-card>
+            <md-card-title>
+                <md-card-title-text>
+                    <span class="md-headline">
+                        <md-icon md-svg-icon="menu"></md-icon>
+                        File menu
+                    </span>
+                </md-card-title-text>
+            </md-card-title>
+            <md-card-content>
+                <p class="md-title">
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    Updates
+                </p>
+                <p>
+                    The updates page helps you following available software updates.
+                    <br/><br/>
+                    Please note, Etcher is the 3rd part software used to install Cleep software on SD card.
+                </p>
+                <p class="md-title">
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    Preferences
+                </p>
+                <p>
+                    Preferences page allows you to configure CleepDesktop software.
+                </p>
+            </md-card-content>
+        </md-card>
 
-        </md-content>
+        <!-- device menu -->
+        <md-card>
+            <md-card-title>
+                <md-card-title-text>
+                    <span class="md-headline">
+                        <md-icon md-svg-icon="menu"></md-icon>
+                        Device menu
+                    </span>
+                </md-card-title-text>
+            </md-card-title>
+            <md-card-content>
+                <p class="md-title">
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    Install
+                </p>
+                <p>
+                    Installation page allows you to prepare your SD card installing Cleep software.
+                </p>
+                <p>
+                    It helps you:
+                    <ul>
+                        <li>to choose the latest Cleep software available,</li>
+                        <li>to select the appropriate drive for the installation,</li>
+                        <li>to configure the device wifi connection in case you need it</li>
+                    </ul>
+                </p>
+                <p>
+                    Finally you can follow full installation progress (download, installation and final checks)
+                </p>
+                <p class="md-title">
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    Monitoring
+                </p>
+                <p>
+                    The monitoring page allows you to follow messages sent by your Cleep devices.
+                </p>
+            </md-card-content>
+        </md-card>
+
+    </md-content>
+
 </div>

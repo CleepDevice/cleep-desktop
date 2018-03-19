@@ -232,6 +232,13 @@ function createMenu()
             }, {
                 type: 'separator'
             }, {
+                label: 'Get support',
+                click: () => {
+                    mainWindow.webContents.send('openPage', 'support');
+                }
+            }, {
+                type: 'separator'
+            }, {
                 label: 'About',
                 click: () => {
                     mainWindow.webContents.send('openPage', 'about');
