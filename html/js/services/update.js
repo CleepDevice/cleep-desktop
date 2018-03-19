@@ -46,12 +46,12 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
             self.taskUpdatePanel = tasksPanelService.addItem(
                 'Updating application...', 
                 {
-                    onAction: self.goToUpdates,
+                    onAction: self.__goToUpdates,
                     tooltip: 'Go to updates',
                     icon: 'update'
                 },
                 {
-                    onClose: self.onCloseUpdateTaskPanel,
+                    onClose: self.__onCloseUpdateTaskPanel,
                     disabled: false
                 },
                 true
@@ -120,7 +120,7 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
                 self.taskUpdatePanel = tasksPanelService.addItem(
                     'New CleepDesktop version available.', 
                     {
-                        onAction: self.goToUpdates,
+                        onAction: self.__goToUpdates,
                         tooltip: 'Go to updates',
                         icon: 'update'
                     }
