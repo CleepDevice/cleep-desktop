@@ -20,11 +20,13 @@ var deviceController = function($rootScope, $scope, $stateParams, $timeout, logg
     
     //device loading
     self.wv.addEventListener('did-start-loading', function() {
+        console.log('didstartloading');
         self.loading = true;
     });
 
     //device loaded
     self.wv.addEventListener('did-stop-loading', function() {
+        console.log('didstoploading');
         $timeout(function() {
             self.loading = false;
         }, 1000);
@@ -36,7 +38,7 @@ var deviceController = function($rootScope, $scope, $stateParams, $timeout, logg
         self.wvAngular = angular.element(self.wv);
         self.wvAngular.attr('src', $stateParams.url);
     }, 500);
-    
+
 };
 Cleep.controller('deviceController', ['$rootScope', '$scope', '$stateParams', '$timeout', 'logger', deviceController]);
 

@@ -1,6 +1,6 @@
 {
     "name": "CleepDesktop",
-    "version": "0.0.3",
+    "version": "0.0.2",
     "description": "Desktop application to manage your Cleep devices",
     "main": "cleepdesktop.js",
     "scripts": {
@@ -81,7 +81,7 @@
         },
         "mac": {
             "category": "public.app-category.utilities",
-            "target": "dmg",
+            "target": ["dmg", "zip"],
             "icon": "resources/icon",
             "extendInfo": "config/Info.plist",
             "binaries": [
