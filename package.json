@@ -81,7 +81,7 @@
         },
         "mac": {
             "category": "public.app-category.utilities",
-            "target": ["dmg", "zip"],
+            "target": ["dmg"],
             "icon": "resources/icon",
             "extendInfo": "config/Info.plist",
             "binaries": [

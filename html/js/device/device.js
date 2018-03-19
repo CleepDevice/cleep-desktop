@@ -20,13 +20,11 @@ var deviceController = function($rootScope, $scope, $stateParams, logger, $docum
     
     //device loading
     self.wv.addEventListener('did-start-loading', function() {
-        console.log('didstartloading');
         self.loading = true;
     });
 
     //device loaded
     self.wv.addEventListener('did-stop-loading', function() {
-        console.log('didstoploading');
         $timeout(function() {
             self.loading = false;
         }, 1000);
