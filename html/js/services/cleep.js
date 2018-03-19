@@ -7,10 +7,7 @@
  * It implements command sending with response (send() function)
  * Some commands shortcuts are also available (getConfig, setConfig...)
  */
-
-var settings = require('electron-settings');
-
-var cleepService = function($http, $q, $rootScope, toast, $websocket, logger) {
+var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, settings) {
 
     var self = this;
 
@@ -120,5 +117,5 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger) {
 };
 
 var Cleep = angular.module('Cleep');
-Cleep.service('cleepService', ['$http', '$q', '$rootScope', 'toastService', '$websocket', 'logger', cleepService]);
+Cleep.service('cleepService', ['$http', '$q', '$rootScope', 'toastService', '$websocket', 'logger', 'settings', cleepService]);
 

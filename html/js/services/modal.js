@@ -14,18 +14,18 @@ var modalService = function($mdPanel, $mdDialog) {
     //@service closeModal: inject this service in your controller to close modal
     self.open = function(controllerName, templateUrl) {
         $mdDialog.show({
-                controller: controllerName,
-                controllerAs: 'ctl',
-                locals: {
-                    closeModal: function() {
-                        $mdDialog.cancel();
-                    }
-                },
-                templateUrl: templateUrl,
-                parent: angular.element(document.body),
-                clickOutsideToClose:false,
-                fullscreen: true
-            });
+            controller: controllerName,
+            controllerAs: 'ctl',
+            locals: {
+                closeModal: function() {
+                    $mdDialog.cancel();
+                }
+            },
+            templateUrl: templateUrl,
+            parent: angular.element(document.body),
+            clickOutsideToClose:false,
+            fullscreen: true
+        });
     };
 
 };

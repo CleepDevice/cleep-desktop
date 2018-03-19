@@ -8,6 +8,7 @@ const DEFAULT_PROXYMODE = 'noproxy';
 const DEFAULT_PROXYHOST = 'localhost';
 const DEFAULT_PROXYPORT = 8080;
 const DEFAULT_CRASHREPORT = true;
+const DEFAULT_FIRSTRUN = true;
 
 //logger
 const logger = require('electron-log')
@@ -32,6 +33,7 @@ const argv = process.argv.slice(1)
 const Menu = require('electron').Menu
 const shell = require('electron').shell
 const settings = require('electron-settings')
+global.settings = settings;
 const path = require('path')
 const url = require('url')
 const detectPort = require('detect-port')
@@ -175,6 +177,12 @@ function createConfig()
     if( !settings.has('proxy.port') )
     {
         settings.set('proxy.port', DEFAULT_PROXYPORT);
+    }
+
+    //firstrun
+    if( !settings.has('cleep.firstrun') )
+    {
+        settings.set('cleep.firstrun', DEFAULT_FIRSTRUN);
     }
 };
 

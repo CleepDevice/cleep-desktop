@@ -3,6 +3,7 @@ const {remote} = electron;
 const cleepdesktopVersion = remote.getGlobal('cleepdesktopVersion');
 const logger = remote.getGlobal('logger');
 const appUpdater = remote.getGlobal('appUpdater');
+const settings = remote.getGlobal('settings');
 let cleepUi = {
     openPage: null,
     openModal: null
@@ -18,6 +19,7 @@ Cleep.value('deviceMessages', []);
 //inject electron values
 Cleep.value('logger', logger)
     .value('appUpdater', appUpdater)
+    .value('settings', settings)
     .value('cleepdesktopVersion', cleepdesktopVersion)
     .value('cleepUi', cleepUi);
 
@@ -170,20 +172,26 @@ Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $
 var emptyController = function($rootScope, $scope, $state)
 {
     var self = this;
-
-    self.openPage = function()
-    {
-        //$rootScope.openPage('/preferences');
-        $state.go('preferences');
-    }
 };
 Cleep.controller('emptyController', ['$rootScope', '$scope', '$state', emptyController]);
+
+/**
+ * Empty dialog controller
+ * Add minimal stuff to handle properly dialog
+ */
+var emptyDialogController = function($rootScope, $scope, $state, closeModal)
+{
+    var self = this;
+
+    self.closeModal = closeModal;
+};
+Cleep.controller('emptyDialogController', ['$rootScope', '$scope', '$state', 'closeModal', emptyDialogController]);
 
 /**
  * Cleep controller
  */
 var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService, modalService, deviceMessages, 
-                            updateService, cleepUi)
+                            updateService, cleepUi, settings, $timeout)
 {
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
@@ -222,8 +230,6 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         self.taskFlashPanel = null;
         self.taskFlashPanelClosed = true;
     };
-
-
 
     //On close restart required task panel
     self.onCloseRestartRequiredTaskPanel = function()
@@ -320,11 +326,21 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         updateService.init();
         //and check for updates
         updateService.checkForUpdates();
+
+        //first run? open application help
+        if( settings.get('cleep.firstrun') )
+        {
+            logger.debug('First run');
+            $timeout(function() {
+                self.openModal('emptyDialogController', 'js/help/helpdialog.html');
+            }, 1000);
+            settings.set('cleep.firstrun', false);
+        }
     };
 
     self.init();
 
 };
 Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 
-                                    'deviceMessages', 'updateService', 'cleepUi', cleepController]);
+                                    'deviceMessages', 'updateService', 'cleepUi', 'settings', '$timeout', cleepController]);
 
