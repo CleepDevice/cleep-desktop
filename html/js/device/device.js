@@ -3,7 +3,7 @@ var Cleep = angular.module('Cleep')
 /**
  * Device controller
  */
-var deviceController = function($rootScope, $scope, $stateParams, logger, $document)
+var deviceController = function($rootScope, $scope, $stateParams, logger, $document, $timeout)
 {
     var self = this;
     self.shell = require('electron').shell;
@@ -38,5 +38,5 @@ var deviceController = function($rootScope, $scope, $stateParams, logger, $docum
     });
 
 };
-Cleep.controller('deviceController', ['$rootScope', '$scope', '$stateParams', 'logger', '$document', deviceController]);
+Cleep.controller('deviceController', ['$rootScope', '$scope', '$stateParams', 'logger', '$document', '$timeout', deviceController]);
 
