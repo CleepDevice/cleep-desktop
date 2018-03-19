@@ -185,6 +185,13 @@ function createMenu()
         label: 'File',
         submenu: [
             {
+                label: 'Homepage',
+                click: () => {
+                    mainWindow.webContents.send('openPage', 'default');
+                }
+            }, {
+                type: 'separator'
+            }, {
                 label: 'Updates',
                 click: () => {
                     mainWindow.webContents.send('openPage', 'updates');
