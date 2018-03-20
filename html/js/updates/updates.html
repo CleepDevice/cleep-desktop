@@ -32,8 +32,8 @@
                         <div flex="1">
                             <md-icon md-svg-icon="chevron-right"></md-icon></md-list-item>
                         </div>
-                        <p>Last check for updates made on {{ctl.lastcheck | hrDatetime}}</p>
-                        <md-icon class="md-secondary" ng-click="ctl.checkUpdates()" md-svg-icon="refresh">
+                        <p>Last check for updates made on {{ctl.getLastCheckTime() | hrDatetime}}</p>
+                        <md-icon class="md-secondary" ng-click="ctl.checkUpdates()" md-svg-icon="refresh" ng-disabled="ctl.isUpdating() || ctl.loading">
                             <md-tooltip md-direction="left">Check for updates</md-tooltip>
                         </md-icon>
                     </md-list-item>
@@ -55,7 +55,7 @@
                         </div>
                         <div ng-if="ctl.cleepdesktopStatus.status===4" flex>
                             <span>Update failed:</span>
-                            <span>{{ctl.getLastCleepdesktopUpdateError()}}</span>
+                            <span>{{ctl.cleepdesktopStatus.lasterror}}</span>
                         </div>
                         <div ng-if="ctl.isCleepdesktopUpdatesAvailable() && ctl.isCleepdesktopUpdatesDisabled()" flex>
                             <span>Update available:</span>
