@@ -21,16 +21,15 @@ class CrashReport():
             self.logger.setLevel(logging.WARN)
 
         #members
+        self.extra = libs_version
+        self.extra['platform'] = platform.platform()
+        self.extra['product'] = product
+        self.extra['product_version'] = product_version
         self.enabled = False
-        self.client = Client('https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385')
-        user_context = libs_version
-        user_context['platform'] = platform.platform()
-        user_context['product'] = product
-        user_context['product_version'] = product_version
-        self.client.user_context(user_context)
-        self.report_exception = self.__unbinded_report_exception
 
-        #attach exception hook
+        #create and configure raven client
+        self.client = Client('https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385')
+        self.report_exception = self.__unbinded_report_exception
         sys.excepthook = self.crash_report
 
     def __unbinded_report_exception(self):
@@ -67,7 +66,7 @@ class CrashReport():
         message += '\n%s %s' % (str(type), value)
         self.logger.fatal(message)
         if self.enabled:
-            self.client.captureException((type, value, tb))
+            self.client.captureException((type, value, tb), extra=self.extra)
 
 
 if __name__ == '__main__':
@@ -78,7 +77,7 @@ if __name__ == '__main__':
     #cr.disable()
     cr.enable()
 
-    #test lcoal catched exception
+    #test local catched exception
     try:
         raise Exception('My custom execption')
     except ZeroDivisionError:
