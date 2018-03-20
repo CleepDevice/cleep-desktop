@@ -5,7 +5,7 @@ var path = require('path');
 /**
  * Auto install controller
  */
-var autoInstallController = function($rootScope, $scope, cleepService, $timeout, toast, confirm, $filter, logger)
+var autoInstallController = function($rootScope, $scope, cleepService, $timeout, toast, confirm, $filter, logger, updateService)
 {
     var self = this;
     self.status = {
@@ -51,6 +51,12 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                 self.status = resp.data;
             });
     };
+
+    //Return etcher availability
+    self.isEtcherAvailable = function()
+    {
+        return updateService.isEtcherAvailable();
+    }
 
     //get wifi networks
     self.refreshWifiNetworks = function()
@@ -320,6 +326,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
 
 };
 
-Cleep.controller('autoInstallController', ['$rootScope', '$scope', 'cleepService', '$timeout', 'toastService', 'confirmService', '$filter', 'logger', autoInstallController]);
+Cleep.controller('autoInstallController', ['$rootScope', '$scope', 'cleepService', '$timeout', 'toastService', 'confirmService', '$filter', 'logger', 
+                                            'updateService', autoInstallController]);
 
 

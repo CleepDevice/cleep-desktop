@@ -221,7 +221,10 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
         //get initial status
         cleepService.sendCommand('getupdatesstatus')
             .then(function(resp) {
-                self.etcherStatus = resp.data.etcherstatus;
+                self.etcherStatus.version = resp.data.etcherstatus.version;
+                self.etcherStatus.status = resp.data.etcherstatus.status;
+                self.etcherStatus.downloadpercent = resp.data.etcherstatus.downloadpercent;
+                self.etcherStatus.downloadstatus = resp.data.etcherstatus.downloadstatus;
                 self.lastCheck = resp.data.lastcheck;
             });
     };
@@ -298,6 +301,18 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
         return self.lastCheck;
     };
 
+    //Return true if etcher is available (installed and no update in progress)
+    self.isEtcherAvailable = function()
+    {
+        if( self.etcherStatus.version=='v0.0.0' || self.etcherStatus.status==self.STATUS_DOWNLOADING || self.etcherStatus.status==self.STATUS_INSTALLING )
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    };
 };
     
 var Cleep = angular.module('Cleep');

@@ -140,7 +140,9 @@
                             <span>Click on button to install Cleep and wait end of process</span>
                         </div>
                         <div layout="row">
-                            <md-button ng-click="ctl.startFlash()" ng-disabled="ctl.flashing" class="md-raised md-accent">Install on selected drive</md-button>
+                            <md-button ng-click="ctl.startFlash()" ng-disabled="ctl.flashing || !ctl.isEtcherAvailable()" class="md-raised md-accent">
+                                Install on selected drive
+                            </md-button>
                         </div>
                     </div>
                 </md-card-content>
