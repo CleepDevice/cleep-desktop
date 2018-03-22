@@ -699,25 +699,26 @@ class FlashDrive(CleepDesktopModule):
                 latest_cleep = {
                     'label': None,
                     'url': None,
-                    'timestamp': None,
+                    'timestamp': 0,
                     'category': 'cleep',
                     'sha256': None
                 }
                 #look for cleep iso files (img and sha256)
                 for file in cleep_release_files:
-                    if file['name'].endswith('.img') and file['name'].startswith('cleep'):
+                    if file['name'].startswith('cleep_%s' % cleep_release_name) and file['name'].endswith('.zip'):
                         #image file found
                         latest_cleep['label'] = 'Cleep %s' % (cleep_release_name)
                         latest_cleep['timestamp'] = file['timestamp']
                         latest_cleep['url'] = file['url']
-                    elif file['name'].endswith('.sha256') and file['name'].startswith('cleep'):
+                    elif file['name'].startswith('cleep_%s' % cleep_release_name) and file['name'].endswith('.sha256'):
                         #checksum file, open it to get its content
                         sha256 = self.github.get_file_content(file['url'])
                         if sha256 and len(sha256.split())>0:
                             latest_cleep['sha256'] = sha256.split()[0]
 
                 #save cleep iso
-                isos.append(latest_cleep)
+                if latest_cleep['label'] and latest_cleep['timestamp']!=0:
+                    isos.append(latest_cleep)
 
             #get raspbian isos
             if with_iso_raspbian:
