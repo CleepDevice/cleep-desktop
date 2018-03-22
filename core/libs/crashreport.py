@@ -56,7 +56,7 @@ class CrashReport():
         self.enabled = False
 
         #unbind report exception
-        self.reporrt_exception = self.__unbinded_report_exception
+        self.report_exception = self.__unbinded_report_exception
 
     def crash_report(self, type, value, tb):
         """
