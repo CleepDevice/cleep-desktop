@@ -61,7 +61,7 @@ else if( require('fs').existsSync(settings.file()) && settings.has('cleep.debug'
     //release mode with debug enabled
     logger.transports.console.level = 'debug';
     logger.transports.file.level = 'debug';
-    logger.info('Debug mode enabled');
+    logger.info('Debug mode enabled according to user preferences');
 }
 else
 {
@@ -381,7 +381,7 @@ function launchCore(rpcport)
 
         //prepare command line
         let commandline = path.join(__dirname + '.unpacked/', 'cleepdesktopcore/');
-        logger.info('cmdline with asar: ' + commandline);
+        logger.debug('cmdline with asar: ' + commandline);
         if( !require('fs').existsSync(commandline) )
         {
             commandline = path.join(__dirname, 'cleepdesktopcore/');
@@ -400,7 +400,7 @@ function launchCore(rpcport)
 
         //launch command line
         let debug = settings.has('cleep.debug') && settings.get('cleep.debug') ? 'debug' : 'release';
-        logger.info('Core commandline: '+commandline+' ' + rpcport + ' ' + configPath + ' ' + configFilename + ' ' + debug);
+        logger.debug('Core commandline: '+commandline+' ' + rpcport + ' ' + configPath + ' ' + configFilename + ' ' + debug);
         coreProcess = require('child_process').spawn(commandline, [rpcport, configPath, configFilename, 'release', 'false']);
     }
     else
