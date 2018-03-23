@@ -2,23 +2,17 @@
 # -*- coding: utf-8 -*
 
 import logging
-import urllib3
-import uuid
-import io
 import time
-import datetime
 import os
-import hashlib
 import platform
 import re
-import requests
-import tempfile
 from core.libs.cleepwificonf import CleepWifiConf
 from core.libs.download import Download
 from core.utils import CleepDesktopModule
 from core.libs.iw import Iw
 from core.libs.iwlist import Iwlist
 from core.libs.github import Github
+from core.libs.raspbians import Raspbians
 if platform.system()=='Windows':
     from core.libs.console import AdminEndlessConsole
     from core.libs.windowsdrives import WindowsDrives
@@ -64,8 +58,6 @@ class FlashDrive(CleepDesktopModule):
     CMDLOGGER_WINDOWS = 'tools\\cmdlogger-windows\\cmdlogger.exe'
     CMDLOGGER_MAC = 'tools/cmdlogger-mac/cmdlogger'
 
-    RASPBIAN_URL = 'http://downloads.raspberrypi.org/raspbian/images/'
-    RASPBIAN_LITE_URL = 'http://downloads.raspberrypi.org/raspbian_lite/images/'
     RASPIOT_REPO = {
         'owner': 'tangb',
         'repository': 'raspiot'
@@ -87,8 +79,8 @@ class FlashDrive(CleepDesktopModule):
         #members
         self.app_path = app_path
         self.config_path = config_path
+        self.crash_report = crash_report
         self.env = platform.system().lower()
-        self.temp_dir = tempfile.gettempdir()
         self.update_callback = update_callback
         self.console = None
         self.percent = 0
@@ -97,7 +89,7 @@ class FlashDrive(CleepDesktopModule):
         self.status = self.STATUS_IDLE
         self.drive = None
         self.iso = None
-        self.iso_sha1 = None
+        self.iso_sha256 = None
         self.isos = []
         self.url = None
         self.cancel = False
@@ -107,6 +99,14 @@ class FlashDrive(CleepDesktopModule):
         self.wifi_config = None
         self.flashable_drives = []
         self.github = Github(self.RASPIOT_REPO['owner'], self.RASPIOT_REPO['repository'])
+        self.raspbians = Raspbians(self.crash_report)
+        self.isos_cached = {
+            'isos': [],
+            'cleepisos': 0,
+            'raspbianisos': 0,
+            'withraspbianiso': False,
+            'withlocaliso': False
+        }
        
         #prepare specific tools and flash commands
         if self.env=='windows':
@@ -212,153 +212,6 @@ class FlashDrive(CleepDesktopModule):
                 #no process, release cpu
                 time.sleep(.5)
 
-    def __get_raspbian_release_infos(self, release):
-        """
-        Parse url specified in latest dict and get infos of release (checksum, link to archive...)
-
-        Args:
-            release (dict): release infos as returned by __get_latest_raspbian_releases function
-
-        Return:
-            dict: raspbian and raspbian lite infos::
-                {
-                    url (string): file url
-                    sha1 (string): sha1 checksum
-                    sha256 (string): sha256 checksum,
-                    timestamp (int): datetime of release
-                }
-        """
-        infos = {
-            'url': None,
-            'sha1': None,
-            'sha256': None,
-            'timestamp': None
-        }
-
-        #get release infos
-        try:
-            self.logger.debug('Requesting %s' % release['url'])
-            resp = requests.get(release['url'])
-            if resp.status_code==200:
-                #self.logger.debug('Resp content: %s' % resp.text)
-                #parse response content
-                matches = re.finditer(r'href=\"(%s.*?)\"' % release['prefix'], resp.text, re.UNICODE)
-                for matchNum, match in enumerate(matches):
-                    groups = match.groups()
-                    self.logger.debug('Groups: %s' % groups)
-
-                    if len(groups)==1:
-                        #main archive
-                        if groups[0].endswith('.zip'):
-                            infos['url'] = '%s%s' % (release['url'], groups[0])
-                            infos['timestamp'] = release['timestamp']
-
-                        #sha1 checksum
-                        elif groups[0].endswith('.sha1'):
-                            url = '%s%s' % (release['url'], groups[0])
-                            try:
-                                content = requests.get(url)
-                                if content.status_code==200:
-                                    infos['sha1'] = content.text.split()[0]
-                            except:
-                                self.crash_report.report_exception()
-                                self.logger.exception('Exception occured during %s request' % url)
-
-                        #sha256 checksum
-                        elif groups[0].endswith('.sha256'):
-                            url = '%s%s' % (release['url'], groups[0])
-                            try:
-                                content = requests.get(url)
-                                if content.status_code==200:
-                                    infos['sha256'] = content.text.split()[0]
-                            except:
-                                self.crash_report.report_exception()
-                                self.logger.exception('Exception occured during %s request' % url)
-
-            else:
-                self.logger.error('Request %s failed (status code=%d)' % (release['url'], resp.status_code))
-
-        except:
-            self.crash_report.report_exception()
-            self.logger.exception('Exception occured during %s request:' % self.release.url)
-
-        return infos
-
-    def __get_latest_raspbian_releases(self):
-        """
-        Parse raspbian isos releases website and return latest release with it's informations
-
-        Return:
-            dict: infos about latest releases::
-                {
-                    raspbian: {
-                        prefix (string): prefix string (useful to search items in subfolder)
-                        url (string): url of latest archive,
-                        timestamp (int): timestamp of latest archive
-                    },
-                    raspbian_lite: {
-                        prefix (string): prefix string (useful to search items in subfolder)
-                        url (string): url of latest archive,
-                        timestamp (int): timestamp of latest archive
-                    }
-                }
-        """
-        latest_raspbian = None
-        latest_raspbian_lite = None
-
-        #get latest raspbian release infos
-        try:
-            self.logger.debug('Requesting %s' % self.RASPBIAN_URL)
-            resp = requests.get(self.RASPBIAN_URL)
-            if resp.status_code==200:
-                #parse response content
-                matches = re.finditer(r'href=\"((raspbian)-(\d*)-(\d*)-(\d*)/)\"', resp.text, re.UNICODE)
-                results = list(matches)
-                if len(results)>0:
-                    groups = results[-1].groups()
-                    if len(groups)==5 and groups[1]=='raspbian':
-                        dt = datetime.datetime(year=int(groups[2]), month=int(groups[3]), day=int(groups[4]))
-                        latest_raspbian = {
-                            'prefix': '%s' % (groups[2]),
-                            'url': '%s%s' % (self.RASPBIAN_URL, groups[0]),
-                            'timestamp': int(time.mktime(dt.timetuple()))
-                        }
-            else:
-                self.logger.error('Unable to request raspbian repository (status code=%d)' % resp.status_code)
-        except:
-            self.crash_report.report_exception()
-            self.logger.exception('Exception occured during %s read:' % self.RASPBIAN_URL)
-
-        #get latest raspbian_lite release infos
-        try:
-            self.logger.debug('Requesting %s' % self.RASPBIAN_LITE_URL)
-            resp = requests.get(self.RASPBIAN_LITE_URL)
-            if resp.status_code==200:
-                #parse response content
-                matches = re.finditer(r'href=\"((raspbian_lite)-(\d*)-(\d*)-(\d*)/)\"', resp.text, re.UNICODE)
-                results = list(matches)
-                if len(results)>0:
-                    groups = results[-1].groups()
-                    if len(groups)==5 and groups[1]=='raspbian_lite':
-                        dt = datetime.datetime(year=int(groups[2]), month=int(groups[3]), day=int(groups[4]))
-                        latest_raspbian_lite = {
-                            'prefix': '%s' % (groups[2]),
-                            'url': '%s%s' % (self.RASPBIAN_LITE_URL, groups[0]),
-                            'timestamp': int(time.mktime(dt.timetuple()))
-                        }
-                else:
-                    self.logger.error('No result requesting %s' % self.RASPBIAN_LITE_URL)
-            else:
-                self.logger.error('Unable to request raspbian_lite repository (status code=%d)' % resp.status_code)
-        except:
-            self.crash_report.report_exception()
-            self.logger.exception('Exception occured during %s request:' % self.RASPBIAN_LITE_URL)
-
-        return {
-            'raspbian': latest_raspbian,
-            'raspbian_lite': latest_raspbian_lite
-        }
-
     def get_latest_raspbians(self):
         """
         Return latest raspbians releases
@@ -368,15 +221,13 @@ class FlashDrive(CleepDesktopModule):
                 {
                     raspbian: {
                         fileurl (string): file url
-                        sha1 (string): sha1 checksum
                         sha256 (string): sha256 checksum,
-                        timestamp (int): datetime of release
+                        timestamp (int): timestamp of release
                     },
                     raspbian_lite: {
                         fileurl (string): file url
-                        sha1 (string): sha1 checksum
                         sha256 (string): sha256 checksum,
-                        timestamp (int): datetime of release
+                        timestamp (int): timestamp of release
                     }
                 }
         """
@@ -384,18 +235,18 @@ class FlashDrive(CleepDesktopModule):
         raspbian_lite_infos = None
 
         #get releases
-        releases = self.__get_latest_raspbian_releases()
+        releases = self.raspbians.get_latest_raspbian_releases()
         self.logger.debug('Raspbian releases: %s' % releases)
 
         #get releases infos
         if releases['raspbian']:
-            infos = self.__get_raspbian_release_infos(releases['raspbian'])
+            infos = self.raspbians.get_raspbian_release_infos(releases['raspbian'])
             if infos['url'] is not None:
                 raspbian_infos = infos
             self.logger.debug('Raspbian release infos: %s' % raspbian_infos)
 
         if releases['raspbian_lite']:
-            infos = self.__get_raspbian_release_infos(releases['raspbian_lite'])
+            infos = self.raspbians.get_raspbian_release_infos(releases['raspbian_lite'])
             if infos['url'] is not None:
                 raspbian_lite_infos = infos
             self.logger.debug('Raspbian lite release infos: %s' % raspbian_lite_infos)
@@ -414,9 +265,8 @@ class FlashDrive(CleepDesktopModule):
                 (
                     {
                         fileurl (string): file url
-                        sha1 (string): sha1 checksum
                         sha256 (string): sha256 checksum,
-                        timestamp (int): datetime of release
+                        timestamp (int): timestamp of release
                     },
                     string: release name (usually version)
                 )
@@ -451,12 +301,11 @@ class FlashDrive(CleepDesktopModule):
         if wifi and 'network' in wifi and (not 'password' in wifi or not 'encryption' in wifi):
             raise Exception('Missing wifi password or encryption value')
 
-        #get sha1
-        isos = self.get_isos(iso_raspbian, iso_local)
-        for iso in isos['isos']:
+        #get checksum
+        for iso in self.isos_cached['isos']:
             if iso['url']==url:
-                self.logger.debug('Found sha1 "%s" for iso "%s"' % (iso['sha1'], url))
-                self.iso_sha1 = iso['sha1']
+                self.logger.debug('Found sha256 "%s" for iso "%s"' % (iso['sha256'], url))
+                self.iso_sha256 = iso['sha256']
 
         #generate wifi config file is needed
         wifi_config = None
@@ -660,7 +509,7 @@ class FlashDrive(CleepDesktopModule):
                             url (string): file url,
                             timestamp (int): timestamp of isos,
                             category (string): entry category ('cleep' or 'raspbian')
-                            sha1 (string): sha1 checksum
+                            sha256 (string): sha256 checksum
                         },
                         ...
                     ],
@@ -730,7 +579,7 @@ class FlashDrive(CleepDesktopModule):
                         'url': raspbians['raspbian_lite']['url'],
                         'timestamp': raspbians['raspbian_lite']['timestamp'],
                         'category': 'raspbian',
-                        'sha1': raspbians['raspbian_lite']['sha1']
+                        'sha256': raspbians['raspbian_lite']['sha256']
                     })
                 if raspbians['raspbian'] is not None:
                     isos.append({
@@ -738,7 +587,7 @@ class FlashDrive(CleepDesktopModule):
                         'url': raspbians['raspbian']['url'],
                         'timestamp': raspbians['raspbian']['timestamp'],
                         'category': 'raspbian',
-                        'sha1': raspbians['raspbian']['sha1']
+                        'sha256': raspbians['raspbian']['sha256']
                     })
 
             self.logger.debug('Isos: %s' % isos)
@@ -756,13 +605,15 @@ class FlashDrive(CleepDesktopModule):
             elif iso['category']=='raspbian':
                 raspbian_isos += 1
 
-        return {
+        #cache result
+        self.isos_cached = {
             'isos': self.isos,
             'cleepisos': cleep_isos,
             'raspbianisos': raspbian_isos,
             'withraspbianiso': with_iso_raspbian,
             'withlocaliso': with_iso_local
         }
+        return self.isos_cached
 
     def __download_callback(self, status, filesize, percent):
         """
@@ -827,7 +678,7 @@ class FlashDrive(CleepDesktopModule):
         self.dl = Download(self.__download_callback)
 
         #start download
-        self.iso = self.dl.download_from_url(self.url, check_sha1=self.iso_sha1, cache=True)
+        self.iso = self.dl.download_from_url(self.url, check_sha256=self.iso_sha256, cache=True)
         self.dl = None
 
         if self.iso is None:
