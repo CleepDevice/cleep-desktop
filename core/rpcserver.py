@@ -346,7 +346,9 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
         else:
             #start HTTP server
             logger.info('Starting HTTP server on %s:%d' % (host, port))
-            app.run(server='gevent', host=host, port=port, quiet=True, debug=False, reloader=False, handler_class=WebSocketHandler)
+            server_logger = LoggingLogAdapter(logger, logging.INFO)
+            server = pywsgi.WSGIServer((host, port), app, log=server_logger, handler_class=WebSocketHandler)
+            server.serve_forever()
 
     except KeyboardInterrupt:
         #user stops raspiot, close server properly
@@ -443,7 +445,6 @@ def execute_command(command, params):
         elif command=='cancelflash':
             flashdrive.cancel_flash()
         elif command=='getisos':
-            #TODO set include_raspbian param from config
             resp.data = flashdrive.get_isos(config['cleep']['isoraspbian'], config['cleep']['isolocal'])
         elif command=='getwifinetworks':
             resp.data = flashdrive.get_wifi_networks()

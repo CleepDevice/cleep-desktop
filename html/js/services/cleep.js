@@ -15,7 +15,6 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
     self.__ws = null;
     self.port = settings.get('remote.rpcport');
     self.urlCommand = 'http://localhost:' + self.port + '/command';
-    self.urlWebsocket = 'ws://localhost:' + self.port + '/cleepws';
 
     /**
      * Connect websocket to python server
@@ -38,7 +37,8 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
     /**
      * Callback when message is received on websocket
      */
-    self.__receive = function(event) {
+    self.__receive = function(event)
+    {
         if( event && event.data && typeof(event.data)==='string' )
         {
             //broadcast received data
@@ -50,7 +50,8 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
     /**
      * Base function to send data to rpcserver
      */
-    self.send = function(url, command, params, method) {
+    self.send = function(url, command, params, method)
+    {
         var d = $q.defer();
 
         //prepare method
@@ -96,21 +97,24 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
     /**
      * Send command to rpcserver
      */
-    self.sendCommand = function(command, params, timeout) {
-        return self.send(self.urlCommand, command, params, timeout);
+    self.sendCommand = function(command, params)
+    {
+        return self.send(self.urlCommand, command, params, 'POST');
     };
 
     /**
      * Get CleepDesktop config
      */
-    self.getConfig = function() {
+    self.getConfig = function()
+    {
         return self.send(self.urlCommand, 'getconfig');
     };
 
     /**
      * Set CleepDesktop config
      */
-    self.setConfig = function(config) {
+    self.setConfig = function(config)
+    {
         return self.send(self.urlCommand, 'setconfig', {config:config});
     };
 
