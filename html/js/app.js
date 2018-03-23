@@ -241,12 +241,9 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
     //Restart appliation
     self.restartApplication = function()
     {
-        //trigger application restart after exit
-        remote.app.relaunch();
-
         //introduce small sleep before closing application
         $timeout(function() {
-            remote.app.quit();
+            appUpdater.quitAndInstall(true, true);
         }, 1000);
     };
 
