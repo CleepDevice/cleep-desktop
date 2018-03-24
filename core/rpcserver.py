@@ -448,6 +448,8 @@ def execute_command(command, params):
             resp.data = flashdrive.get_isos(config['cleep']['isoraspbian'], config['cleep']['isolocal'])
         elif command=='getwifinetworks':
             resp.data = flashdrive.get_wifi_networks()
+        elif command=='getwifiadapter':
+            resp.data = flashdrive.get_wifi_adapter()
 
         #updates
         elif command=='getupdatesstatus':

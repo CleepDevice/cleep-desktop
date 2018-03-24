@@ -65,6 +65,14 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
             .then(function(resp) {
                 self.wifiNetworks = resp.data.networks;
                 self.noWifiNetwork = (resp.data.networks.length===0 ? true : false);
+            });
+    };
+
+    //get wifi adapter
+    self.getWifiAdapter = function()
+    {
+        return cleepService.sendCommand('getwifiadapter')
+            .then(function(resp) {
                 self.noWifiAdapter = !resp.data.adapter;
             });
     };
@@ -287,6 +295,8 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     {
         //get flash status
         self.getStatus();
+        //get wifi networks
+        self.getWifiAdapter();
     };
 
     //flash update recevied

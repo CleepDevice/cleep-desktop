@@ -793,6 +793,82 @@ class FlashDrive(CleepDesktopModule):
             self.__flash_output_error = True
             self.console = None
 
+    def get_wifi_adapter(self):
+        """
+        Return wifi adapter status: exists or not
+
+        Return:
+            dict: adapter status::
+                {
+                    adapter (bool): True if wifi adapter found
+                }
+        """
+        if self.env=='windows':
+            adapter = self.__get_wifi_adapter_windows()
+        elif self.env=='darwin':
+            adapter = self.__get_wifi_adapter_mac()
+        else:
+            adapter = self.__get_wifi_adapter_linux()
+
+        return {
+            'adapter': adapter
+        }
+
+    def __get_wifi_adapter_linux(self):
+        """
+        Return wifi adapter status under linux
+
+        Return:
+            bool: True if adapter exists
+        """
+        #system check
+        if not self.iw.is_installed():
+            return False
+
+        #get wifi interfaces
+        wifi_connections = self.iw.get_connections()
+
+        return len(wifi_connections.keys())>0
+
+    def __get_wifi_adapter_windows(self):
+        """
+        Return wifi adapter status under windows
+
+        Return:
+            bool: True if adapter exists
+        """
+        #handle supported windows version
+        supported = False
+        try:
+            release = int(platform.release())
+            if release>=10:
+                supported = True
+        except:
+            self.logger.exception('Unable to get wifi adapter status under windows:')
+        if not supported:
+            return False
+
+        #get wifi interfaces
+        wifi_interfaces = self.windowswirelessinterfaces.get_interfaces()
+
+        return len(wifi_interfaces)>0
+
+    def __get_wifi_adapter_mac(self):
+        """
+        Return wifi adapter status under macos
+
+        Return:
+            bool: True if adapter exists
+        """
+        #system check
+        if not self.macwirelessinterfaces.is_installed():
+            return False
+
+        #get wifi interfaces
+        wifi_interfaces = self.macwirelessinterfaces.get_interfaces()
+
+        return len(wifi_interfaces)>0
+
     def get_wifi_networks(self):
         """
         Return wifi networks and wifi infos
@@ -801,7 +877,6 @@ class FlashDrive(CleepDesktopModule):
             dict: wifi infos::
                 {
                     networks (list): networks list
-                    adapter (bool): True if wifi adapter found
                 }
         """
         if self.env=='windows':
@@ -825,12 +900,10 @@ class FlashDrive(CleepDesktopModule):
             dict: wifi infos::
                 {
                     networks (list): networks list
-                    adapter (bool): True if wifi adapter found
                 }
         """
         default = {
-            'networks': [],
-            'adapter': False
+            'networks': []
         }
 
         #system check
@@ -858,8 +931,7 @@ class FlashDrive(CleepDesktopModule):
         
         #build output
         return {
-            'networks': wifi_networks,
-            'adapter': len(wifi_connections.keys())>0
+            'networks': wifi_networks
         }
 
     def __get_wifi_networks_windows(self):
@@ -874,8 +946,7 @@ class FlashDrive(CleepDesktopModule):
                 }
         """
         default = {
-            'networks': [],
-            'adapter': False
+            'networks': []
         }
 
         #handle supported windows version
