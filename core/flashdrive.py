@@ -6,6 +6,7 @@ import time
 import os
 import platform
 import re
+import tempfile
 from core.libs.cleepwificonf import CleepWifiConf
 from core.libs.download import Download
 from core.utils import CleepDesktopModule
