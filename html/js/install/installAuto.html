@@ -129,7 +129,7 @@
                             <!-- wifi password -->
                             <md-input-container class="no-error-spacer">
                                 <label>Password</label>
-                                <input type="password" ng-model="ctl.wifiPassword" ng-disabled="ctl.flashing"/>
+                                <input type="password" ng-model="ctl.wifiPassword" ng-disabled="ctl.flashing || ctl.wifiNetworkEncryption=='unsecured'"/>
                             </md-input-container>
                         </div>
                     </div>
