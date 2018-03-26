@@ -5,7 +5,7 @@ var path = require('path');
 /**
  * Auto install controller
  */
-var autoInstallController = function($rootScope, $scope, cleepService, $timeout, toast, confirm, $filter, logger, updateService)
+var autoInstallController = function($rootScope, $scope, cleepService, $timeout, toast, confirm, $filter, logger, updateService, installService)
 {
     var self = this;
     self.status = {
@@ -15,33 +15,32 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         eta: ''
     };
     self.flashing = false;
-    self.refreshingIsos = false;
-    self.drives = [];
+    self.disableCancel = true;
+
+    //drives variables
+    self.drives = installService.drives;
     self.selectedDrive = null;
+
+    //isos variables
     self.isos = [];
+    self.__isos = installService.isos;
     self.selectedIso = null;
-    self.noCleepIso = true;
-    self.noRaspbianIso = true;
-    self.isoraspbian = false
-    self.isolocal = false
-    self.noDrive = true;
     self.localIso = {
         url: null,
         label: 'Select file'
     };
-    self.wifiNetworks = [];
-    self.noWifiNetwork = false;
-    self.noWifiAdapter = false;
-    self.wifiPassword = null;
+
+    //wifi variables
+    self.wifi = installService.wifi;
     self.selectedWifiNetwork = {
         network: null,
         interface: null,
         encryption: null,
         signallevel: 0
     };
+    self.wifiPassword = null;
     self.wifiNetworkName = '';
     self.wifiNetworkEncryption = 'wpa2';
-    self.disableCancel = true;
 
     //return current flash status
     self.getStatus = function(init)
@@ -61,84 +60,63 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     //get wifi networks
     self.refreshWifiNetworks = function()
     {
-        return cleepService.sendCommand('getwifinetworks')
-            .then(function(resp) {
-                self.wifiNetworks = resp.data.networks;
-                self.noWifiNetwork = (resp.data.networks.length===0 ? true : false);
-            });
-    };
-
-    //get wifi adapter
-    self.getWifiAdapter = function()
-    {
-        return cleepService.sendCommand('getwifiadapter')
-            .then(function(resp) {
-                self.noWifiAdapter = !resp.data.adapter;
-            });
+        return installService.refreshWifiNetworks();
     };
 
     //get flashable drives
     self.refreshDrives = function()
     {
-        return cleepService.sendCommand('getflashdrives')
-            .then(function(resp) {
-                self.drives = resp.data;
-                self.noDrive = self.drives.length===0;
-            });
+        return installService.refreshDrives();
     };
 
     //get isos
     self.refreshIsos = function()
     {
-        self.refreshingIsos = true;
-        return cleepService.sendCommand('getisos')
-            .then(function(resp) {
-                self.isos = resp.data.isos;
-                self.noCleepIso = resp.data.cleepisos===0;
-                self.noRaspbianIso = resp.data.raspbianisos===0;
-                self.isoraspbian = resp.data.withraspbianiso;
-                self.isolocal = resp.data.withlocaliso;
-                
-                //append new item for local iso
-                if( self.isolocal )
-                {
-                    //select file entry
-                    self.isos.push({
-                        category: 'local',
-                        label: 'Select file',
-                        sha1: null,
-                        timestamp: 0,
-                        url: null,
-                        selector: true
-                    });
+        return $timeout(function() {
+            //copy locally iso from installService
+            self.isos = [];
+            for( var i=0; i<self.__isos.isos.length; i++ )
+            {
+                self.isos.push(self.__isos.isos[i]);
+            }
+            
+            //append new item for local iso
+            if( self.__isos.withlocaliso )
+            {
+                //select file entry
+                self.isos.push({
+                    category: 'local',
+                    label: 'Select file',
+                    sha1: null,
+                    timestamp: 0,
+                    url: null,
+                    selector: true
+                });
 
-                    //selected file entry
-                    var url = null;
-                    var label = '-- no file selected --';
-                    if( self.localIso.url ) {
-                        url = self.localIso.url;
-                        label = self.localIso.label;
-                    }
-                    self.isos.push({
-                        category: 'local',
-                        label: label,
-                        sha1: null,
-                        timestamp: 0,
-                        url: url,
-                        selector: false
-                    });
+                //selected file entry
+                var url = null;
+                var label = '-- no file selected --';
+                if( self.localIso.url ) {
+                    url = self.localIso.url;
+                    label = self.localIso.label;
                 }
+                self.isos.push({
+                    category: 'local',
+                    label: label,
+                    sha1: null,
+                    timestamp: 0,
+                    url: url,
+                    selector: false
+                });
+            }
 
-                //append item id to allow easier selection
-                var id = 0;
-                for( id=0; id<self.isos.length; id++ )
-                {
-                    self.isos[id].id = id;
-                }
-            })
-            .finally(function() {
-                self.refreshingIsos = false;
-            });
+            //append item id to allow easier selection
+            var id = 0;
+            for( id=0; id<self.isos.length; id++ )
+            {
+                self.isos[id].id = id;
+            }
+        }, 0);
     };
 
     //select local iso
@@ -295,8 +273,6 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     {
         //get flash status
         self.getStatus();
-        //get wifi networks
-        self.getWifiAdapter();
     };
 
     //flash update recevied
@@ -337,6 +313,6 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
 };
 
 Cleep.controller('autoInstallController', ['$rootScope', '$scope', 'cleepService', '$timeout', 'toastService', 'confirmService', '$filter', 'logger', 
-                                            'updateService', autoInstallController]);
+                                            'updateService', 'installService', autoInstallController]);
 
 

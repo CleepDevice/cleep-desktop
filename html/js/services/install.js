@@ -1,9 +1,8 @@
 /**
  * Install service handles data useful to install module
  */
-var installService = function($rootScope, logger, cleepService, settings)
+var installService = function($rootScope, logger, cleepService)
 {
-
     var self = this;
     self.isos = {
         isos: [],
@@ -11,45 +10,57 @@ var installService = function($rootScope, logger, cleepService, settings)
         raspbianisos: 0,
         withraspbianiso: false,
         withlocaliso: false
+    };
+    self.drives = [];
+    self.wifi = {
+        networks: [],
+        adapter: false
     }
 
     /**
      * Return wifi adapter infos
      */
-    self.getWifiAdapter = function()
+    self.refreshWifiAdapter = function()
     {
-        cleepService.sendCommand()
+        return cleepService.sendCommand('getwifiadapter')
             .then(function(resp) {
-
+                self.wifi.adapter = resp.data.adapter;
             });
     };
 
     /**
-     * Connect websocket to python server
+     * Refresh available wifi networks
      */
-    self.getWifiNetworks = function()
+    self.refreshWifiNetworks = function()
     {
-        cleepService.sendCommand()
+        return cleepService.sendCommand('getwifinetworks')
             .then(function(resp) {
-
+                self.wifi.networks = resp.data.networks;
             });
     };
 
     /**
-     * Return list of available drives
+     * Refresh list of available drives
      */
-    self.getDrives = function()
+    self.refreshDrives = function()
     {
-        cleepService.sendCommand()
+        return cleepService.sendCommand('getflashdrives')
             .then(function(resp) {
+                //clear existing drives
+                self.drives.splice(0, self.drives.length);
 
+                //fill with new values
+                for( var i=0; i<resp.data.length; i++)
+                {
+                    self.drives.push(resp.data[i]);
+                }
             });
     };
 
     /**
-     * Return all available isos according to current configuration
+     * Refresh isos list
      */
-    self.getIsos = function()
+    self.refreshIsos = function()
     {
         return cleepService.sendCommand('getisos')
             .then(function(resp) {
@@ -58,47 +69,26 @@ var installService = function($rootScope, logger, cleepService, settings)
                 self.isos.raspbianisos = resp.data.raspbianisos===0;
                 self.isos.withraspbianiso = resp.data.withraspbianiso;
                 self.isos.withlocaliso = resp.data.withlocaliso;
-                
-                //append new item for local iso
-                if( self.isolocal )
-                {
-                    //select file entry
-                    self.isos.push({
-                        category: 'local',
-                        label: 'Select file',
-                        sha1: null,
-                        timestamp: 0,
-                        url: null,
-                        selector: true
-                    });
-
-                    //selected file entry
-                    var url = null;
-                    var label = '-- no file selected --';
-                    if( self.localIso.url ) {
-                        url = self.localIso.url;
-                        label = self.localIso.label;
-                    }
-                    self.isos.push({
-                        category: 'local',
-                        label: label,
-                        sha1: null,
-                        timestamp: 0,
-                        url: url,
-                        selector: false
-                    });
-                }
-
-                //append item id to allow easier selection
-                var id = 0;
-                for( id=0; id<self.isos.length; id++ )
-                {
-                    self.isos[id].id = id;
-                }
             });
     };
+
+    //Init service values
+    self.init = function()
+    {
+        //refresh all internal values
+        self.refreshWifiAdapter();
+        self.refreshWifiNetworks();
+        self.refreshIsos();
+        self.refreshDrives();
+    };
+
+    //Handle config changed to update internal values automatically
+    $rootScope.$on('configchanged', function(config) {
+        logger.debug('Configuration changed, refresh install service values');
+        self.init();
+    });
 
 };
 
 var Cleep = angular.module('Cleep');
-Cleep.service('installService', ['$rootScope', 'logger', 'cleepService', 'settings', installService]);
+Cleep.service('installService', ['$rootScope', 'logger', 'cleepService', installService]);

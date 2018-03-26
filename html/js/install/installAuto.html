@@ -54,19 +54,19 @@
                             <md-input-container>
                                 <label>Version</label>
                                 <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" ng-disabled="ctl.flashing" required ng-model-options="{trackBy: '$value.id'}"> 
-                                    <md-optgroup label="Cleep" ng-if="!ctl.refreshingIsos">
-                                        <md-option ng-if="ctl.noCleepIso" ng-disabled="true">No Cleep version found</md-option>
+                                    <md-optgroup label="Cleep">
+                                        <md-option ng-if="ctl.__isos.cleepisos===0" ng-disabled="true">No Cleep version found</md-option>
                                         <md-option ng-repeat="iso in ctl.isos | filter: {category:'cleep'}" ng-value="iso">
                                             {{iso.label}} ({{iso.timestamp | hrDate}})
                                         </md-option>
                                     </md-optgroup>
-                                    <md-optgroup label="Raspbian" ng-if="ctl.isoraspbian">
-                                        <md-option ng-if="ctl.noRaspbianIso" ng-disabled="true">No Raspbian version found</md-option>
+                                    <md-optgroup label="Raspbian" ng-if="ctl.__isos.withraspbianiso">
+                                        <md-option ng-if="ctl.__isos.raspbianisos===0" ng-disabled="true">No Raspbian version found</md-option>
                                         <md-option ng-repeat="iso in ctl.isos | filter: {category:'raspbian'}" ng-value="iso">
                                             {{iso.label}} ({{iso.timestamp | hrDate}})
                                         </md-option>
                                     </md-optgroup>
-                                    <md-optgroup label="Local" ng-if="ctl.isolocal">
+                                    <md-optgroup label="Local" ng-if="ctl.__isos.withlocaliso">
                                         <md-option ng-repeat="iso in ctl.isos | filter: {category:'local'}" ng-click="ctl.selectLocalIso(iso)" ng-value="iso" ng-disabled="iso.url===null && !iso.selector">
                                             {{iso.label}}
                                         </md-option>
@@ -85,7 +85,7 @@
                             <md-input-container>
                                 <label>Drive</label>
                                 <md-select ng-model="ctl.selectedDrive" md-on-open="ctl.refreshDrives()" placeholder="Drive" class="md-no-underline" ng-disabled="ctl.flashing" required>
-                                    <md-option ng-if="ctl.noDrive" ng-disabled="true">No drive found</md-option>
+                                    <md-option ng-if="ctl.drives.length===0" ng-disabled="true">No drive found</md-option>
                                     <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path" ng-disabled="drive.readonly">
                                         {{drive.desc}} {{drive.readonly ? '[Readonly]' : ''}}
                                     </md-option>
@@ -97,15 +97,15 @@
                     <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
                         <div>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <span>If your device will connect through wifi, configure it here (your password will be encrypted)</span>
+                            <span>If your device will connect using wifi, preconfigure credentials here</span>
                         </div>
                         <div layout="row">
                             <!-- without wifi adapter -->
-                            <md-input-container ng-if="ctl.noWifiAdapter" class="no-error-spacer">
+                            <md-input-container ng-if="!ctl.wifi.adapter" class="no-error-spacer">
                                 <label>Wifi network name</label>
                                 <input type="text" ng-model="ctl.wifiNetworkName" ng-disabled="ctl.flashing"/>
                             </md-input-container>
-                            <md-input-container ng-if="ctl.noWifiAdapter">
+                            <md-input-container ng-if="!ctl.wifi.adapter">
                                 <label>Encryption</label>
                                 <md-select ng-model="ctl.wifiNetworkEncryption" placeholder="Encryption" class="md-no-underline" ng-disabled="ctl.flashing">
                                     <md-option value="wpa2">WPA2</md-option>
@@ -116,11 +116,11 @@
                             </md-input-container>
 
                             <!-- with wifi adapter -->
-                            <md-input-container ng-if="!ctl.noWifiAdapter">
+                            <md-input-container ng-if="ctl.wifi.adapter">
                                 <label>Wifi network</label>
                                 <md-select ng-model="ctl.selectedWifiNetwork" md-on-open="ctl.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline" ng-disabled="ctl.flashing">
-                                    <md-option ng-if="ctl.noWifiNetwork" ng-disabled="true">No wifi network found</md-option>
-                                    <md-option ng-repeat="wifiNetwork in ctl.wifiNetworks" ng-value="wifiNetwork">
+                                    <md-option ng-if="ctl.wifi.networks.length===0" ng-disabled="true">No wifi network found</md-option>
+                                    <md-option ng-repeat="wifiNetwork in ctl.wifi.networks" ng-value="wifiNetwork">
                                         {{wifiNetwork.network}} ({{wifiNetwork.encryption}})
                                     </md-option>
                                 </md-select>

@@ -82,6 +82,9 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
                 {
                     self.config = resp.data.config;
                 }
+
+                //send broadcast event to say config changed
+                $rootScope.$broadcast('configchanged', self.config);
             });
     };
 

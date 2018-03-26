@@ -191,7 +191,7 @@ Cleep.controller('emptyDialogController', ['$rootScope', '$scope', '$state', 'cl
  * Cleep controller
  */
 var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService, modalService, deviceMessages, 
-                            updateService, cleepUi, settings, $timeout)
+                            updateService, cleepUi, settings, $timeout, installService)
 {
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
@@ -324,6 +324,9 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         //and check for updates
         updateService.checkForUpdates();
 
+        //init install service
+        installService.init();
+
         //first run? open application help
         if( settings.get('cleep.firstrun') )
         {
@@ -339,5 +342,5 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
 
 };
 Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 
-                                    'deviceMessages', 'updateService', 'cleepUi', 'settings', '$timeout', cleepController]);
+                                    'deviceMessages', 'updateService', 'cleepUi', 'settings', '$timeout', 'installService', cleepController]);
 
