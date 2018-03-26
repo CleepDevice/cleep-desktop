@@ -53,7 +53,7 @@ var devicesController = function($rootScope, $scope, $timeout, cleepService, $st
     //open device page
     self.openDevicePage = function(device)
     {
-        if( device )
+        if( device && device.online )
         {
             //prepare device url
             var url = device.ip + ':' + device.port;
@@ -64,6 +64,10 @@ var devicesController = function($rootScope, $scope, $timeout, cleepService, $st
 
             //open device page on right panel
             $state.go('device', {url:url, hostname:device.hostname});
+        }
+        else if( device && !device.online )
+        {
+            toast.info('You can\'t connect to offline devices');
         }
     };
 
