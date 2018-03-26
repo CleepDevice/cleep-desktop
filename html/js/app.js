@@ -321,8 +321,10 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
 
         //init update service
         updateService.init();
-        //and check for updates
-        updateService.checkForUpdates();
+        //and check for updates (defer it to make almost sure core is launched)
+        $timeout(function() {
+            updateService.checkForUpdates();
+        }, 5000);
 
         //init install service
         installService.init();
