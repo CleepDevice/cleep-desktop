@@ -21,6 +21,8 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
      */
     self.connectWebSocket = function()
     {
+        var defer = $q.defer();
+
         if( !self.__ws )
         {
             self.__ws = $websocket('ws://localhost:'+self.port+'/cleepws', null, {reconnectIfNotNormalClose: true});
@@ -30,8 +32,16 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
             });
             self.__ws.onOpen(function() {
                 logger.debug('Websocket opened');
+                defer.resolve('connected');
             });
         }
+        else
+        {
+            //websocket is already created
+            defer.resolve('already created');
+        }
+
+        return defer.promise;
     };
 
     /**
