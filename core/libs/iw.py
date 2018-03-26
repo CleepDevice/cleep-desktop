@@ -11,7 +11,8 @@ import os
 
 class Iw(AdvancedConsole):
     """
-    Command /sbin/iw helper
+    Command /sbin/iw helper.
+    Return wireless network interface infos.
     """
 
     CACHE_DURATION = 5.0

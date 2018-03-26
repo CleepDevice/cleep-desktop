@@ -20,7 +20,8 @@ except:
 
 class Iwlist(AdvancedConsole):
     """
-    Command /sbin/iwlist helper
+    Command /sbin/iwlist helper.
+    Get list of wifi networks in range.
     """
 
     CACHE_DURATION = 30.0
