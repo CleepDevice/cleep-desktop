@@ -205,10 +205,10 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
             }
         });
         appUpdater.addListener('download-progress', function(progress) {
-            logger.debug('Update download progress: ' + progress.percent);
+            logger.debug('Update download progress: ' + Math.round(progress.percent));
             self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
             self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
-            self.cleepdesktopStatus.downloadpercent = progress.percent;
+            self.cleepdesktopStatus.downloadpercent = Math.round(progress.percent);
         });
         appUpdater.addListener('checking-for-update', function() {
             logger.info('Checking for CleepDesktop updates...');

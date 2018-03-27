@@ -46,7 +46,7 @@
                         </div>
                         <div ng-if="ctl.cleepdesktopStatus.status===1 || ctl.cleepdesktopStatus.status===2" flex="20" style="text-align:right;">
                             <span ng-if="ctl.cleepdesktopStatus.status===1 && ctl.cleepdesktopStatus.downloadpercent===null">Downloading update</span>
-                            <span ng-if="ctl.cleepdesktopStatus.status===1 && ctl.cleepdesktopStatus.downloadpercent!==null">Downloading update ({{ctl.cleepdesktopStatus.downloadpercent}})</span>
+                            <span ng-if="ctl.cleepdesktopStatus.status===1 && ctl.cleepdesktopStatus.downloadpercent!==null">Downloading update ({{ctl.cleepdesktopStatus.downloadpercent}}%)</span>
                             <span ng-if="ctl.cleepdesktopStatus.status===2">Installing update</span>
                         </div>
                         <div ng-if="ctl.cleepdesktopStatus.status===1 || ctl.cleepdesktopStatus.status===2" flex>
