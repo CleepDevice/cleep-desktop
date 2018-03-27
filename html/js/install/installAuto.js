@@ -173,12 +173,12 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
             toast.error('Please select a Cleep version and a drive');
             return;
         }
-        if( self.noWifiAdapter && self.wifiNetworkName && self.wifiNetworkEncryption!='unsecured' && !self.wifiPassword )
+        if( !self.wifi.adapter && self.wifiNetworkName && self.wifiNetworkEncryption!='unsecured' && !self.wifiPassword )
         {
             toast.error('Please specify wifi password');
             return;
         }
-        if( !self.noWifiAdapter && self.selectedWifiNetwork.network && self.selectedWifiNetwork.encryption!='unsecured' && !self.wifiPassword )
+        if( self.wifi.adapter && self.selectedWifiNetwork.network && self.selectedWifiNetwork.encryption!='unsecured' && !self.wifiPassword )
         {
             toast.error('Please specify wifi password');
             return;
@@ -190,14 +190,14 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
             encryption: null,
             password: null
         }
-        if( self.noWifiAdapter && self.wifiNetworkName && self.wifiNetworkEncryption )
+        if( !self.wifi.adapter && self.wifiNetworkName && self.wifiNetworkEncryption )
         {
             //fill wifi config from manual values
             wifiConfig.network = self.wifiNetworkName;
             wifiConfig.encryption = self.wifiNetworkEncryption;
             wifiConfig.password = self.wifiPassword;
         }
-        else if( !self.noWifiAdapter && self.selectedWifiNetwork.network )
+        else if( self.wifi.adapter && self.selectedWifiNetwork.network )
         {
             //fill wifi config from automatic values
             wifiConfig.network = self.selectedWifiNetwork.network;
