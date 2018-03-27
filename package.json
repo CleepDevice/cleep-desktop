@@ -1,6 +1,6 @@
 {
     "name": "CleepDesktop",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "description": "Desktop application to manage your Cleep devices",
     "main": "cleepdesktop.js",
     "scripts": {
@@ -34,7 +34,7 @@
     "devDependencies": {
         "devtron": "1.4.x",
         "electron": "1.8.4",
-        "electron-builder": "20.5.1"
+        "electron-builder": "20.8.0"
     },
     "dependencies": {
         "detect-port": "1.2.2",
