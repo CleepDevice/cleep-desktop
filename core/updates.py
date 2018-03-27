@@ -160,6 +160,9 @@ class Updates(CleepDesktopModule):
         self.running = True
         self.logger.debug('Updates thread started')
 
+        #copy cmdlogger to config folder
+        self.__copy_cmdlogger()
+
         #check updates at startup
         self.check_updates()
 
@@ -217,6 +220,21 @@ class Updates(CleepDesktopModule):
             time.sleep(1.0)
 
         self.logger.debug('Updates thread stopped')
+
+    def __copy_cmdlogger(self):
+        """
+        Workaround for this issue on linux only (AppImage) https://github.com/AppImage/AppImageKit/issues/146
+        Fastest way is to copy full cmdlogger folder to CleepDesktop directory like etcher
+        """
+        try:
+            source = os.path.join(self.app_path, 'tools', 'cmdlogger-linux')
+            destination = os.path.join(self.config_path)
+            #from distutils.dir_util import copy_tree
+            #copy_tree("/a/b/c", "/x/y/z")
+            #need to create output dir first
+
+        except:
+            self.logger.exception('Unable to copy cmdlogger to %s' % )
 
     def __get_etcher_version_infos(self, assets):
         """
