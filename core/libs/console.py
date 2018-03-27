@@ -373,6 +373,10 @@ class AdminEndlessConsole(EndlessConsole):
                     #http://docs.activestate.com/activepython/3.4/pywin32/win32event__WaitForSingleObject_meth.html
                     wfso = win32event.WaitForSingleObject(proc_handle, 100.0)
                     self.logger.debug('waitforsingleobj=%s' % wfso)
+                    if wfso==win32event.WAIT_OBJECT_0:
+                        self.logger.warn('No cmdlogger connected. Maybe command execution failed or was too quick')
+                        self.__quit_properly(self.ERROR_INTERNAL)
+                        return
 
                 else:
                     if proc_info.poll() is not None:

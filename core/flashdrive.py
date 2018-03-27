@@ -184,13 +184,13 @@ class FlashDrive(CleepDesktopModule):
                     pass
 
                 #reset everything
+                self.logger.debug('Reset flash variables')
                 self.total_percent = 100
                 if self.iso and os.path.exists(self.iso):
-                    #os.remove(self.iso)
-                    #self.logger.debug('File %s deleted' % self.iso)
+                    self.logger.debug('Purge downloaded file')
                     dl = Download(None)
                     dl.purge_files()
-                    self.iso = None
+                self.iso = None
                 self.drive = None
                 self.url = None
                 self.cancel = False
@@ -199,6 +199,7 @@ class FlashDrive(CleepDesktopModule):
                     #remove temp wifi config file
                     if self.wifi_config and os.path.exists(self.wifi_config):
                         try:
+                            self.logger.debug('Remove wifi config file')
                             os.remove(self.wifi_config)
                         except:
                             self.logger.exception('Unable to delete wifi config file %s:' % self.wifi_config)
@@ -211,7 +212,7 @@ class FlashDrive(CleepDesktopModule):
 
             else:
                 #no process, release cpu
-                time.sleep(.5)
+                time.sleep(0.25)
 
     def get_latest_raspbians(self):
         """
