@@ -55,7 +55,7 @@ class FlashDrive(CleepDesktopModule):
     FLASH_WINDOWS = 'etcher-cli\flash.bat'
     FLASH_MAC = 'etcher-cli/flash.sh'
     
-    CMDLOGGER_LINUX = 'tools/cmdlogger-linux/cmdlogger'
+    CMDLOGGER_LINUX = 'cmdlogger-linux/cmdlogger'
     CMDLOGGER_WINDOWS = 'tools\\cmdlogger-windows\\cmdlogger.exe'
     CMDLOGGER_MAC = 'tools/cmdlogger-mac/cmdlogger'
 
@@ -787,7 +787,9 @@ class FlashDrive(CleepDesktopModule):
             elif self.env=='darwin':
                 self.console.set_cmdlogger(os.path.join(self.app_path, self.CMDLOGGER_MAC))
             else:
-                self.console.set_cmdlogger(os.path.join(self.app_path, self.CMDLOGGER_LINUX))
+                #workaround for AppImage issue https://github.com/AppImage/AppImageKit/issues/146
+                #cmdlogger is copied under config directory like etcher
+                self.console.set_cmdlogger(os.path.join(self.config_path, self.CMDLOGGER_LINUX))
             self.console.start()
 
         except:

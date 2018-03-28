@@ -8,6 +8,7 @@ import os
 import platform
 import json
 import datetime
+from distutils.dir_util import copy_tree
 from core.libs.download import Download
 from core.libs.console import Console
 from core.libs.github import Github
@@ -226,15 +227,25 @@ class Updates(CleepDesktopModule):
         Workaround for this issue on linux only (AppImage) https://github.com/AppImage/AppImageKit/issues/146
         Fastest way is to copy full cmdlogger folder to CleepDesktop directory like etcher
         """
+        #check OS
+        if self.env!='linux':
+            #problem appears only under linux with AppImage
+            return
+
+        #always perform a copy to make sure last version is copied
         try:
-            source = os.path.join(self.app_path, 'tools', 'cmdlogger-linux')
-            destination = os.path.join(self.config_path)
-            #from distutils.dir_util import copy_tree
-            #copy_tree("/a/b/c", "/x/y/z")
-            #need to create output dir first
+            #prepare paths
+            src = os.path.join(self.app_path, 'tools', 'cmdlogger-linux')
+            dst = os.path.join(self.config_path, 'cmdlogger-linux')
+
+            #make sure dirs exist
+            os.makedirs(dst, exist_ok=True)
+
+            #copy full cmdlogger folder content
+            copy_tree(src, dst)
 
         except:
-            self.logger.exception('Unable to copy cmdlogger to %s' % )
+            self.logger.exception('Unable to copy cmdlogger from "%s" to "%s"' % (src, dst))
 
     def __get_etcher_version_infos(self, assets):
         """
