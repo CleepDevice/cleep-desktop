@@ -119,6 +119,7 @@
                             <md-input-container ng-if="ctl.wifi.adapter">
                                 <label>Wifi network</label>
                                 <md-select ng-model="ctl.selectedWifiNetwork" md-on-open="ctl.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline" ng-disabled="ctl.flashing">
+                                    <md-option><em>None</em></md-option>
                                     <md-option ng-if="ctl.wifi.networks.length===0" ng-disabled="true">No wifi network found</md-option>
                                     <md-option ng-repeat="wifiNetwork in ctl.wifi.networks" ng-value="wifiNetwork">
                                         {{wifiNetwork.network}} ({{wifiNetwork.encryption}})
