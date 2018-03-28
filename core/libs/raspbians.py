@@ -96,6 +96,9 @@ class Raspbians():
             else:
                 self.logger.error('Request %s failed (status code=%d)' % (release['url'], resp.status_code))
 
+        except requests.exceptions.ConnectionError:
+            self.logger.warning('Cannot get raspbians release infos: no internet connection')
+
         except:
             self.__crash_report()
             self.logger.exception('Exception occured during %s request:' % release['url'])
@@ -143,6 +146,10 @@ class Raspbians():
                         }
             else:
                 self.logger.error('Unable to request raspbian repository (status code=%d)' % resp.status_code)
+
+        except requests.exceptions.ConnectionError:
+            self.logger.warning('Cannot get raspbians isos: no internet connection')
+        
         except:
             self.__crash_report()
             self.logger.exception('Exception occured during %s read:' % self.RASPBIAN_URL)
@@ -168,6 +175,10 @@ class Raspbians():
                     self.logger.error('No result requesting %s' % self.RASPBIAN_LITE_URL)
             else:
                 self.logger.error('Unable to request raspbian_lite repository (status code=%d)' % resp.status_code)
+
+        except requests.exceptions.ConnectionError:
+            self.logger.warning('Cannot get raspbians isos: no internet connection')
+
         except:
             self.__crash_report()
             self.logger.exception('Exception occured during %s request:' % self.RASPBIAN_LITE_URL)

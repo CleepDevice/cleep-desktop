@@ -193,7 +193,7 @@ class Iwlist(AdvancedConsole):
 
                 else:
                     #no network found, retry
-                    self.logger.debug('"No scan results" returned')
+                    #self.logger.debug('"No scan results" returned')
                     time.sleep(1)
 
         else:

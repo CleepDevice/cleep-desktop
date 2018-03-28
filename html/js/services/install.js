@@ -65,8 +65,8 @@ var installService = function($rootScope, logger, cleepService)
         return cleepService.sendCommand('getisos')
             .then(function(resp) {
                 self.isos.isos = resp.data.isos;
-                self.isos.cleepisos = resp.data.cleepisos===0;
-                self.isos.raspbianisos = resp.data.raspbianisos===0;
+                self.isos.cleepisos = resp.data.cleepisos;
+                self.isos.raspbianisos = resp.data.raspbianisos;
                 self.isos.withraspbianiso = resp.data.withraspbianiso;
                 self.isos.withlocaliso = resp.data.withlocaliso;
             });

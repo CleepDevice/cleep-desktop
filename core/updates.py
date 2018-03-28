@@ -331,7 +331,11 @@ class Updates(CleepDesktopModule):
         try:
             latest = github.get_latest_release()
 
-            if not os.path.exists(os.path.join(self.config_path, 'etcher-cli')) or not os.path.exists(os.path.join(self.config_path, etchercli_script_path)):
+            if latest is None:
+                #probably unable to join github (no internet connection?)
+                self.logger.warning('Unable to check etcher updates (no internet connection?)')
+
+            elif not os.path.exists(os.path.join(self.config_path, 'etcher-cli')) or not os.path.exists(os.path.join(self.config_path, etchercli_script_path)):
                 #etcher-cli is not installed
                 self.logger.debug('No etcher-cli found. Installation is necessary')
                 infos.version = latest['tag_name']

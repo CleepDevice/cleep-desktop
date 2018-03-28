@@ -111,20 +111,25 @@ class Github():
             Exception
         """
         #request url
-        resp = self.http.urlopen('GET', url, headers=self.http_headers)
-        if resp.status==200:
-            #response successful, parse data to get current latest version
-            data = json.loads(resp.data.decode('utf-8'))
-            #self.logger.debug('Data: %s' % data)
-            return data
+        try:
+            resp = self.http.urlopen('GET', url, headers=self.http_headers)
+            if resp.status==200:
+                #response successful, parse data to get current latest version
+                data = json.loads(resp.data.decode('utf-8'))
+                #self.logger.debug('Data: %s' % data)
+                return data
 
-        elif resp.status==404:
-            self.logger.warning(u'No release found (404)')
-            return None
+            elif resp.status==404:
+                self.logger.warning(u'No release found (404)')
+                return None
 
-        else:
-            #invalid request
-            self.logger.error(u'Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
+            else:
+                #invalid request
+                self.logger.error(u'Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
+                return None
+
+        except urllib3.exceptions.MaxRetryError:
+            self.logger.error(u'Unable to connect to github (no internet connection?)')
             return None
 
     def get_releases(self):
