@@ -134,14 +134,14 @@
                             <div layout="row">
                                 <md-input-container class="no-error-spacer">
                                     <label>Password</label>
-                                    <input ng-attr-type="{{dialogCtl.showPassword ? 'text' : 'password'}}" ng-model="ctl.wifiPassword" ng-disabled="ctl.flashing || ctl.wifiNetworkEncryption=='unsecured'">
+                                    <input ng-attr-type="{{ctl.showPassword ? 'text' : 'password'}}" ng-model="ctl.wifiPassword" ng-disabled="ctl.flashing || ctl.wifiNetworkEncryption=='unsecured'">
                                 </md-input-container>
                                 <div style="padding-top:10px;">
-                                    <md-button class="md-icon-button" ng-click="dialogCtl.showPassword=!dialogCtl.showPassword" ng-disabled="dialogCtl.flashing || dialogCtl.newNetwork.encryption=='unsecured'" aria-label="Show password">
-                                        <md-icon md-svg-icon="eye" ng-if="!dialogCtl.showPassword"></md-icon>
-                                        <md-icon md-svg-icon="eye-off" ng-if="dialogCtl.showPassword"></md-icon>
-                                        <md-tooltip md-direction="left" ng-if="!dialogCtl.showPassword">Show password</md-tooltip>
-                                        <md-tooltip md-direction="left" ng-if="dialogCtl.showPassword">Hide password</md-tooltip>
+                                    <md-button class="md-icon-button" ng-click="ctl.showPassword=!ctl.showPassword" ng-disabled="ctl.flashing || ctl.newNetwork.encryption=='unsecured'" aria-label="Show password">
+                                        <md-icon md-svg-icon="eye" ng-if="!ctl.showPassword"></md-icon>
+                                        <md-icon md-svg-icon="eye-off" ng-if="ctl.showPassword"></md-icon>
+                                        <md-tooltip md-direction="left" ng-if="!ctl.showPassword">Show password</md-tooltip>
+                                        <md-tooltip md-direction="left" ng-if="ctl.showPassword">Hide password</md-tooltip>
                                     </md-button>
                                 </div>
                             </div>
