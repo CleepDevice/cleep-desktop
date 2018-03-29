@@ -38,8 +38,6 @@ echo "Done"
 #electron-builder
 echo
 echo
-echo "Packaging cleepdesktop..."
-echo "-------------------------"
 if [ "$1" == "publish" ]
 then
     echo "Publishing cleepdesktop..."
