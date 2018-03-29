@@ -27,6 +27,7 @@
     "keywords": [
         "cleep",
         "rasperrypi",
+        "automation",
         "iot"
     ],
     "author": "Tanguy BONNEAU <tanguy.bonneau@gmail.com>",
@@ -81,7 +82,7 @@
         },
         "mac": {
             "category": "public.app-category.utilities",
-            "target": ["dmg"],
+            "target": ["dmg", "zip"],
             "icon": "resources/icon",
             "extendInfo": "config/Info.plist",
             "binaries": [

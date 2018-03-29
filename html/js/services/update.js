@@ -99,14 +99,14 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
     //Init update service adding appUpdater and cleepdesktopcore events handlers
     self.init = function()
     {
-        if( process.platform==='darwin' )
+        /*if( process.platform==='darwin' )
         {
             //disable auto updates on macos due to missing certification key that is needed :(
             self.cleepdesktopUpdatesDisabled = true;
             appUpdater.autoDownload = false;
             logger.info('Updates are disabled on MacOs because we need to pay 99$ to get Apple Developper ID. ' +
             'If Cleep project earns money one day, we will reconsider that.');
-        }
+        }*/
 
         //Handle etcher update here to add update task panel
         $rootScope.$on('updates', function(event, data) {
