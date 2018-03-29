@@ -134,10 +134,10 @@
                             <div layout="row">
                                 <md-input-container class="no-error-spacer">
                                     <label>Password</label>
-                                    <input ng-attr-type="{{dialogCtl.showPassword ? 'text' : 'password'}}" ng-disabled="dialogCtl.testing || dialogCtl.newNetwork.encryption=='unsecured'"  ng-model="ctl.wifiPassword" ng-disabled="ctl.flashing || ctl.wifiNetworkEncryption=='unsecured'">
+                                    <input ng-attr-type="{{dialogCtl.showPassword ? 'text' : 'password'}}" ng-model="ctl.wifiPassword" ng-disabled="ctl.flashing || ctl.wifiNetworkEncryption=='unsecured'">
                                 </md-input-container>
                                 <div style="padding-top:10px;">
-                                    <md-button class="md-icon-button" ng-click="dialogCtl.showPassword=!dialogCtl.showPassword" ng-disabled="dialogCtl.testing || dialogCtl.newNetwork.encryption=='unsecured'" aria-label="Show password">
+                                    <md-button class="md-icon-button" ng-click="dialogCtl.showPassword=!dialogCtl.showPassword" ng-disabled="dialogCtl.flashing || dialogCtl.newNetwork.encryption=='unsecured'" aria-label="Show password">
                                         <md-icon md-svg-icon="eye" ng-if="!dialogCtl.showPassword"></md-icon>
                                         <md-icon md-svg-icon="eye-off" ng-if="dialogCtl.showPassword"></md-icon>
                                         <md-tooltip md-direction="left" ng-if="!dialogCtl.showPassword">Show password</md-tooltip>
