@@ -28,7 +28,7 @@ echo
 echo "Copying release files..."
 echo "------------------------"
 /bin/cp -a html "$CLEEPDESKTOPPATH"
-/bin/cp -a LICENCE.txt "$CLEEPDESKTOPPATH"
+/bin/cp -a LICENSE.txt "$CLEEPDESKTOPPATH"
 /bin/cp -a cleepdesktop.js "$CLEEPDESKTOPPATH"
 /bin/cp -a package.json "$CLEEPDESKTOPPATH"
 /bin/cp -a README.md "$CLEEPDESKTOPPATH"

@@ -28,7 +28,7 @@ echo ------------------------
 echo html...
 mkdir %CLEEPDESKTOPPATH%\html
 xcopy /S html %CLEEPDESKTOPPATH%\html
-xcopy LICENCE.txt %CLEEPDESKTOPPATH%\
+xcopy LICENSE.txt %CLEEPDESKTOPPATH%\
 xcopy cleepdesktop.js %CLEEPDESKTOPPATH%\
 xcopy package.json %CLEEPDESKTOPPATH%\
 xcopy README.md %CLEEPDESKTOPPATH%\
