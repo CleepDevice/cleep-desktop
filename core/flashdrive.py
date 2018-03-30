@@ -52,7 +52,7 @@ class FlashDrive(CleepDesktopModule):
     STATUS_ERROR_FLASH = 10
 
     FLASH_LINUX = 'etcher-cli/flash.sh'
-    FLASH_WINDOWS = 'etcher-cli\flash.bat'
+    FLASH_WINDOWS = 'etcher-cli\\flash.bat'
     FLASH_MAC = 'etcher-cli/flash.sh'
     
     CMDLOGGER_LINUX = 'cmdlogger-linux/cmdlogger'

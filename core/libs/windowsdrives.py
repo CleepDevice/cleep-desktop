@@ -88,7 +88,9 @@ class WindowsDrives():
             for property in disk.Properties_:
                 if property.Name=='DeviceID':
                     current_device['temp_device'] = property.Value
-                    current_device['device'] = property.Value.replace('PHYSICALDRIVE', 'PhysicalDrive')
+                    #workaround for etcher-cli 1.3.1
+                    #current_device['device'] = property.Value.replace('PHYSICALDRIVE', 'PhysicalDrive')
+                    current_device['device'] = property.Value
                     current_device['raw'] = property.Value
                 elif property.Name=='Caption':
                     current_device['description'] = property.Value

@@ -15,7 +15,7 @@ echo params=%1 %2 %3 %4 >> %logfile%
 echo etcher-cli returncode=%ERRORLEVEL% >> %logfile%
 
 :: no wifi config specified jump to end of script
-if [%4] EQU [] GOTO :END
+if [%4] EQU [""] GOTO :END
 
 :: force volume rescan
 echo rescan > rescan.txt

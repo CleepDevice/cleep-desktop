@@ -251,7 +251,10 @@ class AdminEndlessConsole(EndlessConsole):
             raise Exception('Invalid cmdlogger path (%s). Binary file does not exist' % cmdlogger_path)
 
         #set cmdlogger path with spaces protection
-        self.cmdlogger_path = "'%s'" % cmdlogger_path
+        if platform.system()=='Windows':
+            self.cmdlogger_path = cmdlogger_path
+        else:
+            self.cmdlogger_path = '"%s"' % cmdlogger_path
                 
     def __quit_properly(self, return_code):
         """
@@ -369,11 +372,11 @@ class AdminEndlessConsole(EndlessConsole):
             except socket.timeout:
                 self.logger.debug('poll')
                 if platform.system()=='Windows':
-                    #TODO on windows check process is stil running
                     #http://docs.activestate.com/activepython/3.4/pywin32/win32event__WaitForSingleObject_meth.html
+                    #https://msdn.microsoft.com/fr-fr/library/windows/desktop/ms687032(v=vs.85).aspx
                     wfso = win32event.WaitForSingleObject(proc_handle, 100.0)
                     self.logger.debug('waitforsingleobj=%s' % wfso)
-                    if wfso==win32event.WAIT_OBJECT_0:
+                    if wfso==win32event.WAIT_FAILED:
                         self.logger.warn('No cmdlogger connected. Maybe command execution failed or was too quick')
                         self.__quit_properly(self.ERROR_INTERNAL)
                         return
