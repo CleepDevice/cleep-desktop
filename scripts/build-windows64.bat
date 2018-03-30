@@ -66,5 +66,5 @@ rmdir /Q /S cleep\__pycache__
 rmdir /Q /S cleep\libs\__pycache__
 echo Done
 
-echo
+echo.
 echo Build result in dist/ folder
