@@ -7,7 +7,7 @@ import json
 import time
 from core.version import version as VERSION
 from core.utils import CleepDesktopModule
-from core.libs.externalbus import PyreBus
+from core.libs.externalbus import PyreBus, DeviceOffline
 
 class Devices(CleepDesktopModule):
     """
@@ -42,6 +42,7 @@ class Devices(CleepDesktopModule):
             crash_report
         )
         self.peers_uuids = {}
+        self.offline = False
 
         #debug bus
         #pyre_logger = logging.getLogger("pyre")
@@ -60,7 +61,18 @@ class Devices(CleepDesktopModule):
         """
         Custom process for cleep bus: get new message on external bus
         """
-        self.external_bus.run_once()
+        try:
+            self.external_bus.run_once()
+
+        except DeviceOffline:
+            #device is offline, update flag
+            self.offline = True
+            #and update ui
+            self.update_callback(self.get_devices())
+
+        except Exception as e:
+            #raise again exception
+            raise e
 
     def _custom_stop(self):
         """
@@ -192,7 +204,8 @@ class Devices(CleepDesktopModule):
         #prepare output
         out = {
             'unconfigured': unconfigured,
-            'devices': list(self.devices.values())
+            'devices': list(self.devices.values()),
+            'offline': self.offline
         }
         self.logger.debug('devices: %s' % out)
 

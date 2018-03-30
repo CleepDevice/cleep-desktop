@@ -6,8 +6,11 @@ var toastService = function($mdToast) {
      * @param message: message to display
      * @param duration: message duration
      */
-    self.error = function(message, duration) {
-        self.__toast(message, 3000, 'error');
+    self.error = function(message, duration)
+    {
+        if( duration===undefined )
+            duration = 3000;
+        self.__toast(message, duration, 'error');
     };
 
     /**
@@ -15,8 +18,11 @@ var toastService = function($mdToast) {
      * @param message: message to display
      * @param duration: message duration
      */
-    self.warning = function(message, duration) {
-        self.__toast(message, 2000, 'warning');
+    self.warning = function(message, duration)
+    {
+        if( duration===undefined )
+            duration = 2000;
+        self.__toast(message, duration, 'warning');
     };
 
     /**
@@ -24,8 +30,11 @@ var toastService = function($mdToast) {
      * @param message: message to display
      * @param duration: message duration
      */
-    self.success = function(message, duration) {
-        self.__toast(message, 1500, 'success');
+    self.success = function(message, duration)
+    {
+        if( duration===undefined )
+            duration = 1500;
+        self.__toast(message, duration, 'success');
     };
 
     /**
@@ -33,8 +42,11 @@ var toastService = function($mdToast) {
      * @param message: message to display
      * @param duration: message duration
      */
-    self.info = function(message, duration) {
-        self.__toast(message, 1500, 'info');
+    self.info = function(message, duration)
+    {
+        if( duration===undefined )
+            duration = 1500;
+        self.__toast(message, duration, 'info');
     };
 
     /**

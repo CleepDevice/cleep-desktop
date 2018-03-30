@@ -3,7 +3,7 @@
  * This service handles properly update taskpanel
  * It can returns Cleepdesktop update status and last error
  */
-var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $q, cleepService) 
+var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $q, cleepService, toast) 
 {
     var self = this;
 
@@ -198,6 +198,12 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
                 self.cleepdesktopStatus.downloadpercent = 100;
                 self.cleepdesktopStatus.lasterror = error.message;
 
+                if( error.message=='net::ERR_NAME_NOT_RESOLVED' )
+                {
+                    //device seems to be offline
+                    toast.warning('Device is offline, please check your internet connection', 6000);
+                }
+
                 //update task panel (delay it to make sure taskpanel is displayed)
                 $timeout(function() {
                     self.__handleUpdateTaskPanel();
@@ -317,4 +323,4 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
     
 var Cleep = angular.module('Cleep');
 Cleep.service('updateService', ['$rootScope', 'logger', 'appUpdater', '$timeout', 'tasksPanelService', 'cleepUi', 
-            '$q', 'cleepService', updateService]);
+            '$q', 'cleepService', 'toastService', updateService]);

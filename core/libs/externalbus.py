@@ -18,6 +18,11 @@ import netaddr
 import ipaddress
 
 
+class DeviceOffline(Exception):
+    def __str__(self):
+        return repr('Device is offline. Check internet connection.')
+
+
 class ExternalBusMessage():
     """
     Handle ExternalBus message data
@@ -409,6 +414,12 @@ class PyreBus(ExternalBus):
         if not self.__externalbus_configured:
             raise Exception('Bus not configured. Please call configure function first')
 
+        #check network connection
+        gateways = netifaces.gateways()
+        if gateways and 'default' in gateways and len(gateways)==0:
+            #it seems the device is offline
+            raise DeviceOffline()
+
         try:
             #self.logger.debug(u'Polling...')
             items = dict(self.poller.poll(self.POLL_TIMEOUT))
@@ -534,6 +545,11 @@ class PyreBus(ExternalBus):
                 #user stop
                 self.logger.debug(' ==> stop requested manually (CTRL-C)')
                 break
+
+            except DeviceOffline:
+                self.logger.debug('Device is offline. No way to connect to external bus')
+                time.sleep(1.0)
+                continue
 
             except:
                 self.logger.exception('Exception during external bus polling:')

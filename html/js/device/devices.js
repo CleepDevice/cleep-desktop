@@ -88,6 +88,7 @@ var devicesController = function($rootScope, $scope, $timeout, cleepService, $st
     //watch for devices event to refresh devices list
     $rootScope.$on('devices', function(event, data)
     {
+        console.log(data);
         self.updateDevices(data);
     });
 
