@@ -263,7 +263,7 @@ function createMenu()
     }];
 
     const menu = Menu.buildFromTemplate(menuTemplate);
-    Menu.setApplicationMenu(menu)
+    Menu.setApplicationMenu(menu);
 };
 
 // Create splash screen
