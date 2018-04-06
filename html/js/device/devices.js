@@ -71,6 +71,12 @@ var devicesController = function($rootScope, $scope, $timeout, cleepService, $st
         }
     };
 
+    //open install page
+    self.openInstallPage = function()
+    {
+        $state.go('installAuto');
+    };
+
     //update devices list
     self.updateDevices = function(data) 
     {
