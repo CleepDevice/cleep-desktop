@@ -94,7 +94,7 @@ class FlashDrive(CleepDesktopModule):
         self.isos = []
         self.url = None
         self.cancel = False
-        self.timestamp_isos = None
+        self.timestamp_isos = 0
         self.__etcher_output_pattern = r'.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)'
         self.__flash_output_error = False
         self.wifi_config = None
@@ -520,19 +520,24 @@ class FlashDrive(CleepDesktopModule):
         """
         #return isos from cache
         refresh_isos = True
-        if (self.timestamp_isos is not None and time.time()-self.timestamp_isos<=self.CACHE_DURATION) or (len(self.isos)==0):
-            #check if raspbian isos are requested
+        if self.timestamp_isos==0 or len(self.isos)==0:
+            #force refresh first time
+            refresh_isos = True
+        elif time.time()-self.timestamp_isos<=self.CACHE_DURATION:
             need_refresh = False
             if not with_iso_raspbian:
+                #raspbian is not enabled in preferences
                 for iso in self.isos:
                     if iso['category']=='raspbian':
-                        #need to refresh list
+                        #raspbians isos in list while options disabled, need to refresh list to remove entries
                         need_refresh = True
                         break
             else:
+                #raspbian is enabled in preferences, by default need refresh...
                 need_refresh = True
                 for iso in self.isos:
                     if iso['category']=='raspbian':
+                        #.. except if raspbians isos already retrieved
                         need_refresh = False
                         break
 
