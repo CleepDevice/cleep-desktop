@@ -26,16 +26,28 @@ Cleep.value('logger', logger)
 /**
  * Timestamp to human readable string
  **/
-Cleep.filter('hrDatetime', function($filter) {
+Cleep.filter('hrDatetime', function($filter, settings) {
     return function(ts, shortYear) {
         if( angular.isUndefined(ts) || ts===null )
             return '-';
         else
         {
+            //date format https://en.wikipedia.org/wiki/Date_format_by_country
+            var locale = settings.get('cleep.locale');
             if( angular.isUndefined(shortYear) )
-                return moment.unix(ts).format('DD/MM/YYYY HH:mm:ss');
+            {
+                if( locale=='en' )
+                    return moment.unix(ts).format('MM/DD/YYYY HH:mm:ss');
+                else
+                    return moment.unix(ts).format('DD/MM/YYYY HH:mm:ss');
+            }
             else
-                return moment.unix(ts).format('DD/MM/YY HH:mm:ss');
+            {
+                if( locale=='en' )
+                    return moment.unix(ts).format('MM/DD/YY HH:mm:ss');
+                else
+                    return moment.unix(ts).format('DD/MM/YY HH:mm:ss');
+            }
         }
     };
 });
