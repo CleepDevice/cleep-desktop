@@ -35,7 +35,10 @@ class WindowsDrives():
         self.timestamp = None
         self.devices = {}
         client = win32com.client.Dispatch('WbemScripting.SWbemLocator')
-        self.winService = client.ConnectServer('.', 'root\cimv2')
+        try:
+            self.winService = client.ConnectServer('.', 'root\cimv2')
+        except:
+            self.logger.warning('User surely does not give CleepDesktop permissions to access SWbemLocator layer')
         
     def __get_system_drive(self):
         """
