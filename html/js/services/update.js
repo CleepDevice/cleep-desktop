@@ -179,8 +179,8 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
                 self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DONE;
                 self.cleepdesktopStatus.downloadpercent = 100;
 
-            //emit restart required event
-            $rootScope.$broadcast('restartrequired');
+                //emit restart required event
+                $rootScope.$broadcast('restartrequired');
 
                 //update task panel
                 self.__handleUpdateTaskPanel();

@@ -1,5 +1,5 @@
 const electron = require('electron');
-const {remote} = electron;
+const {remote, ipcRenderer} = electron;
 const cleepdesktopVersion = remote.getGlobal('cleepdesktopVersion');
 const logger = remote.getGlobal('logger');
 const appUpdater = remote.getGlobal('appUpdater');
@@ -323,6 +323,14 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
                 false
             );
         }
+    });
+
+    //disable/enable application quit when process is running (like flash)
+    $rootScope.$on('disablequit', function(event, data) {
+        ipcRenderer.send('allow-quit', false);
+    });
+    $rootScope.$on('enablequit', function(event, data) {
+        ipcRenderer.send('allow-quit', true);
     });
 
     //Controller init

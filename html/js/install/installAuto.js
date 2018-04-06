@@ -167,6 +167,9 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     //start flash process
     self.startFlash = function()
     {
+        //disable application quit
+        $rootScope.$broadcast('disablequit');
+
         //check values
         if( !self.selectedIso || !self.selectedDrive )
         {
@@ -281,6 +284,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
             return;
 
         //save status
+        var flashing = self.flashing;
         self.status = data;
 
         //enable flash button
@@ -291,6 +295,13 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         else
         {
             self.flashing = true;
+        }
+
+        //enable application quit
+        if( flashing==true && flashing!=self.flashing )
+        {
+            logger.debug('Enable quit');
+            $rootScope.$broadcast('enablequit');
         }
 
         //disable cancel button when really flashing sdcard

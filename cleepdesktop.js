@@ -15,7 +15,9 @@ const logger = require('electron-log')
 global.logger = logger
 
 //electron
-const electron = require('electron')
+const electron = require('electron');
+const {ipcMain} = electron;
+const {dialog} = electron;
 
 //electron updater
 const {autoUpdater} = require('electron-updater');
@@ -44,6 +46,7 @@ let isDev = require('fs').existsSync(corePath);
 logger.info('Check if ' + corePath + ' exists: ' + isDev);
 let coreProcess = null;
 let coreDisabled = false;
+let allowQuit = true;
 
 //logger configuration
 logger.transports.file.level = 'info';
@@ -466,6 +469,31 @@ app.on('ready', function() {
             createMenu();
             launchCore(rpcport);
         });
+    }
+});
+
+ipcMain.on('allow-quit', (event, arg) => {
+    logger.debug('allow-quit=' + arg);
+    allowQuit = arg;
+})
+
+app.on('before-quit', function(evt) {
+    if( !allowQuit )
+    {
+        //something does not allow application to quit. Request user to quit or not
+        var btnIndex = dialog.showMessageBox(mainWindow, {
+            type: 'question',
+            buttons: ['Confirm quit', 'Cancel'],
+            defaultId: 1,
+            title: 'Quit application ?',
+            message: 'A process is running. Quit application now can let inconsistent data. Quit anyway?'
+        });
+
+        if( btnIndex!=0 )
+        {
+            //user do not quit
+            evt.preventDefault();
+        }
     }
 });
 
