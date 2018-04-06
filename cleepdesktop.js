@@ -280,6 +280,7 @@ function createSplashScreen()
         show: false,
         frame: false,
         parent: mainWindow,
+        resizable: false,
         icon:__dirname+'/resources/256x256.png'
     });
 
