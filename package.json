@@ -1,6 +1,6 @@
 {
     "name": "CleepDesktop",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "Desktop application to manage your Cleep devices",
     "main": "cleepdesktop.js",
     "scripts": {
@@ -85,8 +85,7 @@
             "target": ["dmg", "zip"],
             "icon": "resources/icon",
             "extendInfo": "config/Info.plist",
-            "binaries": [
-            ],
+            "binaries": [],
             "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
         },
         "dmg": {
