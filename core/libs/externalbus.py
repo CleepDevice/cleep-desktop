@@ -275,6 +275,7 @@ class PyreBus(ExternalBus):
         self.__externalbus_configured = False
         self.pipe_in = None
         self.pipe_out = None
+        self.__running = True
 
     def get_mac_addresses(self):
         """
@@ -329,11 +330,11 @@ class PyreBus(ExternalBus):
                 interface = ipaddress.ip_interface(u(interface_string))
 
                 if interface.is_loopback:
-                    logger.debug("Interface {0} is a loopback device.".format(name))
+                    self.logger.debug("Interface {0} is a loopback device.".format(name))
                     continue
 
                 if interface.is_link_local:
-                    logger.debug("Interface {0} is a link-local device.".format(name))
+                    self.logger.debug("Interface {0} is a link-local device.".format(name))
                     continue
 
                 macs.append(mac_str)
@@ -344,10 +345,12 @@ class PyreBus(ExternalBus):
         """
         Stop bus
         """
+        self.__running = False
+
         #send stop message to unblock pyre task
         if self.pipe_in is not None:
             self.logger.debug('Send STOP on pipe')
-            self.pipe_in.send(json.dumps(self.BUS_STOP.encode('utf-8')))
+            self.pipe_in.send_string(json.dumps(self.BUS_STOP.encode('utf-8').decode('utf-8')))
 
     def configure(self, headers):
         """
@@ -397,6 +400,9 @@ class PyreBus(ExternalBus):
 
         self.__externalbus_configured = True
 
+        if not self.__running:
+            self.node.stop()
+
     def run_once(self):
         """
         Run pyre bus once
@@ -427,7 +433,7 @@ class PyreBus(ExternalBus):
             message = json.loads(data.decode(u'utf-8'))
 
             #stop node
-            if message==self.BUS_STOP:
+            if message==self.BUS_STOP or not self.__running:
                 self.logger.debug(u'Stop Pyre bus')
                 self.node.stop()
                 #return false to allow 'run' function to end infinite loop
@@ -523,7 +529,7 @@ class PyreBus(ExternalBus):
             raise Exception('Bus not configured. Please call configure_bus function first')
 
         self.logger.debug('Pyre node started')
-        while True:
+        while self.__running:
             try:
                 if not self.run_once():
                     #stop requested
