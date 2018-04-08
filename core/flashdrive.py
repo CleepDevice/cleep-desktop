@@ -138,6 +138,8 @@ class FlashDrive(CleepDesktopModule):
         """
         Start flash process. Does nothing until start_flash is called
         """
+        self.logger.debug('Flashdrive thread started')
+        
         #precache wifi networks at startup
         self.get_wifi_networks()
 
@@ -213,6 +215,8 @@ class FlashDrive(CleepDesktopModule):
             else:
                 #no process, release cpu
                 time.sleep(0.25)
+
+        self.logger.debug('Flashdrive thread stopped')
 
     def get_latest_raspbians(self):
         """

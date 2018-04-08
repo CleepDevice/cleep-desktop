@@ -158,7 +158,6 @@ class Updates(CleepDesktopModule):
         """
         Start update process. Does nothing until check_updates is called and trigger update if necessary
         """
-        self.running = True
         self.logger.debug('Updates thread started')
 
         #copy cmdlogger to config folder

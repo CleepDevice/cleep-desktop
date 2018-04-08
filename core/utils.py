@@ -93,10 +93,15 @@ class CleepDesktopModule(Thread):
         """
         Default process
         """
+        self.logger.debug('%s thread started' % self.__class__.__name__)
+
         self._configure()
+
         while self.running:
             self._custom_process()
             time.sleep(0.10)
+
+        self.logger.debug('%s thread stopped' % self.__class__.__name__)
     
 
 class CommandError(Exception):
