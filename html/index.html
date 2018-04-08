@@ -35,7 +35,7 @@
                 </div>
 
                 <!-- no device -->
-                <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devices.length==0">
+                <div layout="column" layout-padding layout-align="center center" ng-if="!ctl.loading && ctl.devices.length==0">
                     <div style="padding-top:20px;">
                         No device found...
                     </div>
@@ -48,7 +48,7 @@
                 </div>
 
                 <!-- unconfigured devices -->
-                <md-toolbar class="md-hue-1" style="height:68px;" ng-if="ctl.unconfigured>0">
+                <md-toolbar class="md-hue-1" style="height:68px;" ng-if="!ctl.loading && ctl.unconfigured>0">
                     <div class="md-toolbar-tools">
                         <h2 flex md-truncate>
                             Unconfigured devices
@@ -67,7 +67,7 @@
                 </md-list>
 
                 <!-- configured devices -->
-                <md-toolbar class="md-hue-1" style="height:68px;" ng-if="ctl.devices.length>0">
+                <md-toolbar class="md-hue-1" style="height:68px;" ng-if="!ctl.loading && ctl.devices.length>0">
                     <div class="md-toolbar-tools">
                         <h2 flex md-truncate>
                             Configured devices
