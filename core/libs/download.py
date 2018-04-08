@@ -11,6 +11,8 @@ import platform
 import tempfile
 import base64
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 class Download():
     """
     Download file helper

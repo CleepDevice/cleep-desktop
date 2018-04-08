@@ -7,6 +7,8 @@ import urllib3
 import json
 from datetime import datetime
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 class Github():
     """
     Github release helper
