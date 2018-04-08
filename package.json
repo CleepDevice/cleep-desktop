@@ -42,7 +42,8 @@
         "electron-log": "2.2.14",
         "electron-settings": "3.1.4",
         "electron-updater": "^2.18.2",
-        "npm": "^5.7.1"
+        "npm": "^5.7.1",
+        "@sentry/electron": "0.4.2"
     },
     "build": {
         "appId": "com.cleep.cleepdesktop",
@@ -82,7 +83,10 @@
         },
         "mac": {
             "category": "public.app-category.utilities",
-            "target": ["dmg", "zip"],
+            "target": [
+                "dmg",
+                "zip"
+            ],
             "icon": "resources/icon",
             "extendInfo": "config/Info.plist",
             "binaries": [],

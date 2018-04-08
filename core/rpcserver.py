@@ -228,8 +228,14 @@ def get_app(app_path, config_path, config_filename, debug, is_dev):
     file_handler.setFormatter(logging_formatter)
     if is_dev:
         #dev mode: log to file and console with DEBUG level
-        console_handler = logging.StreamHandler()
+        console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(logging_formatter)
+        console_handler.addFilter(lambda record: record.levelno<=logging.WARNING)
+
+        console_exception_handler = logging.StreamHandler()
+        console_exception_handler.setFormatter(logging_formatter)
+        console_exception_handler.addFilter(lambda record: record.levelno>logging.WARNING)
+
         root_logger.addHandler(file_handler)
         root_logger.addHandler(console_handler)
         root_logger.setLevel(logging.DEBUG)
@@ -291,25 +297,8 @@ def get_app(app_path, config_path, config_filename, debug, is_dev):
     devices = Devices(devices_update, message_update, debug, crash_report)
     devices.start()
 
-    #check etcher dir
-    # logger.debug('Looking for etcher-cli at path: %s' % config_path)
-    etcher_version = config['etcher']['version']
-    # if not os.path.exists(os.path.join(config_path, ETCHER_DIR)):
-    #     logger.info('Etcher-cli not found. Etcher install is required')
-    #     etcher_version = None
-    # if platform.system()=='Windows':
-    #     etcher_script = FlashDrive.ETCHER_WINDOWS
-    # elif platform.system()=='Darwin':
-    #     etcher_script = FlashDrive.ETCHER_MAC
-    # else:
-    #     etcher_script = FlashDrive.ETCHER_LINUX
-    # etchercli_script_path = os.path.join(config_path, etcher_script)
-    # logger.debug('Etcher-cli script path: %s' % etchercli_script_path)
-    # if not os.path.exists(etchercli_script_path):
-    #     logger.info('Etcher-cli script not found. Etcher install is required.')
-    #     etcher_version = None
-
     #launch updates process
+    etcher_version = config['etcher']['version']
     updates = Updates(app_path, config_path, config['cleep']['version'], etcher_version, updates_update, debug, crash_report)
     updates.start()
 
@@ -354,6 +343,17 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
         #user stops raspiot, close server properly
         if not server.closed:
             server.close()
+
+def stop():
+    """
+    Stop all running processes
+    """
+    if flashdrive:
+        flashdrive.stop()
+    if devices:
+        devices.stop()
+    if updates:
+        updates.stop()
 
 def process_config(old, new):
     """

@@ -14,6 +14,12 @@ const DEFAULT_FIRSTRUN = true;
 const logger = require('electron-log')
 global.logger = logger
 
+//crash report
+const { SentryClient } = require('@sentry/electron');
+SentryClient.create({
+    dsn: 'https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385'
+});
+
 //electron
 const electron = require('electron');
 const {ipcMain} = electron;
@@ -47,6 +53,8 @@ logger.info('Check if ' + corePath + ' exists: ' + isDev);
 let coreProcess = null;
 let coreDisabled = false;
 let allowQuit = true;
+let closingApplication = false;
+let coreStartupTime = 0;
 
 //logger configuration
 logger.transports.file.level = 'info';
@@ -405,6 +413,7 @@ function launchCore(rpcport)
         //launch command line
         let debug = settings.has('cleep.debug') && settings.get('cleep.debug') ? 'debug' : 'release';
         logger.debug('Core commandline: '+commandline+' ' + rpcport + ' ' + configPath + ' ' + configFilename + ' ' + debug);
+        coreStartupTime = Math.round(Date.now()/1000);
         coreProcess = require('child_process').spawn(commandline, [rpcport, configPath, configFilename, 'release', 'false']);
     }
     else
@@ -418,9 +427,45 @@ function launchCore(rpcport)
 		{
 			python_bin = 'py';
 			python_args.unshift('-3');
-		}
+        }
+        coreStartupTime = Math.round(Date.now()/1000);
         coreProcess = require('child_process').spawn(python_bin, python_args);
     }
+
+    //handle core stderr
+    coreProcess.stderr.on('data', (data) => {
+        //do not send user warnings
+        var message = data.toString('utf8');
+        if( message.search('UserWarning:')!=-1 )
+        {
+            logger.debug('Drop UserWarning message');
+            return;
+        }
+
+        //only handle startup crash (5 first seconds), after, core will handle it
+        var now = Math.round(Date.now()/1000);
+        if( now<=coreStartupTime+5 )
+        {
+            logger.error(message);
+            throw new Error(message);
+        }
+    });
+
+    //handle end of process
+    coreProcess.on('close', (code) => {
+        if( !closingApplication )
+        {
+            logger.error('Core process exited with code "' + code + '"');
+            if( code!==0 )
+            {
+                //error occured, display error to user before terminates application
+                dialog.showErrorBox("Fatal error", "Unable to start properly application.\nCleepDesktop will stop now.");
+
+                //stop application
+                app.quit();
+            }
+        }
+    });
 };
 
 // This method will be called when Electron has finished
@@ -479,6 +524,9 @@ ipcMain.on('allow-quit', (event, arg) => {
 })
 
 app.on('before-quit', function(evt) {
+    //set closing flag (to avoid catching core process error)
+    closingApplication = true;
+
     if( !allowQuit )
     {
         //something does not allow application to quit. Request user to quit or not

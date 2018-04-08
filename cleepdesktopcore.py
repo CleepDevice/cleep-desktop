@@ -4,6 +4,9 @@
 from core import rpcserver
 import sys
 import os
+import logging
+import traceback
+import time
 
 #parameters
 if len(sys.argv)!=6:
@@ -28,17 +31,25 @@ is_dev = False
 if sys.argv[5]=='true':
     is_dev = True
 
+try:
+    #absolute cleepdesktopcore path
+    app_path = os.path.abspath(os.path.dirname(sys.argv[0]))
 
-#absolute cleepdesktopcore path
-app_path = os.path.abspath(os.path.dirname(sys.argv[0]))
+    #get rpc application
+    app = rpcserver.get_app(app_path, config_path, config_filename, debug, is_dev)
 
-#get rpc application
-app = rpcserver.get_app(app_path, config_path, config_filename, debug, is_dev)
+    #start rpc server
+    rpcserver.logger.debug('Serving files from "%s" folder.' % rpcserver.HTML_DIR)
+    rpcserver.start(u'127.0.0.1', rpcport, None, None)
 
-#start rpc server
-rpcserver.logger.debug('Serving files from "%s" folder.' % rpcserver.HTML_DIR)
-rpcserver.start(u'127.0.0.1', rpcport, None, None)
+except Exception as e:
+    #print exeption to stderr to be catched by electron
+    ex_type, ex_value, ex_traceback = sys.exc_info()
+    traceback.print_exception(ex_type, ex_value, ex_traceback, None, sys.stderr)
+
+finally:
+    rpcserver.stop()
+    sys.exit(1)
 
 #clean everythng
 sys.exit(0)
-
