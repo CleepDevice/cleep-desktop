@@ -15,10 +15,10 @@ const logger = require('electron-log')
 global.logger = logger
 
 //crash report
-const { SentryClient } = require('@sentry/electron');
-SentryClient.create({
+const { init } = require('@sentry/electron');
+init({
     dsn: 'https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385'
-});
+})
 
 //electron
 const electron = require('electron');
