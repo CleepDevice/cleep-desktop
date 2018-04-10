@@ -50,6 +50,7 @@ class FlashDrive(CleepDesktopModule):
     STATUS_ERROR_INVALIDSIZE = 8
     STATUS_ERROR_BADCHECKSUM = 9
     STATUS_ERROR_FLASH = 10
+    STATUS_ERROR_NETWORK = 11
 
     FLASH_LINUX = 'etcher-cli/flash.sh'
     FLASH_WINDOWS = 'etcher-cli\\flash.bat'
@@ -648,6 +649,10 @@ class FlashDrive(CleepDesktopModule):
             self.status = self.STATUS_ERROR_INVALIDSIZE
         elif status==Download.STATUS_ERROR_BADCHECKSUM:
             self.status = self.STATUS_ERROR_BADCHECKSUM
+        elif status==Download.STATUS_ERROR_NETWORK:
+            self.status = self.STATUS_ERROR_NETWORK
+        elif status==Download.STATUS_CANCELED:
+            self.status = self.STATUS_CANCELED
         elif status==Download.STATUS_DONE:
             self.status = self.STATUS_DOWNLOADING
 

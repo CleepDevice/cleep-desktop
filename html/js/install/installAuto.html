@@ -189,6 +189,7 @@
                             <span ng-if="ctl.status.status==8">Downloaded file size is invalid</span>
                             <span ng-if="ctl.status.status==9">Downloaded file seems to be corrupted</span>
                             <span ng-if="ctl.status.status==10">Problem during data copy on drive</span>
+                            <span ng-if="ctl.status.status==11">Network error occured during file download</span>
                         </div>
                         <div>
                             <md-button ng-click="ctl.cancelFlash()" class="md-raised md-primary" ng-disabled="ctl.disableCancel">Cancel</md-button>

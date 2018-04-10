@@ -29,7 +29,8 @@ class Download():
     STATUS_ERROR_INVALIDSIZE = 4
     STATUS_ERROR_BADCHECKSUM = 5
     STATUS_ERROR_NETWORK = 6
-    STATUS_DONE = 7
+    STATUS_CANCELED = 7
+    STATUS_DONE = 8
 
     def __init__(self, status_callback=None):
         """
@@ -262,10 +263,10 @@ class Download():
             try:
                 buf = resp.read(1024)
             except:
+                download.close()
                 self.logger.exception('Network exception:')
                 self.status = self.STATUS_ERROR_NETWORK
                 self.__status_callback(self.status, downloaded_size, self.percent)
-                download.close()
                 return None
 
             if not buf:
@@ -277,10 +278,10 @@ class Download():
             try:
                 download.write(buf)
             except:
+                download.close()
                 self.logger.exception('Unable to write to download file "%s":' % self.download)
                 self.status = self.STATUS_ERROR
                 self.__status_callback(self.status, downloaded_size, self.percent)
-                download.close()
                 return None
             
             #compute percentage
@@ -295,6 +296,8 @@ class Download():
             if self.__cancel:
                 download.close()
                 self.logger.debug('Flash process canceled during download')
+                self.satus = self.STATUS_CANCELED
+                self.__status_callback(self.status, file_size, 100)
                 return None
 
         #download terminated
@@ -335,10 +338,6 @@ class Download():
         else:
             self.logger.debug('No checksum to verify :(')
 
-        #last status callback
-        self.status = self.STATUS_DONE
-        self.__status_callback(self.status, file_size, 100)
-
         #rename file
         if not cache:
             #no cache, rename file with download prefix
@@ -351,6 +350,13 @@ class Download():
             self.download = download
         except:
             self.logger.exception(u'Unable to rename downloaded file:')
+            self.status = STATUS_ERROR
+            self.__status_callback(self.status, file_size, 100)
+            return None
+
+        #final status callback
+        self.status = self.STATUS_DONE
+        self.__status_callback(self.status, file_size, 100)
 
         return self.download
 
