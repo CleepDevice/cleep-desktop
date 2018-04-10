@@ -102,7 +102,7 @@ class WindowsDrives():
                         current_device['size'] = int(property.Value)
                     except:
                         current_device['size'] = 0
-                self.logger.debug(property.Name, " = ", property.Value)
+                self.logger.debug('%s = %s' % (property.Name, property.Value))
                 
             devices[current_device['temp_device']] = current_device
             
