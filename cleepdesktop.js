@@ -361,6 +361,31 @@ function createWindow ()
         logger.debug('Chrome version: ' + process.versions.chrome);
     }
 
+    //give a chance to user to not stop current running action
+    mainWindow.on('close', function(e) {
+        //set closing flag (to avoid catching core process error)
+        closingApplication = true;
+
+        if( !allowQuit )
+        {
+            //something does not allow application to quit. Request user to quit or not
+            var btnIndex = dialog.showMessageBox(mainWindow, {
+                type: 'question',
+                buttons: ['Confirm quit', 'Cancel'],
+                defaultId: 1,
+                title: 'Quit application ?',
+                message: 'A process is running. Quit application now can let inconsistent data. Quit anyway?'
+            });
+
+            if( btnIndex!=0 )
+            {
+                //user do not quit
+                logger.debug('User cancels application closing');
+                e.preventDefault();
+            }
+        }
+    });
+
     // Emitted when the window is closed.
     mainWindow.on('closed', function () {
         // Dereference the window object, usually you would store windows
@@ -523,35 +548,12 @@ ipcMain.on('allow-quit', (event, arg) => {
     allowQuit = arg;
 })
 
-app.on('before-quit', function(evt) {
-    //set closing flag (to avoid catching core process error)
-    closingApplication = true;
-
-    if( !allowQuit )
-    {
-        //something does not allow application to quit. Request user to quit or not
-        var btnIndex = dialog.showMessageBox(mainWindow, {
-            type: 'question',
-            buttons: ['Confirm quit', 'Cancel'],
-            defaultId: 1,
-            title: 'Quit application ?',
-            message: 'A process is running. Quit application now can let inconsistent data. Quit anyway?'
-        });
-
-        if( btnIndex!=0 )
-        {
-            //user do not quit
-            evt.preventDefault();
-        }
-    }
-});
-
 // Application will quit, kill python process
-app.on('will-quit', function() {
+app.on('will-quit', function(e) {
     if( coreProcess )
     {
         logger.debug('Kill core');
-        coreProcess.kill('SIGTERM')
+        coreProcess.kill('SIGTERM');
     }
 });
 
