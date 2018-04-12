@@ -279,7 +279,7 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         {
             //flash is started
             self.taskFlashPanel = tasksPanelService.addItem(
-                'Installing cleep on drive...', 
+                'Installing Cleep on drive...',
                 {
                     onAction: self.jumpToInstallAuto,
                     tooltip: 'Go to install',
