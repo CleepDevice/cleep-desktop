@@ -3,7 +3,7 @@
  * This service handles properly update taskpanel
  * It can returns Cleepdesktop update status and last error
  */
-var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $q, cleepService) 
+var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $q, cleepService, cleepdesktopInfos)
 {
     var self = this;
 
@@ -43,6 +43,7 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
         downloadpercent: null,
         downloadstatus: null
     };
+    self.changelog = null;
 
     //Go to updates page
     self.__goToUpdates = function()
@@ -141,6 +142,12 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
             //update available, open task panel if necessary
             logger.debug('AppUpdater: update-available');
 
+            //keep track of changelog
+            if( info && info.releaseNotes )
+            {
+                self.changelog = info.releaseNotes;
+            }
+
             //update cleepdesktop flags
             self.cleepdesktopUpdateAvailable = true;
             if( !self.cleepdesktopUpdatesDisabled )
@@ -179,6 +186,9 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
                 self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DONE;
                 self.cleepdesktopStatus.downloadpercent = 100;
 
+                //save changelog
+                $rootScope.$broadcast('savechangelog', self.changelog);
+
                 //emit restart required event
                 $rootScope.$broadcast('restartrequired');
 
@@ -205,10 +215,15 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
             }
         });
         appUpdater.addListener('download-progress', function(progress) {
-            logger.debug('Update download progress: ' + Math.round(progress.percent));
-            self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
-            self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
-            self.cleepdesktopStatus.downloadpercent = Math.round(progress.percent);
+            percent = Math.round(progress.percent);
+            logger.debug('Update download progress: ' + percent);
+            //reduce number of ui updates refreshing percentage only each 5%
+            if( (percent % 5)==0 )
+            {
+                self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
+                self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
+                self.cleepdesktopStatus.downloadpercent = percent;
+            }
         });
         appUpdater.addListener('checking-for-update', function() {
             logger.info('Checking for CleepDesktop updates...');
@@ -254,7 +269,7 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
             })
             .then(function(update) {
                 logger.debug('app-updater result: ' + JSON.stringify(update));
-                if( update && update.versionInfo && update.versionInfo.version && update.versionInfo.version!==cleepdesktopVersion )
+                if( update && update.versionInfo && update.versionInfo.version && update.versionInfo.version!==cleepdesktopInfos.version )
                 {
                     cleepdesktopUpdateAvailable = true;
                 }
@@ -317,4 +332,4 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
     
 var Cleep = angular.module('Cleep');
 Cleep.service('updateService', ['$rootScope', 'logger', 'appUpdater', '$timeout', 'tasksPanelService', 'cleepUi', 
-            '$q', 'cleepService', updateService]);
+            '$q', 'cleepService', 'cleepdesktopInfos', updateService]);

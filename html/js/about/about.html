@@ -21,7 +21,7 @@
                 <md-card-title-text>
                     <span class="md-headline">
                         <md-icon md-svg-icon="information-outline"></md-icon>
-                        CleepDesktop v{{ctl.cleepdesktopVersion}}
+                        CleepDesktop v{{ctl.cleepdesktopInfos.version}}
                     </span>
                 </md-card-title-text>
             </md-card-title>
@@ -30,6 +30,20 @@
                 <br/>
                 </br>
                 This application is an open-source software under <a href="https://github.com/tangb/CleepDesktop/blob/master/LICENSE.txt" target="_blank">Apache License 2.0</a> license.<br/>
+            </md-card-content>
+        </md-card>
+
+        <!-- changelog -->
+        <md-card ng-if="ctl.cleepdesktopInfos.changelog.length>0">
+            <md-card-title>
+                <md-card-title-text>
+                    <span class="md-headline">
+                        <md-icon md-svg-icon="note-outline"></md-icon>
+                        Changelog v{{ctl.cleepdesktopInfos.version}}
+                    </span>
+                </md-card-title-text>
+            </md-card-title>
+            <md-card-content ng-bind-html="ctl.cleepdesktopInfos.changelog">
             </md-card-content>
         </md-card>
 

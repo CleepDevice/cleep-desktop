@@ -32,7 +32,10 @@ global.appUpdater = autoUpdater;
 
 //create default variables
 const app = electron.app
-global.cleepdesktopVersion = app.getVersion();
+global.cleepdesktopInfos = {
+    version: app.getVersion(),
+    changelog: null
+};
 app.setName('CleepDesktop')
 const BrowserWindow = electron.BrowserWindow
 const argv = process.argv.slice(1)
@@ -45,10 +48,11 @@ global.settings = settings;
 const path = require('path')
 const url = require('url')
 const detectPort = require('detect-port')
+const fs = require('fs')
 
 //variables
 var corePath = path.join(__dirname, 'cleepdesktopcore.py');
-let isDev = require('fs').existsSync(corePath);
+let isDev = fs.existsSync(corePath);
 logger.info('Check if ' + corePath + ' exists: ' + isDev);
 let coreProcess = null;
 let coreDisabled = false;
@@ -67,7 +71,7 @@ if( isDev )
     logger.transports.file.level = 'debug';
     logger.info('Dev mode enabled');
 }
-else if( require('fs').existsSync(settings.file()) && settings.has('cleep.debug') && settings.get('cleep.debug') )
+else if( fs.existsSync(settings.file()) && settings.has('cleep.debug') && settings.get('cleep.debug') )
 {
     //release mode with debug enabled
     logger.transports.console.level = 'debug';
@@ -84,6 +88,22 @@ else
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
 let splashScreen
+
+// Fill changelog content in cleepdesktopInfos global variable
+function fillChangelog()
+{
+    var changelogPath = path.join(__dirname, 'changelog.txt');
+    var changelogExists = fs.existsSync(changelogPath);
+    if( !changelogExists )
+    {
+        //changelog file doesn't exist, create empty one for later use
+        fs.writeFileSync(changelogPath, '');
+    }
+
+    //load changelog
+    cleepdesktopInfos.changelog = fs.readFileSync(changelogPath, {encoding:'utf8'});
+    logger.debug('changelog: ' + cleepdesktopInfos.changelog);
+};
 
 // Parse command line arguments
 function parseArgs()
@@ -419,7 +439,7 @@ function launchCore(rpcport)
         //prepare command line
         let commandline = path.join(__dirname + '.unpacked/', 'cleepdesktopcore/');
         logger.debug('cmdline with asar: ' + commandline);
-        if( !require('fs').existsSync(commandline) )
+        if( !fs.existsSync(commandline) )
         {
             commandline = path.join(__dirname, 'cleepdesktopcore/');
             logger.info('cmdline without asar: ' + commandline);
@@ -508,6 +528,9 @@ app.on('ready', function() {
 
     //fill configuration file
     createConfig();
+
+    //fill changelog
+    fillChangelog();
     
     if( isDev )
     {
@@ -543,10 +566,24 @@ app.on('ready', function() {
     }
 });
 
+// Handle event to allow to quit application (or not)
 ipcMain.on('allow-quit', (event, arg) => {
     logger.debug('allow-quit=' + arg);
     allowQuit = arg;
-})
+});
+
+// Handle event to save changelog
+ipcMain.on('save-changelog', (event, arg) => {
+    logger.debug('Saving changelog...');
+    var changelogPath = path.join(__dirname, 'changelog.txt');
+    fs.writeFile(changelogPath, arg, (err) => {
+        if( err )
+        {
+            //error occured during changelog saving
+            logger.error('Unable to save changelog: ' + err);
+        }
+    });
+});
 
 // Application will quit, kill python process
 app.on('will-quit', function(e) {

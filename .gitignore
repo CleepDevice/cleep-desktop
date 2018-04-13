@@ -11,3 +11,4 @@ core/libs/*.pyc
 tools/cmdlogger-linux
 tools/cmdlogger-mac
 npm-debug.log
+changelog.txt

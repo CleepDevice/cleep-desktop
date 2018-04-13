@@ -3,9 +3,9 @@ var Cleep = angular.module('Cleep');
 /**
  * About controller
  */
-var aboutController = function($rootScope, $scope, cleepdesktopVersion)
+var aboutController = function($rootScope, $scope, cleepdesktopInfos)
 {
     var self = this;
-    self.cleepdesktopVersion = cleepdesktopVersion;
+    self.cleepdesktopInfos = cleepdesktopInfos;
 };
-Cleep.controller('aboutController', ['$rootScope', '$scope', 'cleepdesktopVersion', aboutController]);
+Cleep.controller('aboutController', ['$rootScope', '$scope', 'cleepdesktopInfos', aboutController]);

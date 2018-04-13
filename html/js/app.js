@@ -1,6 +1,6 @@
 const electron = require('electron');
 const {remote, ipcRenderer} = electron;
-const cleepdesktopVersion = remote.getGlobal('cleepdesktopVersion');
+const cleepdesktopInfos = remote.getGlobal('cleepdesktopInfos');
 const logger = remote.getGlobal('logger');
 const appUpdater = remote.getGlobal('appUpdater');
 const settings = remote.getGlobal('settings');
@@ -20,7 +20,7 @@ Cleep.value('deviceMessages', []);
 Cleep.value('logger', logger)
     .value('appUpdater', appUpdater)
     .value('settings', settings)
-    .value('cleepdesktopVersion', cleepdesktopVersion)
+    .value('cleepdesktopInfos', cleepdesktopInfos)
     .value('cleepUi', cleepUi);
 
 /**
@@ -333,6 +333,11 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
     });
     $rootScope.$on('enablequit', function(event, data) {
         ipcRenderer.send('allow-quit', true);
+    });
+
+    //save changelog
+    $rootScope.$on('savechangelog', function(event, data) {
+        ipcRenderer.send('save-changelog', data);
     });
 
     //Controller init
