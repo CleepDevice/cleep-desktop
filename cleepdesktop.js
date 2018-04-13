@@ -92,11 +92,13 @@ let splashScreen
 // Fill changelog content in cleepdesktopInfos global variable
 function fillChangelog()
 {
-    var changelogPath = path.join(__dirname, 'changelog.txt');
+    var changelogPath = path.join(app.getPath('userData'), 'changelog.txt');
+    logger.debug('changelog.txt file path: ' + changelogPath);
     var changelogExists = fs.existsSync(changelogPath);
     if( !changelogExists )
     {
         //changelog file doesn't exist, create empty one for later use
+        logger.debug('Create changelog.txt file');
         fs.writeFileSync(changelogPath, '');
     }
 
@@ -575,7 +577,7 @@ ipcMain.on('allow-quit', (event, arg) => {
 // Handle event to save changelog
 ipcMain.on('save-changelog', (event, arg) => {
     logger.debug('Saving changelog...');
-    var changelogPath = path.join(__dirname, 'changelog.txt');
+    var changelogPath = path.join(app.getPath('userData'), 'changelog.txt');
     fs.writeFile(changelogPath, arg, (err) => {
         if( err )
         {
