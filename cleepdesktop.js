@@ -373,7 +373,7 @@ function createWindow ()
     }), {"extraHeaders" : "pragma: no-cache\n"})
 
     // Open the DevTools in dev mode only
-    if( isDev )
+    if( isDev || process.env.CLEEPDESKTOP_DEBUG )
     {
         //require('devtron').install();
         mainWindow.webContents.openDevTools();
