@@ -31,7 +31,13 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
     //Return true if update is in progress
     self.isUpdating = function()
     {
-        return updateService.isUpdatingCleepdesktop() || updateService.isUpdatingEtcher();
+        return updateService.updatingCleepdesktop || updateService.updatingEtcher;
+    };
+
+    //Restart application
+    self.restart = function()
+    {
+        $rootScope.$broadcast('restart');
     };
 
     //Check for updates

@@ -35,7 +35,8 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
         version: appUpdater.currentVersion,
         status: self.STATUS_IDLE,
         downloadpercent: null,
-        lasterror: ''
+        lasterror: '',
+        restartrequired: false
     };
     self.etcherStatus = {
         version: null,
@@ -157,6 +158,9 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
                 self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
                 //set to null because download progress is not always available
                 self.cleepdesktopStatus.downloadpercent = null;
+                //workaround to force angular to perform internal update
+                $rootScope.$apply();
+                $rootScope.$digest();
 
                 //update task panel
                 self.__handleUpdateTaskPanel();
@@ -185,15 +189,19 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
                 self.cleepdesktopStatus.status = self.STATUS_DONE;
                 self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DONE;
                 self.cleepdesktopStatus.downloadpercent = 100;
-
-                //save changelog
-                $rootScope.$broadcast('savechangelog', self.changelog);
+                self.cleepdesktopStatus.restartrequired = true;
+                //workaround to force angular to perform internal update
+                $rootScope.$apply();
+                $rootScope.$digest();
 
                 //emit restart required event
                 $rootScope.$broadcast('restartrequired');
 
                 //update task panel
                 self.__handleUpdateTaskPanel();
+
+                //save changelog
+                $rootScope.$broadcast('savechangelog', self.changelog);
             }
         });
         appUpdater.addListener('error', function(error) {
@@ -207,6 +215,9 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
                 self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_ERROR;
                 self.cleepdesktopStatus.downloadpercent = 100;
                 self.cleepdesktopStatus.lasterror = error.message;
+                //workaround to force angular to perform internal update
+                $rootScope.$apply();
+                $rootScope.$digest();
 
                 //update task panel (delay it to make sure taskpanel is displayed)
                 $timeout(function() {
@@ -217,13 +228,13 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
         appUpdater.addListener('download-progress', function(progress) {
             percent = Math.round(progress.percent);
             logger.debug('Update download progress: ' + percent);
-            //reduce number of ui updates refreshing percentage only each 5%
-            if( (percent % 5)==0 )
-            {
-                self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
-                self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
-                self.cleepdesktopStatus.downloadpercent = percent;
-            }
+            
+            self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
+            self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
+            self.cleepdesktopStatus.downloadpercent = percent;
+            //workaround to force angular to perform internal update
+            $rootScope.$apply();
+            $rootScope.$digest();
         });
         appUpdater.addListener('checking-for-update', function() {
             logger.info('Checking for CleepDesktop updates...');
@@ -281,6 +292,7 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
             .finally(function() {
                 //update last check
                 self.lastCheck = lastCheck;
+                self.__handleUpdateTaskPanel(); 
             })
         
         return defer.promise;

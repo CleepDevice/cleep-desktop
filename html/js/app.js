@@ -327,6 +327,11 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         }
     });
 
+    //Restart application
+    $rootScope.$on('restart', function(event, data) {
+        self.restartApplication();
+    });
+
     //disable/enable application quit when process is running (like flash)
     $rootScope.$on('disablequit', function(event, data) {
         ipcRenderer.send('allow-quit', false);
