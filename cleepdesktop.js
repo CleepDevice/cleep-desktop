@@ -222,7 +222,7 @@ function createConfig()
 // Create application menu
 function createMenu()
 {
-    const menuTemplate = [{
+    const subMenuFile = {
         label: 'File',
         submenu: [
             {
@@ -252,7 +252,33 @@ function createMenu()
                 }
             }
         ]
-    }, {
+    };
+    const subMenuEdit = {
+        label: 'Edit',
+        submenu: [
+            {
+                label: "Cut",
+                accelerator: "CmdOrCtrl+X",
+                selector: "cut:"
+            },
+            {
+                label: "Copy",
+                accelerator: "CmdOrCtrl+C",
+                selector: "copy:"
+            },
+            {
+                label: "Paste",
+                accelerator: "CmdOrCtrl+V",
+                selector: "paste:"
+            },
+            {
+                label: "Select All",
+                accelerator: "CmdOrCtrl+A",
+                selector: "selectAll:"
+            }
+        ]
+    };
+    const subMenuDevice = {
         label: 'Device',
         submenu: [
             {
@@ -269,7 +295,8 @@ function createMenu()
                 }
             }
         ]
-    },{
+    };
+    const subMenuHelp = {
         label: 'Help',
         submenu: [
             {
@@ -293,10 +320,19 @@ function createMenu()
                 }
             }
         ]
-    }];
-
-    const menu = Menu.buildFromTemplate(menuTemplate);
-    Menu.setApplicationMenu(menu);
+    };
+    if( process.platform==='darwin' )
+    {
+        const menuTemplate = [subMenuFile, subMenuEdit, subMenuDevice, subMenuHelp];
+        const menu = Menu.buildFromTemplate(menuTemplate);
+        Menu.setApplicationMenu(menu);
+    }
+    else
+    {
+        const menuTemplate = [subMenuFile, subMenuDevice, subMenuHelp];
+        const menu = Menu.buildFromTemplate(menuTemplate);
+        Menu.setApplicationMenu(menu);
+    }
 };
 
 // Create splash screen
