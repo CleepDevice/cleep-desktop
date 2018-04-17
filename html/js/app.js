@@ -257,7 +257,7 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
     {
         //introduce small sleep before closing application
         $timeout(function() {
-            appUpdater.quitAndInstall(true, true);
+            appUpdater.quitAndInstall();
         }, 1000);
     };
 
@@ -365,10 +365,10 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
             if( settings.get('cleep.firstrun') )
             {
                 logger.debug('First run');
+                settings.set('cleep.firstrun', false);
                 $timeout(function() {
                     self.openModal('emptyDialogController', 'js/help/helpdialog.html');
-                }, 1000);
-                settings.set('cleep.firstrun', false);
+                }, 500);
             }
         });
     };
