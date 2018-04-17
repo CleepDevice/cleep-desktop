@@ -33,7 +33,7 @@
                     <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
                         <p>Last check for updates made on {{ctl.getLastCheckTime() | hrDatetime}}</p>
-                        <md-button class="md-secondary" ng-click="ctl.checkUpdates()" ng-disabled="ctl.isUpdating() || ctl.loading">
+                        <md-button class="md-secondary" ng-click="ctl.checkUpdates()" ng-disabled="ctl.isUpdating() || ctl.loading || ctl.cleepdesktopStatus.restartrequired">
                             <md-icon md-svg-icon="refresh"></md-icon>
                             Check updates
                         </md-button>
@@ -44,20 +44,22 @@
                         <md-icon md-svg-icon="chevron-right"></md-icon>
                         <p>CleepDesktop version {{ctl.cleepdesktopStatus.version}} is installed</p>
                         <!-- downloading update -->
-                        <div class="md-secondary" ng-if="ctl.cleepdesktopStatus.status===1 || ctl.cleepdesktopStatus.status===2">
+                        <div class="md-secondary" style="width:400px; text-align:right;" ng-if="ctl.cleepdesktopStatus.status===1 || ctl.cleepdesktopStatus.status===2">
                             <span ng-if="ctl.cleepdesktopStatus.status===1 && ctl.cleepdesktopStatus.downloadpercent===null">Downloading update</span>
                             <span ng-if="ctl.cleepdesktopStatus.status===1 && ctl.cleepdesktopStatus.downloadpercent!==null">Downloading update ({{ctl.cleepdesktopStatus.downloadpercent}}%)</span>
                             <span ng-if="ctl.cleepdesktopStatus.status===2">Installing update</span>
+                        </div>
+                        <div class="md-secondary" style="width:200px; padding-left:10px;" ng-if="ctl.cleepdesktopStatus.status===1 || ctl.cleepdesktopStatus.status===2">
                             <md-progress-linear ng-if="ctl.cleepdesktopStatus.downloadpercent!==null" md-mode="determinate" class="md-accent" value="{{ctl.cleepdesktopStatus.downloadpercent}}"></md-progress-linear>
                             <md-progress-linear ng-if="ctl.cleepdesktopStatus.downloadpercent===null" md-mode="indeterminate" class="md-accent"></md-progress-linear>
                         </div>
                         <!-- update error -->
-                        <div class="md-secondary" ng-if="ctl.cleepdesktopStatus.status===4">
+                        <div class="md-secondary" style="width:400px; text-align:right;" ng-if="ctl.cleepdesktopStatus.status===4">
                             <span>Update failed:</span>
                             <span>{{ctl.cleepdesktopStatus.lasterror}}</span>
                         </div>
                         <!-- auto update disabled and new version available -->
-                        <div class="md-secondary" ng-if="ctl.isCleepdesktopUpdatesAvailable() && ctl.isCleepdesktopUpdatesDisabled()">
+                        <div class="md-secondary" style="width:400px; text-align:right;" ng-if="ctl.isCleepdesktopUpdatesAvailable() && ctl.isCleepdesktopUpdatesDisabled()">
                             <span>Update available:</span>
                             <span>Please download latest version <a href="https://github.com/tangb/CleepDesktop/releases" target="_blank">here</a></span>
                         </div>
@@ -78,9 +80,11 @@
                         <p ng-if="ctl.etcherStatus.version!=='v0.0.0'">Etcher version {{ctl.etcherStatus.version}} is installed</p>
                         <p ng-if="ctl.etcherStatus.version==='v0.0.0'">Etcher is not installed</p>
                         <!-- downloading update -->
-                        <div class="md-secondary" ng-if="ctl.etcherStatus.status===1 || ctl.etcherStatus.status===2">
+                        <div class="md-secondary" style="width:400px; text-align:right;" ng-if="ctl.etcherStatus.status===1 || ctl.etcherStatus.status===2">
                             <span ng-if="ctl.etcherStatus.status===1">Downloading update ({{ctl.etcherStatus.downloadpercent}}%)</span>
                             <span ng-if="ctl.etcherStatus.status===2">Installing update</span>
+                        </div>
+                        <div class="md-secondary" style="width:200px; padding-left:10px;" ng-if="ctl.etcherStatus.status===1 || ctl.etcherStatus.status===2">
                             <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.etcherStatus.downloadpercent}}"></md-progress-linear>
                         </div>
                         <!-- update status -->
