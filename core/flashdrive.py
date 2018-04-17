@@ -51,6 +51,7 @@ class FlashDrive(CleepDesktopModule):
     STATUS_ERROR_BADCHECKSUM = 9
     STATUS_ERROR_FLASH = 10
     STATUS_ERROR_NETWORK = 11
+    STATUS_REQUEST_WRITE_PERMISSIONS = 12
 
     FLASH_LINUX = 'etcher-cli/flash.sh'
     FLASH_WINDOWS = 'etcher-cli\\flash.bat'
@@ -151,6 +152,7 @@ class FlashDrive(CleepDesktopModule):
 
                 if self.__download_file():
                     #update ui
+                    self.status = self.STATUS_REQUEST_WRITE_PERMISSIONS
                     self.logger.debug('Status after download: %s' % self.get_status())
                     self.update_callback(self.get_status())
 
