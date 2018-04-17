@@ -41,6 +41,25 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     self.wifiPassword = null;
     self.wifiNetworkName = '';
     self.wifiNetworkEncryption = 'wpa2';
+    self.showPassword = false;
+
+    //reset form fields
+    self.resetFields = function()
+    {
+        logger.info('reset fields');
+        self.selectedDrive = null;
+        self.selectedIso = null;
+        self.selectedWifiNetwork = {
+            network: null,
+            interface: null,
+            encryption: null,
+            signallevel: 0
+        };
+        self.wifiPassword = null;
+        self.wifiNetworkName = '';
+        self.wifiNetworkEncryption = 'wpa2';
+        self.showPassword = false;
+    };
 
     //return current flash status
     self.getStatus = function(init)
@@ -167,9 +186,6 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     //start flash process
     self.startFlash = function()
     {
-        //disable application quit
-        $rootScope.$broadcast('disablequit');
-
         //check values
         if( !self.selectedIso || !self.selectedDrive )
         {
@@ -213,6 +229,13 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         
         confirm.open('Confirm installation?', 'Installation will erase all drive content. This operation cannot be reversed!<br/>Please note that admin permissions may be requested after file download.', 'Yes, install', 'No')
             .then(function() {
+                //disable application quit
+                $rootScope.$broadcast('disablequit');
+
+                //hide password
+                self.showPassword = false;
+
+                //prepare data
                 self.flashing = true;
                 var data = {
                     url: self.selectedIso.url,
@@ -224,6 +247,8 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                     }
                 };
                 logger.debug('Flash data:', data);
+
+                //launch flash process
                 cleepService.sendCommand('startflash', data)
                     .then(function() {
                         toast.info('Installation started');
@@ -252,6 +277,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                     cleepService.sendCommand('cancelflash')
                         .then(function() {
                             toast.info('Installation canceled');
+                            $rootScope.$broadcast('enablequit');
                         });
                 });
         }
@@ -262,6 +288,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                     cleepService.sendCommand('cancelflash')
                         .then(function() {
                             toast.info('Installation canceled');
+                            $rootScope.$broadcast('enablequit');
                         });
                 });
         }
@@ -287,7 +314,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         var flashing = self.flashing;
         self.status = data;
 
-        //enable flash button
+        //enable/disable flash button
         if( self.status.status==0 || self.status.status>=5 )
         {
             self.flashing = false;
@@ -297,11 +324,15 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
             self.flashing = true;
         }
 
-        //enable application quit
+        //end of flash
         if( flashing==true && flashing!=self.flashing )
         {
+            //suppress warning dialog
             logger.debug('Enable quit');
             $rootScope.$broadcast('enablequit');
+
+            //clear form fields
+            self.resetFields();
         }
 
         //disable cancel button when really flashing sdcard
@@ -315,6 +346,10 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         {
             self.disableCancel = true;
         }
+
+        //force angular refresh
+        $rootScope.$apply();
+        $rootScope.$digest();
 
     });
 
