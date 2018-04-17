@@ -85,9 +85,6 @@ var tasksPanelService = function($rootScope, $mdPanel, logger) {
             });
 
             self.mdPanelRef = null;
-
-            //force refresh
-            self.__digest();
         }
     };
 
@@ -207,7 +204,6 @@ var tasksPanelService = function($rootScope, $mdPanel, logger) {
                 {
                     //remove item
                     self.items.splice(i, 1);
-                    self.__digest();
                     break;
                 }
             }
