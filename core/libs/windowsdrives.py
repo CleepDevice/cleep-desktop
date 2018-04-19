@@ -127,7 +127,7 @@ class WindowsDrives():
                         #save system
                         if mountpoint==system_drive:
                             devices[device]['system'] = True
-                        else:
+                        elif not devices[device]['system']:
                             devices[device]['system'] = False
 
                         #save mountpoint (and its guid to allow mouting it)
@@ -208,7 +208,7 @@ if __name__ == '__main__':
     import pprint
     pp = pprint.PrettyPrinter(indent=2)
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     
     d = WindowsDrives()
     devices = d.get_drives()
