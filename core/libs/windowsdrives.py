@@ -10,6 +10,8 @@ class WindowsDrives():
     Return list of drives on Windows environment
     
     Inspired from https://stackoverflow.com/a/33797636
+
+    wmi python api https://www.activexperts.com/admin/scripts/wmi/python/
     
     Devices output list is similar to https://github.com/resin-io-modules/drivelist (except form deviceType) because 
     scripts for other environements are copied from drivelist project
@@ -91,6 +93,7 @@ class WindowsDrives():
             for property in disk.Properties_:
                 if property.Name=='DeviceID':
                     current_device['temp_device'] = property.Value
+                    self.logger.debug('---------------- %s' % property.Value)
                     #workaround for etcher-cli 1.3.1
                     #current_device['device'] = property.Value.replace('PHYSICALDRIVE', 'PhysicalDrive')
                     current_device['device'] = property.Value
@@ -114,50 +117,68 @@ class WindowsDrives():
                 if device.replace('\\', '') in str(partition.Antecedent.replace('\\', '')):
                     self.logger.debug(partition.Dependent.split('=')[1])
                     devices[device]['temp_partitions'].append(partition.Dependent.split('=')[1].replace('"', ''))
+
+        #self.logger.debug('+++++++++++++++++++++++++++++++++')
+        #items = self.winService.ExecQuery('SELECT * FROM Win32_LogicalDisk')
+        #for item in items:
+
                     
         #get infos from LogicalDiskToPartition
+        
+
         logicals = self.winService.ExecQuery('SELECT * FROM Win32_LogicalDiskToPartition')
         for logical in logicals:
             for device in devices.keys():
-                for partition in devices[device]['temp_partitions']:
-                    self.logger.debug('%s == %s' % (partition, str(logical.Antecedent)))
-                    if partition in str(logical.Antecedent):
-                        mountpoint = logical.Dependent.split('=')[1].replace('"', '')
 
-                        #save system
-                        if mountpoint==system_drive:
-                            devices[device]['system'] = True
-                        elif not devices[device]['system']:
-                            devices[device]['system'] = False
+                if len(devices[device]['temp_partitions'])==0:
+                    #device has no partition, request for at least drive type
+                    self.logger.debug('======> NO PARTITION')
+                    items = self.winService.ExecQuery('SELECT * FROM Win32_LogicalDisk')
+                    for item in items:
+                        if item.DeviceID!=None:
+                            self.logger.debug("DeviceID: %s" % item.DeviceID)
+                            self.logger.debug("DriveType: %s" % item.DriveType)
 
-                        #save mountpoint (and its guid to allow mouting it)
-                        guid = None
-                        try:
-                            guid = win32file.GetVolumeNameForVolumeMountPoint('%s\\\\' % mountpoint).replace('\\\\', '\\')
-                        except:
-                            self.logger.exception('Exception during GetVolumeNameForVolumeMountPoint:')
-                        devices[device]['mountpoints'].append({
-                            'path': mountpoint,
-                            'guid': guid
-                        })
+                else:
+                    for partition in devices[device]['temp_partitions']:
+                        self.logger.debug('%s == %s' % (partition, str(logical.Antecedent)))
+                        if partition in str(logical.Antecedent):
+                            mountpoint = logical.Dependent.split('=')[1].replace('"', '')
 
-                        #save displayName
-                        devices[device]['temp_displayname'].append(mountpoint)
+                            #save system
+                            if mountpoint==system_drive:
+                                devices[device]['system'] = True
+                            elif not devices[device]['system']:
+                                devices[device]['system'] = False
 
-                        #save device type
-                        if devices[device]['deviceType'] is None:
-                            devices[device]['deviceType'] = win32file.GetDriveType(mountpoint)
-                            
-                        #save protected
-                        try:
-                            #https://msdn.microsoft.com/en-us/library/windows/desktop/aa364993(v=vs.85).aspx
-                            (_, _, _, readonly, _) = win32api.GetVolumeInformation('%s\\' % mountpoint)
-                            if (int(readonly) & 0x00080000)==0:
-                                devices[device]['protected'] = False
-                            else:
-                                devices[device]['protected'] = True
-                        except Exception as e:
-                            pass
+                            #save mountpoint (and its guid to allow mouting it)
+                            guid = None
+                            try:
+                                guid = win32file.GetVolumeNameForVolumeMountPoint('%s\\\\' % mountpoint).replace('\\\\', '\\')
+                            except:
+                                self.logger.exception('Exception during GetVolumeNameForVolumeMountPoint:')
+                            devices[device]['mountpoints'].append({
+                                'path': mountpoint,
+                                'guid': guid
+                            })
+
+                            #save displayName
+                            devices[device]['temp_displayname'].append(mountpoint)
+
+                            #save device type
+                            if devices[device]['deviceType'] is None:
+                                devices[device]['deviceType'] = win32file.GetDriveType(mountpoint)
+                                
+                            #save protected
+                            try:
+                                #https://msdn.microsoft.com/en-us/library/windows/desktop/aa364993(v=vs.85).aspx
+                                (_, _, _, readonly, _) = win32api.GetVolumeInformation('%s\\' % mountpoint)
+                                if (int(readonly) & 0x00080000)==0:
+                                    devices[device]['protected'] = False
+                                else:
+                                    devices[device]['protected'] = True
+                            except Exception as e:
+                                pass
             
 
         #clean dicts
