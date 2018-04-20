@@ -13,6 +13,7 @@ echo params=%1 %2 %3 %4 >> %logfile%
 :: flash drive
 %1\etcher-cli\etcher.exe --unmount false --yes --drive %2 %3
 echo etcher-cli returncode=%ERRORLEVEL% >> %logfile%
+if %ERRORLEVEL% NEQ 0 ( exit %ERRORLEVEL% )
 
 :: no wifi config specified jump to end of script
 if [%4] EQU [""] GOTO :END
