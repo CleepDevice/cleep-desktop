@@ -49,7 +49,8 @@
                     <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
                         <div>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <span>Select Cleep version you want to install on your SD card</span>
+                            <span ng-if="!ctl.__isos.withraspbianiso">Select Cleep version you want to install on your SD card</span>
+                            <span ng-if="ctl.__isos.withraspbianiso">Select distribution you want to install on your SD card</span>
                         </div>
                         <div layout="row">
                             <md-input-container>
