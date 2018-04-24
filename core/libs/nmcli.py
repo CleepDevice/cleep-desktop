@@ -131,7 +131,7 @@ class Nmcli(AdvancedConsole):
                 }
             bool: True if interface is not able to scan wifi
         """
-        self.__refresh(interface)
+        self.__refresh()
         return self.networks
 
 
@@ -142,5 +142,5 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     
     i = Nmcli()
-    networks = i.get_networks('wlan0')
+    networks = i.get_networks()
     pp.pprint(networks)
