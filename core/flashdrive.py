@@ -10,8 +10,6 @@ import tempfile
 from core.libs.cleepwificonf import CleepWifiConf
 from core.libs.download import Download
 from core.utils import CleepDesktopModule
-from core.libs.iw import Iw
-from core.libs.iwlist import Iwlist
 from core.libs.github import Github
 from core.libs.raspbians import Raspbians
 if platform.system()=='Windows':
@@ -28,6 +26,9 @@ else:
     from core.libs.console import AdminEndlessConsole
     from core.libs.lsblk import Lsblk
     from core.libs.udevadm import Udevadm
+    from core.libs.iw import Iw
+    from core.libs.iwlist import Iwlist
+    from core.libs.nmcli import Nmcli
     
 
 class FlashDrive(CleepDesktopModule):
@@ -121,6 +122,7 @@ class FlashDrive(CleepDesktopModule):
             self.flash_cmd = os.path.join(self.config_path, self.FLASH_LINUX)
             self.iw = Iw()
             self.iwlist = Iwlist()
+            self.nmcli = Nmcli()
             self.lsblk = Lsblk()
             self.udevadm = Udevadm()
         elif self.env=='darwin':
@@ -922,33 +924,34 @@ class FlashDrive(CleepDesktopModule):
                     networks (list): networks list
                 }
         """
-        default = {
-            'networks': []
-        }
-
-        #system check
-        if not self.iw.is_installed():
-            self.logger.warning('Iw command not found on your system, unable to get list of wifi networks')
-            return default
-
-        elif not self.iwlist.is_installed():
-            self.logger.warning('Iwlist command not found on your system, unable to get list of wifi networks')
-            return default
-
-        #get wifi interfaces
-        wifi_connections = self.iw.get_connections()
-        self.logger.debug('wifi_connections: %s' % wifi_connections)
-
-        #get wifi networks
-        wifi_networks = []
-        if len(wifi_connections.keys())>0:
-            #keep only first wifi interface
-            interface = list(wifi_connections.keys())[0]
-            networks = self.iwlist.get_networks(interface)
+        if self.nmcli.is_installed():
+            #priority to nmcli if installed
+            networks = self.nmcli.get_networks()
 
             #flatten dict
             wifi_networks = [v for k,v in networks.items()]
-        
+
+        elif self.iw.is_installed() and self.iwlist.is_installed():
+            #otherwise fallback to iw/iwlist commands
+
+            #get wifi interfaces
+            wifi_connections = self.iw.get_connections()
+            self.logger.debug('wifi_connections: %s' % wifi_connections)
+
+            #get wifi networks
+            wifi_networks = []
+            if len(wifi_connections.keys())>0:
+                #keep only first wifi interface
+                interface = list(wifi_connections.keys())[0]
+                networks = self.iwlist.get_networks(interface)
+
+                #flatten dict
+                wifi_networks = [v for k,v in networks.items()]
+
+        else:
+            self.logger.info('No command available to get list of wifi networks. Consider wifi is not available on this computer')
+            wifi_networks = []
+       
         #build output
         return {
             'networks': wifi_networks
