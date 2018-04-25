@@ -28,6 +28,11 @@ class WindowsDrives():
     DEVICE_TYPE_CDROM = 5
     DEVICE_TYPE_RAMDISK = 6
 
+    MEDIA_TYPE_FIXED_HD = 'fixed hard disk media'
+    MEDIA_TYPE_EXTERNAL_HD = 'external hard disk media'
+    MEDIA_TYPE_REMOVABLE = 'removable media'
+    MEDIA_TYPE_UNKNOWN = 'unknown'
+
     def __init__(self):
         """
         Constructor
@@ -93,19 +98,28 @@ class WindowsDrives():
             for property in disk.Properties_:
                 if property.Name=='DeviceID':
                     current_device['temp_device'] = property.Value
-                    self.logger.debug('---------------- %s' % property.Value)
                     #workaround for etcher-cli 1.3.1
                     #current_device['device'] = property.Value.replace('PHYSICALDRIVE', 'PhysicalDrive')
                     current_device['device'] = property.Value
                     current_device['raw'] = property.Value
                 elif property.Name=='Caption':
                     current_device['description'] = property.Value
+                elif property.Name=='MediaType':
+                    #try to set drive type. If drive has partitions, it will be overwritten below
+                    if property.Value is None:
+                        current_device['deviceType'] = self.DEVICE_TYPE_UNKNOWN
+                    elif property.Value.lower() in (self.MEDIA_TYPE_EXTERNAL_HD, self.MEDIA_TYPE_FIXED_HD):
+                        current_device['deviceType'] = self.DEVICE_TYPE_FIXED
+                    elif property.Value.lower()==self.MEDIA_TYPE_REMOVABLE:
+                        current_device['deviceType'] = self.DEVICE_TYPE_REMOVABLE
+                    else:
+                        current_device['deviceType'] = self.DEVICE_TYPE_UNKNOWN
+                    current_device['displayName'] = 'No partition'
                 elif property.Name=='Size':
                     try:
                         current_device['size'] = int(property.Value)
                     except:
                         current_device['size'] = 0
-                self.logger.debug('%s = %s' % (property.Name, property.Value))
                 
             devices[current_device['temp_device']] = current_device
             
@@ -113,78 +127,60 @@ class WindowsDrives():
         partitions = self.winService.ExecQuery('SELECT * FROM Win32_DiskDriveToDiskPartition')
         for partition in partitions:
             for device in devices.keys():
-                self.logger.debug('%s == %s' % (device, str(partition.Antecedent)))
                 if device.replace('\\', '') in str(partition.Antecedent.replace('\\', '')):
-                    self.logger.debug(partition.Dependent.split('=')[1])
                     devices[device]['temp_partitions'].append(partition.Dependent.split('=')[1].replace('"', ''))
 
-        #self.logger.debug('+++++++++++++++++++++++++++++++++')
-        #items = self.winService.ExecQuery('SELECT * FROM Win32_LogicalDisk')
-        #for item in items:
-
-                    
         #get infos from LogicalDiskToPartition
-        
-
         logicals = self.winService.ExecQuery('SELECT * FROM Win32_LogicalDiskToPartition')
         for logical in logicals:
             for device in devices.keys():
+                for partition in devices[device]['temp_partitions']:
+                    self.logger.debug('%s == %s' % (partition, str(logical.Antecedent)))
+                    if partition in str(logical.Antecedent):
+                        mountpoint = logical.Dependent.split('=')[1].replace('"', '')
 
-                if len(devices[device]['temp_partitions'])==0:
-                    #device has no partition, request for at least drive type
-                    self.logger.debug('======> NO PARTITION')
-                    items = self.winService.ExecQuery('SELECT * FROM Win32_LogicalDisk')
-                    for item in items:
-                        if item.DeviceID!=None:
-                            self.logger.debug("DeviceID: %s" % item.DeviceID)
-                            self.logger.debug("DriveType: %s" % item.DriveType)
+                        #save system
+                        if mountpoint==system_drive:
+                            devices[device]['system'] = True
+                        elif not devices[device]['system']:
+                            devices[device]['system'] = False
 
-                else:
-                    for partition in devices[device]['temp_partitions']:
-                        self.logger.debug('%s == %s' % (partition, str(logical.Antecedent)))
-                        if partition in str(logical.Antecedent):
-                            mountpoint = logical.Dependent.split('=')[1].replace('"', '')
+                        #save mountpoint (and its guid to allow mouting it)
+                        guid = None
+                        try:
+                            guid = win32file.GetVolumeNameForVolumeMountPoint('%s\\\\' % mountpoint).replace('\\\\', '\\')
+                        except:
+                            self.logger.exception('Exception during GetVolumeNameForVolumeMountPoint:')
+                        devices[device]['mountpoints'].append({
+                            'path': mountpoint,
+                            'guid': guid
+                        })
 
-                            #save system
-                            if mountpoint==system_drive:
-                                devices[device]['system'] = True
-                            elif not devices[device]['system']:
-                                devices[device]['system'] = False
+                        #save displayName
+                        devices[device]['temp_displayname'].append(mountpoint)
 
-                            #save mountpoint (and its guid to allow mouting it)
-                            guid = None
-                            try:
-                                guid = win32file.GetVolumeNameForVolumeMountPoint('%s\\\\' % mountpoint).replace('\\\\', '\\')
-                            except:
-                                self.logger.exception('Exception during GetVolumeNameForVolumeMountPoint:')
-                            devices[device]['mountpoints'].append({
-                                'path': mountpoint,
-                                'guid': guid
-                            })
-
-                            #save displayName
-                            devices[device]['temp_displayname'].append(mountpoint)
-
-                            #save device type
-                            if devices[device]['deviceType'] is None:
-                                devices[device]['deviceType'] = win32file.GetDriveType(mountpoint)
-                                
-                            #save protected
-                            try:
-                                #https://msdn.microsoft.com/en-us/library/windows/desktop/aa364993(v=vs.85).aspx
-                                (_, _, _, readonly, _) = win32api.GetVolumeInformation('%s\\' % mountpoint)
-                                if (int(readonly) & 0x00080000)==0:
-                                    devices[device]['protected'] = False
-                                else:
-                                    devices[device]['protected'] = True
-                            except Exception as e:
-                                pass
-            
+                        #save device type
+                        if devices[device]['deviceType'] in (None, self.DEVICE_TYPE_UNKNOWN):
+                            devices[device]['deviceType'] = win32file.GetDriveType(mountpoint)
+                            
+                        #save protected
+                        try:
+                            #https://msdn.microsoft.com/en-us/library/windows/desktop/aa364993(v=vs.85).aspx
+                            (_, _, _, readonly, _) = win32api.GetVolumeInformation('%s\\' % mountpoint)
+                            if (int(readonly) & 0x00080000)==0:
+                                devices[device]['protected'] = False
+                            else:
+                                devices[device]['protected'] = True
+                        except Exception as e:
+                            pass
 
         #clean dicts
         for device in devices.keys():
             devices[device]['temp_displayname'].sort()
-            devices[device]['displayName'] = u', '.join(devices[device]['temp_displayname'])
+            if len(devices[device]['temp_displayname'])==0:
+                devices[device]['displayName'] = u'no partition'
+            else:
+                devices[device]['displayName'] = u', '.join(devices[device]['temp_displayname'])
             del devices[device]['temp_displayname']
             del devices[device]['temp_partitions']
             del devices[device]['temp_device']
@@ -229,7 +225,7 @@ if __name__ == '__main__':
     import pprint
     pp = pprint.PrettyPrinter(indent=2)
 
-    logging.basicConfig(level=logging.DEBUG)
+    #logging.basicConfig(level=logging.DEBUG)
     
     d = WindowsDrives()
     devices = d.get_drives()
