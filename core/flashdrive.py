@@ -276,19 +276,18 @@ class FlashDrive(CleepDesktopModule):
         Return:
             tuple: cleep release files and release version::
                 (
-                    {
+                    [{
                         name (string): release name
                         url (string): file url
                         size (int): filesize
                         timestamp (int): timestamp of release
-                    },
+                    }],
                     string: release name (usually version)
                 )
         """
         #get releases infos from github
-        #release = self.github.get_latest_release()
-        #self.logger.debug('Cleep release: %s' % release)
-        release = None
+        release = self.github.get_latest_release()
+        self.logger.debug('Cleep release: %s' % release)
 
         #check if release exists
         if not release:
