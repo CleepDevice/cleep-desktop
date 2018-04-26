@@ -315,7 +315,6 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         self.status = data;
 
         //enable/disable flash button
-        logger.debug('status.status=' + self.status.status);
         if( self.status.status==0 || self.status.status>=6 )
         {
             self.flashing = false;
@@ -326,7 +325,6 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         }
 
         //end of flash
-        logger.debug('flashing=' + flashing + ' self.flashing=' + self.flashing);
         if( self.flashing==false && flashing!=self.flashing )
         {
             //suppress warning dialog
