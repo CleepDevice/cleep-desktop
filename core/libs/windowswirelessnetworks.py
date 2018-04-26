@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from win32wifi import Win32Wifi
-from core.libs.wpasupplicantconf import WpaSupplicantConf
+try:
+    from core.libs.wpasupplicantconf import WpaSupplicantConf
+except:
+    from wpasupplicantconf import WpaSupplicantConf
 import time
 import logging
 
@@ -109,8 +112,13 @@ class WindowsWirelessNetworks():
         
 if __name__ == '__main__':
     import pprint
+    from windowswirelessinterfaces import WindowsWirelessInterfaces
+
     pp = pprint.PrettyPrinter(indent=2)
-    
+
+    i = WindowsWirelessInterfaces()
+    ins = i.get_interfaces()
+    print('interfaces: %d' % len(ins))
     n = WindowsWirelessNetworks()
-    networks = n.get_networks()
+    networks = n.get_networks(ins[0])
     pp.pprint(networks)
