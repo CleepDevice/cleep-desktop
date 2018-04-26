@@ -114,3 +114,6 @@ md-toast.info .md-toast-content {
     stroke: white;
 }
 
+.white-icon svg path {
+    fill: white;
+}

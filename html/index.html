@@ -11,8 +11,28 @@
 
     <md-content ng-controller="cleepController as cleep" flex="100" layout="row">
 
+        <!-- tools panel -->
+        <md-content style="width:50px; background-color:#607d8b;" class="panel-separator" layout="column">
+            <span style="height:10px;"></span>
+            <md-button class="md-icon-button white-icon" aria-label="Install" ng-click="cleep.openPage('installAuto')">
+                <md-icon md-svg-icon="sd"></md-icon>
+                <md-tooltip md-direction="right">Install Cleep on SD card</md-tooltip>
+            </md-button>
+            <span style="height:10px;"></span>
+            <md-button class="md-icon-button white-icon" aria-label="Monitoring" ng-click="cleep.openPage('monitoring')">
+                <md-icon md-svg-icon="message-text-outline"></md-icon>
+                <md-tooltip md-direction="right">Devices monitoring</md-tooltip>
+            </md-button>
+            <span flex></span>
+            <md-button class="md-icon-button white-icon" aria-label="Preferences" ng-click="cleep.openModal('preferencesController', 'js/preferences/preferencesdialog.html')">
+                <md-icon md-svg-icon="settings"></md-icon>
+                <md-tooltip md-direction="right">Preferences</md-tooltip>
+            </md-button>
+            <span style="height:10px;"></span>
+        </md-content>
+
         <!-- devices panel -->
-        <div ng-controller="devicesController as ctl" flex="20" layout-fill class="panel-separator">
+        <div ng-controller="devicesController as ctl" style="width:300px;" layout-fill class="panel-separator">
             <md-toolbar flex="initial" class="fix-toolbar">
                 <div class="md-toolbar-tools">
                     <h2>
@@ -90,7 +110,7 @@
         </div>
 
         <!-- dynamic content -->
-        <div flex="80" layout-fill>
+        <div flex= layout-fill>
             <div ui-view></div>
         </div>
 
