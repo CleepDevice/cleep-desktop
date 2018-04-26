@@ -378,6 +378,7 @@ class FlashDrive(CleepDesktopModule):
         """
         Cancel current process
         """
+        self.logger.debug('Flash canceled')
         self.cancel = True
 
     def get_status(self):

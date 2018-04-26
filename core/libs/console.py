@@ -130,7 +130,6 @@ class EndlessConsole(Thread):
         """
         Stop command line execution
         """
-        self.logger.debug(u'Kill process requested')
         self.stop()
 
     def run(self):

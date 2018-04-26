@@ -277,18 +277,16 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                     cleepService.sendCommand('cancelflash')
                         .then(function() {
                             toast.info('Installation canceled');
-                            $rootScope.$broadcast('enablequit');
                         });
                 });
         }
         else if( self.status && (self.status.status===3 || self.status.status===4) )
         {
-            confirm.open('Cancel installation?', 'Canceling installation during this step of process makes your removable media unusable until next installation.', 'Yes, cancel', 'No, continue')
+            confirm.open('Cancel installation?', 'Canceling installation during this step of process will put your removable media in inconsistant state.', 'Yes, cancel', 'No, continue')
                 .then(function() {
                     cleepService.sendCommand('cancelflash')
                         .then(function() {
                             toast.info('Installation canceled');
-                            $rootScope.$broadcast('enablequit');
                         });
                 });
         }
@@ -339,10 +337,12 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         //CleepDesktop is running only with user ones
         if( self.status.status==1 || self.status.status==2 )
         {
+            logger.debug('Enable cancel button');
             self.disableCancel = false;
         }
         else
         {
+            logger.debug('Disable cancel button');
             self.disableCancel = true;
         }
 
