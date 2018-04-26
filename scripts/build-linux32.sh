@@ -17,9 +17,9 @@ echo
 echo
 echo "Packaging cleepdesktopcore..."
 echo "-----------------------------"
-/bin/cp config/cleepdesktopcore-linux64.spec cleepdesktopcore-linux64.spec
-/usr/local/bin/pyinstaller --clean --noconfirm --noupx --debug --log-level INFO cleepdesktopcore-linux64.spec
-/bin/rm cleepdesktopcore-linux64.spec
+/bin/cp config/cleepdesktopcore-linux32.spec cleepdesktopcore-linux32.spec
+/usr/local/bin/pyinstaller --clean --noconfirm --noupx --debug --log-level INFO cleepdesktopcore-linux32.spec
+/bin/rm cleepdesktopcore-linux32.spec
 /bin/mv dist/cleepdesktopcore "$CLEEPDESKTOPPATH"
 
 #copy files and dirs
@@ -50,11 +50,11 @@ if [ "$1" == "publish" ]
 then
     echo "Publishing cleepdesktop..."
     echo "--------------------------"
-    GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP node_modules/.bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH" --publish onTagOrDraft
+    GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP node_modules/.bin/electron-builder --linux --ia32 --projectDir "$CLEEPDESKTOPPATH" --publish onTagOrDraft
 else
     echo "Packaging cleepdesktop..."
     echo "-------------------------"
-    node_modules/.bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH"
+    node_modules/.bin/electron-builder --linux --ia32 --projectDir "$CLEEPDESKTOPPATH"
 fi
 
 #cleaning
