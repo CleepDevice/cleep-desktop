@@ -337,12 +337,10 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         //CleepDesktop is running only with user ones
         if( self.status.status==1 || self.status.status==2 )
         {
-            logger.debug('Enable cancel button');
             self.disableCancel = false;
         }
         else
         {
-            logger.debug('Disable cancel button');
             self.disableCancel = true;
         }
 
