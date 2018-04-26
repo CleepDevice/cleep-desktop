@@ -36,6 +36,14 @@ mkdir %CLEEPDESKTOPPATH%\resources
 xcopy /S resources %CLEEPDESKTOPPATH%\resources
 echo Done
 
+:: Updating npm libs
+echo.
+echo.
+echo Updating npm libs...
+echo --------------------
+call npm install
+echo Done
+
 :: electron-builder
 echo.
 echo.

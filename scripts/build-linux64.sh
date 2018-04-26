@@ -35,6 +35,14 @@ echo "------------------------"
 /bin/cp -a resources "$CLEEPDESKTOPPATH"
 echo "Done"
 
+#update npm
+echo
+echo
+echo "Updating npm libs..."
+echo "--------------------"
+npm install
+echo "Done"
+
 #electron-builder
 echo
 echo
