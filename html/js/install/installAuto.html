@@ -184,14 +184,14 @@
                             <span ng-if="ctl.status.status==2">Downloading file ({{ctl.status.eta}})</span>
                             <span ng-if="ctl.status.status==3">Installing on drive {{ctl.status.percent}}% ({{ctl.status.eta}})</span>
                             <span ng-if="ctl.status.status==4">Validating operation {{ctl.status.percent}}% ({{ctl.status.eta}})</span>
-                            <span ng-if="ctl.status.status==5">Installation completed. You can unplug your SD card.</span>
-                            <span ng-if="ctl.status.status==6">Installation canceled</span>
-                            <span ng-if="ctl.status.status==7">Internal error occured</span>
-                            <span ng-if="ctl.status.status==8">Downloaded file size is invalid</span>
-                            <span ng-if="ctl.status.status==9">Downloaded file seems to be corrupted</span>
-                            <span ng-if="ctl.status.status==10">Problem during data copy on drive</span>
-                            <span ng-if="ctl.status.status==11">Network error occured during file download</span>
-                            <span ng-if="ctl.status.status==12">Requesting write permissions to system</span>
+                            <span ng-if="ctl.status.status==5">Requesting write permissions to system...</span>
+                            <span ng-if="ctl.status.status==6">Installation completed. You can unplug your SD card.</span>
+                            <span ng-if="ctl.status.status==7">Installation canceled</span>
+                            <span ng-if="ctl.status.status==8">Internal error occured</span>
+                            <span ng-if="ctl.status.status==9">Downloaded file size is invalid</span>
+                            <span ng-if="ctl.status.status==10">Downloaded file seems to be corrupted</span>
+                            <span ng-if="ctl.status.status==11">Problem during data copy on drive</span>
+                            <span ng-if="ctl.status.status==12">Network error occured during file download</span>
                         </div>
                         <div>
                             <md-button ng-click="ctl.cancelFlash()" class="md-raised md-primary" ng-disabled="ctl.disableCancel">Cancel</md-button>

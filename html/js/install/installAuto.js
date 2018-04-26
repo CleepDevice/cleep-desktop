@@ -264,7 +264,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     self.cancelFlash = function()
     {
         //check if process is running
-        if( self.status && self.status.status>=5 )
+        if( self.status && self.status.status>=6 )
         {
             self.logger.debug('CancelFlash: invalid status (' + self.status.status + ') do nothing');
             return;
@@ -315,7 +315,8 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         self.status = data;
 
         //enable/disable flash button
-        if( self.status.status==0 || self.status.status>=5 )
+        logger.debug('status.status=' + self.status.status);
+        if( self.status.status==0 || self.status.status>=6 )
         {
             self.flashing = false;
         }
@@ -325,10 +326,10 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         }
 
         //end of flash
-        if( flashing==true && flashing!=self.flashing )
+        logger.debug('flashing=' + flashing + ' self.flashing=' + self.flashing);
+        if( self.flashing==false && flashing!=self.flashing )
         {
             //suppress warning dialog
-            logger.debug('Enable quit');
             $rootScope.$broadcast('enablequit');
 
             //clear form fields

@@ -111,8 +111,8 @@ class Download():
         Return:
             list: cached filepaths::
                 [
-                    {filename, filepath, filesize}
-                    {filename, filepath, filesize}
+                    {filename, filepath, filesize, timestamp}
+                    {filename, filepath, filesize, timestamp}
                     ...
                 ]
         """
@@ -127,7 +127,8 @@ class Download():
                     cached.append({
                         'filename': filename,
                         'filepath': filepath,
-                        'filesize': os.path.getsize(filepath)
+                        'filesize': os.path.getsize(filepath),
+                        'timestamp': int(os.path.getmtime(filepath))
                     })
 
         return cached

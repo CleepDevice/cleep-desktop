@@ -7,6 +7,7 @@ import os
 import platform
 import re
 import tempfile
+from operator import itemgetter
 from core.libs.cleepwificonf import CleepWifiConf
 from core.libs.download import Download
 from core.utils import CleepDesktopModule
@@ -45,14 +46,15 @@ class FlashDrive(CleepDesktopModule):
     STATUS_DOWNLOADING_NOSIZE = 2
     STATUS_FLASHING = 3
     STATUS_VALIDATING = 4
-    STATUS_DONE = 5
-    STATUS_CANCELED = 6
-    STATUS_ERROR = 7
-    STATUS_ERROR_INVALIDSIZE = 8
-    STATUS_ERROR_BADCHECKSUM = 9
-    STATUS_ERROR_FLASH = 10
-    STATUS_ERROR_NETWORK = 11
-    STATUS_REQUEST_WRITE_PERMISSIONS = 12
+    STATUS_REQUEST_WRITE_PERMISSIONS = 5
+    STATUS_DONE = 6
+    STATUS_CANCELED = 7
+    STATUS_ERROR = 8
+    STATUS_ERROR_INVALIDSIZE = 9
+    STATUS_ERROR_BADCHECKSUM = 10
+    STATUS_ERROR_FLASH = 11
+    STATUS_ERROR_NETWORK = 12
+
 
     FLASH_LINUX = 'etcher-cli/flash.sh'
     FLASH_WINDOWS = 'etcher-cli\\flash.bat'
@@ -275,20 +277,47 @@ class FlashDrive(CleepDesktopModule):
             tuple: cleep release files and release version::
                 (
                     {
-                        fileurl (string): file url
-                        sha256 (string): sha256 checksum,
+                        name (string): release name
+                        url (string): file url
+                        size (int): filesize
                         timestamp (int): timestamp of release
                     },
                     string: release name (usually version)
                 )
         """
-        #get releases infos
-        release = self.github.get_latest_release()
-        self.logger.debug('Cleep release: %s' % release)
+        #get releases infos from github
+        #release = self.github.get_latest_release()
+        #self.logger.debug('Cleep release: %s' % release)
+        release = None
 
         #check if release exists
         if not release:
-            return None, None
+            #no release found, surely rate limit reached on github api
+            #fallback to cached releases
+            download = Download()
+            cached_releases = download.get_cached_files()
+            self.logger.debug('Cached releases: %s' % cached_releases)
+
+            if len(cached_releases)>0:
+                #sort to keep recent one
+                cached_releases_sorted = sorted(cached_releases, key=itemgetter('timestamp'))
+                cached_releases_sorted.reverse()
+                for cached_release in cached_releases_sorted:
+                    if cached_release['filename'].startswith('cleep_'):
+                        #and return it
+                        return [{
+                            'name': cached_release['filename'],
+                            'url': 'file://%s' % cached_release['filepath'],
+                            'size': cached_release['filesize'],
+                            'timestamp': cached_release['timestamp']
+                        }], cached_release['filename'].replace('cleep_', '').replace('.zip', '')
+
+                #no cleep cached
+                return None, None
+
+            else:
+                #no file cached
+                return None, None
         else:
             return self.github.get_release_assets_infos(release), release['name']
 
@@ -557,9 +586,9 @@ class FlashDrive(CleepDesktopModule):
 
         if refresh_isos:
             #get cleep latest release
-            (cleep_release_files, cleep_release_name) = self.get_latest_cleep()
-            self.logger.debug('Cleep %s: %s' % (cleep_release_name, cleep_release_files))
-            if cleep_release_files:
+            (cleep_release_file, cleep_release_name) = self.get_latest_cleep()
+            self.logger.debug('Cleep %s: %s' % (cleep_release_name, cleep_release_file))
+            if cleep_release_file:
                 #search for .img and .sha256 files
                 latest_cleep = {
                     'label': None,
@@ -569,7 +598,7 @@ class FlashDrive(CleepDesktopModule):
                     'sha256': None
                 }
                 #look for cleep iso files (img and sha256)
-                for file in cleep_release_files:
+                for file in cleep_release_file:
                     if file['name'].startswith('cleep_%s' % cleep_release_name) and file['name'].endswith('.zip'):
                         #image file found
                         latest_cleep['label'] = 'Cleep %s' % (cleep_release_name)
