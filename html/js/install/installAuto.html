@@ -101,15 +101,32 @@
                     <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
                         <div>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <span>If your device will connect using wifi, preconfigure credentials here</span>
+                            <span>Choose way your device will connect to your network</span>
+                        </div>
+                        <div layout="row">
+                            <md-input-container>
+                                <label>Drive</label>
+                                <md-select ng-model="ctl.selectedWifiChoice" placeholder="Network connection" class="md-no-underline" ng-disabled="ctl.flashing">
+                                    <md-option ng-value="0">Wired connection</md-option>
+                                    <md-option ng-value="1">Wifi on available network</md-option>
+                                    <md-option ng-value="2">Wifi on hidden network</md-option>
+                                </md-select>
+                            </md-input-container>
+                        </div>
+                    </div>
+                    <!-- wifi on available network -->
+                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;" ng-if="ctl.selectedWifiChoice==1 || ctl.selectedWifiChoice==2">
+                        <div>
+                            <md-icon md-svg-icon="chevron-right"></md-icon>
+                            <span>Pre-configure wireless access</span>
                         </div>
                         <div layout="row">
                             <!-- without wifi adapter -->
-                            <md-input-container ng-if="!ctl.wifi.adapter" class="no-error-spacer">
+                            <md-input-container ng-if="(!ctl.wifi.adapter && ctl.selectedWifiChoice==1) || ctl.selectedWifiChoice==2" class="no-error-spacer">
                                 <label>Wifi network name</label>
                                 <input type="text" ng-model="ctl.wifiNetworkName" ng-disabled="ctl.flashing"/>
                             </md-input-container>
-                            <md-input-container ng-if="!ctl.wifi.adapter">
+                            <md-input-container ng-if="(!ctl.wifi.adapter && ctl.selectedWifiChoice==1) || ctl.selectedWifiChoice==2">
                                 <label>Encryption</label>
                                 <md-select ng-model="ctl.wifiNetworkEncryption" placeholder="Encryption" class="md-no-underline" ng-disabled="ctl.flashing">
                                     <md-option value="wpa2">WPA2</md-option>
@@ -120,7 +137,7 @@
                             </md-input-container>
 
                             <!-- with wifi adapter -->
-                            <md-input-container ng-if="ctl.wifi.adapter">
+                            <md-input-container ng-if="ctl.wifi.adapter && ctl.selectedWifiChoice==1">
                                 <label>Wifi network</label>
                                 <md-select ng-model="ctl.selectedWifiNetwork" md-on-open="ctl.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline" ng-disabled="ctl.flashing">
                                     <md-option><em>None</em></md-option>

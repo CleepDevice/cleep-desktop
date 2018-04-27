@@ -31,6 +31,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     };
 
     //wifi variables
+    self.selectedWifiChoice = 0;
     self.wifi = installService.wifi;
     self.selectedWifiNetwork = {
         network: null,
