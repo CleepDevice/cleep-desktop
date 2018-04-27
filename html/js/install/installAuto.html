@@ -97,8 +97,8 @@
                         </div>
                     </div>
 
-                    <!-- wifi network -->
-                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
+                    <!-- wifi choice -->
+                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;" ng-if="ctl.selectedIso.category=='cleep'">
                         <div>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <span>Choose way your device will connect to your network</span>
@@ -106,7 +106,7 @@
                         <div layout="row">
                             <md-input-container>
                                 <label>Drive</label>
-                                <md-select ng-model="ctl.selectedWifiChoice" placeholder="Network connection" class="md-no-underline" ng-disabled="ctl.flashing">
+                                <md-select ng-model="ctl.selectedWifiChoice" placeholder="Network connection" class="md-no-underline" ng-disabled="ctl.selectedIso.category!='cleep'">
                                     <md-option ng-value="0">Wired connection</md-option>
                                     <md-option ng-value="1">Wifi on available network</md-option>
                                     <md-option ng-value="2">Wifi on hidden network</md-option>
@@ -114,8 +114,9 @@
                             </md-input-container>
                         </div>
                     </div>
-                    <!-- wifi on available network -->
-                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;" ng-if="ctl.selectedWifiChoice==1 || ctl.selectedWifiChoice==2">
+
+                    <!-- wifi configuration -->
+                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;" ng-if="(ctl.selectedWifiChoice==1 || ctl.selectedWifiChoice==2) && ctl.selectedIso.category=='cleep'">
                         <div>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <span>Pre-configure wireless access</span>

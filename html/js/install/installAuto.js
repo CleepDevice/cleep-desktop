@@ -210,19 +210,21 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
             encryption: null,
             password: null
         }
-        if( !self.wifi.adapter && self.wifiNetworkName && self.wifiNetworkEncryption )
-        {
-            //fill wifi config from manual values
-            wifiConfig.network = self.wifiNetworkName;
-            wifiConfig.encryption = self.wifiNetworkEncryption;
-            wifiConfig.password = self.wifiPassword;
-        }
-        else if( self.wifi.adapter && self.selectedWifiNetwork.network )
-        {
-            //fill wifi config from automatic values
-            wifiConfig.network = self.selectedWifiNetwork.network;
-            wifiConfig.encryption = self.selectedWifiNetwork.encryption;
-            wifiConfig.password = self.wifiPassword;
+        if( self.selectedWifiChoice==1 || self.selectedWifiChoice==2 ) {
+            if( !self.wifi.adapter && self.wifiNetworkName && self.wifiNetworkEncryption )
+            {
+                //fill wifi config from manual values
+                wifiConfig.network = self.wifiNetworkName;
+                wifiConfig.encryption = self.wifiNetworkEncryption;
+                wifiConfig.password = self.wifiPassword;
+            }
+            else if( self.wifi.adapter && self.selectedWifiNetwork.network )
+            {
+                //fill wifi config from automatic values
+                wifiConfig.network = self.selectedWifiNetwork.network;
+                wifiConfig.encryption = self.selectedWifiNetwork.encryption;
+                wifiConfig.password = self.wifiPassword;
+            }
         }
         logger.debug('url=' + self.selectedIso.url);
         logger.debug('drive=' + self.selectedDrive);
