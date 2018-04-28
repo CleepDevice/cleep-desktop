@@ -106,7 +106,7 @@
                         <div layout="row">
                             <md-input-container>
                                 <label>Drive</label>
-                                <md-select ng-model="ctl.selectedWifiChoice" placeholder="Network connection" class="md-no-underline" ng-disabled="ctl.selectedIso.category!='cleep'">
+                                <md-select ng-model="ctl.selectedWifiChoice" placeholder="Network connection" class="md-no-underline" ng-disabled="ctl.flashing || ctl.selectedIso.category!='cleep'">
                                     <md-option ng-value="0">Wired connection</md-option>
                                     <md-option ng-value="1">Wifi on available network</md-option>
                                     <md-option ng-value="2">Wifi on hidden network</md-option>
