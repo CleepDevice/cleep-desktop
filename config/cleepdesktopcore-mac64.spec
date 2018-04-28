@@ -9,7 +9,7 @@ a = Analysis(['cleepdesktopcore.py'],
                 ('core', 'core'),
                 ('tools/flash.mac.sh', 'tools/'),
                 ('tools/install-etcher.mac.sh', 'tools/'),
-                ('tools/cmdlogger-mac32', 'tools/cmdlogger-mac')
+                ('tools/cmdlogger-mac64', 'tools/cmdlogger-mac')
              ],
              hiddenimports=[],
              hookspath=[],
