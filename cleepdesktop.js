@@ -411,7 +411,7 @@ function createWindow ()
     // Open the DevTools in dev mode only
     if( isDev || process.env.CLEEPDESKTOP_DEBUG )
     {
-        //require('devtron').install();
+        //open devtool in dev mode
         mainWindow.webContents.openDevTools();
 
         //log electron and chrome versions
