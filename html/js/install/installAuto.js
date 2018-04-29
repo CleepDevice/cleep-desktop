@@ -208,7 +208,8 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         wifiConfig = {
             network: null,
             encryption: null,
-            password: null
+            password: null,
+            hidden: (self.selectedWifiChoice==2 ? true : false)
         }
         if( self.selectedWifiChoice==1 || self.selectedWifiChoice==2 ) {
             if( !self.wifi.adapter && self.wifiNetworkName && self.wifiNetworkEncryption )
