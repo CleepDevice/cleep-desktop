@@ -253,7 +253,7 @@ class AdminEndlessConsole(EndlessConsole):
         if platform.system()=='Windows':
             self.cmdlogger_path = cmdlogger_path
         else:
-            self.cmdlogger_path = '"%s"' % cmdlogger_path
+            self.cmdlogger_path = "'%s'" % cmdlogger_path
                 
     def __quit_properly(self, return_code):
         """
@@ -293,12 +293,7 @@ class AdminEndlessConsole(EndlessConsole):
             comm_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             comm_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             comm_server.bind((u'', comm_port))
-            if platform.system()=='Windows':
-                #short timeout on windows
-                comm_server.settimeout(1.0)
-            else:
-                #longer timeout on other platform due to password request
-                comm_server.settimeout(2.0)
+            comm_server.settimeout(1.0)
 
         except:
             self.logger.exception(u'Unable to create communication server')
