@@ -327,7 +327,7 @@ class FlashDrive(CleepDesktopModule):
         Args:
             url (string): url of file to use during flash
             drive (string): drive to flash
-            wifi (dict): wifi configuration (dict('network':XXX, 'password':XXX, 'encryption':XXX))
+            wifi (dict): wifi configuration (dict('network':XXX, 'password':XXX, 'encryption':XXX, 'hidden':XXX))
             iso_raspbian (bool): function will also return raspbian isos
             iso_local (bool): function will set iso_local flag in process data
         """
@@ -353,7 +353,7 @@ class FlashDrive(CleepDesktopModule):
             try:
                 #prepare content
                 cleepwificonf = CleepWifiConf()
-                conf = cleepwificonf.create_content(wifi['network'], wifi['password'], wifi['encryption'])
+                conf = cleepwificonf.create_content(wifi['network'], wifi['password'], wifi['encryption'], wifi['hidden'])
                 self.logger.debug('Generated wifi config file: %s' % conf)
 
                 #write content

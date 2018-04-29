@@ -47,7 +47,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     //reset form fields
     self.resetFields = function()
     {
-        logger.info('reset fields');
+        logger.info('Reset fields');
         self.selectedDrive = null;
         self.selectedIso = null;
         self.selectedWifiNetwork = {
@@ -60,6 +60,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         self.wifiNetworkName = '';
         self.wifiNetworkEncryption = 'wpa2';
         self.showPassword = false;
+        self.selectedWifiChoice = 0;
     };
 
     //return current flash status
@@ -193,15 +194,38 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
             toast.error('Please select a Cleep version and a drive');
             return;
         }
-        if( !self.wifi.adapter && self.wifiNetworkName && self.wifiNetworkEncryption!='unsecured' && !self.wifiPassword )
+        if( self.selectedWifiChoice==1 )
         {
-            toast.error('Please specify wifi password');
-            return;
+            //user wants to connect to available wifi network
+            if( !self.wifi.adapter && !self.wifiNetworkName )
+            {
+                toast.error('Please set wifi network name');
+                return;
+            }
+            else if( self.wifi.adapter && !self.selectedWifiNetwork.network )
+            {
+                toast.error('Please select wifi network');
+                return;
+            }
+            else if( self.wifiNetworkEncryption!='unsecured' && !self.wifiPassword )
+            {
+                toast.error('Please fill wifi network password');
+                return;
+            }
         }
-        if( self.wifi.adapter && self.selectedWifiNetwork.network && self.selectedWifiNetwork.encryption!='unsecured' && !self.wifiPassword )
+        if( self.selectedWifiChoice==2 ) 
         {
-            toast.error('Please specify wifi password');
-            return;
+            //user wants to connect to hidden network
+            if( !self.wifiNetworkName )
+            {
+                toast.error('Please set wifi network name');
+                return;
+            }
+            else if( self.wifiNetworkEncryption!='unsecured' && !self.wifiPassword )
+            {
+                toast.error('Please fill wifi network password');
+                return;
+            }
         }
 
         //wifi config
@@ -211,7 +235,9 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
             password: null,
             hidden: (self.selectedWifiChoice==2 ? true : false)
         }
-        if( self.selectedWifiChoice==1 || self.selectedWifiChoice==2 ) {
+        if( self.selectedWifiChoice==1 )
+        {
+            //connect to available network (non hidden)
             if( !self.wifi.adapter && self.wifiNetworkName && self.wifiNetworkEncryption )
             {
                 //fill wifi config from manual values
@@ -226,6 +252,13 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                 wifiConfig.encryption = self.selectedWifiNetwork.encryption;
                 wifiConfig.password = self.wifiPassword;
             }
+        }
+        else if( self.selectedWifiChoice==2 )
+        {
+            //connect to hidden network (use manual values)
+            wifiConfig.network = self.wifiNetworkName;
+            wifiConfig.encryption = self.wifiNetworkEncryption;
+            wifiConfig.password = self.wifiPassword;
         }
         logger.debug('url=' + self.selectedIso.url);
         logger.debug('drive=' + self.selectedDrive);
@@ -244,11 +277,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
                 var data = {
                     url: self.selectedIso.url,
                     drive: self.selectedDrive,
-                    wifi: {
-                        network: wifiConfig.network,
-                        password: wifiConfig.password,
-                        encryption: wifiConfig.encryption
-                    }
+                    wifi: wifiConfig
                 };
                 logger.debug('Flash data:', data);
 
