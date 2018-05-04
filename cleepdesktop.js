@@ -226,13 +226,6 @@ function createMenu()
         label: 'File',
         submenu: [
             {
-                label: 'Homepage',
-                click: () => {
-                    mainWindow.webContents.send('openPage', 'default');
-                }
-            }, {
-                type: 'separator'
-            }, {
                 label: 'Updates',
                 click: () => {
                     mainWindow.webContents.send('openPage', 'updates');
@@ -323,13 +316,13 @@ function createMenu()
     };
     if( process.platform==='darwin' )
     {
-        const menuTemplate = [subMenuFile, subMenuEdit, subMenuDevice, subMenuHelp];
+        const menuTemplate = [subMenuFile, subMenuEdit, subMenuHelp];
         const menu = Menu.buildFromTemplate(menuTemplate);
         Menu.setApplicationMenu(menu);
     }
     else
     {
-        const menuTemplate = [subMenuFile, subMenuDevice, subMenuHelp];
+        const menuTemplate = [subMenuFile, subMenuHelp];
         const menu = Menu.buildFromTemplate(menuTemplate);
         Menu.setApplicationMenu(menu);
     }

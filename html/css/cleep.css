@@ -114,6 +114,7 @@ md-toast.info .md-toast-content {
     stroke: white;
 }
 
+/* white icon */
 .white-icon svg path {
     fill: white;
 }

@@ -12,23 +12,41 @@
     <md-content ng-controller="cleepController as cleep" flex="100" layout="row">
 
         <!-- tools panel -->
-        <md-content style="width:50px; background-color:#607d8b;" class="panel-separator" layout="column">
-            <span style="height:10px;"></span>
-            <md-button class="md-icon-button white-icon" aria-label="Install" ng-click="cleep.openPage('installAuto')">
-                <md-icon md-svg-icon="sd"></md-icon>
-                <md-tooltip md-direction="right">Install Cleep on SD card</md-tooltip>
-            </md-button>
-            <span style="height:10px;"></span>
-            <md-button class="md-icon-button white-icon" aria-label="Messages monitoring" ng-click="cleep.openPage('monitoring')">
-                <md-icon md-svg-icon="message-text-outline"></md-icon>
-                <md-tooltip md-direction="right">Devices messages monitoring</md-tooltip>
-            </md-button>
-            <span flex></span>
-            <md-button class="md-icon-button white-icon" aria-label="Preferences" ng-click="cleep.openModal('preferencesController', 'js/preferences/preferencesdialog.html')">
-                <md-icon md-svg-icon="settings"></md-icon>
-                <md-tooltip md-direction="right">Preferences</md-tooltip>
-            </md-button>
-            <span style="height:10px;"></span>
+        <md-content style="background-color:#607d8b; overflow-x:hidden;" ng-style="{'width':(cleep.toolbarCollapsed ? '60px' : '250px')}" class="panel-separator" layout="column">
+            <md-list class="toolbar">
+
+                <md-list-item  ng-click="cleep.toggleToolbar()">
+                    <md-icon md-svg-icon="chevron-double-right" class="white-icon" ng-if="cleep.toolbarCollapsed"></md-icon>
+                    <md-icon md-svg-icon="chevron-double-left" class="white-icon" ng-if="!cleep.toolbarCollapsed"></md-icon>
+                    <p></p>
+                </md-list-item>
+
+                <md-divider></md-divider>
+
+                <md-list-item ng-click="cleep.openPage('default')">
+                    <md-icon md-svg-icon="home-outline" ng-class="cleep.selectedToolbarItem=='default' ? 'md-accent' : 'white-icon'"></md-icon>
+                    <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Homepage</p>
+                </md-list-item>
+
+                <md-divider></md-divider>
+
+                <md-list-item ng-click="cleep.openPage('installAuto')">
+                    <md-icon md-svg-icon="sd" ng-class="cleep.selectedToolbarItem=='installAuto' ? 'md-accent' : 'white-icon'"></md-icon>
+                    <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Install Cleep</p>
+                </md-list-item>
+                <md-list-item ng-click="cleep.openPage('monitoring')">
+                    <md-icon md-svg-icon="message-text-outline" ng-class="cleep.selectedToolbarItem=='monitoring' ? 'md-accent' : 'white-icon'"></md-icon>
+                    <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Monitoring</p>
+                </md-list-item>
+
+                <md-divider></md-divider>
+
+                <md-list-item ng-click="cleep.openModal('preferencesController', 'js/preferences/preferencesdialog.html')">
+                    <md-icon md-svg-icon="settings" class="white-icon"></md-icon>
+                    <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Preferences</p>
+                </md-list-item>
+
+            </md-list>
         </md-content>
 
         <!-- devices panel -->

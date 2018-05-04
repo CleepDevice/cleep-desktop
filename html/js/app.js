@@ -205,12 +205,20 @@ Cleep.controller('emptyDialogController', ['$rootScope', '$scope', '$state', 'cl
  * Cleep controller
  */
 var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService, modalService, deviceMessages, 
-                            updateService, cleepUi, settings, $timeout, installService)
+                            updateService, cleepUi, settings, $timeout, installService, $transitions)
 {
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
     self.taskFlashPanel = null;
     self.taskFlashPanelClosed = false;
+    self.selectedToolbarItem = null;
+    self.toolbarCollapsed = true;
+
+    //Toggle toolbar
+    self.toggleToolbar = function()
+    {
+        self.toolbarCollapsed = !self.toolbarCollapsed;
+    };
 
     //Open page in content area (right side) handling 'openPage' event
     self.openPage = function(page)
@@ -260,6 +268,11 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
             appUpdater.quitAndInstall();
         }, 1000);
     };
+
+    //Select toolbar icons
+    $transitions.onEnter({}, function(trans, state) {
+        self.selectedToolbarItem = state.name;
+    });
 
     //Add flash task panel info
     $rootScope.$on('flash', function(event, data) {
@@ -377,5 +390,6 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
 
 };
 Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 
-                                    'deviceMessages', 'updateService', 'cleepUi', 'settings', '$timeout', 'installService', cleepController]);
+                                    'deviceMessages', 'updateService', 'cleepUi', 'settings', '$timeout', 'installService', 
+                                    '$transitions', cleepController]);
 
