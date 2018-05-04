@@ -110,6 +110,15 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
         self.shell.openItem(self.logs);
     };
 
+    // Open logs archive (zip format)
+    self.zipLogs = function()
+    {
+        cleepService.sendCommand('getzippedlogs')
+            .then(function(resp) {
+                self.shell.openItem(resp.data);
+            });
+    };
+
     // Delete specified cached file
     self.purgeCacheFile = function(filename)
     {

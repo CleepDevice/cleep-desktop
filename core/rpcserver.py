@@ -44,6 +44,7 @@ from core.devices import Devices
 from core.updates import Updates
 from core.libs.crashreport import CrashReport
 from core.libs.download import Download
+from core.libs.cleepdesktoplogs import CleepDesktopLogs
 
 __all__ = ['app']
 
@@ -439,6 +440,9 @@ def execute_command(command, params):
             dl = Download(cached_isos_path)
             dl.purge_files(force_all=True)
             resp.data = dl.get_cached_files()
+        elif command=='getzippedlogs':
+            zip = CleepDesktopLogs()
+            resp.data = zip.get_zipped_logs()
       
         #flashdrive
         elif command=='getflashdrives':
