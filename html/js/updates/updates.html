@@ -49,7 +49,7 @@
                             <span ng-if="ctl.cleepdesktopStatus.status===1 && ctl.cleepdesktopStatus.downloadpercent!==null">Downloading update ({{ctl.cleepdesktopStatus.downloadpercent}}%)</span>
                             <span ng-if="ctl.cleepdesktopStatus.status===2">Installing update</span>
                         </div>
-                        <div class="md-secondary" style="width:200px; padding-left:10px;" ng-if="ctl.cleepdesktopStatus.status===1 || ctl.cleepdesktopStatus.status===2">
+                        <div class="md-secondary" style="width:200px; padding-left:10px; padding-top:5px;" ng-if="ctl.cleepdesktopStatus.status===1 || ctl.cleepdesktopStatus.status===2">
                             <md-progress-linear ng-if="ctl.cleepdesktopStatus.downloadpercent!==null" md-mode="determinate" class="md-accent" value="{{ctl.cleepdesktopStatus.downloadpercent}}"></md-progress-linear>
                             <md-progress-linear ng-if="ctl.cleepdesktopStatus.downloadpercent===null" md-mode="indeterminate" class="md-accent"></md-progress-linear>
                         </div>
@@ -84,7 +84,7 @@
                             <span ng-if="ctl.etcherStatus.status===1">Downloading update ({{ctl.etcherStatus.downloadpercent}}%)</span>
                             <span ng-if="ctl.etcherStatus.status===2">Installing update</span>
                         </div>
-                        <div class="md-secondary" style="width:200px; padding-left:10px;" ng-if="ctl.etcherStatus.status===1 || ctl.etcherStatus.status===2">
+                        <div class="md-secondary" style="width:200px; padding-left:10px; padding-top:5px;" ng-if="ctl.etcherStatus.status===1">
                             <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.etcherStatus.downloadpercent}}"></md-progress-linear>
                         </div>
                         <!-- update status -->
