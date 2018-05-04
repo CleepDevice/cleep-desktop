@@ -430,6 +430,7 @@ class FlashDrive(CleepDesktopModule):
                         desc (string): drive description
                         path (string): drive path
                         readonly (bool): True if drive is readonly
+                        size (int): media size
                     },
                     ...
                 ]
@@ -447,7 +448,8 @@ class FlashDrive(CleepDesktopModule):
                 flashables.append({
                     'desc': '%s' % drives[drive]['name'],
                     'path': '%s' % drives[drive]['device'],
-                    'readonly': drives[drive]['protected']
+                    'readonly': drives[drive]['protected'],
+                    'size': drives[drive]['totalsize']
                 })
 
         return flashables
@@ -462,7 +464,8 @@ class FlashDrive(CleepDesktopModule):
                     {
                         desc (string): drive description
                         path (string): drive path
-                        readonly (bool): True if drive is readonly
+                        readonly (bool): True if drive is readonly,
+                        size (int): media size
                     },
                     ...
                 ]
@@ -480,7 +483,8 @@ class FlashDrive(CleepDesktopModule):
                 flashables.append({
                     'desc': '%s (%s)' % (drive['description'], drive['displayName']),
                     'path': '%s' % drive['device'],
-                    'readonly': drive['protected']
+                    'readonly': drive['protected'],
+                    'size': drive['size']
                 })
 
         return flashables
@@ -495,7 +499,8 @@ class FlashDrive(CleepDesktopModule):
                     {
                         desc (string): drive description
                         path (string): drive path
-                        readonly (bool): True if drive is readonly
+                        readonly (bool): True if drive is readonly,
+                        size (int): media size
                     },
                     ...
                 ]
@@ -524,7 +529,8 @@ class FlashDrive(CleepDesktopModule):
                 flashables.append({
                     'desc': desc,
                     'path': '/dev/%s' % drive,
-                    'readonly': drives[drive]['readonly']
+                    'readonly': drives[drive]['readonly'],
+                    'size': drives[drive]['size']
                 })
 
         return flashables

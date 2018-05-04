@@ -89,8 +89,8 @@
                                 <label>Drive</label>
                                 <md-select ng-model="ctl.selectedDrive" md-on-open="ctl.refreshDrives()" placeholder="Drive" class="md-no-underline" ng-disabled="ctl.flashing" required>
                                     <md-option ng-if="ctl.drives.length===0" ng-disabled="true">No drive found</md-option>
-                                    <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path" ng-disabled="drive.readonly">
-                                        {{drive.desc}} {{drive.readonly ? '[Readonly]' : ''}}
+                                    <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path" ng-disabled="drive.readonly || drive.size<4000000000">
+                                        {{drive.desc}} {{drive.readonly ? '[Readonly]' : ''}} {{drive.size<4000000000 ? '[Need larger drive (>=4Go)]' : ''}}
                                     </md-option>
                                 </md-select>
                             </md-input-container>
