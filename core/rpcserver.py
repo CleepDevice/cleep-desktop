@@ -64,6 +64,7 @@ updates = None
 flashdrive = None
 devices = None
 crash_report = None
+cached_isos_path = None
 
 #websocket variables
 current_devices = None
@@ -205,12 +206,13 @@ def updates_update(updates):
     current_updates = updates
     last_updates_update = time.time()
 
-def get_app(app_path, config_path, config_filename, debug, is_dev):
+def get_app(app_path, cache_path, config_path, config_filename, debug, is_dev):
     """
     Return web server instance
 
     Args:
         app_path (string): absolute application path
+        cache_path (string): cache path
         config_path (string): configuration path
         config_filename (string): configuration filename
         debug (bool): True if debug enabled
@@ -218,7 +220,10 @@ def get_app(app_path, config_path, config_filename, debug, is_dev):
     Returns:
         object: bottle instance
     """
-    global logger, app, config, config_file, log_file, flashdrive, devices, updates, crash_report
+    global logger, app, config, config_file, log_file, flashdrive, devices, updates, crash_report, cached_isos_path
+
+    #set globals
+    cached_isos_path = cache_path
 
     #logging
     logging_formatter = logging.Formatter('%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
@@ -290,7 +295,7 @@ def get_app(app_path, config_path, config_filename, debug, is_dev):
         crash_report.disable()
 
     #launch flash process
-    flashdrive = FlashDrive(app_path, config_path, flash_update, debug, crash_report)
+    flashdrive = FlashDrive(app_path, cached_isos_path, config_path, flash_update, debug, crash_report)
     flashdrive.start()
 
     #launch devices process
@@ -402,7 +407,7 @@ def execute_command(command, params):
     Return:
         MessageResponse
     """
-    global flashdrive, log_file
+    global flashdrive, log_file, cached_isos_path
 
     if command is None:
         logger.error('Invalid command received, unable to process it')
@@ -424,14 +429,14 @@ def execute_command(command, params):
                 process_config(old_config, get_config())
                 resp.data = True
         elif command=='getcachedfiles':
-            dl = Download()
+            dl = Download(cached_isos_path)
             resp.data = dl.get_cached_files()
         elif command=='deletecachedfile':
-            dl = Download()
+            dl = Download(cached_isos_path)
             dl.delete_cached_file(params['filename'])
             resp.data = dl.get_cached_files()
         elif command=='purgecachedfiles':
-            dl = Download()
+            dl = Download(cached_isos_path)
             dl.purge_files(force_all=True)
             resp.data = dl.get_cached_files()
       

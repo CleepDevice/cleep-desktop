@@ -69,12 +69,13 @@ class FlashDrive(CleepDesktopModule):
         'repository': 'raspiot'
     }
 
-    def __init__(self, app_path, config_path, update_callback, debug_enabled, crash_report):
+    def __init__(self, app_path, cached_isos_path, config_path, update_callback, debug_enabled, crash_report):
         """
         Contructor
 
         Args:
             app_path (string): application path
+            cached_isos_path (string): cached isos path
             config_path (string): installation path
             update_callback (function): function to call when data need to be pushed to ui
             debug_enabled (bool): True if debug is enabled
@@ -84,6 +85,7 @@ class FlashDrive(CleepDesktopModule):
 
         #members
         self.app_path = app_path
+        self.cached_isos_path = cached_isos_path
         self.config_path = config_path
         self.crash_report = crash_report
         self.env = platform.system().lower()
@@ -197,7 +199,7 @@ class FlashDrive(CleepDesktopModule):
                 self.total_percent = 100
                 if self.iso and os.path.exists(self.iso):
                     self.logger.debug('Purge downloaded file')
-                    dl = Download(None)
+                    dl = Download(self.cached_isos_path)
                     dl.purge_files()
                 self.iso = None
                 self.drive = None
@@ -293,7 +295,7 @@ class FlashDrive(CleepDesktopModule):
         if not release:
             #no release found, surely rate limit reached on github api
             #fallback to cached releases
-            download = Download()
+            download = Download(self.cached_isos_path)
             cached_releases = download.get_cached_files()
             self.logger.debug('Cached releases: %s' % cached_releases)
 
@@ -730,7 +732,7 @@ class FlashDrive(CleepDesktopModule):
             return True
 
         #init download helper
-        self.dl = Download(self.__download_callback)
+        self.dl = Download(self.cached_isos_path, self.__download_callback)
 
         #start download
         self.iso = self.dl.download_from_url(self.url, check_sha256=self.iso_sha256, cache=True)

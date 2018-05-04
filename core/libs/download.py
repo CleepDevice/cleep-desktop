@@ -32,11 +32,12 @@ class Download():
     STATUS_CANCELED = 7
     STATUS_DONE = 8
 
-    def __init__(self, status_callback=None):
+    def __init__(self, cache_dir=None, status_callback=None):
         """
         Constructor
 
         Args:
+            cache_dir (string): directory to save cached files. If not specified default platform temp dir is setted (it means after a reboot, cache will surely be deleted)
             status_callback (function): status callback. Params: status, filesize, percent
         """
         #logger
@@ -45,6 +46,9 @@ class Download():
 
         #members
         self.temp_dir = tempfile.gettempdir()
+        self.cache_dir = cache_dir
+        if not self.cache_dir:
+            self.cache_dir = self.temp_dir
         self.download = None
         self.__cancel = False
         self.status_callback = status_callback
@@ -69,13 +73,13 @@ class Download():
         """
         cached_filename = self.__get_cached_filename_by_filename(filename)
         self.logger.debug('Trying to delete cached filename %s (with real name %s)' % (cached_filename, filename))
-        for root, dirs, dls in os.walk(self.temp_dir):
+        for root, dirs, dls in os.walk(self.cache_dir):
             for dl in dls:
                 #delete cached file
                 if os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX) and os.path.basename(dl).endswith(cached_filename):
                     self.logger.debug('Delete existing cached file: %s' % dl)
                     try:
-                        os.remove(os.path.join(self.temp_dir, dl))
+                        os.remove(os.path.join(self.cache_dir, dl))
                     except:
                         pass
 
@@ -96,11 +100,21 @@ class Download():
                     except:
                         pass
 
-                #delete cached files
+                #delete cached files (on temp dir)
                 elif force_all and os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded cached file: %s' % dl)
                     try:
                         os.remove(os.path.join(self.temp_dir, dl))
+                    except:
+                        pass
+
+        #delete cached files (on cache dir)
+        for root, dirs, dls in os.walk(self.cache_dir):
+            for dl in dls:
+                if force_all and os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
+                    self.logger.debug('Purge existing downloaded cached file: %s' % dl)
+                    try:
+                        os.remove(os.path.join(self.cache_dir, dl))
                     except:
                         pass
 
@@ -118,10 +132,10 @@ class Download():
         """
         cached = []
 
-        for root, dirs, dls in os.walk(self.temp_dir):
+        for root, dirs, dls in os.walk(self.cache_dir):
             for dl in dls:
                 if os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
-                    filepath = os.path.join(self.temp_dir, dl)
+                    filepath = os.path.join(self.cache_dir, dl)
                     filename = os.path.basename(dl).replace(self.CACHED_FILE_PREFIX, '')
                     filename = base64.b64decode(filename).decode('utf-8')
                     cached.append({
@@ -218,7 +232,7 @@ class Download():
 
         #check if file is cached
         cached_filename = self.__get_cached_filename_by_url(url)
-        cached_download = os.path.join(self.temp_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, cached_filename))
+        cached_download = os.path.join(self.cache_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, cached_filename))
         if cache and os.path.exists(cached_download):
             #file cached, return it
             self.logger.debug('Return cached file (%s)' % cached_download)
@@ -345,7 +359,7 @@ class Download():
             download = os.path.join(self.temp_dir, '%s_%s' % (self.DOWNLOAD_FILE_PREFIX, download_uuid))
         else:
             #cache file, rename file with cache prefix
-            download = os.path.join(self.temp_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, cached_filename))
+            download = os.path.join(self.cache_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, cached_filename))
         try:
             os.rename(self.download, download)
             self.download = download

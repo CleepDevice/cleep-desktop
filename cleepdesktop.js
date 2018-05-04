@@ -466,8 +466,16 @@ function launchCore(rpcport)
     //get config file path
     var configFile = settings.file();
     logger.debug('Config path: '+configFile);
+    var cachePath = path.join(app.getPath('userData'), 'cache_cleepdesktop');
     var configPath = path.dirname(configFile);
     var configFilename = path.basename(configFile);
+
+    //check whether cache dir exists or not
+    if( !fs.existsSync(cachePath) )
+    {
+        logger.debug('Create cache dir' + cachePath);
+        fs.mkdirSync(cachePath);
+    }
 
     if( !isDev )
     {
@@ -495,22 +503,24 @@ function launchCore(rpcport)
 
         //launch command line
         let debug = settings.has('cleep.debug') && settings.get('cleep.debug') ? 'debug' : 'release';
-        logger.debug('Core commandline: '+commandline+' ' + rpcport + ' ' + configPath + ' ' + configFilename + ' ' + debug);
+        logger.debug('Core commandline: '+commandline+' ' + rpcport + ' ' + cachePath + ' ' + configPath + ' ' + configFilename + ' ' + debug);
         coreStartupTime = Math.round(Date.now()/1000);
-        coreProcess = require('child_process').spawn(commandline, [rpcport, configPath, configFilename, 'release', 'false']);
+        coreProcess = require('child_process').spawn(commandline, [rpcport, cachePath, configPath, configFilename, 'release', 'false']);
     }
     else
     {
         //launch dev
         logger.debug('Launch development mode');
-        logger.debug('Core commandline: python3 cleepdesktopcore.py ' + rpcport + ' ' + configPath + ' ' + configFilename + ' debug');
+        logger.debug('Core commandline: python3 cleepdesktopcore.py ' + rpcport + ' ' + cachePath + ' ' + configPath + ' ' + configFilename + ' debug');
 		var python_bin = 'python3'
-		var python_args = ['cleepdesktopcore.py', rpcport, configPath, configFilename, 'debug', 'true']
+        var python_args = ['cleepdesktopcore.py', rpcport, cachePath, configPath, configFilename, 'debug', 'true']
+        logger.debug('before: ' + python_args);
 		if( process.platform=='win32' )
 		{
 			python_bin = 'py';
 			python_args.unshift('-3');
         }
+        logger.debug('after: ' + python_args);
         coreStartupTime = Math.round(Date.now()/1000);
         coreProcess = require('child_process').spawn(python_bin, python_args);
     }

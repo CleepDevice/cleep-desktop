@@ -175,7 +175,7 @@ class Updates(CleepDesktopModule):
                     #update etcher status
                     self.etcher_status = self.STATUS_DOWNLOADING
                     #new etcher update available
-                    self.__current_download = Download(self.__download_callback)
+                    self.__current_download = Download(None, self.__download_callback)
                     #download it with no checksum (call is blocking)
                     filepath = self.__current_download.download_from_url(self.__download_etcher.url)
                     #end of dowload, trigger callback and reset member
