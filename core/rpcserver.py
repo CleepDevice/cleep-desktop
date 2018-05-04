@@ -16,6 +16,7 @@ Rpcserver implements:
 import os
 import platform
 import logging
+from logging.handlers import RotatingFileHandler
 import sys
 import argparse
 import json
@@ -230,7 +231,7 @@ def get_app(app_path, cache_path, config_path, config_filename, debug, is_dev):
     logging_formatter = logging.Formatter('%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
     root_logger = logging.getLogger()
     log_file = os.path.join(config_path, 'cleepdesktopcore.log')
-    file_handler = logging.RotatingFileHandler(log_file, maxBytes=2*1024*1024, backupCount=2, encoding='utf-8')
+    file_handler = RotatingFileHandler(log_file, maxBytes=2*1024*1024, backupCount=2, encoding='utf-8')
     file_handler.setFormatter(logging_formatter)
     if is_dev:
         #dev mode: log to file and console with DEBUG level
