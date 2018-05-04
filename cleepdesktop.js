@@ -514,13 +514,11 @@ function launchCore(rpcport)
         logger.debug('Core commandline: python3 cleepdesktopcore.py ' + rpcport + ' ' + cachePath + ' ' + configPath + ' ' + configFilename + ' debug');
 		var python_bin = 'python3'
         var python_args = ['cleepdesktopcore.py', rpcport, cachePath, configPath, configFilename, 'debug', 'true']
-        logger.debug('before: ' + python_args);
 		if( process.platform=='win32' )
 		{
 			python_bin = 'py';
 			python_args.unshift('-3');
         }
-        logger.debug('after: ' + python_args);
         coreStartupTime = Math.round(Date.now()/1000);
         coreProcess = require('child_process').spawn(python_bin, python_args);
     }
