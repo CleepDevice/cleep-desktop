@@ -437,6 +437,8 @@ class AdminEndlessConsole(EndlessConsole):
         self.logger.debug('Return code: %s' % self.return_code)
         
         #close comm_server
+        if cmdlogger:
+            cmdlogger.close()
         comm_server.close()
         
         #make sure process is killed
