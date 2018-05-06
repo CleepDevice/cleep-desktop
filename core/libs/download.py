@@ -10,6 +10,7 @@ import hashlib
 import platform
 import tempfile
 import base64
+import shutil
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -361,11 +362,11 @@ class Download():
             #cache file, rename file with cache prefix
             download = os.path.join(self.cache_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, cached_filename))
         try:
-            os.rename(self.download, download)
+            shutil.move(self.download, download)
             self.download = download
         except:
             self.logger.exception(u'Unable to rename downloaded file:')
-            self.status = STATUS_ERROR
+            self.status = self.STATUS_ERROR
             self.__status_callback(self.status, file_size, 100)
             return None
 
