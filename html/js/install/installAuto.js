@@ -15,7 +15,6 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
         eta: ''
     };
     self.flashing = false;
-    self.disableCancel = true;
 
     //drives variables
     self.drives = installService.drives;
@@ -365,17 +364,6 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
             self.resetFields();
         }
 
-        //disable cancel button when really flashing sdcard
-        //no way to cancel process because launched with root privileges while
-        //CleepDesktop is running only with user ones
-        if( self.status.status==1 || self.status.status==2 )
-        {
-            self.disableCancel = false;
-        }
-        else
-        {
-            self.disableCancel = true;
-        }
 
         //force angular refresh
         $rootScope.$apply();

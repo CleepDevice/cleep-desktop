@@ -212,7 +212,7 @@
                             <span ng-if="ctl.status.status==12">Network error occured during file download</span>
                         </div>
                         <div>
-                            <md-button ng-click="ctl.cancelFlash()" class="md-raised md-primary" ng-disabled="ctl.disableCancel">Cancel</md-button>
+                            <md-button ng-click="ctl.cancelFlash()" class="md-raised md-primary" ng-disabled="!ctl.flashing">Cancel</md-button>
                         </div>
                     </div>
                     <div style="padding-top:15px;">
