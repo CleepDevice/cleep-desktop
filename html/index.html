@@ -15,7 +15,7 @@
         <md-content style="background-color:#607d8b; overflow-x:hidden;" ng-style="{'width':(cleep.toolbarCollapsed ? '60px' : '250px')}" class="panel-separator" layout="column">
             <md-list class="toolbar" style="padding-top:0px;">
 
-                <md-list-item  ng-click="cleep.toggleToolbar()">
+                <md-list-item ng-click="cleep.toggleToolbar()" aria-label="Toggle toolbar">
                     <md-icon md-svg-icon="chevron-double-right" class="white-icon" ng-if="cleep.toolbarCollapsed"></md-icon>
                     <md-icon md-svg-icon="chevron-double-left" class="white-icon" ng-if="!cleep.toolbarCollapsed"></md-icon>
                     <p></p>
@@ -23,25 +23,25 @@
 
                 <md-divider></md-divider>
 
-                <md-list-item ng-click="cleep.openPage('default')">
+                <md-list-item ng-click="cleep.openPage('default')" aria-label="Homepage">
                     <md-icon md-svg-icon="home-outline" ng-class="cleep.selectedToolbarItem=='default' ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Homepage</p>
                 </md-list-item>
 
                 <md-divider></md-divider>
 
-                <md-list-item ng-click="cleep.openPage('installAuto')">
+                <md-list-item ng-click="cleep.openPage('installAuto')" aria-label="Install Cleep">
                     <md-icon md-svg-icon="sd" ng-class="cleep.selectedToolbarItem=='installAuto' ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Install Cleep</p>
                 </md-list-item>
-                <md-list-item ng-click="cleep.openPage('monitoring')">
+                <md-list-item ng-click="cleep.openPage('monitoring')" aria-label="Monitoring">
                     <md-icon md-svg-icon="message-text-outline" ng-class="cleep.selectedToolbarItem=='monitoring' ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Monitoring</p>
                 </md-list-item>
 
                 <md-divider></md-divider>
 
-                <md-list-item ng-click="cleep.openModal('preferencesController', 'js/preferences/preferencesdialog.html')">
+                <md-list-item ng-click="cleep.openModal('preferencesController', 'js/preferences/preferencesdialog.html')" aria-label="Preferences">
                     <md-icon md-svg-icon="settings" class="white-icon"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Preferences</p>
                 </md-list-item>
