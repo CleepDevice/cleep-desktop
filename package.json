@@ -33,12 +33,12 @@
     "author": "Tanguy BONNEAU <tanguy.bonneau@gmail.com>",
     "license": "GPLv3",
     "devDependencies": {
-        "devtron": "1.4.x",
-        "electron": "1.8.4",
+        "devtron": "1.4.0",
+        "electron": "2.0.0",
         "electron-builder": "20.10.0"
     },
     "dependencies": {
-        "@sentry/electron": "0.5.3",
+        "@sentry/electron": "0.5.4",
         "detect-port": "1.2.2",
         "electron-log": "2.2.14",
         "electron-settings": "3.1.4",
