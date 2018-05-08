@@ -28,6 +28,13 @@ class Nmcli(AdvancedConsole):
     MAX_RETRY = 30
     NO_SCAN_RESULTS = u'No scan results'
 
+    TYPE_UNKNOWN = 'unknown'
+    TYPE_WIFI = 'wifi'
+    TYPE_ETHERNET = 'ethernet'
+
+    STATE_CONNECTED = 'connected'
+    STATE_DISCONNECTED = 'disconnected'
+
     def __init__(self):
         """
         Constructor
@@ -35,26 +42,21 @@ class Nmcli(AdvancedConsole):
         AdvancedConsole.__init__(self)
 
         #members
-        self._command = u'/usr/bin/nmcli -f SSID,SIGNAL,SECURITY dev wifi list'
+        self._command_wifi_networks = u'/usr/bin/nmcli -f SSID,SIGNAL,SECURITY dev wifi list'
+        self._command_interfaces = u'/usr/bin/nmcli -f TYPE,STATE,DEVICE device'
         self.timestamp = None
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
         self.networks = {}
 
-    def __refresh(self):
+    def __refresh(self, interface):
         """
         Refresh all data
 
         Return:
             bool: True if scan ok, False if scan need to be done again (no scan result), None if no refresh performed
         """
-        results = self.find(self._command, r'^(.*)\s+(\d+)\s+(.*)$', timeout=5.0)
-
-        #handle invalid interface for wifi scanning
-        if len(results)==0 and self.get_last_return_code()!=0:
-            self.networks = {}
-            self.error = True
-            return None
+        results = self.find(self._command_wifi_networks, r'^(.*)\s+(\d+)\s+(.*)$', timeout=5.0)
 
         entries = {}
         for group, groups in results:
@@ -67,13 +69,13 @@ class Nmcli(AdvancedConsole):
 
             #get encryption
             encryption = WpaSupplicantConf.ENCRYPTION_TYPE_UNKNOWN
-            if groups[2].lower().find('wpa2'):
+            if groups[2].lower().find('wpa2')>=0:
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WPA2
-            elif groups[2].lower().find('wpa1'):
+            elif groups[2].lower().find('wpa1')>=0:
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WPA
-            elif groups[2].lower().find('wep'):
+            elif groups[2].lower().find('wep')>=0:
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WEP
-            elif groups[2].lower().find('--'):
+            elif groups[2].lower().find('--')>=0:
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_UNSECURED
 
             #get signal level
@@ -85,7 +87,7 @@ class Nmcli(AdvancedConsole):
 
             #create entry
             entries[network] = {
-                'interface': None,
+                'interface': interface,
                 'network': network,
                 'encryption': encryption,
                 'signallevel': signal_level
@@ -93,7 +95,6 @@ class Nmcli(AdvancedConsole):
         
         #save networks and error
         self.networks = entries
-        self.error = False
 
     def is_installed(self):
         """
@@ -101,22 +102,79 @@ class Nmcli(AdvancedConsole):
         """
         return os.path.exists(u'/usr/bin/nmcli')
 
-    def has_error(self):
+    def get_interfaces(self):
         """
-        Return True if error occured
-        
+        Return all network interfaces
+
         Return:
-            bool: True if error, False otherwise
+            dict: dict or interfaces with their type::
+                {
+                    interface: {
+                        name (string): interface name
+                        type (string): interface type (see TYPE_XXX)
+                        connected (bool): True if connected
+                    }
+                }
         """
-        return self.error
+        results = self.find(self._command_interfaces, r'^(wifi|ethernet|loopback)\s+(disconnected|connected|unavailable|unmanaged)\s+(.*)$', timeout=5.0)
+        #self.logger.debug(results)
 
-    def get_networks(self):
+        #handle errors
+        if len(results)==0 and self.get_last_return_code()!=0:
+            return {}
+
+        entries = {}
+        for group, groups in results:
+            #filter None values
+            groups = list(filter(None, groups))
+            #self.logger.debug(groups)
+
+            #get type
+            type_ = self.TYPE_UNKNOWN
+            if groups[0].lower()==self.TYPE_ETHERNET:
+                type_ = self.TYPE_ETHERNET
+            if groups[0].lower()==self.TYPE_WIFI:
+                type_ = self.TYPE_WIFI
+
+            #get state
+            connected = False
+            if groups[1].lower()==self.STATE_CONNECTED:
+                connected = True
+
+            #interface name
+            name = groups[2]
+
+            #create entry
+            entries[name] = {
+                'interface': name,
+                'type': type_,
+                'connected': connected
+            }
+        
+        return entries
+
+    def get_wifi_interfaces(self):
         """
-        Return all wifi networks scanned using iwlist.
+        Return wifi interfaces names
 
-        Note:
-            If iwlist is run without root privileges it returns sometimes no result. To prevent a long
-            wait we cache previous scan results. It could be not up to date, but there is no solution for now.
+        Return:
+            list: list of interfaces names
+        """
+        out = []
+
+        interfaces = self.get_interfaces()
+        for interface in interfaces:
+            if interfaces[interface]['type']==self.TYPE_WIFI:
+                out.append(interface)
+
+        return out
+
+    def get_wifi_networks(self, interface):
+        """
+        Return all wifi networks scanned using nmcli command.
+
+        Args:
+            interface (string): interface to scan 
 
         Returns:
             dict: dictionnary of found wifi networks::
@@ -131,7 +189,7 @@ class Nmcli(AdvancedConsole):
                 }
             bool: True if interface is not able to scan wifi
         """
-        self.__refresh()
+        self.__refresh(interface)
         return self.networks
 
 
@@ -142,5 +200,12 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     
     i = Nmcli()
-    networks = i.get_networks()
+
+    interfaces = i.get_interfaces()
+    pp.pprint(interfaces)
+
+    wifi_interfaces = i.get_wifi_interfaces()
+    pp.pprint(wifi_interfaces)
+
+    networks = i.get_wifi_networks(wifi_interfaces[0])
     pp.pprint(networks)

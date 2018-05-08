@@ -171,13 +171,13 @@ class FlashDrive(CleepDesktopModule):
                         time.sleep(0.25)
                         
                     #end of process
-                    if self.__flash_output_error:
-                        #error occured during flash
-                        self.status = self.STATUS_ERROR_FLASH
-                    elif self.cancel:
+                    if self.cancel:
                         #process canceled
                         self.console.kill()
                         self.status = self.STATUS_CANCELED
+                    if self.__flash_output_error:
+                        #error occured during flash
+                        self.status = self.STATUS_ERROR_FLASH
                     else:
                         #installation succeed
                         self.status = self.STATUS_DONE
@@ -961,22 +961,32 @@ class FlashDrive(CleepDesktopModule):
                     networks (list): networks list
                 }
         """
+        wifi_networks = []
         if self.nmcli.is_installed():
             #priority to nmcli if installed
-            networks = self.nmcli.get_networks()
+            self.logger.debug('Use nmcli to find wifi networks')
 
-            #flatten dict
-            wifi_networks = [v for k,v in networks.items()]
+            interfaces = self.nmcli.get_wifi_interfaces()
+            self.logger.debug('nmcli wifi interfaces: %s')
+            if len(interfaces)>0:
+                #keep only first interface
+                interface = interfaces[0]
+
+                networks = self.nmcli.get_wifi_networks(interface)
+                self.logger.debug('nmcli wifi networks: %s' % networks)
+
+                #flatten dict
+                wifi_networks = [v for k,v in networks.items()]
 
         elif self.iw.is_installed() and self.iwlist.is_installed():
             #otherwise fallback to iw/iwlist commands
+            self.logger.debug('Use iw to find wifi networks')
 
             #get wifi interfaces
             wifi_connections = self.iw.get_connections()
             self.logger.debug('wifi_connections: %s' % wifi_connections)
 
             #get wifi networks
-            wifi_networks = []
             if len(wifi_connections.keys())>0:
                 #keep only first wifi interface
                 interface = list(wifi_connections.keys())[0]
@@ -986,8 +996,7 @@ class FlashDrive(CleepDesktopModule):
                 wifi_networks = [v for k,v in networks.items()]
 
         else:
-            self.logger.info('No command available to get list of wifi networks. Consider wifi is not available on this computer')
-            wifi_networks = []
+            self.logger.info('No system command available to get list of wifi networks. Consider wifi is not available on this computer')
        
         #build output
         return {
