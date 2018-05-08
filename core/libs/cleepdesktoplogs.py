@@ -68,10 +68,10 @@ class CleepDesktopLogs():
             archive = zipfile.ZipFile(filename, 'w')
             core_file = os.path.join(self.logs_path, self.LOGS_CORE)
             if os.path.exists(core_file):
-                archive.write(core_file, basename(core_file))
+                archive.write(core_file, os.path.basename(core_file))
             ui_file = os.path.join(self.logs_path, self.LOGS_UI)
             if os.path.exists(ui_file):
-                archive.write(ui_file, basename(ui_file))
+                archive.write(ui_file, os.path.basename(ui_file))
             archive.close()
         
         except:
