@@ -51,15 +51,16 @@
 
         <!-- devices panel -->
         <div ng-controller="devicesController as ctl" style="width:300px;" layout-fill class="panel-separator">
-            <md-toolbar flex="initial" class="fix-toolbar">
-                <div class="md-toolbar-tools">
-                    <h2>
-                        <md-icon md-svg-icon="cellphone"></md-icon>
-                        Cleep devices
-                    </h2>
-                    <span flex></span>
+
+            <!-- toolbar -->
+            <div md-colors="{background: 'primary-500'}" class="toolbar-content" layout="row" layout-align="start center">
+                <div class="toolbar-spacer"></div>
+                <div layout="row" layout-align="left center">
+                    <md-icon style="color:white;" md-svg-icon="cellphone"></md-icon>
+                    <h1 style="padding-left:5px;" class="md-title">Cleep devices</h1>
                 </div>
-            </md-toolbar>
+            </div>
+            <!-- not used , just to mimic raspiot layout -->
             <md-progress-linear md-mode="determinate" value="100"></md-progress-linear>
 
             <md-content>
@@ -86,14 +87,13 @@
                 </div>
 
                 <!-- unconfigured devices -->
-                <md-toolbar class="md-hue-1" style="height:68px;" ng-if="!ctl.loading && ctl.unconfigured>0">
-                    <div class="md-toolbar-tools">
-                        <h2 flex md-truncate>
-                            Unconfigured devices
-                        </h2>
+                <div ng-if="!ctl.loading && ctl.unconfigured>0" md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
+                    <div class="toolbar-spacer"></div>
+                    <div layout="row" layout-align="left center">
+                        <h1 style="padding-left:5px;" class="md-title">Unconfigured devices</h1>
                     </div>
-                </md-toolbar>
-                <md-list ng-if="!ctl.loading">
+                </div>
+                <md-list ng-if="!ctl.loading && ctl.unconfigured>0" style="padding:0px;">
                     <md-list-item ng-repeat="device in ctl.devices | filter: {configured:false}" ng-if="ctl.unconfigured>0" ng-click="ctl.openDevicePage(device)">
                         <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin">
                             <md-tooltip md-direction="right">Unconfigured</md-tooltip>
@@ -105,14 +105,13 @@
                 </md-list>
 
                 <!-- configured devices -->
-                <md-toolbar class="md-hue-1" style="height:68px;" ng-if="!ctl.loading && ctl.devices.length>0">
-                    <div class="md-toolbar-tools">
-                        <h2 flex md-truncate>
-                            Configured devices
-                        </h2>
+                <div ng-if="!ctl.loading && ctl.devices.length>0" md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
+                    <div class="toolbar-spacer"></div>
+                    <div layout="row" layout-align="left center">
+                        <h1 style="padding-left:5px;" class="md-title">configured devices</h1>
                     </div>
-                </md-toolbar>
-                <md-list>
+                </div>
+                <md-list ng-if="!ctl.loading && ctl.devices.length>0" style="padding:0px;">
                     <md-list-item ng-repeat="device in ctl.devices | filter: {configured:true}" ng-click="ctl.openDevicePage(device)">
                         <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin">
                             <md-tooltip md-direction="right">Online</md-tooltip>

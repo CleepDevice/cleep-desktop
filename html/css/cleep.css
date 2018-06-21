@@ -118,3 +118,13 @@ md-toast.info .md-toast-content {
 .white-icon svg path {
     fill: white;
 }
+
+/* toolbar */
+.toolbar-content {
+    height: 64px;
+    overflow-y: hidden;
+}
+
+.toolbar-spacer {
+    width: 15px;
+}
