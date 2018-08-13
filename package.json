@@ -33,17 +33,18 @@
     "author": "Tanguy BONNEAU <tanguy.bonneau@gmail.com>",
     "license": "GPLv3",
     "devDependencies": {
-        "devtron": "1.4.0",
-        "electron": "2.0.0",
-        "electron-builder": "20.10.0"
+        "devtron": "^1.4.0",
+        "electron": "2.0.7",
+        "electron-builder": "20.26.1"
     },
     "dependencies": {
-        "@sentry/electron": "0.5.4",
-        "detect-port": "1.2.2",
-        "electron-log": "2.2.14",
-        "electron-settings": "3.1.4",
-        "electron-updater": "^2.18.2",
-        "npm": "^5.8.0"
+        "@sentry/electron": "0.7.0",
+        "detect-port": "1.2.3",
+        "electron-dl": "^1.12.0",
+        "electron-log": "2.2.16",
+        "electron-settings": "3.2.0",
+        "electron-updater": "^3.1.1",
+        "npm": "6.3.0"
     },
     "build": {
         "appId": "com.cleep.cleepdesktop",
