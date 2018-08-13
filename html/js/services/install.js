@@ -78,7 +78,8 @@ var installService = function($rootScope, logger, cleepService)
         //refresh all internal values
         self.refreshWifiAdapter();
         self.refreshWifiNetworks();
-        self.refreshIsos();
+        //do not refresh isos at startup to reduce number of request on github.com (limited to few requests per day per ip)
+        //self.refreshIsos();
         self.refreshDrives();
     };
 
