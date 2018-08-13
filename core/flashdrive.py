@@ -537,13 +537,14 @@ class FlashDrive(CleepDesktopModule):
 
         return flashables
 
-    def get_isos(self, with_iso_raspbian, with_iso_local):
+    def get_isos(self, with_iso_raspbian, with_iso_local, force_refresh=False):
         """
         Get list of isos file available
 
         Args:
             with_iso_raspbian (bool): function will also return raspbian isos
             with_iso_local (bool): just return iso local flag
+            force_refresh (bool): force refresh
 
         Return:
             dict:
@@ -566,10 +567,16 @@ class FlashDrive(CleepDesktopModule):
         """
         #return isos from cache
         refresh_isos = True
+        if force_refresh is True:
+            #refresh forced
+            pass
+
         if self.timestamp_isos==0 or len(self.isos)==0:
             #force refresh first time
             refresh_isos = True
+
         elif time.time()-self.timestamp_isos<=self.CACHE_DURATION:
+            #cache duration expired, check if refresh needed
             need_refresh = False
             if not with_iso_raspbian:
                 #raspbian is not enabled in preferences
@@ -591,7 +598,6 @@ class FlashDrive(CleepDesktopModule):
                 refresh_isos = False
 
         isos = []
-
         if refresh_isos:
             #get cleep latest release
             (cleep_release_file, cleep_release_name) = self.get_latest_cleep()

@@ -437,10 +437,14 @@ def execute_command(command, params):
             dl = Download(cached_isos_path)
             dl.delete_cached_file(params['filename'])
             resp.data = dl.get_cached_files()
+            #refresh cached files that may have been purged
+            flashdrive.get_isos(config['cleep']['isoraspbian'], config['cleep']['isolocal'], force_refresh=True)
         elif command=='purgecachedfiles':
             dl = Download(cached_isos_path)
             dl.purge_files(force_all=True)
             resp.data = dl.get_cached_files()
+            #refresh cached files that may have been purged
+            flashdrive.get_isos(config['cleep']['isoraspbian'], config['cleep']['isolocal'], force_refresh=True)
         elif command=='getzippedlogs':
             zip = CleepDesktopLogs()
             resp.data = zip.get_zipped_logs()
