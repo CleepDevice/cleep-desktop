@@ -31,24 +31,25 @@ autoUpdater.logger = logger;
 global.appUpdater = autoUpdater;
 
 //create default variables
-const app = electron.app
+const app = electron.app;
 global.cleepdesktopInfos = {
     version: app.getVersion(),
     changelog: null
 };
-app.setName('CleepDesktop')
-const BrowserWindow = electron.BrowserWindow
-const argv = process.argv.slice(1)
+app.setName('CleepDesktop');
+const BrowserWindow = electron.BrowserWindow;
+const argv = process.argv.slice(1);
 
 //imports
-const Menu = require('electron').Menu
-const shell = require('electron').shell
-const settings = require('electron-settings')
+const Menu = require('electron').Menu;
+const shell = require('electron').shell;
+const settings = require('electron-settings');
 global.settings = settings;
-const path = require('path')
-const url = require('url')
-const detectPort = require('detect-port')
-const fs = require('fs')
+const path = require('path');
+const url = require('url');
+const detectPort = require('detect-port');
+const fs = require('fs');
+const {download} = require('electron-dl');
 
 //variables
 var corePath = path.join(__dirname, 'cleepdesktopcore.py');
@@ -59,6 +60,8 @@ let coreDisabled = false;
 let allowQuit = true;
 let closingApplication = false;
 let coreStartupTime = 0;
+let downloadItem = null;
+let downloadFilename = '';
 
 //logger configuration
 logger.transports.file.level = 'info';
@@ -625,6 +628,71 @@ ipcMain.on('save-changelog', (event, arg) => {
             logger.error('Unable to save changelog: ' + err);
         }
     });
+});
+
+// Handle file download
+ipcMain.on('download-file-cancel', (event, args) => {
+    if( downloadItem!==null ) {
+        //cancel running download
+        downloadItem.cancel();
+    }
+});
+ipcMain.on('download-file', (event, args) => {
+    if( downloadItem!==null ) {
+        //download already running, do not launch this one
+        mainWindow.webContents.send('download-file-status', {
+            status: 'alreadyrunning',
+            percent: 0
+        });
+        return;
+    }
+    //make sure downloadItem is different from null asap
+    downloadItem = undefined;
+
+    //launch download
+    download(BrowserWindow.getFocusedWindow(), args.url, {
+        saveAs: true,
+        onStarted: function(item) {
+            downloadItem = item;
+            downloadFilename = item.getFilename();
+        },
+        onProgress: function(percent) {
+            if( typeof percent == 'number' ) {
+                mainWindow.webContents.send('download-file-status', {
+                    filename: downloadFilename,
+                    status: 'downloading',
+                    percent: Math.round(percent*100)
+                });
+            }
+        },
+        onCancel: function(item) {
+            mainWindow.webContents.send('download-file-status', {
+                filename: downloadFilename,
+                status: 'canceled',
+                percent: 0
+            });
+            downloadItem = null;
+            downloadFilename = '';
+        }
+    })
+        .then(function() {
+            mainWindow.webContents.send('download-file-status', {
+                filename: downloadFilename,
+                status: 'success',
+                percent: 100
+            });
+            downloadItem = null;
+            downloadFilename = '';
+        })
+        .catch(function() {
+            mainWindow.webContents.send('download-file-status', {
+                filename: downloadFilename,
+                status: 'failed',
+                percent: 100
+            });
+            downloadItem = null;
+            downloadFilename = '';
+        });
 });
 
 // Application will quit, kill python process

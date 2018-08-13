@@ -207,12 +207,13 @@ Cleep.controller('emptyDialogController', ['$rootScope', '$scope', '$state', 'cl
  * Cleep controller
  */
 var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService, modalService, deviceMessages, 
-                            updateService, cleepUi, settings, $timeout, installService, $transitions)
+                            updateService, cleepUi, settings, $timeout, installService, $transitions, toast)
 {
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
     self.taskFlashPanel = null;
     self.taskFlashPanelClosed = false;
+    self.taskDownloadPanel = null;
     self.selectedToolbarItem = null;
     self.toolbarCollapsed = true;
 
@@ -274,6 +275,56 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
     //Select toolbar icons
     $transitions.onEnter({}, function(trans, state) {
         self.selectedToolbarItem = state.name;
+    });
+
+    //handle file download
+    self.cancelDownload = function() {
+        ipcRenderer.send('download-file-cancel');
+    };
+    self.ipcRenderer.on('download-file-status', function(event, status) {
+        if( status.status=='alreadyrunning' ) {
+            //download already running. this feature is limited to one at once
+            toast.warning('File download is limited to 1 at once');
+        }
+        else if( status.status=='downloading' ) {
+            //download is running, update percentage
+            if( !self.taskDownloadPanel ) {
+                self.taskDownloadPanel = tasksPanelService.addItem(
+                    `Downloading ${status.filename}...`,
+                    {
+                        onAction: self.cancelDownload,
+                        tooltip: 'Cancel',
+                        icon: 'close-circle'
+                    },
+                    {
+                        onClose: null,
+                        disabled: false
+                    },
+                    true
+                );
+            }
+        }
+        else if( status.status=='canceled' || status.status=='success' || status.status=='failed' ) {
+            //user message
+            if( status.status=='canceled' ) {
+                toast.info('Download canceled');
+            }
+            else if( status.status=='success' ) {
+                toast.info('Download succeed');
+            }
+            else if( status.status=='failed' ) {
+                toast.error('Download failed');
+            }
+
+            //reset task panel
+            if( self.taskDownloadPanel ) {
+                tasksPanelService.removeItem(self.taskDownloadPanel);
+                self.taskDownloadPanel = null;
+            }
+        }
+    });
+    $rootScope.$on('downloadfile', function(event, data) {
+        ipcRenderer.send('download-file', data);
     });
 
     //Add flash task panel info
@@ -393,5 +444,5 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
 };
 Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 
                                     'deviceMessages', 'updateService', 'cleepUi', 'settings', '$timeout', 'installService', 
-                                    '$transitions', cleepController]);
+                                    '$transitions', 'toastService', cleepController]);
 

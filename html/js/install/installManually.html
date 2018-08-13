@@ -54,7 +54,7 @@
                     </div>
                     <div layout="row">
                         <span style="padding-top:15px;" class="md-caption" ng-if="ctl.selectedIso.url">{{ctl.selectedIso.url}}</span>
-                        <md-button class="md-raised md-primary" ng-href="https://github.com/tangb/raspiot/releases/download/v0.0.12/cleep_0.0.12.zip" target="_blank" ng-disabled="ctl.selectedIso.url">Download</md-button>
+                        <md-button class="md-raised md-primary" ng-click="ctl.downloadIso()" ng-disabled="!ctl.selectedIso.url">Download</md-button>
                     </div>
                 </div>
 

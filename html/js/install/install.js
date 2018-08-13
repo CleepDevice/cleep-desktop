@@ -334,6 +334,12 @@ var installController = function($rootScope, $scope, cleepService, $timeout, toa
         }
     };
 
+    //download iso file
+    self.downloadIso = function()
+    {
+        $rootScope.$broadcast('downloadfile', {url: self.selectedIso.url});
+    };
+
     //initialize
     self.init = function()
     {
