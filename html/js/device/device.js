@@ -14,10 +14,20 @@ var deviceController = function($rootScope, $scope, $stateParams, logger, $docum
     //handle external link
     self.wv.addEventListener('new-window', function(event) {
         event.preventDefault();
-        logger.debug('Opening external url: '+event.url);
-        self.shell.openExternal(event.url);
+
+        //detect download in url action
+        if( event.url.indexOf('/download?')!==-1 ) {
+            //trigger file download
+            logger.debug('Trigger file download: '+event.url);
+            logger.debug(event);
+            $rootScope.$broadcast('downloadfile', {url: event.url});
+        } else {
+            //open external link
+            logger.debug('Opening external url: '+event.url);
+            self.shell.openExternal(event.url);
+        }
     });
-    
+
     //device loading
     self.wv.addEventListener('did-start-loading', function() {
         self.loading = true;
