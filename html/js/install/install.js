@@ -95,52 +95,66 @@ var installController = function($rootScope, $scope, cleepService, $timeout, toa
         return installService.refreshDrives();
     };
 
+    self.__refreshIsos = function() {
+        //copy locally iso from installService
+        self.isos = [];
+        for( var i=0; i<self.__isos.isos.length; i++ )
+        {
+            self.isos.push(self.__isos.isos[i]);
+        }
+
+        //append new item for local iso
+        if( self.__isos.withlocaliso )
+        {
+            //select file entry
+            self.isos.push({
+                category: 'local',
+                label: 'Select file',
+                sha1: null,
+                timestamp: 0,
+                url: null,
+                selector: true
+            });
+
+            //selected file entry
+            var url = null;
+            var label = '-- no file selected --';
+            if( self.localIso.url ) {
+                url = self.localIso.url;
+                label = self.localIso.label;
+            }
+            self.isos.push({
+                category: 'local',
+                label: label,
+                sha1: null,
+                timestamp: 0,
+                url: url,
+                selector: false
+            });
+        }
+
+        //append item id to allow easier selection
+        var id = 0;
+        for( id=0; id<self.isos.length; id++ )
+        {
+            self.isos[id].id = id;
+        }
+    };
+
     //get isos
     self.refreshIsos = function()
     {
         return $timeout(function() {
-            //copy locally iso from installService
-            self.isos = [];
-            for( var i=0; i<self.__isos.isos.length; i++ )
-            {
-                self.isos.push(self.__isos.isos[i]);
-            }
-            
-            //append new item for local iso
-            if( self.__isos.withlocaliso )
-            {
-                //select file entry
-                self.isos.push({
-                    category: 'local',
-                    label: 'Select file',
-                    sha1: null,
-                    timestamp: 0,
-                    url: null,
-                    selector: true
-                });
-
-                //selected file entry
-                var url = null;
-                var label = '-- no file selected --';
-                if( self.localIso.url ) {
-                    url = self.localIso.url;
-                    label = self.localIso.label;
-                }
-                self.isos.push({
-                    category: 'local',
-                    label: label,
-                    sha1: null,
-                    timestamp: 0,
-                    url: url,
-                    selector: false
-                });
-            }
-
-            //append item id to allow easier selection
-            var id = 0;
-            for( id=0; id<self.isos.length; id++ )
-            {
-                self.isos[id].id = id;
+            console.log('length isos: ' + self.__isos.isos.length);
+            if( self.__isos.isos.length===0 ) {
+                //no isos loaded yet, get list
+                installService.refreshIsos()
+                    .then(function() {
+                        self.__refreshIsos();
+                    });
+            } else {
+                //simply refresh internal list of isos
+                self.__refreshIsos();
             }
         }, 0);
     };
