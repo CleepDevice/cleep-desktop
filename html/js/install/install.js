@@ -145,7 +145,6 @@ var installController = function($rootScope, $scope, cleepService, $timeout, toa
     self.refreshIsos = function()
     {
         return $timeout(function() {
-            console.log('length isos: ' + self.__isos.isos.length);
             if( self.__isos.isos.length===0 ) {
                 //no isos loaded yet, get list
                 installService.refreshIsos()
