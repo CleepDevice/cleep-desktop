@@ -128,3 +128,9 @@ md-toast.info .md-toast-content {
 .toolbar-spacer {
     width: 15px;
 }
+
+/* tooltip over list */
+.tooltip-over-list {
+    position: relative;
+    z-index: 1;
+}
