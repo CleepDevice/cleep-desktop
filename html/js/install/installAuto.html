@@ -14,24 +14,6 @@
 
         <md-content layout-padding>
 
-            <!-- tips -->
-            <md-card>
-                <md-card-title>
-                    <md-card-title-text>
-                        <span class="md-headline">
-                            <md-icon md-svg-icon="information-outline"></md-icon>
-                            Infos
-                        </span>
-                    </md-card-title-text>
-                </md-card-title>
-                <md-card-content>
-                    <p>
-                        This is the easiest way to install Cleep on your SD card.
-                        Cleep installation consists of copying Cleep data on removable media.
-                    </p>
-                </md-card-content>
-            </md-card>    
-
             <!-- preparation -->
             <md-card>
                 <md-card-title>
@@ -89,8 +71,8 @@
                                 <label>Drive</label>
                                 <md-select ng-model="ctl.selectedDrive" md-on-open="ctl.refreshDrives()" placeholder="Drive" class="md-no-underline" ng-disabled="ctl.flashing" required>
                                     <md-option ng-if="ctl.drives.length===0" ng-disabled="true">No drive found</md-option>
-                                    <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path" ng-disabled="drive.readonly || drive.size<4000000000">
-                                        {{drive.desc}} {{drive.readonly ? '[Readonly]' : ''}} {{drive.size<4000000000 ? '[Need at least 4Go drive]' : ''}}
+                                    <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path" ng-disabled="drive.readonly || drive.size<3600000000">
+                                        {{drive.desc}} {{drive.readonly ? '[Readonly]' : ''}} {{drive.size<3600000000 ? '[Need at least 4Go drive]' : ''}}
                                     </md-option>
                                 </md-select>
                             </md-input-container>
@@ -226,6 +208,23 @@
                     </div>
                 </md-card-content>
             </md-card>
+
+            <!-- trouble -->
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">
+                            <md-icon md-svg-icon="information-outline"></md-icon>
+                            Having trouble?
+                        </span>
+                    </md-card-title-text>
+                </md-card-title>
+                <md-card-content>
+                    <p>
+                        If an error occured, you can try to install Cleep manually following <a href="#" ng-click="$event.preventDefault(); ctl.gotoManualInstall()">this page</a>.
+                    </p>
+                </md-card-content>
+            </md-card>    
 
         </md-content>
 
