@@ -84,7 +84,7 @@ class EndlessConsole(Thread):
         for line in iter(output.readline, b''):
             if not self.running:
                 break
-            queue.put(line.strip())
+            queue.put(line.decode('utf-8').strip())
         try:
             output.close()
         except:
@@ -149,7 +149,7 @@ class EndlessConsole(Thread):
             self.__stdout_thread.start()
 
             #async stderr reading
-            self.__stderr_thread = Thread(target=self.__enqueue_output, args=(p.stderr, self.__stdout_queue))
+            self.__stderr_thread = Thread(target=self.__enqueue_output, args=(p.stderr, self.__stderr_queue))
             self.__stderr_thread.daemon = True
             self.__stderr_thread.start()
 
