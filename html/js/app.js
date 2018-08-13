@@ -152,12 +152,14 @@ Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $
         })
         .state('installAuto', {
             url: '/installAuto',
-            controller: 'autoInstallController',
+            controller: 'installController',
             controllerAs: 'ctl',
             templateUrl: 'js/install/installAuto.html'
         })
         .state('installManually', {
             url: '/installManually',
+            controller: 'installController',
+            controllerAs: 'ctl',
             templateUrl: 'js/install/installManually.html'
         })
         .state('device', {

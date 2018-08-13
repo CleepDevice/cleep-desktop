@@ -5,7 +5,7 @@
         <div class="md-toolbar-tools">
             <h2>
                 <md-icon md-svg-icon="sd"></md-icon>
-                Install Cleep manually on your device
+                Manual Cleep installation
             </h2>
             <span flex></span>
         </div>
@@ -13,80 +13,63 @@
     <md-progress-linear md-mode="determinate"></md-progress-linear>
 
     <md-content layout-padding>
-
-        <!-- iso install -->
         <md-card>
-            <md-card-title>
-                <md-card-title-text>
-                    <span class="md-headline">
-                        <md-icon md-svg-icon="wrench">build</md-icon>
-                        Install Cleep image on SD card manually
-                    </span>
-                </md-card-title-text>
-            </md-card-title>
             <md-card-content>
-                <div>
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    You can install Cleep manually downloading image file directly from <a href="https://www.cleep.me/downloads" target="_blank">Cleep website</a>.
+
+                <!-- etcher -->
+                <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
+                    <div>
+                        <md-icon md-svg-icon="chevron-right"></md-icon>
+                        <span>Download and install Etcher, free SD card burning tool, from official website</span>
+                    </div>
+                    <div layout="row">
+                        <md-button class="md-raised md-primary" ng-href="https://etcher.io" target="_blank">Etcher.io</md-button>
+                    </div>
                 </div>
-                <div>
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    Once downloaded, burn image with your favorite SD card burner application or use <a href="https://etcher.io/" target="_blank">Etcher</a>
-                    (Cross plaftorm software adviced by Raspberry Pi fundation).
+
+                <!-- iso -->
+                <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
+                    <div>
+                        <md-icon md-svg-icon="chevron-right"></md-icon>
+                        <span>Select Cleep version you want to install on your SD card</span>
+                    </div>
+                    <div layout="row">
+                        <md-input-container>
+                            <label>Version</label>
+                            <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" ng-disabled="ctl.flashing" required ng-model-options="{trackBy: '$value.id'}"> 
+                                <md-option ng-if="ctl.__isos.cleepisos===0" ng-disabled="true">No Cleep version found</md-option>
+                                <md-option ng-repeat="iso in ctl.isos | filter: {category:'cleep'}" ng-value="iso">
+                                    {{iso.label}} ({{iso.timestamp | hrDate}})
+                                </md-option>
+                            </md-select>
+                        </md-input-container>
+                    </div>
                 </div>
-                <img src="images/etcher.png" alt="Etcher screenshot" title="Etcher screenshot" style="padding: 15px 30px 15px 30px;"/>
-                <div>
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    Plug the SD card in your Raspberry Pi and connect it to power supply.
+
+                <!-- cleep download url -->
+                <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
+                    <div>
+                        <md-icon md-svg-icon="chevron-right"></md-icon>
+                        <span>Download selected Cleep image file</span>
+                    </div>
+                    <div layout="row">
+                        <span style="padding-top:15px;" class="md-caption" ng-if="ctl.selectedIso.url">{{ctl.selectedIso.url}}</span>
+                        <md-button class="md-raised md-primary" ng-href="https://github.com/tangb/raspiot/releases/download/v0.0.12/cleep_0.0.12.zip" target="_blank" ng-disabled="ctl.selectedIso.url">Download</md-button>
+                    </div>
                 </div>
-                <div>
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    Wait few seconds and you should see a new device appear in the left "Devices" panel.
+
+                <!-- flash tips -->
+                <div layout="row" layout-align="space-between center" style="margin-top: 20px; padding: 0 10px;">
+                    <div>
+                        <md-icon md-svg-icon="chevron-right"></md-icon>
+                        <span>Now launch and use etcher software to flash your SD card.</span>
+                    </div>
+                    <div layout="row">
+                    </div>
                 </div>
+                
             </md-card-content>
-        </md-card>
-
-        <!-- package install -->
-        <md-card>
-            <md-card-title>
-                <md-card-title-text>
-                    <span class="md-headline">
-                        <md-icon md-svg-icon="file"></md-icon>
-                        Install Cleep package on existing operating system
-                    </span>
-                </md-card-title-text>
-            </md-card-title>
-            <md-card-content>
-                <div class="note">
-                    Cleep is running exclusively on Raspbian operating system.
-                </div>
-                <div>
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    Connect to your Raspberry Pi via SSH
-                </div>
-                <div>
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    Download Raspiot package from <a href="http://www.google.com" target="_blank">Cleep website</a>:
-                    <code>wget http://www.cleep.me/downloads/raspiot_X.X.X_armhf.deb</code>
-                </div>
-                <div>
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    Install tools:
-                    <code>aptitude update; aptitude install ?</code>
-                </div>
-                <div>
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    Install dependencies:
-                    <code>aptitude install ?</code>
-                </div>
-                <div>
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    And install Cleep package:
-                    <code>dpkg -i raspiot_X.X.X_armhf.deb</code>
-                </div>
-            <md-card-content>
         </md-card>
     </md-content>
 
 </div>
-

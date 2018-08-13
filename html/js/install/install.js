@@ -3,9 +3,9 @@ const {dialog} = require('electron').remote;
 var path = require('path');
 
 /**
- * Auto install controller
+ * Install controller
  */
-var autoInstallController = function($rootScope, $scope, cleepService, $timeout, toast, confirm, $filter, logger, updateService, installService)
+var installController = function($rootScope, $scope, cleepService, $timeout, toast, confirm, $filter, logger, updateService, installService)
 {
     var self = this;
     self.status = {
@@ -42,6 +42,12 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
     self.wifiNetworkName = '';
     self.wifiNetworkEncryption = 'wpa2';
     self.showPassword = false;
+
+    //open manual install
+    self.gotoManualInstall = function()
+    {
+        cleepUi.openPage('installManually');
+    };
 
     //reset form fields
     self.resetFields = function()
@@ -376,7 +382,7 @@ var autoInstallController = function($rootScope, $scope, cleepService, $timeout,
 
 };
 
-Cleep.controller('autoInstallController', ['$rootScope', '$scope', 'cleepService', '$timeout', 'toastService', 'confirmService', '$filter', 'logger', 
-                                            'updateService', 'installService', autoInstallController]);
+Cleep.controller('installController', ['$rootScope', '$scope', 'cleepService', '$timeout', 'toastService', 'confirmService', '$filter', 'logger', 
+                                            'updateService', 'installService', installController]);
 
 
