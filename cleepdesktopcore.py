@@ -31,6 +31,7 @@ if sys.argv[5]=='debug':
 is_dev = False
 if sys.argv[6]=='true':
     is_dev = True
+crash_report = None
 
 try:
     #absolute cleepdesktopcore path
@@ -39,14 +40,21 @@ try:
     #get rpc application
     app = rpcserver.get_app(app_path, cache_path, config_path, config_filename, debug, is_dev)
 
+    #set crash report
+    crash_report = rpcserver.crash_report
+
     #start rpc server
     rpcserver.logger.debug('Serving files from "%s" folder.' % rpcserver.HTML_DIR)
     rpcserver.start(u'127.0.0.1', rpcport, None, None)
 
 except Exception as e:
-    #print exeption to stderr to be catched by electron
+    #print exception to stderr to be catched by electron
     ex_type, ex_value, ex_traceback = sys.exc_info()
     traceback.print_exception(ex_type, ex_value, ex_traceback, None, sys.stderr)
+
+    #crash report if possible
+    if crash_report:
+        crash_report.report_exception()
 
 finally:
     rpcserver.stop()
