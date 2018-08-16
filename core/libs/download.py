@@ -137,14 +137,21 @@ class Download():
             for dl in dls:
                 if os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
                     filepath = os.path.join(self.cache_dir, dl)
-                    filename = os.path.basename(dl).replace(self.CACHED_FILE_PREFIX, '')
-                    filename = base64.b64decode(filename).decode('utf-8')
-                    cached.append({
-                        'filename': filename,
-                        'filepath': filepath,
-                        'filesize': os.path.getsize(filepath),
-                        'timestamp': int(os.path.getmtime(filepath))
-                    })
+                    try:
+                        filename = os.path.basename(dl).replace(self.CACHED_FILE_PREFIX, '')
+                        filename = base64.b16decode(filename).decode('utf-8')
+                        cached.append({
+                            'filename': filename,
+                            'filepath': filepath,
+                            'filesize': os.path.getsize(filepath),
+                            'timestamp': int(os.path.getmtime(filepath))
+                        })
+
+                    except:
+                        #unable to get cached filename, filename format changed surely
+                        #remove it from list and filesystem
+                        os.remove(filepath)
+                        self.logger.warning('Remove cached file "%s" because name format surely changed and is not compatible anymore' % filepath)
 
         return cached
 
@@ -391,7 +398,7 @@ class Download():
         filename = url_parsed.path.split(u'/')[-1]
 
         #encode filename for safety
-        safe_filename = base64.urlsafe_b64encode(filename.encode('utf-8')).decode('utf-8')
+        safe_filename = base64.b16encode(filename.encode('utf-8')).decode('utf-8')
 
         return safe_filename
 
@@ -406,7 +413,7 @@ class Download():
             string: cached filename
         """
         #encode filename for safety
-        safe_filename = base64.urlsafe_b64encode(filename.encode('utf-8')).decode('utf-8')
+        safe_filename = base64.b16encode(filename.encode('utf-8')).decode('utf-8')
 
         return safe_filename
 
