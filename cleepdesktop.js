@@ -28,6 +28,8 @@ const {dialog} = electron;
 //electron updater
 const {autoUpdater} = require('electron-updater');
 autoUpdater.logger = logger;
+//enable this flag to test pre release
+//autoUpdater.allowPrerelease = true;
 global.appUpdater = autoUpdater;
 
 //create default variables
@@ -91,6 +93,20 @@ else
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
 let splashScreen
+
+// Pause process during specified amount of seconds
+function pause(seconds)
+{
+    if (seconds<=0)
+        return;
+    var now = new Date();
+    var exitTime = now.getTime() + seconds * 1000;
+    while (true) {
+        now = new Date();
+        if (now.getTime() > exitTime)
+            return;
+    }
+}
 
 // Fill changelog content in cleepdesktopInfos global variable
 function fillChangelog()
@@ -165,61 +181,77 @@ function parseArgs()
 // Create application configuration file
 function createConfig()
 {
+    let delay = 0;
+
     //cleep
     settings.set('cleep.version', app.getVersion());
     if( !settings.has('cleep.isoraspbian') )
     {
         settings.set('cleep.isoraspbian', DEFAULT_ISORASPBIAN);
+        delay = 2;
     }
     if( !settings.has('cleep.isolocal') )
     {
         settings.set('cleep.isolocal', DEFAULT_ISOLOCAL);
+        delay = 2;
     }
     if( !settings.has('cleep.locale') )
     {
         settings.set('cleep.locale', DEFAULT_LOCALE);
+        delay = 2;
     }
     if( !settings.has('cleep.debug') )
     {
         settings.set('cleep.debug', DEFAULT_DEBUG);
+        delay = 2;
     }
     settings.set('cleep.isdev', isDev);
     if( !settings.has('cleep.crashreport') )
     {
         settings.set('cleep.crashreport', DEFAULT_CRASHREPORT);
+        delay = 2;
     }
 
     //etcher
     if( !settings.has('etcher.version') )
     {
         settings.set('etcher.version', 'v0.0.0');
+        delay = 2;
     }
 
     //remote
     if( !settings.has('remote.rpcport') )
     {
         settings.set('remote.rpcport', DEFAULT_RPCPORT);
+        delay = 2;
     }
 
     //proxy
     if( !settings.has('proxy.mode') )
     {
         settings.set('proxy.mode', DEFAULT_PROXYMODE);
+        delay = 2;
     }
     if( !settings.has('proxy.host') )
     {
         settings.set('proxy.host', DEFAULT_PROXYHOST);
+        delay = 2;
     }
     if( !settings.has('proxy.port') )
     {
         settings.set('proxy.port', DEFAULT_PROXYPORT);
+        delay = 2;
     }
 
     //firstrun
     if( !settings.has('cleep.firstrun') )
     {
         settings.set('cleep.firstrun', DEFAULT_FIRSTRUN);
+        delay = 2;
     }
+
+    //in case of config file modification, make sure everything is written to disk
+    pause(delay);
 };
 
 // Create application menu
@@ -568,6 +600,9 @@ app.on('ready', function() {
     logger.info('Display: ' + display.size.width + 'x' + display.size.height);
     logger.info('Version: ' + app.getVersion());
 
+    //spashscreen asap
+    createSplashScreen();
+
     //parse command line arguments
     parseArgs();
 
@@ -576,7 +611,7 @@ app.on('ready', function() {
 
     //fill changelog
     fillChangelog();
-    
+
     if( isDev )
     {
         //use static rpc port in development mode
@@ -585,7 +620,6 @@ app.on('ready', function() {
         settings.set('remote.rpcport', DEFAULT_RPCPORT);
 
         //launch application
-        createSplashScreen();
         createWindow();
         createMenu();
         launchCore(DEFAULT_RPCPORT);
@@ -603,7 +637,6 @@ app.on('ready', function() {
             settings.set('remote.rpcport', rpcport);
 
             //launch application
-            createSplashScreen();
             createWindow();
             createMenu();
             launchCore(rpcport);

@@ -431,9 +431,9 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
             if( settings.get('cleep.firstrun') )
             {
                 logger.debug('First run');
-                settings.set('cleep.firstrun', false);
                 $timeout(function() {
                     self.openModal('emptyDialogController', 'js/help/helpdialog.html');
+                    settings.set('cleep.firstrun', false);
                 }, 500);
             }
         });
