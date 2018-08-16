@@ -5,5 +5,5 @@ requests>=2.18.4,<2.19
 PyInstaller>=3.3.1,<3.4
 passlib>=1.7.1,<1.8
 pyre-gevent==0.2.1
-raven>=6.5.0,<6.6
+raven==6.8.0
 win32wifi==0.1.0; sys_platform == 'win32'
