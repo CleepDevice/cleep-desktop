@@ -1,4 +1,8 @@
 const electron = require('electron');
+const { init } = require('@sentry/electron');
+init({
+    dsn: 'https://8e703f88899c42c18b8466c44b612472@sentry.io/213385'
+});
 const {remote, ipcRenderer} = electron;
 const cleepdesktopInfos = remote.getGlobal('cleepdesktopInfos');
 const logger = remote.getGlobal('logger');
