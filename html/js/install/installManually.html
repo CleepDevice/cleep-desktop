@@ -16,25 +16,26 @@
         <md-card>
             <md-card-content>
 
-                <!-- etcher -->
-                <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
-                    <div>
-                        <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <span>Download and install Etcher, free SD card burning tool, from official website</span>
-                    </div>
-                    <div layout="row">
-                        <md-button class="md-raised md-primary" ng-href="https://etcher.io" target="_blank">Etcher.io</md-button>
-                    </div>
-                </div>
+                <md-list>
 
-                <!-- iso -->
-                <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
-                    <div>
+                    <!-- warning -->
+                    <md-list-item>
+                        <md-icon md-svg-icon="alert-outline"></md-icon>
+                        <p>Please note that with a manual installation you will need to connect your device via the ethernet, the wifi can not be configured</p>
+                    </md-list-item>
+
+                    <!-- etcher -->
+                    <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <span>Select Cleep version you want to install on your SD card</span>
-                    </div>
-                    <div layout="row">
-                        <md-input-container>
+                        <p>Download and install Etcher, free SD card burning tool, from official website</p>
+                        <md-button class="md-secondary md-raised md-primary" ng-href="https://www.balena.io/etcher/" target="_blank">balena.io</md-button>
+                    </md-list-item>
+
+                    <!-- iso -->
+                    <md-list-item>
+                        <md-icon md-svg-icon="chevron-right"></md-icon>
+                        <p>Select Cleep version you want to install on your SD card</p>
+                        <md-input-container class="md-secondary">
                             <label>Version</label>
                             <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" ng-disabled="ctl.flashing" required ng-model-options="{trackBy: '$value.id'}"> 
                                 <md-option ng-if="ctl.__isos.cleepisos===0" ng-disabled="true">No Cleep version found</md-option>
@@ -43,33 +44,29 @@
                                 </md-option>
                             </md-select>
                         </md-input-container>
-                    </div>
-                </div>
+                    </md-list-item>
 
-                <!-- cleep download url -->
-                <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
-                    <div>
+                    <!-- download url -->
+                    <md-list-item class="md-2-line">
                         <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <span>Download selected Cleep image file</span>
-                    </div>
-                    <div layout="row">
-                        <span style="padding-top:15px;" class="md-caption" ng-if="ctl.selectedIso.url">{{ctl.selectedIso.url}}</span>
-                        <md-button class="md-raised md-primary" ng-click="ctl.downloadIso()" ng-disabled="!ctl.selectedIso.url">Download</md-button>
-                    </div>
-                </div>
+                        <div class="md-list-item-text">
+                            <h3>Download selected Cleep image file</h3>
+                            <p ng-if="ctl.selectedIso.url">{{ctl.selectedIso.url}}</p>
+                            <p ng-if="!ctl.selectedIso.url">No distribution selected</p>
+                        </div>
+                        <md-button class="md-secondary md-raised md-primary" ng-click="ctl.downloadIso()" ng-disabled="!ctl.selectedIso.url">Download</md-button>
+                    </md-list-item>
 
-                <!-- flash tips -->
-                <div layout="row" layout-align="space-between center" style="margin-top: 20px; padding: 0 10px;">
-                    <div>
+                    <!-- flash tips -->
+                    <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <span>Now launch and use etcher software to flash your SD card.</span>
-                    </div>
-                    <div layout="row"></div>
-                </div>
-                <div layout="row" layout-align="center center" style="margin-top: 20px; padding: 0 10px;">
-                    <div>
-                        <img src="images/etcher.png">
-                    </div>
+                        <p>Now launch and use Etcher software to flash your SD card</p>
+                    </md-list-item>
+
+                </md-list>
+
+                <div style="text-align: center;">
+                    <img src="images/etcher.png">
                 </div>
                 
             </md-card-content>
