@@ -973,7 +973,7 @@ class FlashDrive(CleepDesktopModule):
             self.logger.debug('Use nmcli to find wifi networks')
 
             interfaces = self.nmcli.get_wifi_interfaces()
-            self.logger.debug('nmcli wifi interfaces: %s')
+            self.logger.debug('nmcli wifi interfaces: %s' % interfaces)
             if len(interfaces)>0:
                 #keep only first interface
                 interface = interfaces[0]
