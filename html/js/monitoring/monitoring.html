@@ -15,24 +15,6 @@
     <!-- page content -->
     <md-content layout-padding>
 
-        <!-- infos -->
-        <md-card>
-            <md-card-title>
-                <md-card-title-text>
-                    <span class="md-headline">
-                        <md-icon md-svg-icon="information-outline"></md-icon>
-                        Infos
-                    </span>
-                </md-card-title-text>
-            </md-card-title>
-            <md-card-content>
-                Display all messages received from all devices connected to your network since CleepDesktop is launched.
-                <br/>
-                It means when you quit application no message will be kept on a history.
-            </md-card-content>
-        </md-card>
-
-        <!-- messages -->
         <md-card>
             <md-card-title>
                 <md-card-title-text>
@@ -46,7 +28,11 @@
 
                 <!-- no message -->
                 <div layout="row" ng-if="ctl.messages.length==0" layout-align="center center">
-                    <span style="padding-bottom:50px;">No message received yet</span>
+                    <span style="padding-bottom:50px;">
+                        This area will display messages received from your devices during current session. When CleepDesktop is closed, all messages are lost.
+                        <br><br>
+                        For now your devices have not published any messages.
+                    </span>
                 </div>
 
                 <!-- messages list -->
