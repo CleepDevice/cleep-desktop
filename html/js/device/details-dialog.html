@@ -1,0 +1,44 @@
+<md-dialog aria-label="Device details" ng-cloak flex="60">
+
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>Device details</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="ctl.closeModal()">
+                <md-icon md-svg-icon="close"></md-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+
+    <md-dialog-content>
+        <div class="md-dialog-content">
+            <md-list>
+                <md-list-item>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    <p>Device name</p>
+                    <div class="md-secondary">{{::ctl.device.hostname}}</div>
+                </md-list-item>
+                <md-list-item>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    <p>Ip address</p>
+                    <div class="md-secondary">{{::ctl.device.ip}}</div>
+                </md-list-item>
+                <md-list-item>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    <p>Running Cleep version</p>
+                    <div class="md-secondary">{{::ctl.device.version}}</div>
+                </md-list-item>
+                <md-list-item>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    <p>Installed applications</p>
+                    <div class="md-secondary">
+                        <ul>
+                            <li ng-repeat="app in ctl.deviceApps">{{app}}</li>
+                        </ul>
+                    </div>
+                </md-list-item>
+            </md-list>
+        </div>
+    </md-dialog-content>
+
+</md-dialog>

@@ -41,7 +41,7 @@
 
                 <md-divider></md-divider>
 
-                <md-list-item ng-click="cleep.openModal('preferencesController', 'js/preferences/preferencesdialog.html')" aria-label="Preferences" title="Preferences">
+                <md-list-item ng-click="cleep.openModal('preferencesController', 'js/preferences/preferences-dialog.html')" aria-label="Preferences" title="Preferences">
                     <md-icon class="    white-icon" md-svg-icon="settings"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Preferences</p>
                 </md-list-item>
@@ -120,6 +120,7 @@
                             <md-tooltip md-direction="right">Offline</md-tooltip>
                         </md-icon>
                         <p>{{device.hostname}}</p>
+                        <md-icon class="md-secondary" ng-click="cleep.openModal('deviceDetailsController', 'js/device/details-dialog.html', device)" aria-label="Details" md-svg-icon="information-outline"></md-icon>
                     </md-list-item>
                 </md-list>
 
@@ -160,6 +161,7 @@
     <script src="js/install/install.js"></script>
     <script src="js/device/device.js"></script>
     <script src="js/device/devices.js"></script>
+    <script src="js/device/details.js"></script>
     <script src="js/monitoring/monitoring.js"></script>
     <script src="js/about/about.js"></script>
 
