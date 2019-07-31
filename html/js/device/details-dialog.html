@@ -11,33 +11,77 @@
     </md-toolbar>
 
     <md-dialog-content>
-        <div class="md-dialog-content">
-            <md-list>
-                <md-list-item>
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    <p>Device name</p>
-                    <div class="md-secondary">{{::ctl.device.hostname}}</div>
-                </md-list-item>
-                <md-list-item>
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    <p>Ip address</p>
-                    <div class="md-secondary">{{::ctl.device.ip}}</div>
-                </md-list-item>
-                <md-list-item>
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    <p>Running Cleep version</p>
-                    <div class="md-secondary">{{::ctl.device.version}}</div>
-                </md-list-item>
-                <md-list-item>
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    <p>Installed applications</p>
-                    <div class="md-secondary">
-                        <ul>
-                            <li ng-repeat="app in ctl.deviceApps">{{app}}</li>
-                        </ul>
-                    </div>
-                </md-list-item>
-            </md-list>
+        <div style="height:450px;">
+
+            <md-tabs md-border-bottom md-dynamic-height style="height:400px;">
+
+                <!-- software -->
+                <md-tab label="Software">
+                    <md-list>
+                        <md-list-item>
+                            <md-icon md-svg-icon="chevron-right"></md-icon>
+                            <p>Device name</p>
+                            <div class="md-secondary">{{::ctl.device.hostname}}</div>
+                        </md-list-item>
+                        <md-list-item>
+                            <md-icon md-svg-icon="chevron-right"></md-icon>
+                            <p>Ip address</p>
+                            <div class="md-secondary">{{::ctl.device.ip}}</div>
+                        </md-list-item>
+                        <md-list-item>
+                            <md-icon md-svg-icon="chevron-right"></md-icon>
+                            <p>Running Cleep version</p>
+                            <div class="md-secondary">{{::ctl.device.version}}</div>
+                        </md-list-item>
+                        <md-list-item>
+                            <md-icon md-svg-icon="chevron-right"></md-icon>
+                            <p>Installed applications</p>
+                            <div class="md-secondary">
+                                <ul>
+                                    <li ng-repeat="app in ctl.deviceApps">{{app}}</li>
+                                </ul>
+                            </div>
+                        </md-list-item>
+                    </md-list>
+                </md-tab>
+
+                <!-- hardware -->
+                <md-tab label="Hardware">
+                    <md-list>
+                        <md-list-item>
+                            <md-icon md-svg-icon="chevron-right"></md-icon>
+                            <p>Raspberry pi model</p>
+                            <div class="md-secondary">{{::ctl.device.hwmodel}} (rev {{::ctl.device.hwrevision}})</div>
+                        </md-list-item>
+                        <md-list-item>
+                            <md-icon md-svg-icon="chevron-right"></md-icon>
+                            <p>Memory</p>
+                            <div class="md-secondary">{{::ctl.device.hwmemory}}</div>
+                        </md-list-item>
+                        <md-subheader class="md-no-sticky">Board capabilities</md-subheader>
+                        <md-list-item>
+                            <md-icon md-svg-icon="chevron-right"></md-icon>
+                            <p>Ethernet</p>
+                            <md-icon ng-if="ctl.device.hwethernet==='1'" md-svg-icon="check-box-outline" class="md-secondary"></md-icon>
+                            <md-icon ng-if="ctl.device.hwethernet!=='1'" md-svg-icon="checkbox-blank-outline" class="md-secondary"></md-icon>
+                        </md-list-item>
+                        <md-list-item>
+                            <md-icon md-svg-icon="chevron-right"></md-icon>
+                            <p>Wireless</p>
+                            <md-icon ng-if="ctl.device.hwwireless==='1'" md-svg-icon="check-box-outline" class="md-secondary"></md-icon>
+                            <md-icon ng-if="ctl.device.hwwireless!=='1'" md-svg-icon="checkbox-blank-outline" class="md-secondary"></md-icon>
+                        </md-list-item>
+                        <md-list-item>
+                            <md-icon md-svg-icon="chevron-right"></md-icon>
+                            <p>Audio</p>
+                            <md-icon ng-if="ctl.device.hwaudio==='1'" md-svg-icon="check-box-outline" class="md-secondary"></md-icon>
+                            <md-icon ng-if="ctl.device.hwaudio!=='1'" md-svg-icon="checkbox-blank-outline" class="md-secondary"></md-icon>
+                        </md-list-item>
+                    </md-list>
+                </md-tab>
+
+            </md-tabs>
+            
         </div>
     </md-dialog-content>
 
