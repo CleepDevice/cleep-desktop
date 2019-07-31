@@ -234,13 +234,17 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
     });
 
     //Open modal handling 'openModal' event
-    self.openModal = function(controllerName, templateUrl)
+    //Data must be a map
+    self.openModal = function(controllerName, templateUrl, data)
     {
-        modalService.open(controllerName, templateUrl);
+        if( data===undefined || data===null ) {
+            data = {}
+        }
+        modalService.open(controllerName, templateUrl, data);
     };
     cleepUi.openModal = self.openModal;
-    self.ipcRenderer.on('openModal', function(event, controllerName, templateUrl) {
-        self.openModal(controllerName, templateUrl);
+    self.ipcRenderer.on('openModal', function(_event, controllerName, templateUrl, data) {
+        self.openModal(controllerName, templateUrl, data);
     });
 
     //Jump to auto install page

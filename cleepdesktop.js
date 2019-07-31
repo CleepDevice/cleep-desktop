@@ -268,7 +268,7 @@ function createMenu()
             }, {
                 label: 'Preferences',
                 click: () => {
-                    mainWindow.webContents.send('openModal', 'preferencesController', 'js/preferences/preferencesdialog.html');
+                    mainWindow.webContents.send('openModal', 'preferencesController', 'js/preferences/preferences-dialog.html');
                 }
             }, {
                 type: 'separator'
