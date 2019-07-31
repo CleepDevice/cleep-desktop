@@ -400,6 +400,10 @@ function createWindow ()
 {
     // Create the browser window.
     mainWindow = new BrowserWindow({
+        webPreferences: {
+            nodeIntegration: true,
+            webviewTag: true
+        },
         width:1024,
         height:600,
         minHeight: 640,
@@ -437,7 +441,9 @@ function createWindow ()
         pathname: path.join(__dirname, 'html/index.html'),
         protocol: 'file:',
         slashes: true
-    }), {"extraHeaders" : "pragma: no-cache\n"})
+    }), {
+        'extraHeaders': 'pragma: no-cache\n'
+    });
 
     // Open the DevTools in dev mode only
     if( isDev || process.env.CLEEPDESKTOP_DEBUG )

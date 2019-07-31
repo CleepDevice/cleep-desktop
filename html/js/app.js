@@ -323,7 +323,7 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
             }
         }
     });
-    $rootScope.$on('downloadfile', function(event, data) {
+    $rootScope.$on('download-file', function(_event, data) {
         ipcRenderer.send('download-file', data);
     });
 

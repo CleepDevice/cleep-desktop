@@ -1,6 +1,6 @@
 var Cleep = angular.module('Cleep');
-const {dialog} = require('electron').remote;
-var path = require('path');
+const { dialog } = require('electron').remote;
+var path = require('electron').remote.require('path');
 
 /**
  * Install controller
@@ -350,7 +350,7 @@ var installController = function($rootScope, $scope, cleepService, $timeout, toa
     //download iso file
     self.downloadIso = function()
     {
-        $rootScope.$broadcast('downloadfile', {url: self.selectedIso.url});
+        $rootScope.$broadcast('download-file', {url: self.selectedIso.url});
     };
 
     //initialize

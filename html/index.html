@@ -9,7 +9,7 @@
 </head>
 <body ng-app="Cleep" layout-fill ng-cloak>
 
-    <md-content ng-controller="cleepController as cleep" flex="100" layout="row">
+    <md-content ng-controller="cleepController as cleep" layout-fill layout="row">
 
         <!-- tools panel -->
         <md-content style="background-color:#607d8b; overflow-x:hidden;" ng-style="{'width':(cleep.toolbarCollapsed ? '60px' : '250px')}" class="panel-separator" layout="column">
@@ -127,7 +127,7 @@
         </div>
 
         <!-- dynamic content -->
-        <div flex= layout-fill>
+        <div flex layout-fill>
             <div ui-view></div>
         </div>
 
