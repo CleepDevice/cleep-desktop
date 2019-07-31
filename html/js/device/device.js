@@ -50,4 +50,3 @@ var deviceController = function($rootScope, $scope, $stateParams, logger, $docum
 
 };
 Cleep.controller('deviceController', ['$rootScope', '$scope', '$stateParams', 'logger', '$document', '$timeout', deviceController]);
-
