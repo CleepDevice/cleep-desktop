@@ -34,6 +34,9 @@
                     <md-icon md-svg-icon="sd" ng-class="cleep.selectedToolbarItem=='installAuto' ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Install Cleep</p>
                 </md-list-item>
+
+                <md-divider></md-divider>
+                
                 <md-list-item ng-click="cleep.openPage('monitoring')" aria-label="Monitoring" title="Monitoring">
                     <md-icon md-svg-icon="message-text-outline" ng-class="cleep.selectedToolbarItem=='monitoring' ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Monitoring</p>
