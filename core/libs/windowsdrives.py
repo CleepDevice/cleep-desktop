@@ -13,7 +13,7 @@ class WindowsDrives():
 
     wmi python api https://www.activexperts.com/admin/scripts/wmi/python/
     
-    Devices output list is similar to https://github.com/resin-io-modules/drivelist (except form deviceType) because 
+    Devices output list is similar to https://github.com/balena-io-modules/drivelist (except form deviceType) because 
     scripts for other environements are copied from drivelist project
     """
   

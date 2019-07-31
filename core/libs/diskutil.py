@@ -12,7 +12,7 @@ import logging
 class Diskutil():
     """
     Mac diskutil class helper
-    This code is ported from etcher-cli bash script to python class and can be found in etcher-cli project (Copyright resin.io)
+    This code is ported from etcher-cli bash script to python class and can be found in etcher-cli project (Copyright balena.io)
     """
 
     CACHE_DURATION = 2.0
