@@ -43,7 +43,7 @@ class Devices(CleepDesktopModule):
         )
         self.peers_uuids = {}
 
-        #debug bus
+        #debug bus (full log report!)
         #pyre_logger = logging.getLogger("pyre")
         #pyre_logger.setLevel(logging.WARN)
         #pyre_logger.addHandler(logging.StreamHandler())
@@ -71,7 +71,7 @@ class Devices(CleepDesktopModule):
 
     def get_bus_headers(self):
         """
-        Headers to send at bus connection (values must be in string format)
+        Headers to send at bus connection (values must be in string format!)
 
         Return:
             dict: dict of headers (only string supported)
@@ -84,7 +84,8 @@ class Devices(CleepDesktopModule):
             'port': self.CLEEPDESKTOP_PORT,
             'macs': json.dumps(macs),
             'ssl': '0',
-            'cleepdesktop': '1'
+            'cleepdesktop': '1',
+            'apps': '',
         }
         self.logger.debug('headers: %s' % headers)
 
@@ -131,23 +132,31 @@ class Devices(CleepDesktopModule):
         Callback when peer is connected
         
         Args:
-            peer (??): peer id
+            peer (string): peer id
             infos (dict): peer infos
         """
         self.logger.debug('Peer %s connected: %s' % (peer, infos))
 
-        #drop cleepdesktop connection0
+        #drop cleepdesktop connection
         if infos['cleepdesktop']:
-            self.logger.debug('CleepDesktop @ %s connected. Drop it' % infos['ip'])
+            self.logger.debug('Another CleepDesktop @%s connected. Drop it' % infos['ip'])
             return
 
-        #update mapping (useful for disconnection)
+        #after device restarted, pyre bus assigns new peer uuid, here we can encounter device that 
+        #already exist so we need to purge obsolete device entries
+        obsolete_peers = {peer:device for peer,device in self.peers_uuids.items() if device==infos['uuid']}
+        if len(obsolete_peers)>=1:
+            for obsolete_peer in obsolete_peers:
+                del self.peers_uuids[obsolete_peer]
+
+        #save new mapping (useful for disconnection)
         self.peers_uuids[peer] = infos['uuid']
 
         #append extra data
         infos['online'] = True
         infos['configured'] = False
-        if len(infos['hostname'].strip())>0:
+        infos['connectedat'] = int(time.time())
+        if len(infos['hostname'].strip())>0 and infos['hostname']!='cleepdevice':
             infos['configured'] = True
 
         #save peer infos
@@ -161,22 +170,18 @@ class Devices(CleepDesktopModule):
         Callback when peer is disconnected
 
         Args:
-            peer (??): peer id
+            peer (string): peer id
         """
         self.logger.debug('Peer %s disconnected' % peer)
 
-        #get peer uuid
-        device_uuid = None
-        if peer in self.peers_uuids.keys():
-            device_uuid = self.peers_uuids[peer]
+        #get device uuid
+        device_uuid = self.peers_uuids[peer] if peer in self.peers_uuids.keys() else None
 
-        #keep peer entry locally but update its online status
+        #only update online status of disconnected device
         if device_uuid:
             self.devices[device_uuid]['online'] = False
-        else:
-            self.logger.info('Unknown peer %s disconnected (surely CleepDesktop instance)' % peer)
 
-        #update ui
+        #always update ui
         self.update_callback(self.get_devices())
 
     def get_devices(self):
