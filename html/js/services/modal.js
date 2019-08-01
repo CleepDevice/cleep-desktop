@@ -15,12 +15,15 @@ var modalService = function($mdDialog, $routerTransitions) {
     //@service closeModal: inject this service in your controller to close modal
     self.open = function(controllerName, templateUrl, data)
     {
-        $mdDialog.show({
+        return $mdDialog.show({
             controller: controllerName,
             controllerAs: 'ctl',
             locals: {
-                closeModal: function() {
-                    $mdDialog.cancel();
+                closeModal: function(result) {
+                    if( result===undefined || result===null ) {
+                        $mdDialog.cancel();
+                    }
+                    $mdDialog.hide(result);
                 },
                 modalData: data,
             },
