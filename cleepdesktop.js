@@ -464,7 +464,7 @@ function createWindow ()
         if( !allowQuit )
         {
             //something does not allow application to quit. Request user to quit or not
-            var btnIndex = dialog.showMessageBox(mainWindow, {
+            var btnIndex = dialog.showMessageBoxSync(mainWindow, {
                 type: 'question',
                 buttons: ['Confirm quit', 'Cancel'],
                 defaultId: 1,
