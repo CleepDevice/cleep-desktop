@@ -82,8 +82,13 @@
 
                 <!-- board -->
                 <md-tab label="Board">
-                    <div style="text-align:center; margin-top:15px;">
-                        <img ng-src="{{ctl.boardImg}}" height="350px">
+                    <div layout="column" layout-align="center center" style="margin-top:15px;">
+                        <div>
+                            <img ng-src="{{ctl.boardImg}}" height="350px">
+                        </div>
+                        <div>
+                            <span class="md-caption">Board code: {{::ctl.device.hwcode}}</span>
+                        </div>
                     </div>
                 </md-tab>
 
