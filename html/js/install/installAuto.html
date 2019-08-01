@@ -19,23 +19,21 @@
                 <md-card-title>
                     <md-card-title-text>
                         <span class="md-headline">
-                            <md-icon md-svg-icon="pencil"></md-icon>
+                            <md-icon md-svg-icon="wrench"></md-icon>
                             Preparation
                         </span>
                     </md-card-title-text>
                 </md-card-title>
 
                 <md-card-content>
+                    <md-list>
 
-                    <!-- iso -->
-                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
-                        <div>
+                        <!-- iso -->
+                        <md-list-item>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <span ng-if="!ctl.__isos.withraspbianiso">Select Cleep version you want to install on your SD card</span>
-                            <span ng-if="ctl.__isos.withraspbianiso">Select distribution you want to install on your SD card</span>
-                        </div>
-                        <div layout="row">
-                            <md-input-container>
+                            <p ng-if="!ctl.__isos.withraspbianiso">Select Cleep version you want to install on your SD card</p>
+                            <p ng-if="ctl.__isos.withraspbianiso">Select distribution you want to install on your SD card</p>
+                            <md-input-container class="md-secondary">
                                 <label>Version</label>
                                 <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" ng-disabled="ctl.flashing" required ng-model-options="{trackBy: '$value.id'}"> 
                                     <md-optgroup label="Cleep" ng-if="ctl.isos.length>0">
@@ -57,17 +55,13 @@
                                     </md-optgroup>
                                 </md-select>
                             </md-input-container>
-                        </div>
-                    </div>
+                        </md-list-item>
 
-                    <!-- drive -->
-                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
-                        <div>
+                        <!-- drive -->
+                        <md-list-item>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <span>Plug your SD card or your USB card reader on your computer and select it from drives list</span>
-                        </div>
-                        <div layout="row">
-                            <md-input-container>
+                            <p>Plug your SD card or your USB card reader on your computer and select it from drives list</p>
+                            <md-input-container class="md-secondary">
                                 <label>Drive</label>
                                 <md-select ng-model="ctl.selectedDrive" md-on-open="ctl.refreshDrives()" placeholder="Drive" class="md-no-underline" ng-disabled="ctl.flashing" required>
                                     <md-option ng-if="ctl.drives.length===0" ng-disabled="true">No drive found</md-option>
@@ -76,17 +70,13 @@
                                     </md-option>
                                 </md-select>
                             </md-input-container>
-                        </div>
-                    </div>
+                        </md-list-item>
 
-                    <!-- wifi choice -->
-                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;" ng-if="ctl.selectedIso.category=='cleep'">
-                        <div>
+                        <!-- wifi choice -->
+                        <md-list-item ng-if="ctl.selectedIso.category=='cleep'">
                             <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <span>Choose way your device will connect to your network</span>
-                        </div>
-                        <div layout="row">
-                            <md-input-container>
+                            <p>Choose way your device will connect to your network</p>
+                            <md-input-container class="md-secondary">
                                 <label>Drive</label>
                                 <md-select ng-model="ctl.selectedWifiChoice" placeholder="Network connection" class="md-no-underline" ng-disabled="ctl.flashing || ctl.selectedIso.category!='cleep'">
                                     <md-option ng-value="0">Wired connection</md-option>
@@ -94,73 +84,68 @@
                                     <md-option ng-value="2">Wifi on hidden network</md-option>
                                 </md-select>
                             </md-input-container>
-                        </div>
-                    </div>
+                        </md-list-item>
 
-                    <!-- wifi configuration -->
-                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;" ng-if="(ctl.selectedWifiChoice==1 || ctl.selectedWifiChoice==2) && ctl.selectedIso.category=='cleep'">
-                        <div>
+                        <!-- wifi configuration -->
+                        <md-list-item ng-if="(ctl.selectedWifiChoice==1 || ctl.selectedWifiChoice==2) && ctl.selectedIso.category=='cleep'">
                             <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <span>Pre-configure wireless access</span>
-                        </div>
-                        <div layout="row">
-                            <!-- without wifi adapter -->
-                            <md-input-container ng-if="(!ctl.wifi.adapter && ctl.selectedWifiChoice==1) || ctl.selectedWifiChoice==2" class="no-error-spacer">
-                                <label>Wifi network name</label>
-                                <input type="text" ng-model="ctl.wifiNetworkName" ng-disabled="ctl.flashing"/>
-                            </md-input-container>
-                            <md-input-container ng-if="(!ctl.wifi.adapter && ctl.selectedWifiChoice==1) || ctl.selectedWifiChoice==2">
-                                <label>Encryption</label>
-                                <md-select ng-model="ctl.wifiNetworkEncryption" placeholder="Encryption" class="md-no-underline" ng-disabled="ctl.flashing">
-                                    <md-option value="wpa2">WPA2</md-option>
-                                    <md-option value="wpa">WPA</md-option>
-                                    <md-option value="wep">WEP</md-option>
-                                    <md-option value="unsecured">Unsecured</md-option>
-                                </md-select>
-                            </md-input-container>
-
-                            <!-- with wifi adapter -->
-                            <md-input-container ng-if="ctl.wifi.adapter && ctl.selectedWifiChoice==1">
-                                <label>Wifi network</label>
-                                <md-select ng-model="ctl.selectedWifiNetwork" md-on-open="ctl.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline" ng-disabled="ctl.flashing">
-                                    <md-option><em>None</em></md-option>
-                                    <md-option ng-if="ctl.wifi.networks.length===0" ng-disabled="true">No wifi network found</md-option>
-                                    <md-option ng-repeat="wifiNetwork in ctl.wifi.networks" ng-value="wifiNetwork">
-                                        {{wifiNetwork.network}} ({{wifiNetwork.encryption}})
-                                    </md-option>
-                                </md-select>
-                            </md-input-container>
-
-                            <!-- wifi password -->
-                            <div layout="row">
-                                <md-input-container class="no-error-spacer">
-                                    <label>Password</label>
-                                    <input ng-attr-type="{{ctl.showPassword ? 'text' : 'password'}}" ng-model="ctl.wifiPassword" ng-disabled="ctl.flashing || ctl.wifiNetworkEncryption=='unsecured'">
+                            <p>Configure device wireless access</p>
+                            <div layout="row" class="md-secondary">
+                                <!-- without wifi adapter -->
+                                <md-input-container ng-if="(!ctl.wifi.adapter && ctl.selectedWifiChoice==1) || ctl.selectedWifiChoice==2" class="no-error-spacer">
+                                    <label>Wifi network name</label>
+                                    <input type="text" ng-model="ctl.wifiNetworkName" ng-disabled="ctl.flashing"/>
                                 </md-input-container>
-                                <div style="padding-top:10px;">
-                                    <md-button class="md-icon-button" ng-click="ctl.showPassword=!ctl.showPassword" ng-disabled="ctl.flashing || ctl.newNetwork.encryption=='unsecured'" aria-label="Show password">
-                                        <md-icon md-svg-icon="eye" ng-if="!ctl.showPassword"></md-icon>
-                                        <md-icon md-svg-icon="eye-off" ng-if="ctl.showPassword"></md-icon>
-                                        <md-tooltip md-direction="left" ng-if="!ctl.showPassword">Show password</md-tooltip>
-                                        <md-tooltip md-direction="left" ng-if="ctl.showPassword">Hide password</md-tooltip>
-                                    </md-button>
+                                <md-input-container ng-if="(!ctl.wifi.adapter && ctl.selectedWifiChoice==1) || ctl.selectedWifiChoice==2">
+                                    <label>Encryption</label>
+                                    <md-select ng-model="ctl.wifiNetworkEncryption" placeholder="Encryption" class="md-no-underline" ng-disabled="ctl.flashing">
+                                        <md-option value="wpa2">WPA2</md-option>
+                                        <md-option value="wpa">WPA</md-option>
+                                        <md-option value="wep">WEP</md-option>
+                                        <md-option value="unsecured">Unsecured</md-option>
+                                    </md-select>
+                                </md-input-container>
+
+                                <!-- with wifi adapter -->
+                                <md-input-container ng-if="ctl.wifi.adapter && ctl.selectedWifiChoice==1">
+                                    <label>Wifi network</label>
+                                    <md-select ng-model="ctl.selectedWifiNetwork" md-on-open="ctl.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline" ng-disabled="ctl.flashing">
+                                        <md-option><em>None</em></md-option>
+                                        <md-option ng-if="ctl.wifi.networks.length===0" ng-disabled="true">No wifi network found</md-option>
+                                        <md-option ng-repeat="wifiNetwork in ctl.wifi.networks" ng-value="wifiNetwork">
+                                            {{wifiNetwork.network}} ({{wifiNetwork.encryption}})
+                                        </md-option>
+                                    </md-select>
+                                </md-input-container>
+
+                                <!-- wifi password -->
+                                <div layout="row">
+                                    <md-input-container class="no-error-spacer">
+                                        <label>Password</label>
+                                        <input ng-attr-type="{{ctl.showPassword ? 'text' : 'password'}}" ng-model="ctl.wifiPassword" ng-disabled="ctl.flashing || ctl.wifiNetworkEncryption=='unsecured'">
+                                    </md-input-container>
+                                    <div style="padding-top:10px;">
+                                        <md-button class="md-icon-button" ng-click="ctl.showPassword=!ctl.showPassword" ng-disabled="ctl.flashing || ctl.newNetwork.encryption=='unsecured'" aria-label="Show password">
+                                            <md-icon md-svg-icon="eye" ng-if="!ctl.showPassword"></md-icon>
+                                            <md-icon md-svg-icon="eye-off" ng-if="ctl.showPassword"></md-icon>
+                                            <md-tooltip md-direction="left" ng-if="!ctl.showPassword">Show password</md-tooltip>
+                                            <md-tooltip md-direction="left" ng-if="ctl.showPassword">Hide password</md-tooltip>
+                                        </md-button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </md-list-item>
 
-                    <!-- drive -->
-                    <div layout="row" layout-align="space-between center" style="padding: 0 10px;">
-                        <div>
+                        <!-- drive -->
+                        <md-list-item>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <span>Click on button to install Cleep and wait end of process</span>
-                        </div>
-                        <div layout="row">
-                            <md-button ng-click="ctl.startFlash()" ng-disabled="ctl.flashing || !ctl.isEtcherAvailable()" class="md-raised md-accent">
+                            <p>Click on button to install Cleep and folow install process below</p>
+                            <md-button ng-click="ctl.startFlash()" ng-disabled="ctl.flashing || !ctl.isEtcherAvailable()" class="md-secondary md-raised md-accent">
                                 Install on selected drive
                             </md-button>
-                        </div>
-                    </div>
+                        </md-list-item>
+
+                    </md-list>
 
                 </md-card-content>
             </md-card>
@@ -214,7 +199,7 @@
                 <md-card-title>
                     <md-card-title-text>
                         <span class="md-headline">
-                            <md-icon md-svg-icon="information-outline"></md-icon>
+                            <md-icon md-svg-icon="bug"></md-icon>
                             Having trouble?
                         </span>
                     </md-card-title-text>
