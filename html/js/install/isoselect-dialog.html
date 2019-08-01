@@ -1,0 +1,63 @@
+<md-dialog aria-label="Version selection" ng-cloak flex="40">
+
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>Version selection</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="ctl.closeModal()">
+                <md-icon md-svg-icon="close"></md-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+
+    <md-dialog-content style="height: 450px;">
+
+        <!-- loader -->
+        <div layout="column" layout-align="center center" layout-fill layout-margin ng-if="ctl.loading">
+            <div>
+                <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+            </div>
+            <div>
+                <span>Fetching available distributions...</span>
+            </div>
+        </div>
+
+        <!-- list -->
+        <md-list ng-show="!ctl.loading" style="padding: 0px;">
+
+            <md-subheader class="md-no-sticky">Cleep versions</md-subheader>
+            <md-list-item ng-if="ctl.cleepisos===0" class="md-2-line">
+                <div class="md-list-item-text">
+                    <h3>No Cleep version found</h3>
+                    <p>You surely reach free Github api requests amount. Please retry next hour.</p>
+                </div>
+            </md-list-item>
+            <md-list-item ng-repeat="iso in ctl.isos | filter: {category:'cleep'}" ng-click="ctl.selectRemoteIso(iso)">
+                <md-icon md-svg-icon="circle-small"></md-icon>
+                <p>{{iso.label}} ({{iso.timestamp | hrDate}})</p>
+            </md-list-item>
+
+            <!-- raspbian -->
+            <md-subheader class="md-no-sticky">Latest Raspbian</md-subheader>
+            <md-list-item ng-if="ctl.cleepisos===0" class="md-2-line">
+                <div class="md-list-item-text">
+                    <h3>No Raspbian version found</h3>
+                    <p>Is internet connection available?</p>
+                </div>
+            </md-list-item>
+            <md-list-item ng-repeat="iso in ctl.isos | filter: {category:'raspbian'}" ng-if="ctl.config.withraspbianiso" ng-click="ctl.selectRemoteIso(iso)">
+                <md-icon md-svg-icon="circle-small"></md-icon>
+                <p>{{iso.label}} ({{iso.timestamp | hrDate}})</p>
+            </md-list-item>
+
+            <!-- local iso -->
+            <md-subheader ng-if="ctl.config.withlocaliso" class="md-no-sticky">Local iso</md-subheader>
+            <md-list-item ng-if="ctl.config.withlocaliso" ng-click="ctl.selectLocalIso(iso)">
+                <md-icon md-svg-icon="circle-small"></md-icon>
+                <p>Click to select local iso file</p>
+            </md-list-item>
+
+        </md-list>
+    </md-dialog-content>
+
+</md-dialog>

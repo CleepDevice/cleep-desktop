@@ -5,7 +5,7 @@ var path = require('electron').remote.require('path');
 /**
  * Install controller
  */
-var installController = function($rootScope, $scope, cleepService, $timeout, toast, confirm, $filter, logger, updateService, installService)
+var installController = function($rootScope, cleepService, toast, confirm, logger, updateService, installService, modalService)
 {
     var self = this;
     self.status = {
@@ -15,19 +15,9 @@ var installController = function($rootScope, $scope, cleepService, $timeout, toa
         eta: ''
     };
     self.flashing = false;
-
-    //drives variables
-    self.drives = installService.drives;
+    self.modal = modalService;
     self.selectedDrive = null;
-
-    //isos variables
-    self.isos = [];
-    self.__isos = installService.isos;
     self.selectedIso = null;
-    self.localIso = {
-        url: null,
-        label: 'Select file'
-    };
 
     //wifi variables
     self.selectedWifiChoice = 0;
@@ -43,10 +33,33 @@ var installController = function($rootScope, $scope, cleepService, $timeout, toa
     self.wifiNetworkEncryption = 'wpa2';
     self.showPassword = false;
 
+    //initialize
+    self.$onInit = function()
+    {
+        //get flash status
+        self.getStatus();
+    };
+
     //open manual install
     self.gotoManualInstall = function()
     {
         cleepUi.openPage('installManually');
+    };
+
+    //open iso dialog
+    self.openIsoDialog = function() {
+        self.modal.open('isoSelectController', 'js/install/isoselect-dialog.html')
+            .then(function(res) {
+                self.selectedIso = res;
+            });
+    };
+
+    //open drive dialog
+    self.openDriveDialog = function() {
+        self.modal.open('driveSelectController', 'js/install/driveselect-dialog.html')
+            .then(function(res) {
+                self.selectedDrive = res;
+            });
     };
 
     //reset form fields
@@ -87,120 +100,6 @@ var installController = function($rootScope, $scope, cleepService, $timeout, toa
     self.refreshWifiNetworks = function()
     {
         return installService.refreshWifiNetworks();
-    };
-
-    //get flashable drives
-    self.refreshDrives = function()
-    {
-        return installService.refreshDrives();
-    };
-
-    self.__refreshIsos = function() {
-        //copy locally iso from installService
-        self.isos = [];
-        for( var i=0; i<self.__isos.isos.length; i++ )
-        {
-            self.isos.push(self.__isos.isos[i]);
-        }
-
-        //append new item for local iso
-        if( self.__isos.withlocaliso )
-        {
-            //select file entry
-            self.isos.push({
-                category: 'local',
-                label: 'Select file',
-                sha1: null,
-                timestamp: 0,
-                url: null,
-                selector: true
-            });
-
-            //selected file entry
-            var url = null;
-            var label = '-- no file selected --';
-            if( self.localIso.url ) {
-                url = self.localIso.url;
-                label = self.localIso.label;
-            }
-            self.isos.push({
-                category: 'local',
-                label: label,
-                sha1: null,
-                timestamp: 0,
-                url: url,
-                selector: false
-            });
-        }
-
-        //append item id to allow easier selection
-        var id = 0;
-        for( id=0; id<self.isos.length; id++ )
-        {
-            self.isos[id].id = id;
-        }
-    };
-
-    //get isos
-    self.refreshIsos = function()
-    {
-        return $timeout(function() {
-            if( self.__isos.isos.length===0 ) {
-                //no isos loaded yet, get list
-                installService.refreshIsos()
-                    .then(function() {
-                        self.__refreshIsos();
-                    });
-            } else {
-                //simply refresh internal list of isos
-                self.__refreshIsos();
-            }
-        }, 0);
-    };
-
-    //select local iso
-    self.selectLocalIso = function(item)
-    {
-        if( !item.selector )
-        {
-            return;
-        }
-
-        var options = {
-            title: 'Select local iso',
-            filters: [
-                {name: 'Iso file', extensions: ['zip', 'iso', 'img', 'dmg', 'raw']}
-            ]
-        };
-        dialog.showOpenDialog(options, function(filenames) {
-            if( filenames===undefined )
-            {
-                //no file selected
-                self.selectedIso = null;
-                return;
-            }
-
-            //save selected file infos
-            self.localIso.url = 'file://' + filenames[0];
-            self.localIso.label = path.parse(filenames[0]).base;
-            selectedIso = null;
-            for( var i=0; i<self.isos.length; i++ )
-            {
-                if( self.isos[i].category==='local' && self.isos[i].selector===false )
-                {
-                    self.isos[i].url = self.localIso.url;
-                    self.isos[i].label = self.localIso.label;
-                    selectedIso = self.isos[i];
-                    break;
-                }
-            }
-
-            //and select entry in md-select
-            $timeout(function() {
-                self.selectedIso = selectedIso;
-            }, 250);
-
-        }); 
     };
 
     //start flash process
@@ -353,13 +252,6 @@ var installController = function($rootScope, $scope, cleepService, $timeout, toa
         $rootScope.$broadcast('download-file', {url: self.selectedIso.url});
     };
 
-    //initialize
-    self.init = function()
-    {
-        //get flash status
-        self.getStatus();
-    };
-
     //flash update recevied
     $rootScope.$on('flash', function(event, data) {
         if( !data )
@@ -396,12 +288,9 @@ var installController = function($rootScope, $scope, cleepService, $timeout, toa
 
     });
 
-    //init controller
-    self.init();
-
 };
 
-Cleep.controller('installController', ['$rootScope', '$scope', 'cleepService', '$timeout', 'toastService', 'confirmService', '$filter', 'logger', 
-                                            'updateService', 'installService', installController]);
+Cleep.controller('installController', ['$rootScope', 'cleepService', 'toastService', 'confirmService', 'logger', 'updateService', 
+                                        'installService', 'modalService', installController]);
 
 

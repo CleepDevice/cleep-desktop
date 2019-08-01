@@ -33,43 +33,24 @@
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p ng-if="!ctl.__isos.withraspbianiso">Select Cleep version you want to install on your SD card</p>
                             <p ng-if="ctl.__isos.withraspbianiso">Select distribution you want to install on your SD card</p>
-                            <md-input-container class="md-secondary">
-                                <label>Version</label>
-                                <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" ng-disabled="ctl.flashing" required ng-model-options="{trackBy: '$value.id'}"> 
-                                    <md-optgroup label="Cleep" ng-if="ctl.isos.length>0">
-                                        <md-option ng-if="ctl.__isos.cleepisos===0" ng-disabled="true">No Cleep version found</md-option>
-                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'cleep'}" ng-value="iso">
-                                            {{iso.label}} ({{iso.timestamp | hrDate}})
-                                        </md-option>
-                                    </md-optgroup>
-                                    <md-optgroup label="Raspbian" ng-if="ctl.__isos.withraspbianiso">
-                                        <md-option ng-if="ctl.__isos.raspbianisos===0" ng-disabled="true">No Raspbian version found</md-option>
-                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'raspbian'}" ng-value="iso">
-                                            {{iso.label}} ({{iso.timestamp | hrDate}})
-                                        </md-option>
-                                    </md-optgroup>
-                                    <md-optgroup label="Local" ng-if="ctl.__isos.withlocaliso">
-                                        <md-option ng-repeat="iso in ctl.isos | filter: {category:'local'}" ng-click="ctl.selectLocalIso(iso)" ng-value="iso" ng-disabled="iso.url===null && !iso.selector">
-                                            {{iso.label}}
-                                        </md-option>
-                                    </md-optgroup>
-                                </md-select>
-                            </md-input-container>
+                            <span class="md-secondary md-caption">
+                                {{ctl.selectedIso ? ctl.selectedIso.label : 'No version selected'}}
+                            </span>
+                            <md-button ng-click="ctl.openIsoDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.flashing">
+                                <md-icon md-svg-icon="open-in-app"></md-icon>
+                            </md-button>
                         </md-list-item>
 
                         <!-- drive -->
                         <md-list-item>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Plug your SD card or your USB card reader on your computer and select it from drives list</p>
-                            <md-input-container class="md-secondary">
-                                <label>Drive</label>
-                                <md-select ng-model="ctl.selectedDrive" md-on-open="ctl.refreshDrives()" placeholder="Drive" class="md-no-underline" ng-disabled="ctl.flashing" required>
-                                    <md-option ng-if="ctl.drives.length===0" ng-disabled="true">No drive found</md-option>
-                                    <md-option ng-repeat="drive in ctl.drives" ng-value="drive.path" ng-disabled="drive.readonly || drive.size<3600000000">
-                                        {{drive.desc}} {{drive.readonly ? '[Readonly]' : ''}} {{drive.size<3600000000 ? '[Need at least 4Go drive]' : ''}}
-                                    </md-option>
-                                </md-select>
-                            </md-input-container>
+                            <span class="md-secondary md-caption">
+                                {{ctl.selectedDrive ? ctl.selectedDrive.desc : 'No drive selected'}}
+                            </span>
+                            <md-button ng-click="ctl.openDriveDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.flashing">
+                                <md-icon md-svg-icon="open-in-app"></md-icon>
+                            </md-button>
                         </md-list-item>
 
                         <!-- wifi choice -->
@@ -77,7 +58,6 @@
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Choose way your device will connect to your network</p>
                             <md-input-container class="md-secondary">
-                                <label>Drive</label>
                                 <md-select ng-model="ctl.selectedWifiChoice" placeholder="Network connection" class="md-no-underline" ng-disabled="ctl.flashing || ctl.selectedIso.category!='cleep'">
                                     <md-option ng-value="0">Wired connection</md-option>
                                     <md-option ng-value="1">Wifi on available network</md-option>

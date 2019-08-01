@@ -1,0 +1,55 @@
+<md-dialog aria-label="Drive selection" ng-cloak flex="40">
+
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>Drive selection</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="ctl.closeModal()">
+                <md-icon md-svg-icon="close"></md-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+
+    <md-dialog-content style="height: 450px;">
+
+        <!-- loader -->
+        <div layout="column" layout-align="center center" layout-fill layout-margin ng-if="ctl.loading">
+            <div>
+                <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+            </div>
+            <div>
+                <span>Fetching drive list...</span>
+            </div>
+        </div>
+
+        <!-- list -->
+        <md-list ng-show="!ctl.loading" style="padding: 0px;">
+            <md-list-item ng-if="ctl.drives.length===0" class="md-2-line">
+                <div class="md-list-item-text">
+                    <h3>No drive found</h3>
+                    <p>Please plug SD card or SD card reader then click on refresh button.</p>
+                </div>
+            </md-list-item>
+            <md-list-item ng-repeat="drive in ctl.drives" ng-click="ctl.selectDrive(drive)" class="md-2-line">
+                <md-icon md-svg-icon="circle-small"></md-icon>
+                <div class="md-list-item-text">
+                    <h3>{{drive.desc}}</h3>
+                    <p>Size {{::drive.size | hrBytes}}</p>
+                </div>
+                <span class="md-secondary">
+                    {{drive.readonly ? 'Readonly' : ''}} {{drive.size<3600000000 ? '&gt;4Go drive required' : ''}}
+                </span>
+            </md-list-item>
+        </md-list>
+
+    </md-dialog-content>
+
+    <md-dialog-actions>
+        <md-button ng-click="ctl.refreshDrives()" class="md-primary md-raised" ng-disabled="ctl.loading">
+            <md-icon md-svg-icon="refresh"></md-icon>
+            Refresh drive list
+        </md-button>
+    </md-dialog-actions>
+
+</md-dialog>
+    
