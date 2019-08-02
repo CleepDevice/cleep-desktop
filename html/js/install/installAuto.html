@@ -53,7 +53,7 @@
                             </md-button>
                         </md-list-item>
 
-                        <!-- wifi choice -->
+                        <!-- network choice -->
                         <md-list-item ng-if="ctl.selectedIso.category=='cleep'">
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Choose way your device will connect to your network</p>
@@ -67,11 +67,11 @@
                         </md-list-item>
 
                         <!-- wifi configuration -->
+                        <!--
                         <md-list-item ng-if="(ctl.selectedWifiChoice==1 || ctl.selectedWifiChoice==2) && ctl.selectedIso.category=='cleep'">
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Configure device wireless access</p>
                             <div layout="row" class="md-secondary">
-                                <!-- without wifi adapter -->
                                 <md-input-container ng-if="(!ctl.wifi.adapter && ctl.selectedWifiChoice==1) || ctl.selectedWifiChoice==2" class="no-error-spacer">
                                     <label>Wifi network name</label>
                                     <input type="text" ng-model="ctl.wifiNetworkName" ng-disabled="ctl.flashing"/>
@@ -86,7 +86,6 @@
                                     </md-select>
                                 </md-input-container>
 
-                                <!-- with wifi adapter -->
                                 <md-input-container ng-if="ctl.wifi.adapter && ctl.selectedWifiChoice==1">
                                     <label>Wifi network</label>
                                     <md-select ng-model="ctl.selectedWifiNetwork" md-on-open="ctl.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline" ng-disabled="ctl.flashing">
@@ -98,7 +97,6 @@
                                     </md-select>
                                 </md-input-container>
 
-                                <!-- wifi password -->
                                 <div layout="row">
                                     <md-input-container class="no-error-spacer">
                                         <label>Password</label>
@@ -115,8 +113,19 @@
                                 </div>
                             </div>
                         </md-list-item>
+                        -->
+                        <md-list-item ng-if="(ctl.selectedWifiChoice==1 || ctl.selectedWifiChoice==2) && ctl.selectedIso.category=='cleep'">
+                            <md-icon md-svg-icon="chevron-right"></md-icon>
+                            <p>Wifi configuration</p>
+                            <span class="md-secondary md-caption">
+                                {{ctl.wifiConfig ? ctl.wifiConfig.network : 'Wifi not configured'}}
+                            </span>
+                            <md-button ng-click="ctl.openWifiDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.flashing">
+                                <md-icon md-svg-icon="open-in-app"></md-icon>
+                            </md-button>
+                        </md-list-item>
 
-                        <!-- drive -->
+                        <!-- install button -->
                         <md-list-item>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Click on button to install Cleep and folow install process below</p>

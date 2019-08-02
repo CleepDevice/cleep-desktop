@@ -17,21 +17,30 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
     self.flashing = false;
     self.modal = modalService;
     self.selectedDrive = null;
-    self.selectedIso = null;
+    self.selectedIso = {
+        label: 'Cleep 0.0.19',
+        category: 'cleep',
+        url: 'https://www.google.com',
+    };
+    self.STATUS = {
+        IDLE: 0,
+        DOWNLOADING: 1,
+        DOWNLOADING_NOSIZE: 2,
+        FLASHING: 3,
+        VALIDATING: 4,
+        REQUEST_WRITE_PERMISSIONS: 5,
+        DONE: 6,
+        CANCELED: 7,
+        ERROR: 8,
+        ERROR_INVALIDSIZE: 9,
+        ERROR_BADCHECKSUM: 10,
+        ERROR_FLASH: 11,
+        ERROR_NETWORK: 12,
+    };
 
     //wifi variables
     self.selectedWifiChoice = 0;
-    self.wifi = installService.wifi;
-    self.selectedWifiNetwork = {
-        network: null,
-        interface: null,
-        encryption: null,
-        signallevel: 0
-    };
-    self.wifiPassword = null;
-    self.wifiNetworkName = '';
-    self.wifiNetworkEncryption = 'wpa2';
-    self.showPassword = false;
+    self.wifiConfig = null;
 
     //initialize
     self.$onInit = function()
@@ -62,27 +71,28 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
             });
     };
 
+    //open wifi dialog
+    self.openWifiDialog = function() {
+        self.modal.open('wifiController', 'js/install/wifi-dialog.html', {
+            selectedWifiChoice: self.selectedWifiChoice,
+        })
+            .then(function(res) {
+                self.wifiConfig = res;
+            });
+    };
+
     //reset form fields
     self.resetFields = function()
     {
-        logger.info('Reset fields');
+        logger.debug('Reset fields');
         self.selectedDrive = null;
         self.selectedIso = null;
-        self.selectedWifiNetwork = {
-            network: null,
-            interface: null,
-            encryption: null,
-            signallevel: 0
-        };
-        self.wifiPassword = null;
-        self.wifiNetworkName = '';
-        self.wifiNetworkEncryption = 'wpa2';
-        self.showPassword = false;
         self.selectedWifiChoice = 0;
+        self.wifiConfig = null;
     };
 
     //return current flash status
-    self.getStatus = function(init)
+    self.getStatus = function()
     {
         return cleepService.sendCommand('getflashstatus')
             .then(function(resp) {
@@ -96,12 +106,6 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
         return updateService.isEtcherAvailable();
     }
 
-    //get wifi networks
-    self.refreshWifiNetworks = function()
-    {
-        return installService.refreshWifiNetworks();
-    };
-
     //start flash process
     self.startFlash = function()
     {
@@ -111,90 +115,27 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
             toast.error('Please select a Cleep version and a drive');
             return;
         }
-        if( self.selectedWifiChoice==1 )
+        if( self.selectedWifiChoice!==0 && !self.wifiConfig )
         {
-            //user wants to connect to available wifi network
-            if( !self.wifi.adapter && !self.wifiNetworkName )
-            {
-                toast.error('Please set wifi network name');
-                return;
-            }
-            else if( self.wifi.adapter && !self.selectedWifiNetwork.network )
-            {
-                toast.error('Please select wifi network');
-                return;
-            }
-            else if( self.wifiNetworkEncryption!='unsecured' && !self.wifiPassword )
-            {
-                toast.error('Please fill wifi network password');
-                return;
-            }
-        }
-        if( self.selectedWifiChoice==2 ) 
-        {
-            //user wants to connect to hidden network
-            if( !self.wifiNetworkName )
-            {
-                toast.error('Please set wifi network name');
-                return;
-            }
-            else if( self.wifiNetworkEncryption!='unsecured' && !self.wifiPassword )
-            {
-                toast.error('Please fill wifi network password');
-                return;
-            }
+            toast.error('Please configure wifi');
+            return;
         }
 
-        //wifi config
-        wifiConfig = {
-            network: null,
-            encryption: null,
-            password: null,
-            hidden: (self.selectedWifiChoice==2 ? true : false)
-        }
-        if( self.selectedWifiChoice==1 )
-        {
-            //connect to available network (non hidden)
-            if( !self.wifi.adapter && self.wifiNetworkName && self.wifiNetworkEncryption )
-            {
-                //fill wifi config from manual values
-                wifiConfig.network = self.wifiNetworkName;
-                wifiConfig.encryption = self.wifiNetworkEncryption;
-                wifiConfig.password = self.wifiPassword;
-            }
-            else if( self.wifi.adapter && self.selectedWifiNetwork.network )
-            {
-                //fill wifi config from automatic values
-                wifiConfig.network = self.selectedWifiNetwork.network;
-                wifiConfig.encryption = self.selectedWifiNetwork.encryption;
-                wifiConfig.password = self.wifiPassword;
-            }
-        }
-        else if( self.selectedWifiChoice==2 )
-        {
-            //connect to hidden network (use manual values)
-            wifiConfig.network = self.wifiNetworkName;
-            wifiConfig.encryption = self.wifiNetworkEncryption;
-            wifiConfig.password = self.wifiPassword;
-        }
         logger.debug('url=' + self.selectedIso.url);
-        logger.debug('drive=' + self.selectedDrive);
-        logger.debug('wifi=' + JSON.stringify(wifiConfig));
+        logger.debug('drive=' + self.selectedDrive.path);
+        logger.debug('wifi=' + JSON.stringify(self.wifiConfig));
         
         confirm.open('Confirm installation?', 'Installation will erase all drive content. This operation cannot be reversed!<br/>Please note that admin permissions may be requested after file download.', 'Yes, install', 'No')
             .then(function() {
                 //disable application quit
                 $rootScope.$broadcast('disablequit');
 
-                //hide password
-                self.showPassword = false;
-
                 //prepare data
                 self.flashing = true;
                 var data = {
                     url: self.selectedIso.url,
-                    drive: self.selectedDrive,
-                    wifi: wifiConfig
+                    drive: self.selectedDrive.path,
+                    wifi: self.wifiConfig
                 };
                 logger.debug('Flash data:', data);
 
@@ -213,14 +154,19 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
     //cancel flash process
     self.cancelFlash = function()
     {
-        //check if process is running
-        if( self.status && self.status.status>=6 )
+        if( !self.status )
         {
-            self.logger.debug('CancelFlash: invalid status (' + self.status.status + ') do nothing');
             return;
         }
 
-        if( self.status && (self.status.status===1 || self.status.status===2) )
+        //check if process is running
+        if( self.status.status>=self.STATUS.DONE )
+        {
+            self.logger.debug('CancelFlash: invalid status [' + self.status.status + '] do nothing');
+            return;
+        }
+
+        if( self.status.status===self.STATUS.DOWNLOADING || self.status.status===self.STATUS.DOWNLOADING_NOSIZE )
         {
             confirm.open('Cancel installation?', null, 'Yes', 'No')
                 .then(function() {
@@ -230,7 +176,7 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
                         });
                 });
         }
-        else if( self.status && (self.status.status===3 || self.status.status===4) )
+        else if( self.status.status===self.STATUS.FLASHING || self.status.status===self.STATUS.VALIDATING )
         {
             confirm.open('Cancel installation?', 'Canceling installation during this step of process will put your removable media in inconsistant state.', 'Yes, cancel', 'No, continue')
                 .then(function() {
@@ -240,9 +186,20 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
                         });
                 });
         }
+        else if( self.status.status===self.STATUS.REQUEST_WRITE_PERMISSIONS )
+        {
+            //can cancel if permissions is blocked. Can happen if user take too much time filling password
+            confirm.open('Cancel installation?', null, 'Yes', 'No')
+                .then(function() {
+                    cleepService.sendCommand('cancelflash')
+                        .then(function() {
+                            toast.info('Installation canceled');
+                        });
+                });
+        }
         else
         {
-            logger.debug('Nothing to do with status (' + self.status.status + ')'); 
+            logger.debug('Nothing to do with current status [' + self.status.status + ']'); 
         }
     };
 
@@ -252,17 +209,20 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
         $rootScope.$broadcast('download-file', {url: self.selectedIso.url});
     };
 
-    //flash update recevied
-    $rootScope.$on('flash', function(event, data) {
+    //flash update received
+    $rootScope.$on('flash', function(_event, data) {
         if( !data )
+        {
             return;
+        }
 
         //save status
         var flashing = self.flashing;
         self.status = data;
 
         //enable/disable flash button
-        if( self.status.status==0 || self.status.status>=6 )
+        logger.debug('=> current status: ' + self.status.status, self.status);
+        if( self.status.status===self.STATUS.IDLE || self.status.status>=self.STATUS.DONE )
         {
             self.flashing = false;
         }
@@ -274,6 +234,8 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
         //end of flash
         if( self.flashing==false && flashing!=self.flashing )
         {
+            logger.info('Flashing is terminated. Restore ui');
+
             //suppress warning dialog
             $rootScope.$broadcast('enablequit');
 
@@ -281,11 +243,9 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
             self.resetFields();
         }
 
-
         //force angular refresh
         $rootScope.$apply();
         $rootScope.$digest();
-
     });
 
 };

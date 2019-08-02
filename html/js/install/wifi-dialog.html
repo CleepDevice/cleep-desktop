@@ -1,0 +1,84 @@
+<md-dialog aria-label="Wifi configuration" ng-cloak flex="50">
+
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Wifi configuration</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="ctl.closeModal()">
+                    <md-icon md-svg-icon="close"></md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+    
+        <md-dialog-content style="height:350px;">
+       
+            <md-list>
+
+                <!-- no adapter warning -->
+                <md-list-item ng-if="!ctl.config.adapter">
+                    <md-icon md-svg-icon="alert"></md-icon>
+                    <p>No wifi adapter found, please fill wifi parameters manually.</p>
+                </md-list-item>
+
+                <!-- network name (hidden network or no adapter) -->
+                <md-list-item ng-if="(!ctl.config.adapter && ctl.selectedWifiChoice==1) || ctl.selectedWifiChoice==2">
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    <p>Wifi network name</p>
+                    <md-input-container class="md-secondary">
+                        <input type="text" ng-model="ctl.wifiNetworkName"/>
+                    </md-input-container>
+                </md-list-item>
+
+                <!-- network selector (adapter available) -->
+                <md-list-item ng-if="ctl.config.adapter && ctl.selectedWifiChoice==1">
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    <p>Wifi network</p>
+                    <md-select ng-model="ctl.selectedWifi" md-on-open="ctl.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline">
+                        <md-option><em>None</em></md-option>
+                        <md-option ng-if="ctl.config.networks.length===0" ng-disabled="true">No wifi network found</md-option>
+                        <md-option ng-repeat="wifiNetwork in ctl.config.networks" ng-value="wifiNetwork">
+                            {{wifiNetwork.network}} ({{wifiNetwork.encryption}})
+                        </md-option>
+                    </md-select>
+                </md-list-item>
+
+                <!-- security (hidden network or no adapter) -->
+                <md-list-item ng-if="(!ctl.config.adapter && ctl.selectedWifiChoice==1) || ctl.selectedWifiChoice==2">
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    <p>Network security</p>
+                    <md-select ng-model="ctl.wifiNetworkEncryption" class="md-secondary md-no-underline">
+                        <md-option value="wpa2">WPA2</md-option>
+                        <md-option value="wpa">WPA</md-option>
+                        <md-option value="wep">WEP</md-option>
+                        <md-option value="unsecured">Unsecured</md-option>
+                    </md-select>
+                </md-list-item>
+
+                <!-- password -->
+                <md-list-item>
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    <p>Password</p>
+                    <md-input-container class="md-secondary">
+                        <input ng-attr-type="{{ctl.showPassword ? 'text' : 'password'}}" ng-model="ctl.wifiPassword" ng-disabled="ctl.wifiNetworkEncryption=='unsecured'">
+                    </md-input-container>
+                    <md-button class="md-icon-button md-secondary" ng-click="ctl.showPassword=!ctl.showPassword" ng-disabled="ctl.wifiNetworkEncryption=='unsecured'" aria-label="Show password">
+                        <md-icon md-svg-icon="eye" ng-if="!ctl.showPassword"></md-icon>
+                        <md-icon md-svg-icon="eye-off" ng-if="ctl.showPassword"></md-icon>
+                        <md-tooltip ng-if="!ctl.showPassword">Show password</md-tooltip>
+                        <md-tooltip ng-if="ctl.showPassword">Hide password</md-tooltip>
+                    </md-button>
+                </md-list-item>
+
+            </md-list>
+    
+        </md-dialog-content>
+
+        <md-dialog-actions>
+            <md-button ng-click="ctl.save()" class="md-primary md-raised" ng-disabled="ctl.disableSaveButton()">
+                <md-icon md-svg-icon="check"></md-icon>
+                Ok
+            </md-button>
+        </md-dialog-actions>
+    
+    </md-dialog>
+        
