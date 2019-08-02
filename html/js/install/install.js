@@ -17,11 +17,7 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
     self.flashing = false;
     self.modal = modalService;
     self.selectedDrive = null;
-    self.selectedIso = {
-        label: 'Cleep 0.0.19',
-        category: 'cleep',
-        url: 'https://www.google.com',
-    };
+    self.selectedIso = null;
     self.STATUS = {
         IDLE: 0,
         DOWNLOADING: 1,
@@ -238,9 +234,6 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
 
             //suppress warning dialog
             $rootScope.$broadcast('enablequit');
-
-            //clear form fields
-            self.resetFields();
         }
 
         //force angular refresh
