@@ -34,16 +34,14 @@
                     <!-- iso -->
                     <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <p>Select Cleep version you want to install on your SD card</p>
-                        <md-input-container class="md-secondary">
-                            <label>Version</label>
-                            <md-select ng-model="ctl.selectedIso" md-on-open="ctl.refreshIsos()" placeholder="Cleep version" class="md-no-underline" ng-disabled="ctl.flashing" required ng-model-options="{trackBy: '$value.id'}"> 
-                                <md-option ng-if="ctl.__isos.cleepisos===0" ng-disabled="true">No Cleep version found</md-option>
-                                <md-option ng-repeat="iso in ctl.isos | filter: {category:'cleep'}" ng-value="iso">
-                                    {{iso.label}} ({{iso.timestamp | hrDate}})
-                                </md-option>
-                            </md-select>
-                        </md-input-container>
+                        <p ng-if="!ctl.__isos.withraspbianiso">Select Cleep version you want to install on your SD card</p>
+                        <p ng-if="ctl.__isos.withraspbianiso">Select distribution you want to install on your SD card</p>
+                        <span class="md-secondary md-caption">
+                            {{ctl.config.iso ? ctl.config.iso.label : 'No version selected'}}
+                        </span>
+                        <md-button ng-click="ctl.openIsoDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.flashing">
+                            <md-icon md-svg-icon="open-in-app"></md-icon>
+                        </md-button>
                     </md-list-item>
 
                     <!-- download url -->
@@ -51,10 +49,10 @@
                         <md-icon md-svg-icon="chevron-right"></md-icon>
                         <div class="md-list-item-text">
                             <h3>Download selected Cleep image file</h3>
-                            <p ng-if="ctl.selectedIso.url">{{ctl.selectedIso.url}}</p>
-                            <p ng-if="!ctl.selectedIso.url">No distribution selected</p>
+                            <p ng-if="ctl.config.iso.url">{{ctl.config.iso.url}}</p>
+                            <p ng-if="!ctl.config.iso.url">No distribution selected</p>
                         </div>
-                        <md-button class="md-secondary md-raised md-primary" ng-click="ctl.downloadIso()" ng-disabled="!ctl.selectedIso.url">Download</md-button>
+                        <md-button class="md-secondary md-raised md-primary" ng-click="ctl.downloadIso()" ng-disabled="!ctl.config.iso.url">Download</md-button>
                     </md-list-item>
 
                     <!-- flash tips -->
