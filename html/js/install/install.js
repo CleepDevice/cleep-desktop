@@ -5,19 +5,13 @@ var path = require('electron').remote.require('path');
 /**
  * Install controller
  */
-var installController = function($rootScope, cleepService, toast, confirm, logger, updateService, installService, modalService)
+var installController = function($rootScope, toast, confirm, logger, updateService, installService, modalService)
 {
     var self = this;
-    self.status = {
-        percent: 0,
-        total_percent: 0,
-        status: 0,
-        eta: ''
-    };
     self.flashing = false;
     self.modal = modalService;
-    self.selectedDrive = null;
-    self.selectedIso = null;
+    self.config = installService.flashConfig;
+    self.status = installService.status;
     self.STATUS = {
         IDLE: 0,
         DOWNLOADING: 1,
@@ -34,15 +28,11 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
         ERROR_NETWORK: 12,
     };
 
-    //wifi variables
-    self.selectedWifiChoice = 0;
-    self.wifiConfig = null;
-
     //initialize
     self.$onInit = function()
     {
-        //get flash status
-        self.getStatus();
+        //get install status
+        installService.getStatus();
     };
 
     //open manual install
@@ -55,7 +45,7 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
     self.openIsoDialog = function() {
         self.modal.open('isoSelectController', 'js/install/isoselect-dialog.html')
             .then(function(res) {
-                self.selectedIso = res;
+                self.config.iso = res;
             });
     };
 
@@ -63,17 +53,17 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
     self.openDriveDialog = function() {
         self.modal.open('driveSelectController', 'js/install/driveselect-dialog.html')
             .then(function(res) {
-                self.selectedDrive = res;
+                self.config.drive = res;
             });
     };
 
     //open wifi dialog
     self.openWifiDialog = function() {
         self.modal.open('wifiController', 'js/install/wifi-dialog.html', {
-            selectedWifiChoice: self.selectedWifiChoice,
+            wifiChoice: self.config.wifiChoice,
         })
             .then(function(res) {
-                self.wifiConfig = res;
+                self.config.wifi = res;
             });
     };
 
@@ -81,22 +71,13 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
     self.resetFields = function()
     {
         logger.debug('Reset fields');
-        self.selectedDrive = null;
-        self.selectedIso = null;
-        self.selectedWifiChoice = 0;
-        self.wifiConfig = null;
+        self.config.drive = null;
+        self.config.iso = null;
+        self.config.wifiChoice = 0;
+        self.config.wifi = null;
     };
 
-    //return current flash status
-    self.getStatus = function()
-    {
-        return cleepService.sendCommand('getflashstatus')
-            .then(function(resp) {
-                self.status = resp.data;
-            });
-    };
-
-    //Return etcher availability
+    //return etcher availability
     self.isEtcherAvailable = function()
     {
         return updateService.isEtcherAvailable();
@@ -106,22 +87,23 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
     self.startFlash = function()
     {
         //check values
-        if( !self.selectedIso || !self.selectedDrive )
+        if( !self.config.iso || !self.config.drive )
         {
             toast.error('Please select a Cleep version and a drive');
             return;
         }
-        if( self.selectedWifiChoice!==0 && !self.wifiConfig )
+        if( self.config.wifiChoice!==0 && !self.config.wifi )
         {
             toast.error('Please configure wifi');
             return;
         }
 
-        logger.debug('url=' + self.selectedIso.url);
-        logger.debug('drive=' + self.selectedDrive.path);
-        logger.debug('wifi=' + JSON.stringify(self.wifiConfig));
+        logger.debug('url=' + self.config.iso.url);
+        logger.debug('drive=' + self.config.drive.path);
+        logger.debug('wifi=' + JSON.stringify(self.config.wifi));
         
-        confirm.open('Confirm installation?', 'Installation will erase all drive content. This operation cannot be reversed!<br/>Please note that admin permissions may be requested after file download.', 'Yes, install', 'No')
+        confirm.open('Confirm installation?', 'Installation will erase all drive content. This operation cannot be reversed!<br/> \
+                      Please note that admin permissions may be requested after file download.', 'Yes, install', 'No')
             .then(function() {
                 //disable application quit
                 $rootScope.$broadcast('disablequit');
@@ -129,14 +111,14 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
                 //prepare data
                 self.flashing = true;
                 var data = {
-                    url: self.selectedIso.url,
-                    drive: self.selectedDrive.path,
-                    wifi: self.wifiConfig
+                    url: self.config.iso.url,
+                    drive: self.config.drive.path,
+                    wifi: self.config.wifi
                 };
                 logger.debug('Flash data:', data);
 
                 //launch flash process
-                cleepService.sendCommand('startflash', data)
+                installService.startFlash(data)
                     .then(function() {
                         toast.info('Installation started');
                     }, function(err) {
@@ -166,20 +148,14 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
         {
             confirm.open('Cancel installation?', null, 'Yes', 'No')
                 .then(function() {
-                    cleepService.sendCommand('cancelflash')
-                        .then(function() {
-                            toast.info('Installation canceled');
-                        });
+                    installService.cancelFlash();
                 });
         }
         else if( self.status.status===self.STATUS.FLASHING || self.status.status===self.STATUS.VALIDATING )
         {
             confirm.open('Cancel installation?', 'Canceling installation during this step of process will put your removable media in inconsistant state.', 'Yes, cancel', 'No, continue')
                 .then(function() {
-                    cleepService.sendCommand('cancelflash')
-                        .then(function() {
-                            toast.info('Installation canceled');
-                        });
+                    installService.cancelFlash();
                 });
         }
         else if( self.status.status===self.STATUS.REQUEST_WRITE_PERMISSIONS )
@@ -187,10 +163,7 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
             //can cancel if permissions is blocked. Can happen if user take too much time filling password
             confirm.open('Cancel installation?', null, 'Yes', 'No')
                 .then(function() {
-                    cleepService.sendCommand('cancelflash')
-                        .then(function() {
-                            toast.info('Installation canceled');
-                        });
+                    installService.cancelFlash();
                 });
         }
         else
@@ -202,7 +175,7 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
     //download iso file
     self.downloadIso = function()
     {
-        $rootScope.$broadcast('download-file', {url: self.selectedIso.url});
+        $rootScope.$broadcast('download-file', {url: self.config.iso.url});
     };
 
     //flash update received
@@ -243,7 +216,7 @@ var installController = function($rootScope, cleepService, toast, confirm, logge
 
 };
 
-Cleep.controller('installController', ['$rootScope', 'cleepService', 'toastService', 'confirmService', 'logger', 'updateService', 
+Cleep.controller('installController', ['$rootScope', 'toastService', 'confirmService', 'logger', 'updateService', 
                                         'installService', 'modalService', installController]);
 
 

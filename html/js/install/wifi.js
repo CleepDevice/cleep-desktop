@@ -13,7 +13,7 @@ var wifiController = function(closeModal, installService, modalData)
     self.wifiNetworkName = '';
     self.wifiNetworkEncryption = 'wpa2';
     self.showPassword = false;
-    self.selectedWifiChoice = modalData.selectedWifiChoice;
+    self.wifiChoice = modalData.wifiChoice;
 
     //refresh wifi networks
     self.refreshWifiNetworks = function()
@@ -23,7 +23,7 @@ var wifiController = function(closeModal, installService, modalData)
 
     self.disableSaveButton = function()
     {
-        if( self.selectedWifiChoice==1 )
+        if( self.wifiChoice==1 )
         {
             //user wants to connect to available wifi network
             if( !self.config.adapter && !self.wifiNetworkName )
@@ -42,7 +42,7 @@ var wifiController = function(closeModal, installService, modalData)
                 return true;
             }
         }
-        if( self.selectedWifiChoice==2 ) 
+        if( self.wifiChoice==2 ) 
         {
             //user wants to connect to hidden network
             if( !self.wifiNetworkName )
@@ -67,14 +67,14 @@ var wifiController = function(closeModal, installService, modalData)
                 network: self.selectedWifi.network,
                 encryption: self.selectedWifi.encryption,
                 password: self.wifiPassword,
-                hidden: (self.selectedWifiChoice===2 ? true : false)
+                hidden: (self.wifiChoice===2 ? true : false)
             });
         } else {
             self.closeModal({
                 network: self.wifiNetworkName,
                 encryption: self.wifiNetworkEncryption,
                 password: self.wifiPassword,
-                hidden: (self.selectedWifiChoice===2 ? true : false)
+                hidden: (self.wifiChoice===2 ? true : false)
             });
         }
     }

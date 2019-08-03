@@ -34,7 +34,7 @@
                             <p ng-if="!ctl.__isos.withraspbianiso">Select Cleep version you want to install on your SD card</p>
                             <p ng-if="ctl.__isos.withraspbianiso">Select distribution you want to install on your SD card</p>
                             <span class="md-secondary md-caption">
-                                {{ctl.selectedIso ? ctl.selectedIso.label : 'No version selected'}}
+                                {{ctl.config.iso ? ctl.config.iso.label : 'No version selected'}}
                             </span>
                             <md-button ng-click="ctl.openIsoDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.flashing">
                                 <md-icon md-svg-icon="open-in-app"></md-icon>
@@ -46,7 +46,7 @@
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Plug your SD card or your USB card reader on your computer and select it from drives list</p>
                             <span class="md-secondary md-caption">
-                                {{ctl.selectedDrive ? ctl.selectedDrive.desc : 'No drive selected'}}
+                                {{ctl.config.drive ? ctl.config.drive.desc : 'No drive selected'}}
                             </span>
                             <md-button ng-click="ctl.openDriveDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.flashing">
                                 <md-icon md-svg-icon="open-in-app"></md-icon>
@@ -54,11 +54,11 @@
                         </md-list-item>
 
                         <!-- network choice -->
-                        <md-list-item ng-if="ctl.selectedIso.category=='cleep'">
+                        <md-list-item ng-if="ctl.config.iso.category=='cleep'">
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Choose way your device will connect to your network</p>
                             <md-input-container class="md-secondary">
-                                <md-select ng-model="ctl.selectedWifiChoice" placeholder="Network connection" class="md-no-underline" ng-disabled="ctl.flashing || ctl.selectedIso.category!='cleep'">
+                                <md-select ng-model="ctl.config.wifiChoice" placeholder="Network connection" class="md-no-underline" ng-disabled="ctl.flashing || ctl.config.iso.category!='cleep'">
                                     <md-option ng-value="0">Wired connection</md-option>
                                     <md-option ng-value="1">Wifi on available network</md-option>
                                     <md-option ng-value="2">Wifi on hidden network</md-option>
@@ -67,58 +67,11 @@
                         </md-list-item>
 
                         <!-- wifi configuration -->
-                        <!--
-                        <md-list-item ng-if="(ctl.selectedWifiChoice==1 || ctl.selectedWifiChoice==2) && ctl.selectedIso.category=='cleep'">
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Configure device wireless access</p>
-                            <div layout="row" class="md-secondary">
-                                <md-input-container ng-if="(!ctl.wifi.adapter && ctl.selectedWifiChoice==1) || ctl.selectedWifiChoice==2" class="no-error-spacer">
-                                    <label>Wifi network name</label>
-                                    <input type="text" ng-model="ctl.wifiNetworkName" ng-disabled="ctl.flashing"/>
-                                </md-input-container>
-                                <md-input-container ng-if="(!ctl.wifi.adapter && ctl.selectedWifiChoice==1) || ctl.selectedWifiChoice==2">
-                                    <label>Encryption</label>
-                                    <md-select ng-model="ctl.wifiNetworkEncryption" placeholder="Encryption" class="md-no-underline" ng-disabled="ctl.flashing">
-                                        <md-option value="wpa2">WPA2</md-option>
-                                        <md-option value="wpa">WPA</md-option>
-                                        <md-option value="wep">WEP</md-option>
-                                        <md-option value="unsecured">Unsecured</md-option>
-                                    </md-select>
-                                </md-input-container>
-
-                                <md-input-container ng-if="ctl.wifi.adapter && ctl.selectedWifiChoice==1">
-                                    <label>Wifi network</label>
-                                    <md-select ng-model="ctl.selectedWifiNetwork" md-on-open="ctl.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline" ng-disabled="ctl.flashing">
-                                        <md-option><em>None</em></md-option>
-                                        <md-option ng-if="ctl.wifi.networks.length===0" ng-disabled="true">No wifi network found</md-option>
-                                        <md-option ng-repeat="wifiNetwork in ctl.wifi.networks" ng-value="wifiNetwork">
-                                            {{wifiNetwork.network}} ({{wifiNetwork.encryption}})
-                                        </md-option>
-                                    </md-select>
-                                </md-input-container>
-
-                                <div layout="row">
-                                    <md-input-container class="no-error-spacer">
-                                        <label>Password</label>
-                                        <input ng-attr-type="{{ctl.showPassword ? 'text' : 'password'}}" ng-model="ctl.wifiPassword" ng-disabled="ctl.flashing || ctl.wifiNetworkEncryption=='unsecured'">
-                                    </md-input-container>
-                                    <div style="padding-top:10px;">
-                                        <md-button class="md-icon-button" ng-click="ctl.showPassword=!ctl.showPassword" ng-disabled="ctl.flashing || ctl.newNetwork.encryption=='unsecured'" aria-label="Show password">
-                                            <md-icon md-svg-icon="eye" ng-if="!ctl.showPassword"></md-icon>
-                                            <md-icon md-svg-icon="eye-off" ng-if="ctl.showPassword"></md-icon>
-                                            <md-tooltip md-direction="left" ng-if="!ctl.showPassword">Show password</md-tooltip>
-                                            <md-tooltip md-direction="left" ng-if="ctl.showPassword">Hide password</md-tooltip>
-                                        </md-button>
-                                    </div>
-                                </div>
-                            </div>
-                        </md-list-item>
-                        -->
-                        <md-list-item ng-if="(ctl.selectedWifiChoice==1 || ctl.selectedWifiChoice==2) && ctl.selectedIso.category=='cleep'">
+                        <md-list-item ng-if="(ctl.config.wifiChoice==1 || ctl.config.wifiChoice==2) && ctl.config.iso.category=='cleep'">
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Wifi configuration</p>
                             <span class="md-secondary md-caption">
-                                {{ctl.wifiConfig ? ctl.wifiConfig.network : 'Wifi not configured'}}
+                                {{ctl.config.wifi ? ctl.config.wifi.network : 'Wifi not configured'}}
                             </span>
                             <md-button ng-click="ctl.openWifiDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.flashing">
                                 <md-icon md-svg-icon="open-in-app"></md-icon>
@@ -175,7 +128,7 @@
                         Overall progress status:
                     </div>
                     <div>
-                        <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.status.total_percent}}" style="padding-top: 15px !important;"></md-progress-linear>
+                        <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.status.total_percent || 0}}" style="padding-top: 15px !important;"></md-progress-linear>
                     </div>
                     <div layout="row" layout-align="end center" style="padding-top:30px;">
                         Powered by&nbsp;<a href="https://etcher.io" target="_blank"><img style="height:14px;" src="images/etcher_logo_black.png"/></a>

@@ -8,7 +8,6 @@ var driveSelectController = function(closeModal, installService, toast)
     var self = this;
     self.closeModal = closeModal;
     self.drives = installService.drives;
-    self.selectedDrive = null;
     self.loading = true;
     self.minSize = 3600000000;
 

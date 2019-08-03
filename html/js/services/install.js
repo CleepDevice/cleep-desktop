@@ -4,6 +4,12 @@
 var installService = function($rootScope, logger, cleepService)
 {
     var self = this;
+    self.status = {
+        percent: 0,
+        total_percent: 0,
+        status: 0,
+        eta: ''
+    };
     self.isos = {
         isos: [],
         cleepisos: 0,
@@ -16,6 +22,24 @@ var installService = function($rootScope, logger, cleepService)
         networks: [],
         adapter: false
     }
+    //save flash config in service for data persistence
+    self.flashConfig = {
+        drive: null,
+        iso: null,
+        wifiChoice: 0,
+        wifi: null
+    };
+
+    /**
+     * Return current install status
+     */
+    self.getStatus = function()
+    {
+        return cleepService.sendCommand('getflashstatus')
+            .then(function(resp) {
+                self.status = resp.data;
+            });
+    };
 
     /**
      * Return wifi adapter infos
@@ -72,7 +96,29 @@ var installService = function($rootScope, logger, cleepService)
             });
     };
 
-    //Init service values
+    /**
+     * Start flash
+     * @data: flash data (drive, iso, wifi...)
+     */
+    self.startFlash = function(data)
+    {
+        return cleepService.sendCommand('startflash', data);
+    };
+
+    /**
+     * Cancel flash
+     */
+    self.cancelFlash = function()
+    {
+        return cleepService.sendCommand('cancelflash')
+            .then(function() {
+                toast.info('Installation canceled');
+            });
+    };
+
+    /**
+     * Init service values
+     */
     self.init = function()
     {
         //refresh all internal values
@@ -83,7 +129,9 @@ var installService = function($rootScope, logger, cleepService)
         self.refreshDrives();
     };
 
-    //Handle config changed to update internal values automatically
+    /**
+     * Handle config changed to update internal values automatically
+     */
     $rootScope.$on('configchanged', function(config) {
         logger.debug('Configuration changed, refresh install service values');
         self.init();

@@ -9,7 +9,6 @@ var isoSelectController = function(closeModal, installService, $timeout)
     self.closeModal = closeModal;
     self.isos = [];
     self.config = installService.isos;
-    self.selectedIso = null;
     self.loading = true;
 
     //controller init
@@ -73,7 +72,6 @@ var isoSelectController = function(closeModal, installService, $timeout)
             if( filenames===undefined )
             {
                 //no file selected
-                self.selectedIso = null;
                 return;
             }
 
