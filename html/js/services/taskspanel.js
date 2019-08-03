@@ -138,10 +138,10 @@ var tasksPanelService = function($rootScope, $mdPanel, logger) {
                       '                <md-progress-circular md-mode="indeterminate" md-diameter="20px" class="progress-circular-white" style="float:left; padding-right:10px;" ng-if="item.loader"></md-progress-circular>' +
                       '                {{item.label}}' +
                       '            </div>' +
-                      '            <md-icon md-svg-icon="{{item.action.icon}}" class="md-secondary" ng-if="item.action" ng-click="ctl.click(item.action.onAction)">' +
+                      '            <md-icon md-svg-icon="{{item.action.icon}}" class="md-secondary" ng-if="item.action" ng-click="ctl.click(item.action.onAction)" aria-label="Action">' +
                       '                <md-tooltip md-direction="top">{{item.action.tooltip}}</md-tooltip>' +
                       '            </md-icon>' +
-                      '            <md-icon md-svg-icon="close" class="md-secondary" ng-if="!item.close.disabled" ng-click="ctl.close(item.id)">' +
+                      '            <md-icon md-svg-icon="close" class="md-secondary" ng-if="!item.close.disabled" ng-click="ctl.close(item.id)" aria-label="Close">' +
                       '                <md-tooltip md-direction="top">Close</md-tooltip>' +
                       '            </md-icon>' +
                       '            <md-divider ng-if="!$last"></md-divider>' +
