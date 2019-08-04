@@ -72,7 +72,7 @@ class Download():
         Args:
             filename: filename to delete
         """
-        cached_filename = self.__get_cached_filename_by_filename(filename)
+        cached_filename = self.__encode_cached_filename_by_filename(filename)
         self.logger.debug('Trying to delete cached filename %s (with real name %s)' % (cached_filename, filename))
         for root, dirs, dls in os.walk(self.cache_dir):
             for dl in dls:
@@ -133,13 +133,15 @@ class Download():
         """
         cached = []
 
+        self.logger.debug('Get cached files from "%s"' % self.cache_dir)
         for root, dirs, dls in os.walk(self.cache_dir):
             for dl in dls:
+                self.logger.debug('Found cached file "%s"' % dl)
                 if os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
                     filepath = os.path.join(self.cache_dir, dl)
                     try:
-                        filename = os.path.basename(dl).replace(self.CACHED_FILE_PREFIX, '')
-                        filename = base64.b16decode(filename).decode('utf-8')
+                        filename = os.path.basename(dl).replace('%s_' % self.CACHED_FILE_PREFIX, '')
+                        filename = self.__decode_cached_filename(filename)
                         cached.append({
                             'filename': filename,
                             'filepath': filepath,
@@ -150,6 +152,7 @@ class Download():
                     except:
                         #unable to get cached filename, filename format changed surely
                         #remove it from list and filesystem
+                        self.logger.exception('Invalid cached file:')
                         os.remove(filepath)
                         self.logger.warning('Remove cached file "%s" because name format surely changed and is not compatible anymore' % filepath)
 
@@ -239,7 +242,7 @@ class Download():
         self.logger.debug('File will be saved to "%s"' % self.download)
 
         #check if file is cached
-        cached_filename = self.__get_cached_filename_by_url(url)
+        cached_filename = self.__encode_cached_filename_by_url(url)
         cached_download = os.path.join(self.cache_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, cached_filename))
         if cache and os.path.exists(cached_download):
             #file cached, return it
@@ -365,9 +368,11 @@ class Download():
         if not cache:
             #no cache, rename file with download prefix
             download = os.path.join(self.temp_dir, '%s_%s' % (self.DOWNLOAD_FILE_PREFIX, download_uuid))
+            self.logger.debug('Cache disabled, rename download to "%s"', download)
         else:
             #cache file, rename file with cache prefix
             download = os.path.join(self.cache_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, cached_filename))
+            self.logger.debug('Cache enabled, rename download to "%s"', download)
         try:
             shutil.move(self.download, download)
             self.download = download
@@ -383,7 +388,7 @@ class Download():
 
         return self.download
 
-    def __get_cached_filename_by_url(self, url):
+    def __encode_cached_filename_by_url(self, url):
         """
         Return cached filename based on url
 
@@ -402,7 +407,7 @@ class Download():
 
         return safe_filename
 
-    def __get_cached_filename_by_filename(self, filename):
+    def __encode_cached_filename_by_filename(self, filename):
         """
         Return cached filename based on real filename
 
@@ -416,6 +421,19 @@ class Download():
         safe_filename = base64.b16encode(filename.encode('utf-8')).decode('utf-8')
 
         return safe_filename
+
+    def __decode_cached_filename(self, filename):
+        """
+        Return decoded cached filename
+
+        Args:
+            filename (string): filename to decode
+
+        Returns:
+            string: decoded filename
+        """
+        return base64.b16decode(filename).decode('utf-8')
+
 
 #last_percent = 0
 #def cb(status, size, percent):
