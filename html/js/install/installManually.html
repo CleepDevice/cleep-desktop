@@ -34,8 +34,8 @@
                     <!-- iso -->
                     <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <p ng-if="!ctl.__isos.withraspbianiso">Select Cleep version you want to install on your SD card</p>
-                        <p ng-if="ctl.__isos.withraspbianiso">Select distribution you want to install on your SD card</p>
+                        <p ng-if="!ctl.prefs.isoraspbian">Select Cleep version you want to install on your SD card</p>
+                        <p ng-if="ctl.prefs.isoraspbian">Select distribution you want to install on your SD card</p>
                         <span class="md-secondary md-caption">
                             {{ctl.config.iso ? ctl.config.iso.label : 'No version selected'}}
                         </span>

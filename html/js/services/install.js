@@ -14,8 +14,8 @@ var installService = function($rootScope, logger, cleepService)
         isos: [],
         cleepisos: 0,
         raspbianisos: 0,
-        withraspbianiso: false,
-        withlocaliso: false
+        withraspbianisos: false,
+        withlocalisos: false
     };
     self.drives = [];
     self.wifi = {
@@ -91,8 +91,8 @@ var installService = function($rootScope, logger, cleepService)
                 self.isos.isos = resp.data.isos;
                 self.isos.cleepisos = resp.data.cleepisos;
                 self.isos.raspbianisos = resp.data.raspbianisos;
-                self.isos.withraspbianiso = resp.data.withraspbianiso;
-                self.isos.withlocaliso = resp.data.withlocaliso;
+                self.isos.withraspbianisos = resp.data.withraspbianisos;
+                self.isos.withlocalisos = resp.data.withlocalisos;
             });
     };
 

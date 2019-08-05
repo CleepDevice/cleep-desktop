@@ -22,10 +22,12 @@
             </div>
         </div>
 
-        <!-- list -->
         <md-list ng-show="!ctl.loading" style="padding: 0px;">
 
-            <md-subheader class="md-no-sticky">Cleep versions</md-subheader>
+            <!-- cleep -->
+            <md-subheader class="md-no-sticky">
+                Cleep versions
+            </md-subheader>
             <md-list-item ng-if="ctl.cleepisos===0" class="md-2-line">
                 <div class="md-list-item-text">
                     <h3>No Cleep version found</h3>
@@ -38,21 +40,23 @@
             </md-list-item>
 
             <!-- raspbian -->
-            <md-subheader class="md-no-sticky">Latest Raspbian</md-subheader>
-            <md-list-item ng-if="ctl.cleepisos===0" class="md-2-line">
+            <md-subheader class="md-no-sticky" ng-if="ctl.config.withraspbianisos">
+                Latest Raspbian
+            </md-subheader>
+            <md-list-item ng-if="ctl.config.withraspbianisos && ctl.cleepisos===0" class="md-2-line">
                 <div class="md-list-item-text">
                     <h3>No Raspbian version found</h3>
                     <p>Is internet connection available?</p>
                 </div>
             </md-list-item>
-            <md-list-item ng-repeat="iso in ctl.isos | filter: {category:'raspbian'}" ng-if="ctl.config.withraspbianiso" ng-click="ctl.selectRemoteIso(iso)">
+            <md-list-item ng-repeat="iso in ctl.isos | filter: {category:'raspbian'}" ng-if="ctl.config.withraspbianisos" ng-click="ctl.selectRemoteIso(iso)">
                 <md-icon md-svg-icon="circle-small"></md-icon>
                 <p>{{iso.label}} ({{iso.timestamp | hrDate}})</p>
             </md-list-item>
 
             <!-- local iso -->
-            <md-subheader ng-if="ctl.config.withlocaliso" class="md-no-sticky">Local iso</md-subheader>
-            <md-list-item ng-if="ctl.config.withlocaliso" ng-click="ctl.selectLocalIso(iso)">
+            <md-subheader ng-if="ctl.config.withlocalisos" class="md-no-sticky">Local iso</md-subheader>
+            <md-list-item ng-if="ctl.config.withlocalisos" ng-click="ctl.selectLocalIso(iso)">
                 <md-icon md-svg-icon="circle-small"></md-icon>
                 <p>Click to select local iso file</p>
             </md-list-item>

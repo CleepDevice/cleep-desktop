@@ -37,7 +37,7 @@ class FlashDrive(CleepDesktopModule):
     Flash drive helper
     """
 
-    CACHE_DURATION = 600.0
+    CACHE_DURATION = 900.0
 
     TMP_FILE_PREFIX = 'cleep_iso'
 
@@ -101,7 +101,6 @@ class FlashDrive(CleepDesktopModule):
         self.isos = []
         self.url = None
         self.cancel = False
-        self.timestamp_isos = 0
         self.__etcher_output_pattern = r'.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)'
         self.__flash_output_error = False
         self.wifi_config = None
@@ -109,11 +108,12 @@ class FlashDrive(CleepDesktopModule):
         self.github = Github(self.RASPIOT_REPO['owner'], self.RASPIOT_REPO['repository'])
         self.raspbians = Raspbians(self.crash_report)
         self.isos_cached = {
+            'lastupdate': 0,
             'isos': [],
             'cleepisos': 0,
             'raspbianisos': 0,
-            'withraspbianiso': False,
-            'withlocaliso': False
+            'withraspbianisos': False,
+            'withlocalisos': False
         }
        
         #prepare specific tools and flash commands
@@ -355,6 +355,7 @@ class FlashDrive(CleepDesktopModule):
             if iso['url']==url:
                 self.logger.debug('Found sha256 "%s" for iso "%s"' % (iso['sha256'], url))
                 self.iso_sha256 = iso['sha256']
+                break
 
         #generate wifi config file is needed
         wifi_config = None
@@ -545,17 +546,18 @@ class FlashDrive(CleepDesktopModule):
 
         return flashables
 
-    def get_isos(self, with_iso_raspbian, with_iso_local, force_refresh=False):
+    def get_isos(self, with_raspbian_isos, with_local_isos, force_refresh=False):
         """
         Get list of isos file available
 
         Args:
-            with_iso_raspbian (bool): function will also return raspbian isos
-            with_iso_local (bool): just return iso local flag
+            with_raspbian_isos (bool): function will also return raspbian isos
+            with_local_isos (bool): just return iso local flag
             force_refresh (bool): force refresh
 
         Return:
             dict:
+                lastupdate (float): last update
                 raspbian (bool): with raspbian iso,
                 cleepisos (int): number of returned Cleep isos
                 raspbianisos (int): number of returned Raspbian isos
@@ -573,96 +575,85 @@ class FlashDrive(CleepDesktopModule):
                 withraspbianisos (bool): raspbian iso flag
                 withlocalisos (bool): local iso flag
         """
+        self.logger.debug('===> getisos %s' % self.isos_cached)
         #return isos from cache
-        refresh_isos = True
+        refresh_isos = False
         if force_refresh is True:
             #refresh forced
-            pass
-
-        if self.timestamp_isos==0 or len(self.isos)==0:
+            self.logger.debug('Force refresh isos enabled')
+            refresh_isos = True
+        elif self.isos_cached['lastupdate']==0 or len(self.isos)==0:
             #force refresh first time
+            self.logger.debug('First isos checking, refresh isos list')
+            refresh_isos = True
+        elif time.time()-self.isos_cached['lastupdate']>self.CACHE_DURATION:
+            #cache duration expired, refresh needed
+            self.logger.debug('Cache expired, refresh isos list')
+            refresh_isos = True
+        elif self.isos_cached['withraspbianisos']!=with_raspbian_isos:
+            #preferences changed, refresh needed
+            self.logger.debug('Preferences changes, refresh isos list')
             refresh_isos = True
 
-        elif time.time()-self.timestamp_isos<=self.CACHE_DURATION:
-            #cache duration expired, check if refresh needed
-            need_refresh = False
-            if not with_iso_raspbian:
-                #raspbian is not enabled in preferences
-                for iso in self.isos:
-                    if iso['category']=='raspbian':
-                        #raspbians isos in list while options disabled, need to refresh list to remove entries
-                        need_refresh = True
-                        break
-            else:
-                #raspbian is enabled in preferences, by default need refresh...
-                need_refresh = True
-                for iso in self.isos:
-                    if iso['category']=='raspbian':
-                        #.. except if raspbians isos already retrieved
-                        need_refresh = False
-                        break
-
-            if not need_refresh: 
-                refresh_isos = False
-
-        isos = []
-        if refresh_isos:
-            #get cleep latest release
-            (cleep_release_file, cleep_release_name) = self.get_latest_cleep()
-            self.logger.debug('Cleep %s: %s' % (cleep_release_name, cleep_release_file))
-            if cleep_release_file:
-                #search for .img and .sha256 files
-                latest_cleep = {
-                    'label': None,
-                    'url': None,
-                    'timestamp': 0,
-                    'category': 'cleep',
-                    'sha256': None
-                }
-                #look for cleep iso files (img and sha256)
-                for file in cleep_release_file:
-                    if file['name'].startswith('cleep_%s' % cleep_release_name) and file['name'].endswith('.zip'):
-                        #image file found
-                        latest_cleep['label'] = 'Cleep %s' % (cleep_release_name)
-                        latest_cleep['timestamp'] = file['timestamp']
-                        latest_cleep['url'] = file['url']
-                    elif file['name'].startswith('cleep_%s' % cleep_release_name) and file['name'].endswith('.sha256'):
-                        #checksum file, open it to get its content
-                        sha256 = self.github.get_file_content(file['url'])
-                        if sha256 and len(sha256.split())>0:
-                            latest_cleep['sha256'] = sha256.split()[0]
-
-                #save cleep iso
-                if latest_cleep['label'] and latest_cleep['timestamp']!=0:
-                    isos.append(latest_cleep)
-
-            #get raspbian isos
-            if with_iso_raspbian:
-                raspbians = self.get_latest_raspbians()
-                self.logger.debug('Raspbians: %s' % raspbians)
-                if raspbians['raspbian_lite'] is not None:
-                    isos.append({
-                        'label': 'Raspbian Lite',
-                        'url': raspbians['raspbian_lite']['url'],
-                        'timestamp': raspbians['raspbian_lite']['timestamp'],
-                        'category': 'raspbian',
-                        'sha256': raspbians['raspbian_lite']['sha256']
-                    })
-                if raspbians['raspbian'] is not None:
-                    isos.append({
-                        'label': 'Raspbian desktop',
-                        'url': raspbians['raspbian']['url'],
-                        'timestamp': raspbians['raspbian']['timestamp'],
-                        'category': 'raspbian',
-                        'sha256': raspbians['raspbian']['sha256']
-                    })
-
-            self.logger.debug('Isos: %s' % isos)
-            self.isos = sorted(isos, key=lambda i:i['timestamp'])
-            self.timestamp_isos = time.time()
-
-        else:
+        if not refresh_isos:
+            #no refresh needed, return cache (with updated local isos value)
             self.logger.debug('Return isos list from cache')
+            self.isos_cached['withlocalisos'] = with_local_isos
+            return self.isos_cached
+
+        #get cleep latest release
+        isos = []
+        (cleep_release_file, cleep_release_name) = self.get_latest_cleep()
+        self.logger.debug('Cleep %s: %s' % (cleep_release_name, cleep_release_file))
+        if cleep_release_file:
+            #search for .img and .sha256 files
+            latest_cleep = {
+                'label': None,
+                'url': None,
+                'timestamp': 0,
+                'category': 'cleep',
+                'sha256': None
+            }
+            #look for cleep iso files (img and sha256)
+            for file in cleep_release_file:
+                if file['name'].startswith('cleep_%s' % cleep_release_name) and file['name'].endswith('.zip'):
+                    #image file found
+                    latest_cleep['label'] = 'Cleep %s' % (cleep_release_name)
+                    latest_cleep['timestamp'] = file['timestamp']
+                    latest_cleep['url'] = file['url']
+                elif file['name'].startswith('cleep_%s' % cleep_release_name) and file['name'].endswith('.sha256'):
+                    #checksum file, open it to get its content
+                    sha256 = self.github.get_file_content(file['url'])
+                    if sha256 and len(sha256.split())>0:
+                        latest_cleep['sha256'] = sha256.split()[0]
+
+            #save cleep iso
+            if latest_cleep['label'] and latest_cleep['timestamp']!=0:
+                isos.append(latest_cleep)
+
+        #get raspbian isos
+        if with_raspbian_isos:
+            raspbians = self.get_latest_raspbians()
+            self.logger.debug('Raspbians: %s' % raspbians)
+            if raspbians['raspbian_lite'] is not None:
+                isos.append({
+                    'label': 'Raspbian Lite',
+                    'url': raspbians['raspbian_lite']['url'],
+                    'timestamp': raspbians['raspbian_lite']['timestamp'],
+                    'category': 'raspbian',
+                    'sha256': raspbians['raspbian_lite']['sha256']
+                })
+            if raspbians['raspbian'] is not None:
+                isos.append({
+                    'label': 'Raspbian desktop',
+                    'url': raspbians['raspbian']['url'],
+                    'timestamp': raspbians['raspbian']['timestamp'],
+                    'category': 'raspbian',
+                    'sha256': raspbians['raspbian']['sha256']
+                })
+
+        self.logger.debug('Isos: %s' % isos)
+        self.isos = sorted(isos, key=lambda i:i['timestamp'])
 
         cleep_isos = 0
         raspbian_isos = 0
@@ -672,14 +663,16 @@ class FlashDrive(CleepDesktopModule):
             elif iso['category']=='raspbian':
                 raspbian_isos += 1
 
-        #cache result
+        #save new cache
         self.isos_cached = {
+            'lastupdate': time.time(),
             'isos': self.isos,
             'cleepisos': cleep_isos,
             'raspbianisos': raspbian_isos,
-            'withraspbianiso': with_iso_raspbian,
-            'withlocaliso': with_iso_local
+            'withraspbianisos': with_raspbian_isos,
+            'withlocalisos': with_local_isos
         }
+
         return self.isos_cached
 
     def __download_callback(self, status, filesize, percent):

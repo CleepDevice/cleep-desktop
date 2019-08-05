@@ -5,11 +5,12 @@ var path = require('electron').remote.require('path');
 /**
  * Install controller
  */
-var installController = function($rootScope, toast, confirm, logger, updateService, installService, modalService)
+var installController = function($rootScope, toast, confirm, logger, updateService, installService, modalService, cleepService)
 {
     var self = this;
     self.flashing = false;
     self.modal = modalService;
+    self.prefs = null;
     self.config = installService.flashConfig;
     self.status = installService.status;
     self.STATUS = {
@@ -31,6 +32,11 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
     //initialize
     self.$onInit = function()
     {
+        cleepService.getConfig()
+            .then(function(resp) {
+                self.prefs = resp.data.config.cleep;
+            });
+
         //get install status
         installService.getStatus();
     };
@@ -217,6 +223,6 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
 };
 
 Cleep.controller('installController', ['$rootScope', 'toastService', 'confirmService', 'logger', 'updateService', 
-                                        'installService', 'modalService', installController]);
+                                        'installService', 'modalService', 'cleepService', installController]);
 
 

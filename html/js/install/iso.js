@@ -38,20 +38,11 @@ var isoSelectController = function(closeModal, installService, $timeout)
     {
         self.loading = true;
 
-        return $timeout(function() {
-            if( self.config.isos.length===0 ) {
-                //no isos loaded yet, get list
-                installService.refreshIsos()
-                    .then(function() {
-                        self.__refreshIsos();
-                        self.loading = false;
-                    });
-            } else {
-                //simply refresh internal list of isos
+        installService.refreshIsos()
+            .then(function() {
                 self.__refreshIsos();
                 self.loading = false;
-            }
-        }, 0);
+            });
     };
 
     //select raspbian iso
