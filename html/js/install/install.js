@@ -49,7 +49,7 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
 
     //open iso dialog
     self.openIsoDialog = function() {
-        self.modal.open('isoSelectController', 'js/install/isoselect-dialog.html')
+        self.modal.open('isoController', 'js/install/iso-dialog.html')
             .then(function(res) {
                 self.config.iso = res;
             });
@@ -57,7 +57,7 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
 
     //open drive dialog
     self.openDriveDialog = function() {
-        self.modal.open('driveSelectController', 'js/install/driveselect-dialog.html')
+        self.modal.open('driveController', 'js/install/drive-dialog.html')
             .then(function(res) {
                 self.config.drive = res;
             });

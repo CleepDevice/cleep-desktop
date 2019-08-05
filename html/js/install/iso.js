@@ -1,9 +1,9 @@
 var Cleep = angular.module('Cleep')
 
 /**
- * Iso select controller
+ * Iso controller
  */
-var isoSelectController = function(closeModal, installService, $timeout)
+var isoController = function(closeModal, installService, $timeout)
 {
     var self = this;
     self.closeModal = closeModal;
@@ -75,4 +75,4 @@ var isoSelectController = function(closeModal, installService, $timeout)
     };
 
 };
-Cleep.controller('isoSelectController', ['closeModal', 'installService', '$timeout', isoSelectController]);
+Cleep.controller('isoController', ['closeModal', 'installService', '$timeout', isoController]);

@@ -1,9 +1,9 @@
 var Cleep = angular.module('Cleep')
 
 /**
- * Drive select controller
+ * Drive controller
  */
-var driveSelectController = function(closeModal, installService, toast)
+var driveController = function(closeModal, installService, toast)
 {
     var self = this;
     self.closeModal = closeModal;
@@ -39,4 +39,4 @@ var driveSelectController = function(closeModal, installService, toast)
     };
 
 };
-Cleep.controller('driveSelectController', ['closeModal', 'installService', 'toastService', driveSelectController]);
+Cleep.controller('driveController', ['closeModal', 'installService', 'toastService', driveController]);
