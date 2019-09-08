@@ -542,7 +542,9 @@ function launchCore(rpcport)
         let debug = settings.has('cleep.debug') && settings.get('cleep.debug') ? 'debug' : 'release';
         logger.debug('Core commandline: '+commandline+' ' + rpcport + ' ' + cachePath + ' ' + configPath + ' ' + configFilename + ' ' + debug);
         coreStartupTime = Math.round(Date.now()/1000);
-        coreProcess = require('child_process').spawn(commandline, [rpcport, cachePath, configPath, configFilename, 'release', 'false']);
+        coreProcess = require('child_process').spawn(commandline, [rpcport, cachePath, configPath, configFilename, 'release', 'false'], {
+            stdio: 'ignore'
+        });
     }
     else
     {
