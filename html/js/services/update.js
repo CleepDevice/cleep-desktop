@@ -280,7 +280,7 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
             })
             .then(function(update) {
                 logger.debug('app-updater result: ' + JSON.stringify(update));
-                if( update && update.versionInfo && update.versionInfo.version && update.versionInfo.version!==cleepdesktopInfos.version )
+                if( update && update.versionInfo && update.versionInfo.version && update.versionInfo.version>cleepdesktopInfos.version )
                 {
                     cleepdesktopUpdateAvailable = true;
                 }
