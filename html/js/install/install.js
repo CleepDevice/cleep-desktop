@@ -131,6 +131,7 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
                         //no toast here, if error occured with command, it should return an exception that is catched
                         //and toasted by cleepService
                         self.flashing = false;
+                        $rootScope.$broadcast('enablequit');
                     });
             });
     };
@@ -185,7 +186,7 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
     };
 
     //flash update received
-    $rootScope.$on('flash', function(_event, data) {
+    $rootScope.$on('install', function(_event, data) {
         if( !data )
         {
             return;

@@ -332,7 +332,7 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
     });
 
     //Add flash task panel info
-    $rootScope.$on('flash', function(event, data) {
+    $rootScope.$on('install', function(event, data) {
         if( !data )
             return;
 
