@@ -35,7 +35,7 @@ var installService = function($rootScope, logger, cleepService)
      */
     self.getStatus = function()
     {
-        return cleepService.sendCommand('getflashstatus')
+        return cleepService.sendCommand('get_status', 'install')
             .then(function(resp) {
                 self.status = resp.data;
             });
@@ -46,7 +46,7 @@ var installService = function($rootScope, logger, cleepService)
      */
     self.refreshWifiAdapter = function()
     {
-        return cleepService.sendCommand('getwifiadapter')
+        return cleepService.sendCommand('get_wifi_adapter', 'install')
             .then(function(resp) {
                 self.wifi.adapter = resp.data.adapter;
             });
@@ -57,7 +57,7 @@ var installService = function($rootScope, logger, cleepService)
      */
     self.refreshWifiNetworks = function()
     {
-        return cleepService.sendCommand('getwifinetworks')
+        return cleepService.sendCommand('get_wifi_networks', 'install')
             .then(function(resp) {
                 self.wifi.networks = resp.data.networks;
             });
@@ -68,7 +68,7 @@ var installService = function($rootScope, logger, cleepService)
      */
     self.refreshDrives = function()
     {
-        return cleepService.sendCommand('getflashdrives')
+        return cleepService.sendCommand('get_flashable_drives', 'install')
             .then(function(resp) {
                 //clear existing drives
                 self.drives.splice(0, self.drives.length);
@@ -86,7 +86,7 @@ var installService = function($rootScope, logger, cleepService)
      */
     self.refreshIsos = function()
     {
-        return cleepService.sendCommand('getisos')
+        return cleepService.sendCommand('get_isos', 'install')
             .then(function(resp) {
                 self.isos.isos = resp.data.isos;
                 self.isos.cleepisos = resp.data.cleepisos;
@@ -102,7 +102,7 @@ var installService = function($rootScope, logger, cleepService)
      */
     self.startFlash = function(data)
     {
-        return cleepService.sendCommand('startflash', data);
+        return cleepService.sendCommand('start_flash', 'install', data);
     };
 
     /**
@@ -110,7 +110,7 @@ var installService = function($rootScope, logger, cleepService)
      */
     self.cancelFlash = function()
     {
-        return cleepService.sendCommand('cancelflash')
+        return cleepService.sendCommand('cancel_flash', 'install')
             .then(function() {
                 toast.info('Installation canceled');
             });

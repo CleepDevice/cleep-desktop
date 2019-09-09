@@ -1,18 +1,37 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__all__ = ['CommandError', 'CommandInfo', 'NoResponse', 'NoMessageAvailable', 'InvalidParameter', 'MissingParameter', 
-           'InvalidMessage', 'Unauthorized', 'BusError', 'MessageResponse', 'MessageRequest', 'CleepDesktopModule']
+__all__ = ['MessageResponse', 'MessageRequest', 'CleepDesktopModule', 'AppContext', 'AppPaths']
 
 from threading import Thread
 import logging
 import time
+from core.exceptions import CommandError, InvalidMessage
+
+class AppPaths():
+    app = None
+    config = None
+    cache = None
+
+class AppContext():
+    #Logger: main logger instance
+    main_logger = None
+    #string: log filepath
+    log_filepath = None
+    #AppConfig: application config instance
+    config = None
+    #CrashReport: crash report instance
+    crash_report = None
+    #AppPaths: application paths
+    paths = AppPaths()
+    #function: callback to ui update
+    update_ui = None
 
 class CleepDesktopModule(Thread):
     """
     CleepDesktopModule handles default behavior for CleepDesktop module
     """
-    def __init__(self, debug_enabled, crash_report):
+    def __init__(self, context, debug_enabled):
         """
         Constructor
 
@@ -30,7 +49,8 @@ class CleepDesktopModule(Thread):
         self.debug_enabled = debug_enabled
 
         #members
-        self.crash_report = crash_report
+        self.context = context
+        self.crash_report = context.crash_report
         self.running = True
 
     def __del__(self):
@@ -89,6 +109,20 @@ class CleepDesktopModule(Thread):
         """
         pass
 
+    def execute_command(self, command, params):
+        """
+        Execute specified command specifying parameters
+
+        Args:
+            commmand (string): command to execute
+            params (dict): command parameters
+        """
+        if not hasattr(self, command):
+            raise CommandError('Command "%s" not found in "%s"' % (command, self.__class__.__name__))
+
+        module_function = getattr(self, command)
+        return module_function(**params)
+
     def run(self):
         """
         Default process
@@ -103,65 +137,6 @@ class CleepDesktopModule(Thread):
 
         self.logger.debug('%s thread stopped' % self.__class__.__name__)
     
-
-class CommandError(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-
-class CommandInfo(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-
-class NoResponse(Exception):
-    def __str__(self):
-        return repr('No response')
-
-class NoMessageAvailable(Exception):
-    def __str__(self):
-        return repr('No message available')
-
-class InvalidParameter(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-
-class MissingParameter(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-
-class InvalidMessage(Exception):
-    def __str__(self):
-        return repr('Invalid message')
-
-class BusNotReady(Exception):
-    def __str__(self):
-        return repr('Bus is not ready yet. Please handle system.application.ready event before sending events.')
-
-class InvalidModule(Exception):
-    def __init__(self, module):
-        self.module = module
-    def __str__(self):
-        return repr('Invalid module %s (not loaded or unknown)' % module)
-
-class Unauthorized(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-
-class BusError(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-
 class MessageResponse():
     """ 
     Object that holds message response

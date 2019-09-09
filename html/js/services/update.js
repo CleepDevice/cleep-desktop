@@ -245,7 +245,7 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
         });
 
         //get initial status
-        cleepService.sendCommand('getupdatesstatus')
+        cleepService.sendCommand('get_status', 'updates')
             .then(function(resp) {
                 self.etcherStatus.version = resp.data.etcherstatus.version;
                 self.etcherStatus.status = resp.data.etcherstatus.status;
@@ -266,7 +266,7 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
         var lastCheck = null;
         var etcherUpdateAvailable = true;
         var cleepdesktopUpdateAvailable = false;
-        cleepService.sendCommand('checkupdates')
+        cleepService.sendCommand('check_updates', 'updates')
             .then(function(resp) {
                 //save resp
                 lastCheck = resp.data.lastcheck;

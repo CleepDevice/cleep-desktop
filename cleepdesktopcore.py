@@ -31,20 +31,17 @@ if sys.argv[5]=='debug':
 is_dev = False
 if sys.argv[6]=='true':
     is_dev = True
-crash_report = None
+app_context = None
 
 try:
     #absolute cleepdesktopcore path
     app_path = os.path.abspath(os.path.dirname(sys.argv[0]))
 
     #get rpc application
-    app = rpcserver.get_app(app_path, cache_path, config_path, config_filename, debug, is_dev)
-
-    #set crash report
-    crash_report = rpcserver.crash_report
+    app_context = rpcserver.configure_app(app_path, cache_path, config_path, config_filename, debug, is_dev)
 
     #start rpc server
-    rpcserver.logger.debug('Serving files from "%s" folder.' % rpcserver.HTML_DIR)
+    app_context.main_logger.debug('Serving files from "%s" folder.' % rpcserver.HTML_DIR)
     rpcserver.start(u'127.0.0.1', rpcport, None, None)
 
 except Exception as e:
@@ -53,8 +50,8 @@ except Exception as e:
     traceback.print_exception(ex_type, ex_value, ex_traceback, None, sys.stderr)
 
     #crash report if possible
-    if crash_report:
-        crash_report.report_exception()
+    if app_context:
+        app_context.crash_report.report_exception()
 
 finally:
     rpcserver.stop()

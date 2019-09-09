@@ -17,29 +17,25 @@ class Devices(CleepDesktopModule):
     CLEEPDESKTOP_HOSTNAME = 'CLEEPDESKTOP'
     CLEEPDESKTOP_PORT = '0'
 
-    def __init__(self, update_callback, message_callback, debug_enabled, crash_report):
+    def __init__(self, context, debug_enabled):
         """
         Constructor
 
         Args:
-            update_callback (function): function called when device connects/disconnects
-            message_callback (function): function called when message is received on bus
-            debug_enabled (bool): True to enable module debug
-            crash_report (bool): True if crash report is enabled
+            context (AppContext): application context
+            debug_enabled (bool): True if debug is enabled
         """
-        CleepDesktopModule.__init__(self, debug_enabled, crash_report)
+        CleepDesktopModule.__init__(self, context, debug_enabled)
 
         #members
         self.devices = {}
-        self.update_callback = update_callback
-        self.message_callback = message_callback
         self.external_bus = PyreBus(
             self.on_message_received, 
             self.on_peer_connected, 
             self.on_peer_disconnected, 
             self.__decode_bus_headers, 
             debug_enabled, 
-            crash_report
+            self.context.crash_report
         )
         self.peers_uuids = {}
 
@@ -125,7 +121,7 @@ class Devices(CleepDesktopModule):
         msg = message.to_dict()
         msg['timestamp'] = int(time.time())
 
-        self.message_callback(msg)
+        self.context.update_ui('monitoring', msg)
 
     def on_peer_connected(self, peer, infos):
         """
@@ -163,7 +159,7 @@ class Devices(CleepDesktopModule):
         self.devices[infos['uuid']] = infos
 
         #update ui
-        self.update_callback(self.get_devices())
+        self.context.update_ui('devices', self.get_devices())
 
     def on_peer_disconnected(self, peer):
         """
@@ -182,7 +178,7 @@ class Devices(CleepDesktopModule):
             self.devices[device_uuid]['online'] = False
 
         #always update ui
-        self.update_callback(self.get_devices())
+        self.context.update_ui('devices', self.get_devices())
 
     def get_devices(self):
         """

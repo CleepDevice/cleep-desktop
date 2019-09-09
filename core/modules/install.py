@@ -32,7 +32,7 @@ else:
     from core.libs.nmcli import Nmcli
     
 
-class FlashDrive(CleepDesktopModule):
+class Install(CleepDesktopModule):
     """
     Flash drive helper
     """
@@ -69,27 +69,18 @@ class FlashDrive(CleepDesktopModule):
         'repository': 'raspiot'
     }
 
-    def __init__(self, app_path, cached_isos_path, config_path, update_callback, debug_enabled, crash_report):
+    def __init__(self, context, debug_enabled):
         """
         Contructor
 
         Args:
-            app_path (string): application path
-            cached_isos_path (string): cached isos path
-            config_path (string): installation path
-            update_callback (function): function to call when data need to be pushed to ui
+            context (AppContext): application context
             debug_enabled (bool): True if debug is enabled
-            crash_report (CrashReport): crash report instance
         """
-        CleepDesktopModule.__init__(self, debug_enabled, crash_report)
+        CleepDesktopModule.__init__(self, context, debug_enabled)
 
         #members
-        self.app_path = app_path
-        self.cached_isos_path = cached_isos_path
-        self.config_path = config_path
-        self.crash_report = crash_report
         self.env = platform.system().lower()
-        self.update_callback = update_callback
         self.console = None
         self.percent = 0
         self.total_percent = 0
@@ -106,7 +97,7 @@ class FlashDrive(CleepDesktopModule):
         self.wifi_config = None
         self.flashable_drives = []
         self.github = Github(self.RASPIOT_REPO['owner'], self.RASPIOT_REPO['repository'])
-        self.raspbians = Raspbians(self.crash_report)
+        self.raspbians = Raspbians(self.context.crash_report)
         self.isos_cached = {
             'lastupdate': 0,
             'isos': [],
@@ -118,19 +109,19 @@ class FlashDrive(CleepDesktopModule):
        
         #prepare specific tools and flash commands
         if self.env=='windows':
-            self.flash_cmd = os.path.join(self.config_path, self.FLASH_WINDOWS)
+            self.flash_cmd = os.path.join(self.context.paths.config, self.FLASH_WINDOWS)
             self.windowsdrives = WindowsDrives()
             self.windowswirelessinterfaces = WindowsWirelessInterfaces()
             self.windowswirelessnetworks = WindowsWirelessNetworks()
         elif self.env=='linux':
-            self.flash_cmd = os.path.join(self.config_path, self.FLASH_LINUX)
+            self.flash_cmd = os.path.join(self.context.paths.config, self.FLASH_LINUX)
             self.iw = Iw()
             self.iwlist = Iwlist()
             self.nmcli = Nmcli()
             self.lsblk = Lsblk()
             self.udevadm = Udevadm()
         elif self.env=='darwin':
-            self.flash_cmd = os.path.join(self.config_path, self.FLASH_MAC)
+            self.flash_cmd = os.path.join(self.context.paths.config, self.FLASH_MAC)
             self.diskutil = Diskutil()
             self.macwirelessinterfaces = MacWirelessInterfaces()
             self.macwirelessnetworks = MacWirelessNetworks()
@@ -160,7 +151,7 @@ class FlashDrive(CleepDesktopModule):
                     #update ui
                     self.status = self.STATUS_REQUEST_WRITE_PERMISSIONS
                     self.logger.debug('Status after download: %s' % self.get_status())
-                    self.update_callback(self.get_status())
+                    self.context.update_ui('install', self.get_status())
 
                     #file downloaded successfully, launch flash+validation
                     self.__flash_drive()
@@ -184,7 +175,7 @@ class FlashDrive(CleepDesktopModule):
                         
                     #update ui
                     self.logger.debug('Send status to ui: %s' % self.get_status())
-                    self.update_callback(self.get_status())
+                    self.context.update_ui('install', self.get_status())
                     
                 elif self.cancel:
                     #handle cancelation
@@ -199,7 +190,7 @@ class FlashDrive(CleepDesktopModule):
                 self.total_percent = 100
                 if self.iso and os.path.exists(self.iso):
                     self.logger.debug('Purge downloaded file')
-                    dl = Download(self.cached_isos_path)
+                    dl = Download(self.context.paths.cache)
                     dl.purge_files()
                 self.iso = None
                 self.drive = None
@@ -219,7 +210,7 @@ class FlashDrive(CleepDesktopModule):
                 self.logger.info('Flash process terminated')
                 
                 #update ui
-                self.update_callback(self.get_status())
+                self.context.update_ui('install', self.get_status())
 
             else:
                 #no process, release cpu
@@ -295,7 +286,7 @@ class FlashDrive(CleepDesktopModule):
         if not release:
             #no release found, surely rate limit reached on github api
             #fallback to cached releases
-            download = Download(self.cached_isos_path)
+            download = Download(self.context.paths.cache)
             cached_releases = download.get_cached_files()
             self.logger.debug('Cached releases: %s' % cached_releases)
 
@@ -546,7 +537,7 @@ class FlashDrive(CleepDesktopModule):
 
         return flashables
 
-    def get_isos(self, with_raspbian_isos, with_local_isos, force_refresh=False):
+    def get_isos(self, force_refresh=False):
         """
         Get list of isos file available
 
@@ -575,6 +566,10 @@ class FlashDrive(CleepDesktopModule):
                 withraspbianisos (bool): raspbian iso flag
                 withlocalisos (bool): local iso flag
         """
+        with_raspbian_isos = self.context.config.get_config_value('cleep.isoraspbian')
+        with_local_isos = self.context.config.get_config_value('cleep.isolocal')
+        self.logger.info('============> %s %s' % (with_raspbian_isos, with_local_isos))
+
         self.logger.debug('===> getisos %s' % self.isos_cached)
         #return isos from cache
         refresh_isos = False
@@ -717,7 +712,7 @@ class FlashDrive(CleepDesktopModule):
                 self.dl.cancel()
 
         #update ui
-        self.update_callback(self.get_status())
+        self.context.update_ui('install', self.get_status())
 
     def __download_file(self):
         """
@@ -739,7 +734,7 @@ class FlashDrive(CleepDesktopModule):
             return True
 
         #init download helper
-        self.dl = Download(self.cached_isos_path, self.__download_callback)
+        self.dl = Download(self.context.paths.cache, self.__download_callback)
 
         #start download
         self.iso = self.dl.download_from_url(self.url, check_sha256=self.iso_sha256, cache=True)
@@ -790,10 +785,10 @@ class FlashDrive(CleepDesktopModule):
                     self.eta = items[2]
 
                     #update ui
-                    self.update_callback(self.get_status())
+                    self.context.update_ui('install', self.get_status())
         except:
             if not self.__flash_output_error:
-                self.crash_report.report_exception()
+                self.context.crash_report.report_exception()
                 self.logger.exception('Exception occured during flash callback:')
                 self.__flash_output_error = True
 
@@ -819,7 +814,7 @@ class FlashDrive(CleepDesktopModule):
             self.__flash_output_error = False
 
         #update ui
-        self.update_callback(self.get_status())
+        self.context.update_ui('install', self.get_status())
         
         #reset console
         self.console = None
@@ -839,19 +834,19 @@ class FlashDrive(CleepDesktopModule):
                 wifi_config = ''
 
             #prepare command line
-            cmd = [self.flash_cmd, self.config_path, self.drive, self.iso, wifi_config]
+            cmd = [self.flash_cmd, self.context.paths.config, self.drive, self.iso, wifi_config]
             self.logger.debug('Flash command to execute: %s' % cmd)
 
             #start command in admin endless console
             self.console = AdminEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
             if self.env=='windows':
-                self.console.set_cmdlogger(os.path.join(self.app_path, self.CMDLOGGER_WINDOWS))
+                self.console.set_cmdlogger(os.path.join(self.context.paths.app_path, self.CMDLOGGER_WINDOWS))
             elif self.env=='darwin':
-                self.console.set_cmdlogger(os.path.join(self.app_path, self.CMDLOGGER_MAC))
+                self.console.set_cmdlogger(os.path.join(self.context.paths.app_path, self.CMDLOGGER_MAC))
             else:
                 #workaround for AppImage issue https://github.com/AppImage/AppImageKit/issues/146
                 #cmdlogger is copied under config directory like etcher
-                self.console.set_cmdlogger(os.path.join(self.config_path, self.CMDLOGGER_LINUX))
+                self.console.set_cmdlogger(os.path.join(self.context.paths.config, self.CMDLOGGER_LINUX))
             self.console.start()
 
         except:

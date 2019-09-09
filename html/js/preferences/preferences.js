@@ -66,7 +66,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
                 self.updateProxyMode(self.config.proxy.mode);
             });
 
-        cleepService.sendCommand('getcachedfiles')
+        cleepService.sendCommand('get_cached_files', 'cache')
             .then(function(resp) {
                 self.cacheds = resp.data;
             });
@@ -113,7 +113,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
     // Open logs archive (zip format)
     self.zipLogs = function()
     {
-        cleepService.sendCommand('getzippedlogs')
+        cleepService.sendCommand('get_zipped_logs', 'cache')
             .then(function(resp) {
                 self.shell.openItem(resp.data);
             });
@@ -122,7 +122,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
     // Delete specified cached file
     self.purgeCacheFile = function(filename)
     {
-        cleepService.sendCommand('deletecachedfile', {filename:filename})
+        cleepService.sendCommand('delete_cached_file', 'cache', {filename:filename})
             .then(function(resp) {
                 self.cacheds = resp.data;
             });
@@ -131,7 +131,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
     // Purge all cached files
     self.purgeCachedFiles = function()
     {
-        cleepService.sendCommand('purgecachedfiles')
+        cleepService.sendCommand('purge_cached_files', 'cache')
             .then(function(resp) {
                 self.cacheds = resp.data;
             });

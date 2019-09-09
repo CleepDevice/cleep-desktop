@@ -38,14 +38,19 @@ from bottle import auth_basic, response
 from passlib import __version__ as passlib_version
 from passlib.hash import sha256_crypt
 from requests import __version__ as requests_version
+from queue import Queue, Empty
 
-from core.utils import MessageResponse
-from core.flashdrive import FlashDrive
-from core.devices import Devices
-from core.updates import Updates
+from core.libs.appconfig import AppConfig
+from core.utils import MessageResponse, AppContext
+from core.modules.install import Install
+from core.modules.devices import Devices
+from core.modules.updates import Updates
+from core.modules.config import Config
+from core.modules.cache import Cache
 from core.libs.crashreport import CrashReport
 from core.libs.download import Download
 from core.libs.cleepdesktoplogs import CleepDesktopLogs
+from core.exceptions import CommandError
 
 __all__ = ['app']
 
@@ -55,160 +60,45 @@ HTML_DIR = os.path.join(BASE_DIR, 'html')
 ETCHER_DIR = 'etcher-cli'
 
 #globals
-logger = None
+context = AppContext()
 app = bottle.app()
-server = None
-config = None
-config_file = None
-log_file = None
-config_lock = Lock()
-updates = None
-flashdrive = None
-devices = None
-crash_report = None
-cached_isos_path = None
-
-#websocket variables
-current_devices = None
-last_devices_update = 0
-current_updates = None
-last_updates_update = 0
-current_flash = None
-last_flash_update = 0
-current_message = None
-last_message_update = 0
-
+modules = {}
+ws_updates = Queue(maxsize=50)
 
 class CleepWebSocketMessage():
     def __init__(self):
-        self.module = None
+        self.event = None
         self.error = False
         self.message = ''
         self.data = None
 
     def to_json(self):
         data = {
-            'module': self.module,
+            'event': self.event,
             'error': self.error,
             'message': self.message,
             'data': self.data
         }
         return json.dumps(data)
 
-
-def save_config(config):
+def update_ui(event, data):
     """
-    Save config file.
+    Update ui callback.
+    Data will be processed in websocket background task
 
     Args:
-        config (dict): config to save.
-    
-    Returns:
-        bool: True if file successfully saved, False otherwise
+        event (string): event name
+        data (any): event data
     """
-    global config_file
-    force_reload = False
-    out = False
+    global  ws_updates
 
-    #check if module have config file
-    if config_file is None:
-        logger.error(u'Config filepath not set. Unable to save configuration')
-        return False
+    #push data to queue
+    ws_updates.put_nowait({
+        'event': event,
+        'data': data,
+    })
 
-    config_lock.acquire(True)
-    try:
-        f = open(config_file, u'w')
-        f.write(json.dumps(config))
-        f.close()
-        force_reload = True
-        out = True
-    except:
-        logger.exception(u'Unable to write config file %s:' % config_file)
-    config_lock.release()
-
-    if force_reload:
-        #reload config
-        load_config()
-
-    return out
-
-def load_config():
-    """
-    Load config file.
-
-    Returns:
-        dict: configuration file content or None if error occured.
-    """
-    global config_file, config
-
-    #check if module have config file
-    if config_file is None:
-        logger.error(u'Config filepath not set. Unable to load configuration')
-        return None
-
-    config_lock.acquire(True)
-    out = None
-    try:
-        logger.debug(u'Loading conf file %s' % config_file)
-        if os.path.exists(config_file):
-            f = open(config_file, u'r')
-            raw = f.read()
-            f.close()
-            config = json.loads(raw)
-            out = config
-        else:
-            #no conf file yet
-            logger.warning('No config file found at "%s"' % config_file)
-    except:
-        logger.exception(u'Unable to load config file %s:' % config_file)
-    config_lock.release()
-
-    return out
-
-def devices_update(devices):
-    """
-    This function is triggered by Devices module when devices list is updated
-    """
-    global current_devices, last_devices_update
-
-    current_devices = devices
-    last_devices_update = time.time()
-
-def message_update(message):
-    """
-    This function is triggered by Devices module when message on bus is received
-    """
-    global current_message, last_message_update
-
-    current_message = message
-    last_message_update = time.time()
-
-def flash_update(status):
-    """
-    This function is triggered by Flashdrive module when flash process is running
-    """
-    global current_flash, last_flash_update
-
-    current_flash = status
-    last_flash_update = time.time()
-
-def updates_update(updates):
-    """
-    This function is triggered by Updates module when updates status is updated
-    """
-    global current_updates, last_updates_update, config
-
-    #check software versions and store new versions on config file
-    #TODO move this part of code to updates.js after having put config in global and set it in angular (see appUpdater)
-    if updates['etcherstatus']['version']!=config['etcher']['version']:
-        logger.debug('New etcher version installed. Update config')
-        config['etcher']['version'] = updates['etcherstatus']['version']
-        save_config(config)
-
-    current_updates = updates
-    last_updates_update = time.time()
-
-def get_app(app_path, cache_path, config_path, config_filename, debug, is_dev):
+def configure_app(app_path, cache_path, config_path, config_filename, debug, is_dev):
     """
     Return web server instance
 
@@ -219,29 +109,31 @@ def get_app(app_path, cache_path, config_path, config_filename, debug, is_dev):
         config_filename (string): configuration filename
         debug (bool): True if debug enabled
         is_dev (bool): True if launch in dev mode
-    Returns:
-        object: bottle instance
-    """
-    global logger, app, config, config_file, log_file, flashdrive, devices, updates, crash_report, cached_isos_path
 
-    #set globals
-    cached_isos_path = cache_path
+    Returns:
+        AppContext: application context (that contains crash_report, logger...)
+    """
+    global app, context, modules
+
+    #fill context
+    context.paths.app = '.' if len(app_path)==0 else app_path 
+    context.paths.cache = cache_path
+    context.paths.config = config_path
+    context.update_ui = update_ui
 
     #logging
     logging_formatter = logging.Formatter('%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
     root_logger = logging.getLogger()
-    log_file = os.path.join(config_path, 'cleepdesktopcore.log')
-    file_handler = RotatingFileHandler(log_file, maxBytes=2*1024*1024, backupCount=2, encoding='utf-8')
+    context.log_filepath = os.path.join(config_path, 'cleepdesktopcore.log')
+    file_handler = RotatingFileHandler(context.log_filepath, maxBytes=2*1024*1024, backupCount=2, encoding='utf-8')
     file_handler.setFormatter(logging_formatter)
     if is_dev:
         #dev mode: log to file and console with DEBUG level
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(logging_formatter)
-        console_handler.addFilter(lambda record: record.levelno<=logging.WARNING)
 
         console_exception_handler = logging.StreamHandler()
         console_exception_handler.setFormatter(logging_formatter)
-        console_exception_handler.addFilter(lambda record: record.levelno>logging.WARNING)
 
         root_logger.addHandler(file_handler)
         root_logger.addHandler(console_handler)
@@ -256,16 +148,15 @@ def get_app(app_path, cache_path, config_path, config_filename, debug, is_dev):
         root_logger.setLevel(logging.INFO)
 
     #set rpclogger
-    logger = logging.getLogger('RpcServer')
-    logger.info('===== CleepDesktopCore started =====')
-    logger.info('Python version: %s' % platform.python_version())
-    logger.info('Application path: %s' % app_path)
-    logger.info('Configuration path: %s' % config_path)
+    context.main_logger = logging.getLogger('RpcServer')
+    context.main_logger.info('===== CleepDesktopCore started =====')
+    context.main_logger.info('Python version: %s' % platform.python_version())
+    context.main_logger.info('Application path: %s' % app_path)
+    context.main_logger.info('Configuration path: %s' % config_path)
     
     #load config
-    config_file = os.path.join(config_path, config_filename)
-    load_config()
-    logger.debug('Config: %s' % config)
+    app_config = AppConfig(os.path.join(config_path, config_filename))
+    config = app_config.load_config()
 
     #handle debug
     debug = False
@@ -275,10 +166,10 @@ def get_app(app_path, cache_path, config_path, config_filename, debug, is_dev):
     #update logger level
     if config['cleep']['debug']:
         debug = True
-        logger.setLevel(logging.DEBUG)
+        context.main_logger.setLevel(logging.DEBUG)
     else:
-        logger.setLevel(logging.WARN)
-    logger.debug('Config: %s' % config)
+        context.main_logger.setLevel(logging.WARN)
+    context.main_logger.debug('Config: %s' % config)
 
     #init crash report (disabled by default)
     libs_version = {
@@ -288,28 +179,36 @@ def get_app(app_path, cache_path, config_path, config_filename, debug, is_dev):
         'requests': requests_version,
         'geventwebsocket': geventwebsocket_version()
     }
-    crash_report = CrashReport('CleepDesktop', config['cleep']['version'], libs_version, config['cleep']['isdev'])
+    context.crash_report = CrashReport('CleepDesktop', config['cleep']['version'], libs_version, config['cleep']['isdev'])
     if config['cleep']['crashreport']:
-        crash_report.enable()
+        context.crash_report.enable()
     if config['cleep']['isdev']:
         #disable crash report during developments
-        logger.debug('Crash report disabled during developments')
-        crash_report.disable()
+        context.main_logger.debug('Crash report disabled during developments')
+        context.crash_report.disable()
 
-    #launch flash process
-    flashdrive = FlashDrive(app_path, cached_isos_path, config_path, flash_update, debug, crash_report)
-    flashdrive.start()
+    #launch config module
+    modules['config'] = Config(context, app_config, debug)
+    context.config = modules['config']
+    modules['config'].start()
 
-    #launch devices process
-    devices = Devices(devices_update, message_update, debug, crash_report)
-    devices.start()
+    #launch cache module
+    modules['cache'] = Cache(context, debug)
+    modules['cache'].start()
 
-    #launch updates process
-    etcher_version = config['etcher']['version']
-    updates = Updates(app_path, config_path, config['cleep']['version'], etcher_version, updates_update, debug, crash_report)
-    updates.start()
+    #launch install module
+    modules['install'] = Install(context, debug)
+    modules['install'].start()
 
-    return app
+    #launch devices module
+    modules['devices'] = Devices(context, debug)
+    modules['devices'].start()
+
+    #launch updates module
+    modules['updates'] = Updates(context, debug)
+    modules['updates'].start()
+
+    return context
 
 def start(host='0.0.0.0', port=80, key=None, cert=None):
     """
@@ -323,26 +222,24 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
         key (string): SSL key file
         cert (string): SSL certificate file
     """
-    global server, app, devices, current_devices
+    global app, context, modules
 
-    #populate current devices
-    current_devices = devices.get_devices()
-    
-    #get current update status
-    current_updates = updates.get_status()
+    #populate some stuff at startup
+    modules['devices'].get_devices()
+    modules['updates'].get_status()
 
     try:
         if key is not None and len(key)>0 and cert is not None and len(cert)>0:
             #start HTTPS server
-            logger.info('Starting HTTPS server on %s:%d' % (host, port))
-            server_logger = LoggingLogAdapter(logger, logging.INFO)
+            context.main_logger.info('Starting HTTPS server on %s:%d' % (host, port))
+            server_logger = LoggingLogAdapter(context.main_logger, logging.INFO)
             server = pywsgi.WSGIServer((host, port), app, keyfile=key, certfile=cert, log=server_logger, handler_class=WebSocketHandler)
             server.serve_forever()
 
         else:
             #start HTTP server
-            logger.info('Starting HTTP server on %s:%d' % (host, port))
-            server_logger = LoggingLogAdapter(logger, logging.INFO)
+            context.main_logger.info('Starting HTTP server on %s:%d' % (host, port))
+            server_logger = LoggingLogAdapter(context.main_logger, logging.INFO)
             server = pywsgi.WSGIServer((host, port), app, log=server_logger, handler_class=WebSocketHandler)
             server.serve_forever()
 
@@ -355,143 +252,10 @@ def stop():
     """
     Stop all running processes
     """
-    if flashdrive:
-        flashdrive.stop()
-    if devices:
-        devices.stop()
-    if updates:
-        updates.stop()
+    global modules
 
-def process_config(old, new):
-    """
-    Process configuration after save
-    """
-    global crash_report, updates, devices, flashdrive
-
-    #process debug flag
-    if old['cleep']['debug']!=new['cleep']['debug']:
-        if new['cleep']['debug']:
-            logger.setLevel(logging.DEBUG)
-            updates.set_debug(True)
-            devices.set_debug(True)
-            flashdrive.set_debug(True)
-        else:
-            logger.setLevel(logging.WARN)
-            updates.set_debug(False)
-            devices.set_debug(False)
-            flashdrive.set_debug(False)
-            
-    #process crashreport flag
-    if old['cleep']['crashreport']!=new['cleep']['crashreport']:
-        if new['cleep']['crashreport']:
-            crash_report.enable()
-        else:
-            crash_report.disable()
-
-def get_config():
-    """
-    Return CleepDesktop configuration
-
-    Return:
-        dict: config
-    """
-    global config
-    return config
-
-def execute_command(command, params):
-    """
-    Execute specified command
-
-    Args:
-        command (string): command to execute
-        params (dict): command parameters
-
-    Return:
-        MessageResponse
-    """
-    global flashdrive, log_file, cached_isos_path
-
-    if command is None:
-        logger.error('Invalid command received, unable to process it')
-
-    resp = MessageResponse()
-    try:
-        #preferences
-        if command=='getconfig':
-            resp.data = {
-                'config': get_config(),
-                'logs': log_file
-            }
-        elif command=='setconfig':
-            old_config = copy.deepcopy(get_config())
-            if not save_config(params['config']):
-                resp.messages = 'Unable to save config'
-                resp.error = True
-            else:
-                process_config(old_config, get_config())
-                resp.data = True
-        elif command=='getcachedfiles':
-            dl = Download(cached_isos_path)
-            resp.data = dl.get_cached_files()
-        elif command=='deletecachedfile':
-            dl = Download(cached_isos_path)
-            dl.delete_cached_file(params['filename'])
-            resp.data = dl.get_cached_files()
-            #refresh cached files that may have been purged
-            flashdrive.get_isos(config['cleep']['isoraspbian'], config['cleep']['isolocal'], force_refresh=True)
-        elif command=='purgecachedfiles':
-            dl = Download(cached_isos_path)
-            dl.purge_files(force_all=True)
-            resp.data = dl.get_cached_files()
-            #refresh cached files that may have been purged
-            flashdrive.get_isos(config['cleep']['isoraspbian'], config['cleep']['isolocal'], force_refresh=True)
-        elif command=='getzippedlogs':
-            zip = CleepDesktopLogs()
-            resp.data = zip.get_zipped_logs()
-      
-        #flashdrive
-        elif command=='getflashdrives':
-            resp.data = flashdrive.get_flashable_drives()
-        elif command=='getflashstatus':
-            resp.data = flashdrive.get_status()
-        elif command=='startflash':
-            flashdrive.start_flash(params['url'], params['drive'], params['wifi'], config['cleep']['isoraspbian'], config['cleep']['isolocal'])
-        elif command=='cancelflash':
-            flashdrive.cancel_flash()
-        elif command=='getisos':
-            resp.data = flashdrive.get_isos(config['cleep']['isoraspbian'], config['cleep']['isolocal'])
-        elif command=='getwifinetworks':
-            resp.data = flashdrive.get_wifi_networks()
-        elif command=='getwifiadapter':
-            resp.data = flashdrive.get_wifi_adapter()
-
-        #updates
-        elif command=='getupdatesstatus':
-            resp.data = updates.get_status()
-        elif command=='checkupdates':
-            resp.data = updates.check_updates()
-
-        #about
-        elif command=='version':
-            resp.data = {
-                'version': config['cleep']['version']
-            }
-
-        #default
-        else:
-            #unknow command
-            resp.error = True
-            resp.message = u'Unknown command "%s" received. Nothing processed' % command
-
-    except Exception as e:
-        logger.exception('Error occured during command execution:')
-        crash_report.report_exception()
-        resp.error = True
-        resp.message = str(e)
-
-    #send response
-    #logger.debug('Command response: %s' % resp.to_dict())
-    return json.dumps(resp.to_dict())
+    for _, module in modules.items():
+        module.stop()
 
 @app.hook('after_request')
 def enable_cors():
@@ -507,96 +271,70 @@ def command():
     """
     Communication between javascript and python
     """
-    #logger.debug('Command (method=%s)' % bottle.request.method)
+    global context, modules
+
+    #context.main_logger.debug('Command (method=%s)' % bottle.request.method)
     if bottle.request.method=='OPTIONS':
         return {}
     else:
-        #convert command to cleep command
-        data = bottle.request.json
-        command = None
-        if u'command' in data:
-            command = data[u'command']
-        params = None
-        if u'params' in data:
-            params = data[u'params']
+        resp = MessageResponse()
+        try:
+            #convert command to cleep command
+            data = bottle.request.json
+            # pylint: disable=E1136, E1135
+            command = data['command'] if 'command' in data else None
+            to = data['to'] if 'to' in data else None
+            params = data['params'] if 'params' in data else None
+            # pylint: enable=E1136, E1135
 
-        #and execute command
-        #logger.debug('Execute command %s with params %s' % (command, params))
-        return execute_command(command, params)
+            #and execute command
+            #context.main_logger.debug('Execute command %s with params %s' % (command, params))
+            if not to in modules:
+                raise CommandError('Module "%s" does not exist' % to)
+            resp.data = modules[to].execute_command(command, params)
+
+        except Exception as e:
+            context.main_logger.exception('Error occured during command execution:')
+            context.crash_report.report_exception()
+            resp.error = True
+            resp.message = str(e)
+
+        #send response
+        return json.dumps(resp.to_dict())
 
 @app.route('/cleepws')
 def handle_cleepwebsocket():
     """
     Devices websocket. Communication between python and javascript
     """
-    global current_devices, last_devices_update, current_updates, last_updates_update
+    global context, ws_updates
 
     #init websocket
     wsock = bottle.request.environ.get('wsgi.websocket')
     if not wsock:
-        logger.error('Expected WebSocket request')
+        context.main_logger.error('Expected WebSocket request')
         bottle.abort(400, 'Expected WebSocket request')
 
-    #now wait for module updates (devices, updates...)
-    local_last_devices_update = 0
-    local_last_updates_update = 0
-    local_last_flash_update = 0
-    local_last_message_update = 0
+    #now wait for data to send
     while True:
 
         try:
-            if last_devices_update>=local_last_devices_update:
-                #send devices list
-                #logger.debug('Send device update: %s' % current_devices)
-                send = CleepWebSocketMessage()
-                send.module = 'devices'
-                send.data = current_devices
-                wsock.send(send.to_json())
-            
-                #update local update
-                local_last_devices_update = time.time()
+            event = ws_updates.get(block=True, timeout=0.25)
 
-            if last_updates_update>=local_last_updates_update:
-                #send new devices list
-                #logger.debug('Send updates update: %s' % current_updates)
-                send = CleepWebSocketMessage()
-                send.module = 'updates'
-                send.data = current_updates
-                wsock.send(send.to_json())
-            
-                #update local update
-                local_last_updates_update = time.time()
+            #send data to socket
+            send = CleepWebSocketMessage()
+            send.event = event['event']
+            send.data = event['data']
+            wsock.send(send.to_json())
 
-            if last_flash_update>=local_last_flash_update:
-                #send new flash list
-                #logger.debug('Send flash update: %s' % current_flash)
-                send = CleepWebSocketMessage()
-                send.module = 'flash'
-                send.data = current_flash
-                wsock.send(send.to_json())
-            
-                #update local update
-                local_last_flash_update = time.time()
-
-            if last_message_update>=local_last_message_update:
-                #send new message
-                #logger.debug('Send message update: %s' % current_message)
-                send = CleepWebSocketMessage()
-                send.module = 'message'
-                send.data = current_message
-                wsock.send(send.to_json())
-            
-                #update local update
-                local_last_message_update = time.time()
+        except Empty:
+            # no event on FIFO
+            pass
 
         except WebSocketError:
-            #logger.exception('WebSocket error:')
+            # stop statement, websocket will restart
             break
 
         except:
-            logger.exception('Exception occured in WebSocket handler:')
-            break
-
-        time.sleep(.25)
-
-
+            context.main_logger.exception('Exception occured in WebSocket handler:')
+            context.crash_report.report_exception()

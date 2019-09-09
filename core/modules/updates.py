@@ -13,7 +13,7 @@ from core.libs.download import Download
 from core.libs.console import Console
 from core.libs.github import Github
 from core.utils import CleepDesktopModule
-from core.flashdrive import FlashDrive
+from core.modules.install import Install
 
 
 class UpdateInfos():
@@ -56,31 +56,19 @@ class Updates(CleepDesktopModule):
     #ETCHER_VERSION_FORCED = "v1.2.0"
     ETCHER_VERSION_FORCED = None
 
-    def __init__(self, app_path, config_path, cleep_version, etcher_version, update_callback, debug_enabled, crash_report):
+    def __init__(self, context, debug_enabled):
         """
         Constructor
 
         Args:
-            app_path (string): absolute application path
-            config_path (string): path to install extra tools (etcher)
-            cleep_version (string): current cleepdesktop version
-            etcher_version (string): current etcher-cli version
-            update_callback (function): function to call when data need to be updated on ui
+            context (AppContext): application context
             debug_enabled (bool): True if debug is enabled
-            crash_report (CrashReport): crash report instance
         """
-        CleepDesktopModule.__init__(self, debug_enabled, crash_report)
+        CleepDesktopModule.__init__(self, context, debug_enabled)
 
         #members
-        self.app_path = app_path
-        if len(self.app_path)==0:
-            self.app_path = '.'
-        self.config_path = config_path
-        self.update_callback = update_callback
         self.__download_etcher = None
         self.__current_download = None
-
-        self.etcher_version = etcher_version
         self.etcher_status = self.STATUS_IDLE
         self.etcher_download_status = Download.STATUS_IDLE
         self.etcher_download_percent = 0
@@ -127,9 +115,10 @@ class Updates(CleepDesktopModule):
                     lastcheck (int): timestamp of last check
                 }
         """
+        config = self.context.config.get_config()
         return {
             'etcherstatus': {
-                'version': self.etcher_version,
+                'version': config['config']['etcher']['version'],
                 'status': self.etcher_status,
                 'downloadstatus': self.etcher_download_status,
                 'downloadpercent': self.etcher_download_percent
@@ -152,7 +141,7 @@ class Updates(CleepDesktopModule):
             self.etcher_download_percent = percent
         
         #update ui
-        self.update_callback(self.get_status())
+        self.context.update_ui('updates', self.get_status())
 
     def run(self):
         """
@@ -185,7 +174,7 @@ class Updates(CleepDesktopModule):
                         self.etcher_status = self.STATUS_INSTALLING
                     else:
                         self.etcher_status = self.STATUS_ERROR
-                    self.update_callback(self.get_status())
+                    self.context.update_ui('updates', self.get_status())
 
                     if filepath:
                         self.logger.debug('Etcher archive downloaded')
@@ -195,22 +184,22 @@ class Updates(CleepDesktopModule):
                             self.logger.error('Etcher installation failed')
                         else:
                             self.etcher_status = self.STATUS_DONE
-                            self.etcher_version = self.__download_etcher.version
+                            self.context.config.set_config_value('etcher.version', self.__download_etcher.version)
                             self.logger.info('Etcher installation succeed (installed version is now %s)' % self.__download_etcher.version)
 
-                        self.update_callback(self.get_status())
+                        self.context.update_ui('updates', self.get_status())
 
                     else:
                         #error downloading etcher archive
                         self.logger.error('Failed to download Etcher archive.')
                         self.etcher_status = self.STATUS_ERROR
-                        self.update_callback(self.get_status())
+                        self.context.update_ui('updates', self.get_status())
 
                 except:
                     #exception during update
                     self.logger.exception('Exception during etcher-cli update:')
                     self.etcher_status = self.STATUS_ERROR
-                    self.update_callback(self.get_status())
+                    self.context.update_ui('updates', self.get_status())
 
                 finally:
                     #end of etcher update process, reset variables
@@ -234,8 +223,8 @@ class Updates(CleepDesktopModule):
         #always perform a copy to make sure last version is copied
         try:
             #prepare paths
-            src = os.path.join(self.app_path, 'tools', 'cmdlogger-linux')
-            dst = os.path.join(self.config_path, 'cmdlogger-linux')
+            src = os.path.join(self.context.paths.app, 'tools', 'cmdlogger-linux')
+            dst = os.path.join(self.context.paths.config, 'cmdlogger-linux')
 
             #make sure dirs exist
             os.makedirs(dst, exist_ok=True)
@@ -297,11 +286,11 @@ class Updates(CleepDesktopModule):
 
         #etcher-cli path for test it is installed
         if self.env=='linux':
-            etchercli_script_path = FlashDrive.FLASH_LINUX
+            etchercli_script_path = Install.FLASH_LINUX
         elif self.env=='darwin':
-            etchercli_script_path = FlashDrive.FLASH_MAC
+            etchercli_script_path = Install.FLASH_MAC
         elif self.env=='windows':
-            etchercli_script_path = FlashDrive.FLASH_WINDOWS
+            etchercli_script_path = Install.FLASH_WINDOWS
 
         #handle forced version
         if self.ETCHER_VERSION_FORCED is not None and self.ETCHER_VERSION_FORCED!=etcher_version:
@@ -334,7 +323,7 @@ class Updates(CleepDesktopModule):
                 #probably unable to join github (no internet connection?)
                 self.logger.warning('Unable to check etcher updates (no internet connection?)')
 
-            elif not os.path.exists(os.path.join(self.config_path, 'etcher-cli')) or not os.path.exists(os.path.join(self.config_path, etchercli_script_path)):
+            elif not os.path.exists(os.path.join(self.context.paths.config, 'etcher-cli')) or not os.path.exists(os.path.join(self.context.paths.config, etchercli_script_path)):
                 #etcher-cli is not installed
                 self.logger.debug('No etcher-cli found. Installation is necessary')
                 infos.version = latest['tag_name']
@@ -371,7 +360,8 @@ class Updates(CleepDesktopModule):
         self.last_check = int(time.time())
 
         #check etcher
-        infos = self.__check_etcher_updates(self.etcher_version)
+        config = self.context.config.get_config()
+        infos = self.__check_etcher_updates(config['config']['etcher']['version'])
         self.logger.debug('Check etcher version: %s' % infos)
         if infos.update_available:
             #set member to trigger download in run function
@@ -400,11 +390,11 @@ class Updates(CleepDesktopModule):
         #prepare command
         command = None
         if self.env=='linux':
-            command = self.INSTALL_ETCHER_COMMAND_LINUX % (self.app_path, archive_path, self.app_path, self.config_path)
+            command = self.INSTALL_ETCHER_COMMAND_LINUX % (self.context.paths.app, archive_path, self.context.paths.app, self.context.paths.config)
         elif self.env=='darwin':
-            command = self.INSTALL_ETCHER_COMMAND_MAC % (self.app_path, archive_path, self.app_path, self.config_path)
+            command = self.INSTALL_ETCHER_COMMAND_MAC % (self.context.paths.app, archive_path, self.context.paths.app, self.context.paths.config)
         elif self.env=='windows':
-            command = self.INSTALL_ETCHER_COMMAND_WINDOWS % (self.app_path, archive_path, self.app_path, self.config_path)
+            command = self.INSTALL_ETCHER_COMMAND_WINDOWS % (self.context.paths.app, archive_path, self.context.paths.app, self.context.paths.config)
         self.logger.debug('Command executed to install etcher: %s' % command)
 
         #execute command

@@ -26,7 +26,7 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
         if( !self.__ws )
         {
             self.__ws = $websocket('ws://localhost:'+self.port+'/cleepws', null, {reconnectIfNotNormalClose: true});
-            self.__ws.onMessage(self.__receive);
+            self.__ws.onMessage(self.__websocketReceive);
             self.__ws.onClose(function() {
                 logger.debug('Websocket closed');
             });
@@ -47,20 +47,20 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
     /**
      * Callback when message is received on websocket
      */
-    self.__receive = function(event)
+    self.__websocketReceive = function(event)
     {
         if( event && event.data && typeof(event.data)==='string' )
         {
             //broadcast received data
             var data = JSON.parse(event.data);
-            $rootScope.$broadcast(data.module, data.data);
+            $rootScope.$broadcast(data.event, data.data);
         }
     };
 
     /**
      * Base function to send data to rpcserver
      */
-    self.send = function(url, command, params, method)
+    self.send = function(url, command, to, params, method)
     {
         var d = $q.defer();
 
@@ -77,7 +77,8 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
         }
         var data = {
             command: command,
-            params: params
+            to: to,
+            params: params,
         };
 
 		$http({
@@ -107,9 +108,9 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
     /**
      * Send command to rpcserver
      */
-    self.sendCommand = function(command, params)
+    self.sendCommand = function(command, to, params)
     {
-        return self.send(self.urlCommand, command, params, 'POST');
+        return self.send(self.urlCommand, command, to, params, 'POST');
     };
 
     /**
@@ -117,7 +118,7 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
      */
     self.getConfig = function()
     {
-        return self.send(self.urlCommand, 'getconfig');
+        return self.send(self.urlCommand, 'get_config', 'config');
     };
 
     /**
@@ -125,7 +126,7 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
      */
     self.setConfig = function(config)
     {
-        return self.send(self.urlCommand, 'setconfig', {config:config});
+        return self.send(self.urlCommand, 'set_config', 'config', {config:config});
     };
 
 };

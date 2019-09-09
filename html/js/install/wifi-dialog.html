@@ -24,7 +24,7 @@
                 <md-list-item ng-if="(!ctl.config.adapter && ctl.wifiChoice==1) || ctl.wifiChoice==2">
                     <md-icon md-svg-icon="chevron-right"></md-icon>
                     <p>Wifi network name</p>
-                    <md-input-container class="md-secondary">
+                    <md-input-container class="md-secondary no-error-spacer">
                         <input type="text" ng-model="ctl.wifiNetworkName"/>
                     </md-input-container>
                 </md-list-item>
@@ -33,7 +33,7 @@
                 <md-list-item ng-if="ctl.config.adapter && ctl.wifiChoice==1">
                     <md-icon md-svg-icon="chevron-right"></md-icon>
                     <p>Wifi network</p>
-                    <md-select ng-model="ctl.selectedWifi" md-on-open="ctl.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline">
+                    <md-select ng-model="ctl.selectedWifi" md-on-open="ctl.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline no-error-spacer">
                         <md-option><em>None</em></md-option>
                         <md-option ng-if="ctl.config.networks.length===0" ng-disabled="true">No wifi network found</md-option>
                         <md-option ng-repeat="wifiNetwork in ctl.config.networks" ng-value="wifiNetwork">
@@ -46,7 +46,7 @@
                 <md-list-item ng-if="(!ctl.config.adapter && ctl.wifiChoice==1) || ctl.wifiChoice==2">
                     <md-icon md-svg-icon="chevron-right"></md-icon>
                     <p>Network security</p>
-                    <md-select ng-model="ctl.wifiNetworkEncryption" class="md-secondary md-no-underline">
+                    <md-select ng-model="ctl.wifiNetworkEncryption" class="md-secondary md-no-underline no-error-spacer">
                         <md-option value="wpa2">WPA2</md-option>
                         <md-option value="wpa">WPA</md-option>
                         <md-option value="wep">WEP</md-option>
