@@ -63,7 +63,7 @@ ETCHER_DIR = 'etcher-cli'
 context = AppContext()
 app = bottle.app()
 modules = {}
-ws_updates = Queue(maxsize=50)
+ws_updates = Queue()
 
 class CleepWebSocketMessage():
     def __init__(self):
