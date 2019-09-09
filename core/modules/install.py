@@ -55,10 +55,9 @@ class Install(CleepDesktopModule):
     STATUS_ERROR_FLASH = 11
     STATUS_ERROR_NETWORK = 12
 
-
-    FLASH_LINUX = 'etcher-cli/flash.sh'
-    FLASH_WINDOWS = 'etcher-cli\\flash.bat'
-    FLASH_MAC = 'etcher-cli/flash.sh'
+    FLASH_LINUX = 'balena-cli/flash.sh'
+    FLASH_WINDOWS = 'balena-cli\\flash.bat'
+    FLASH_MAC = 'balena-cli/flash.sh'
     
     CMDLOGGER_LINUX = 'cmdlogger-linux/cmdlogger'
     CMDLOGGER_WINDOWS = 'tools\\cmdlogger-windows\\cmdlogger.exe'
@@ -222,7 +221,7 @@ class Install(CleepDesktopModule):
         """
         Return latest raspbians releases
 
-        Return:
+        Returns:
             dict: raspbian and raspbian lite infos::
                 {
                     raspbian: {
@@ -266,7 +265,7 @@ class Install(CleepDesktopModule):
         """
         Return latest cleep release
 
-        Return:
+        Returns:
             tuple: cleep release files and release version::
                 (
                     [{
@@ -313,7 +312,7 @@ class Install(CleepDesktopModule):
         else:
             return self.github.get_release_assets_infos(release), release['name']
 
-    def start_flash(self, url, drive, wifi, iso_raspbian, iso_local):
+    def start_flash(self, url, drive, wifi):
         """
         Set flash data before launching process
 
@@ -329,8 +328,6 @@ class Install(CleepDesktopModule):
                     hidden (bool): hidden network
                 }
 
-            iso_raspbian (bool): function will also return raspbian isos
-            iso_local (bool): function will set iso_local flag in process data
         """
         if url is None or len(url)==0:
             raise Exception('Invalid Url "%s"' % url)
@@ -387,7 +384,7 @@ class Install(CleepDesktopModule):
         """
         Return current flash process percent
 
-        Return:
+        Returns:
             int: flash process percent
         """
         return {
@@ -542,11 +539,9 @@ class Install(CleepDesktopModule):
         Get list of isos file available
 
         Args:
-            with_raspbian_isos (bool): function will also return raspbian isos
-            with_local_isos (bool): just return iso local flag
             force_refresh (bool): force refresh
 
-        Return:
+        Returns:
             dict:
                 lastupdate (float): last update
                 raspbian (bool): with raspbian iso,
@@ -568,7 +563,6 @@ class Install(CleepDesktopModule):
         """
         with_raspbian_isos = self.context.config.get_config_value('cleep.isoraspbian')
         with_local_isos = self.context.config.get_config_value('cleep.isolocal')
-        self.logger.info('============> %s %s' % (with_raspbian_isos, with_local_isos))
 
         self.logger.debug('===> getisos %s' % self.isos_cached)
         #return isos from cache
@@ -858,7 +852,7 @@ class Install(CleepDesktopModule):
         """
         Return wifi adapter status: exists or not
 
-        Return:
+        Returns:
             dict: adapter status::
                 {
                     adapter (bool): True if wifi adapter found
@@ -879,7 +873,7 @@ class Install(CleepDesktopModule):
         """
         Return wifi adapter status under linux
 
-        Return:
+        Returns:
             bool: True if adapter exists
         """
         #system check
@@ -895,7 +889,7 @@ class Install(CleepDesktopModule):
         """
         Return wifi adapter status under windows
 
-        Return:
+        Returns:
             bool: True if adapter exists
         """
         #handle supported windows version
@@ -918,7 +912,7 @@ class Install(CleepDesktopModule):
         """
         Return wifi adapter status under macos
 
-        Return:
+        Returns:
             bool: True if adapter exists
         """
         #system check
@@ -934,7 +928,7 @@ class Install(CleepDesktopModule):
         """
         Return wifi networks and wifi infos
 
-        Return:
+        Returns:
             dict: wifi infos::
                 {
                     networks (list): networks list
@@ -957,7 +951,7 @@ class Install(CleepDesktopModule):
         """
         Return wifi networks and wifi infos for linux
 
-        Return:
+        Returns:
             dict: wifi infos::
                 {
                     networks (list): networks list
@@ -1009,7 +1003,7 @@ class Install(CleepDesktopModule):
         """
         Return wifi networks and wifi infos for windows 10 and above only
 
-        Return:
+        Returns:
             dict: wifi infos::
                 {
                     networks (list): networks list
@@ -1057,7 +1051,7 @@ class Install(CleepDesktopModule):
         """
         Return wifi networks and wifi infos for macos
 
-        Return:
+        Returns:
             dict: wifi infos::
                 {
                     networks (list): networks list

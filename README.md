@@ -18,7 +18,7 @@ Application main window is separated in 2 parts:
 
 ## Features
 ### SD card burning
-CleepDesktop embeds flashing SD card tool (etcher) and search automatically available latest Cleep release. So user can install Cleep distribution in 3 clicks.
+CleepDesktop embeds flashing SD card tool (Balena-etcher) and search automatically available latest Cleep release. So user can install Cleep distribution in 3 clicks.
 There is also a way to pre configure wifi access in case of device uses wireless connection. Settings those fields will auto connect device to specified wifi network at startup.
 
 ### Auto update

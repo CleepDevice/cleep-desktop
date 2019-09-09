@@ -1,18 +1,18 @@
 @echo off
 :: params:
-:: %1: install path 
+:: %1: config path 
 :: %2: drive path
 :: %3: image filepath
 :: %4: wifi config file
 
-set logfile=%1\etcher-cli.log
+set logfile=%1\balena-cli.log
 
 echo START %date% %time% >> %logfile%
 echo params=%1 %2 %3 %4 >> %logfile%
 
 :: flash drive
-%1\etcher-cli\etcher.exe --unmount false --yes --drive %2 %3
-echo etcher-cli returncode=%ERRORLEVEL% >> %logfile%
+%1\balena-cli\balena.exe %3 --drive %2 --yes
+echo balena-cli returncode=%ERRORLEVEL% >> %logfile%
 if %ERRORLEVEL% NEQ 0 ( exit %ERRORLEVEL% )
 
 :: no wifi config specified jump to end of script

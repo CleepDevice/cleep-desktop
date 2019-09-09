@@ -33,7 +33,7 @@
                     <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
                         <p>Last check for updates made on {{ctl.getLastCheckTime() | hrDatetime}}</p>
-                        <md-button class="md-secondary" ng-click="ctl.checkUpdates()" ng-disabled="ctl.isUpdating() || ctl.loading || ctl.cleepdesktopStatus.restartrequired">
+                        <md-button class="md-secondary md-raised md-primary" ng-click="ctl.checkUpdates()" ng-disabled="ctl.isUpdating() || ctl.loading || ctl.cleepdesktopStatus.restartrequired">
                             <md-icon md-svg-icon="refresh"></md-icon>
                             Check updates
                         </md-button>
@@ -74,11 +74,11 @@
                         </md-button>
                     </md-list-item>
 
-                    <!-- etcher updates -->
+                    <!-- balena-etcher updates -->
                     <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <p ng-if="ctl.etcherStatus.version!=='v0.0.0'">Etcher version {{ctl.etcherStatus.version}} is installed</p>
-                        <p ng-if="ctl.etcherStatus.version==='v0.0.0'">Etcher is not installed</p>
+                        <p ng-if="ctl.etcherStatus.version!=='v0.0.0'">Balena-etcher version {{ctl.etcherStatus.version}} is installed</p>
+                        <p ng-if="ctl.etcherStatus.version==='v0.0.0'">Balena-etcher is not installed</p>
                         <!-- downloading update -->
                         <div class="md-secondary" style="width:400px; text-align:right;" ng-if="ctl.etcherStatus.status===1 || ctl.etcherStatus.status===2">
                             <span ng-if="ctl.etcherStatus.status===1">Downloading update ({{ctl.etcherStatus.downloadpercent}}%)</span>

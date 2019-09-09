@@ -35,7 +35,7 @@ class UpdateInfos():
 
 class Updates(CleepDesktopModule):
     """
-    Updates manager: it can update etcher-cli and CleepDesktop files
+    Updates manager: it can update balena-cli and CleepDesktop files
     """
 
     ETCHER_REPO = {
@@ -75,7 +75,6 @@ class Updates(CleepDesktopModule):
         
         #running env
         self.env = platform.system().lower()
-        self.arch64 = platform.machine().endswith('64')
 
         self.last_update = 0
 
@@ -197,7 +196,7 @@ class Updates(CleepDesktopModule):
 
                 except:
                     #exception during update
-                    self.logger.exception('Exception during etcher-cli update:')
+                    self.logger.exception('Exception during balena-cli update:')
                     self.etcher_status = self.STATUS_ERROR
                     self.context.update_ui('updates', self.get_status())
 
@@ -248,22 +247,18 @@ class Updates(CleepDesktopModule):
         #get environment and architecture
         pattern = None
         if self.env=='linux':
-            pattern = 'linux-x86'
-            if self.arch64:
-                pattern = 'linux-x64'
+            pattern = 'linux-x64'
         elif self.env=='darwin':
-            pattern = 'darwin'
+            pattern = 'macOS-x64'
         elif self.env=='windows':
-            pattern = 'win32-x86'
-            if self.arch64:
-                pattern = 'win32-x64'
+            pattern = 'windows-x64'
         self.logger.debug('Search release using pattern: %s' % pattern)
 
         #search for release
         for asset in assets:
             if 'browser_download_url' and 'size' and 'name' in asset.keys():
                 name = asset['name'].lower()
-                if name.find('etcher')>=0 and name.find('cli')>=0 and name.find(pattern)>=0:
+                if name.find('balena-cli')>=0 and name.find(pattern)>=0:
                     #version found, return infos
                     self.logger.debug('Found release: %s' % asset)
                     return asset['name'], asset['browser_download_url'], asset['size']
@@ -284,18 +279,18 @@ class Updates(CleepDesktopModule):
         infos = UpdateInfos()
         github = Github(self.ETCHER_REPO['owner'], self.ETCHER_REPO['repo'])
 
-        #etcher-cli path for test it is installed
+        #balena-cli path for test it is installed
         if self.env=='linux':
-            etchercli_script_path = Install.FLASH_LINUX
+            balenacli_script_path = Install.FLASH_LINUX
         elif self.env=='darwin':
-            etchercli_script_path = Install.FLASH_MAC
+            balenacli_script_path = Install.FLASH_MAC
         elif self.env=='windows':
-            etchercli_script_path = Install.FLASH_WINDOWS
+            balenacli_script_path = Install.FLASH_WINDOWS
 
         #handle forced version
         if self.ETCHER_VERSION_FORCED is not None and self.ETCHER_VERSION_FORCED!=etcher_version:
-            #force etcher-cli installation to specific version
-            self.logger.debug('Force etcher-cli installation (forced version=%s, installed version=%s)' % (self.ETCHER_VERSION_FORCED, etcher_version))
+            #force balena-cli installation to specific version
+            self.logger.debug('Force balena-cli installation (forced version=%s, installed version=%s)' % (self.ETCHER_VERSION_FORCED, etcher_version))
 
             try:
                 #get forced release
@@ -307,7 +302,7 @@ class Updates(CleepDesktopModule):
                 infos.update_available = True
 
             except:
-                self.logger.exception('Forced Etcher-cli release not found:')
+                self.logger.exception('Forced balena-cli release not found:')
 
             return infos
 
@@ -323,9 +318,9 @@ class Updates(CleepDesktopModule):
                 #probably unable to join github (no internet connection?)
                 self.logger.warning('Unable to check etcher updates (no internet connection?)')
 
-            elif not os.path.exists(os.path.join(self.context.paths.config, 'etcher-cli')) or not os.path.exists(os.path.join(self.context.paths.config, etchercli_script_path)):
-                #etcher-cli is not installed
-                self.logger.debug('No etcher-cli found. Installation is necessary')
+            elif not os.path.exists(os.path.join(self.context.paths.config, 'balena-cli')) or not os.path.exists(os.path.join(self.context.paths.config, balenacli_script_path)):
+                #balena-cli is not installed
+                self.logger.debug('No balena-cli found. Installation is necessary')
                 infos.version = latest['tag_name']
                 infos.update_available = True
                 (infos.filename, infos.url, infos.size) = self.__get_etcher_version_infos(latest['assets'])
@@ -338,10 +333,10 @@ class Updates(CleepDesktopModule):
                 (infos.filename, infos.url, infos.size) = self.__get_etcher_version_infos(latest['assets'])
 
             else:
-                self.logger.debug('No new etcher version available')
+                self.logger.debug('No new balena-etcher version available')
 
         except:
-            self.logger.exception('Latest Etcher-cli release not found:')
+            self.logger.exception('Latest balena-cli release not found:')
 
         return infos
 
@@ -349,7 +344,7 @@ class Updates(CleepDesktopModule):
         """
         Check for available updates
 
-        Return:
+        Returns:
             dict: check output::
                 {
                     updateavailable (bool): True if update is available
@@ -362,7 +357,7 @@ class Updates(CleepDesktopModule):
         #check etcher
         config = self.context.config.get_config()
         infos = self.__check_etcher_updates(config['config']['etcher']['version'])
-        self.logger.debug('Check etcher version: %s' % infos)
+        self.logger.debug('Check balena-cli version: %s' % infos)
         if infos.update_available:
             #set member to trigger download in run function
             self.__download_etcher = infos
@@ -379,7 +374,7 @@ class Updates(CleepDesktopModule):
 
     def __update_etcher(self, archive_path):
         """
-        Update etcher software
+        Update balena-cli software
 
         Args:
             archive_path (string): etcher archive file path
@@ -395,13 +390,13 @@ class Updates(CleepDesktopModule):
             command = self.INSTALL_ETCHER_COMMAND_MAC % (self.context.paths.app, archive_path, self.context.paths.app, self.context.paths.config)
         elif self.env=='windows':
             command = self.INSTALL_ETCHER_COMMAND_WINDOWS % (self.context.paths.app, archive_path, self.context.paths.app, self.context.paths.config)
-        self.logger.debug('Command executed to install etcher: %s' % command)
+        self.logger.debug('Command executed to install balena-cli: %s' % command)
 
         #execute command
         c = Console()
         resp = c.command(command, 20.0)
         if resp['error'] or resp['killed']:
-            self.logger.error('Unable to install etcher-cli: stdout: %s' % resp)
+            self.logger.error('Unable to install balena-cli: stdout: %s' % resp)
             return False
 
         return True

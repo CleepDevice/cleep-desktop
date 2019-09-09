@@ -69,7 +69,7 @@ class Devices(CleepDesktopModule):
         """
         Headers to send at bus connection (values must be in string format!)
 
-        Return:
+        Returns:
             dict: dict of headers (only string supported)
         """
         macs = self.external_bus.get_mac_addresses()
@@ -94,7 +94,7 @@ class Devices(CleepDesktopModule):
         Args:
             headers (dict): dict of values as returned by bus
 
-        Return:
+        Returns:
             dict: dict with parsed values
         """
         if u'port' in headers.keys():
@@ -184,7 +184,7 @@ class Devices(CleepDesktopModule):
         """
         Return known devices (online or not)
 
-        Return:
+        Returns:
             dict of devices
         """
         #compute unconfigured devices

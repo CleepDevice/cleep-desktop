@@ -1,21 +1,21 @@
 #!/bin/sh
 
 #params:
-# $1: install path
+# $1: config path
 # $2: drive path
 # $3: image filepath
 # $4: wifi config file
 
-LOGFILE="$1/etcher-cli.log"
+LOGFILE="$1/balena-cli.log"
 
 dt=$(date '+%d/%m/%Y %H:%M')
 echo "START $dt" >> $LOGFILE
 echo "params=$1 $2 $3 $4" >> $LOGFILE
 
 #flash drive
-"$1/etcher-cli/etcher" --yes --unmount --drive $2 $3
+"$1/balena-cli/balena" "$3" --drive "$2" --yes
 ret=$?
-echo "etcher-cli returncode=$ret" >> $LOGFILE
+echo "balena-cli returncode=$ret" >> $LOGFILE
 if [ $ret != 0 ]
 then
     exit $ret

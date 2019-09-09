@@ -6,7 +6,7 @@
 # $3 : install path
 
 /bin/rm -rf $3/etcher-cli
+/bin/rm -rf $3/balena-cli
 /bin/tar xzvf "$1" -C "$3"
-/bin/mv $3/Etcher-cli* $3/etcher-cli
-/bin/cp "$2/tools/flash.linux.sh" "$3/etcher-cli/flash.sh"
+/bin/cp "$2/tools/flash.linux.sh" "$3/balena-cli/flash.sh"
 
