@@ -40,6 +40,7 @@ class Config(CleepDesktopModule):
                 #leaf, update value
                 if key in node.keys():
                     node[key] = value
+                    return True
                 else:
                     #self.context.main_logger.debug('Key "%s" not found' % key)
                     return False
