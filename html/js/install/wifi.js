@@ -31,7 +31,7 @@ var wifiController = function(closeModal, installService, modalData)
                 //toast.error('Please set wifi network name');
                 return true;
             }
-            else if( self.config.adapter && !self.selectedWifi.network )
+            else if( self.config.adapter && (!self.selectedWifi || !self.selectedWifi.network) )
             {
                 //toast.error('Please select wifi network');
                 return true;
