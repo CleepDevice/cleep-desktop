@@ -98,9 +98,12 @@ class WindowsDrives():
             for property in disk.Properties_:
                 if property.Name=='DeviceID':
                     current_device['temp_device'] = property.Value
-                    #workaround for etcher-cli 1.3.1
-                    #current_device['device'] = property.Value.replace('PHYSICALDRIVE', 'PhysicalDrive')
-                    current_device['device'] = property.Value
+                    #workaround for etcher-cli >=1.3.1 and balena-cli
+                    #balena.exe util available-drives
+                    #DEVICE             SIZE    DESCRIPTION
+                    #\\.\PhysicalDrive3 30.9 GB Kingston DataTraveler 3.0 USB Device
+                    current_device['device'] = property.Value.replace('PHYSICALDRIVE', 'PhysicalDrive')
+                    #current_device['device'] = property.Value
                     current_device['raw'] = property.Value
                 elif property.Name=='Caption':
                     current_device['description'] = property.Value
