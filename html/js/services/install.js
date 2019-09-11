@@ -121,12 +121,8 @@ var installService = function($rootScope, logger, cleepService)
      */
     self.init = function()
     {
-        //refresh all internal values
+        //refresh only adapter at startup
         self.refreshWifiAdapter();
-        self.refreshWifiNetworks();
-        //do not refresh isos at startup to reduce number of request on github.com (limited to few requests per day per ip)
-        //self.refreshIsos();
-        self.refreshDrives();
     };
 
     /**
