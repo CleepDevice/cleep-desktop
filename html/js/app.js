@@ -207,7 +207,7 @@ Cleep.controller('emptyDialogController', ['$rootScope', '$scope', '$state', 'cl
  * Cleep controller
  */
 var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService, modalService, deviceMessages, 
-                            updateService, cleepUi, settings, $timeout, installService, $transitions, toast)
+                            updateService, cleepUi, settings, $timeout, installService, $transitions, toast, devicesService)
 {
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
@@ -226,6 +226,10 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
     //Open page in content area (right side) handling 'openPage' event
     self.openPage = function(page)
     {
+        //unselect all devices
+        devicesService.selectDevice(null);
+
+        //open specified page
         $state.go(page);
     };
     cleepUi.openPage = self.openPage;
@@ -448,5 +452,5 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
 };
 Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 
                                     'deviceMessages', 'updateService', 'cleepUi', 'settings', '$timeout', 'installService', 
-                                    '$transitions', 'toastService', cleepController]);
+                                    '$transitions', 'toastService', 'devicesService', cleepController]);
 

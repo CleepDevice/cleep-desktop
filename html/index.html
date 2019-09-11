@@ -56,7 +56,7 @@
         <div ng-controller="devicesController as ctl" style="width:300px;" layout-fill class="panel-separator">
 
             <!-- toolbar -->
-            <div md-colors="{background: 'primary-500'}" class="toolbar-content" layout="row" layout-align="start center">
+            <div md-colors="::{background: 'primary-500'}" class="toolbar-content" layout="row" layout-align="start center">
                 <div class="toolbar-spacer"></div>
                 <div layout="row" layout-align="left center">
                     <md-icon style="color:white;" md-svg-icon="cellphone"></md-icon>
@@ -68,7 +68,7 @@
 
             <md-content>
                 <!-- loader -->
-                <div layout="column" layout-align="center center" ng-if="ctl.loading">
+                <div layout="column" layout-align="center center" ng-if="ctl.devicesService.loading">
                     <div>
                         <br/><br/><br/>
                         <md-progress-circular md-mode="indeterminate"></md-progress-circular>
@@ -77,7 +77,7 @@
                 </div>
 
                 <!-- no device -->
-                <div layout="column" layout-padding layout-align="center center" ng-if="!ctl.loading && ctl.devices.length==0">
+                <div layout="column" layout-padding layout-align="center center" ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length==0">
                     <div style="padding-top:20px;">
                         No device found...
                     </div>
@@ -90,14 +90,14 @@
                 </div>
 
                 <!-- unconfigured devices -->
-                <div ng-if="!ctl.loading && ctl.unconfigured>0" md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
+                <div ng-if="!ctl.devicesService.loading && ctl.devicesService.unconfigured>0" md-colors="::{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
                     <div class="toolbar-spacer"></div>
                     <div layout="row" layout-align="left center">
                         <h1 style="padding-left:5px;" class="md-title">Unconfigured devices</h1>
                     </div>
                 </div>
-                <md-list ng-if="!ctl.loading && ctl.unconfigured>0" style="padding:0px;">
-                    <md-list-item ng-repeat="device in ctl.devices | filter: {configured:false}" ng-if="ctl.unconfigured>0" ng-click="ctl.openDevicePage(device)">
+                <md-list ng-if="!ctl.devicesService.loading && ctl.devicesService.unconfigured>0" style="padding:0px;">
+                    <md-list-item ng-repeat="device in ctl.devicesService.devices | filter: {configured:false}" ng-if="ctl.devicesService.unconfigured>0" ng-click="ctl.openDevicePage(device)">
                         <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
                         <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin"></md-icon>
                         <p>{{device.hostname}}</p>
@@ -106,14 +106,14 @@
                 </md-list>
 
                 <!-- configured devices -->
-                <div ng-if="!ctl.loading && ctl.devices.length>0" md-colors="{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
+                <div ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length>0" md-colors="::{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
                     <div class="toolbar-spacer"></div>
                     <div layout="row" layout-align="left center">
                         <h1 style="padding-left:5px;" class="md-title">Configured devices</h1>
                     </div>
                 </div>
-                <md-list ng-if="!ctl.loading && ctl.devices.length>0" style="padding:0px;">
-                    <md-list-item ng-repeat="device in ctl.devices | filter: {configured:true}" ng-click="ctl.openDevicePage(device)">
+                <md-list ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length>0" style="padding:0px;">
+                    <md-list-item ng-repeat="device in ctl.devicesService.devices | filter: {configured:true}" ng-click="ctl.openDevicePage(device)" md-colors="device.selected ? {background: 'accent-400'} : {background: 'background'}">
                         <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
                         <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin"></md-icon>
                         <p>{{device.hostname}}</p>
@@ -153,6 +153,7 @@
     <script src="js/services/modal.js"></script>
     <script src="js/services/update.js"></script>
     <script src="js/services/install.js"></script>
+    <script src="js/services/devices.js"></script>
     <script src="js/updates/updates.js"></script>
     <script src="js/preferences/preferences.js"></script>
     <script src="js/install/install.js"></script>
