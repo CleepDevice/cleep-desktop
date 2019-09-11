@@ -140,101 +140,97 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
 
         //Handle cleepdesktop update here to add update task panel
         appUpdater.addListener('update-available', function(info) {
-            //update available, open task panel if necessary
-            logger.debug('AppUpdater: update-available');
+            $timeout(() => {
+                //update available, open task panel if necessary
+                logger.debug('AppUpdater: update-available');
 
-            //keep track of changelog
-            if( info && info.releaseNotes )
-            {
-                self.changelog = info.releaseNotes;
-            }
+                //keep track of changelog
+                if( info && info.releaseNotes )
+                {
+                    self.changelog = info.releaseNotes;
+                }
 
-            //update cleepdesktop flags
-            self.cleepdesktopUpdateAvailable = true;
-            if( !self.cleepdesktopUpdatesDisabled )
-            {
-                //update downloading flag
-                self.updatingCleepdesktop = true;
-                self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
-                //set to null because download progress is not always available
-                self.cleepdesktopStatus.downloadpercent = null;
-                //workaround to force angular to perform internal update
-                $rootScope.$apply();
-                $rootScope.$digest();
+                //update cleepdesktop flags
+                self.cleepdesktopUpdateAvailable = true;
+                if( !self.cleepdesktopUpdatesDisabled )
+                {
+                    //update downloading flag
+                    self.updatingCleepdesktop = true;
+                    self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
+                    //set to null because download progress is not always available
+                    self.cleepdesktopStatus.downloadpercent = null;
 
-                //update task panel
-                self.__handleUpdateTaskPanel();
-            }
-            else
-            {
-                //update is disabled, show message to user
-                self.taskUpdatePanel = tasksPanelService.addItem(
-                    'New CleepDesktop version available.', 
-                    {
-                        onAction: self.__goToUpdates,
-                        tooltip: 'Go to updates',
-                        icon: 'update'
-                    }
-                );
-            }
+                    //update task panel
+                    self.__handleUpdateTaskPanel();
+                }
+                else
+                {
+                    //update is disabled, show message to user
+                    self.taskUpdatePanel = tasksPanelService.addItem(
+                        'New CleepDesktop version available.', 
+                        {
+                            onAction: self.__goToUpdates,
+                            tooltip: 'Go to updates',
+                            icon: 'update'
+                        }
+                    );
+                }
+            });
         });
         appUpdater.addListener('update-downloaded', function(info) {
-            //update downloaded, close task panel
-            logger.debug('AppUpdater: update-downloaded');
-            if( !self.cleepdesktopUpdatesDisabled )
-            {
-                //update flags
-                self.updatingCleepdesktop = false;
-                self.cleepdesktopUpdateAvailable = false;
-                self.cleepdesktopStatus.status = self.STATUS_DONE;
-                self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DONE;
-                self.cleepdesktopStatus.downloadpercent = 100;
-                self.cleepdesktopStatus.restartrequired = true;
-                //workaround to force angular to perform internal update
-                $rootScope.$apply();
-                $rootScope.$digest();
+            $timeout(() => {
+                //update downloaded, close task panel
+                logger.debug('AppUpdater: update-downloaded');
+                if( !self.cleepdesktopUpdatesDisabled )
+                {
+                    //update flags
+                    self.updatingCleepdesktop = false;
+                    self.cleepdesktopUpdateAvailable = false;
+                    self.cleepdesktopStatus.status = self.STATUS_DONE;
+                    self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DONE;
+                    self.cleepdesktopStatus.downloadpercent = 100;
+                    self.cleepdesktopStatus.restartrequired = true;
+                    
+                    //emit restart required event
+                    $rootScope.$broadcast('restartrequired');
 
-                //emit restart required event
-                $rootScope.$broadcast('restartrequired');
+                    //update task panel
+                    self.__handleUpdateTaskPanel();
 
-                //update task panel
-                self.__handleUpdateTaskPanel();
-
-                //save changelog
-                $rootScope.$broadcast('savechangelog', self.changelog);
-            }
+                    //save changelog
+                    $rootScope.$broadcast('savechangelog', self.changelog);
+                }
+            });
         });
         appUpdater.addListener('error', function(error) {
-            //error during update, close task panel
-            if( !self.cleepdesktopUpdatesDisabled )
-            {
-                //update flags
-                logger.error('AppUpdater: error ' + error.message);
-                self.updatingCleepdesktop = false;
-                self.cleepdesktopStatus.status = self.STATUS_ERROR;
-                self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_ERROR;
-                self.cleepdesktopStatus.downloadpercent = 100;
-                self.cleepdesktopStatus.lasterror = error.message;
-                //workaround to force angular to perform internal update
-                $rootScope.$apply();
-                $rootScope.$digest();
-
-                //update task panel (delay it to make sure taskpanel is displayed)
-                $timeout(function() {
-                    self.__handleUpdateTaskPanel();
-                }, 1500);
-            }
+            $timeout(() => {
+                //error during update, close task panel
+                if( !self.cleepdesktopUpdatesDisabled )
+                {
+                    //update flags
+                    logger.error('AppUpdater: error ' + error.message);
+                    self.updatingCleepdesktop = false;
+                    self.cleepdesktopStatus.status = self.STATUS_ERROR;
+                    self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_ERROR;
+                    self.cleepdesktopStatus.downloadpercent = 100;
+                    self.cleepdesktopStatus.lasterror = error.message;
+                    
+                    //update task panel (delay it to make sure taskpanel is displayed)
+                    $timeout(function() {
+                        self.__handleUpdateTaskPanel();
+                    }, 1500);
+                }
+            });
         });
         appUpdater.addListener('download-progress', function(progress) {
-            percent = Math.round(progress.percent);
-            logger.debug('Update download progress: ' + percent);
-            
-            self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
-            self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
-            self.cleepdesktopStatus.downloadpercent = percent;
-            //workaround to force angular to perform internal update
-            $rootScope.$apply();
-            $rootScope.$digest();
+            $timeout(() => {
+                percent = Math.round(progress.percent);
+                logger.debug('Update download progress: ' + percent);
+                
+                self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
+                self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
+                self.cleepdesktopStatus.downloadpercent = percent;
+            });
         });
         appUpdater.addListener('checking-for-update', function() {
             logger.info('Checking for CleepDesktop updates...');

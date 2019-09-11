@@ -186,9 +186,6 @@ var tasksPanelService = function($rootScope, $mdPanel, logger) {
         //show panel
         self.__showPanel();
 
-        //force refresh
-        self.__digest();
-
         return item.id;
     };
 
@@ -213,13 +210,6 @@ var tasksPanelService = function($rootScope, $mdPanel, logger) {
             //hide panel if necessary
             self.__hidePanel();
         }
-    };
-
-    //force angular digest process
-    self.__digest = function()
-    {
-        $rootScope.$apply();
-        $rootScope.$digest();
     };
 
 };

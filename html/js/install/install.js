@@ -187,38 +187,35 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
 
     //flash update received
     $rootScope.$on('install', function(_event, data) {
-        if( !data )
-        {
-            return;
-        }
+        $timeout(() => {
+            if( !data )
+            {
+                return;
+            }
 
-        //save status
-        var flashing = self.flashing;
-        self.status = data;
+            //save status
+            var flashing = self.flashing;
+            self.status = data;
 
-        //enable/disable flash button
-        logger.debug('=> current status: ' + self.status.status, self.status);
-        if( self.status.status===self.STATUS.IDLE || self.status.status>=self.STATUS.DONE )
-        {
-            self.flashing = false;
-        }
-        else
-        {
-            self.flashing = true;
-        }
+            //enable/disable flash button
+            if( self.status.status===self.STATUS.IDLE || self.status.status>=self.STATUS.DONE )
+            {
+                self.flashing = false;
+            }
+            else
+            {
+                self.flashing = true;
+            }
 
-        //end of flash
-        if( self.flashing==false && flashing!=self.flashing )
-        {
-            logger.info('Flashing is terminated. Restore ui');
+            //end of flash
+            if( self.flashing==false && flashing!=self.flashing )
+            {
+                logger.info('Flashing is terminated. Restore ui');
 
-            //suppress warning dialog
-            $rootScope.$broadcast('enablequit');
-        }
-
-        //force angular refresh
-        $rootScope.$apply();
-        $rootScope.$digest();
+                //suppress warning dialog
+                $rootScope.$broadcast('enablequit');
+            }
+        });
     });
 
 };
