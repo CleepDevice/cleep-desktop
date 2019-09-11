@@ -82,6 +82,7 @@ class Install(CleepDesktopModule):
         self.env = platform.system().lower()
         self.console = None
         self.percent = 0
+        self.__last_percent = 0
         self.total_percent = 0
         self.eta = 0
         self.status = self.STATUS_IDLE
@@ -132,6 +133,14 @@ class Install(CleepDesktopModule):
         """
         self.cancel = True
 
+    def __update_ui(self):
+        """
+        Update ui if necessary
+        """
+        if self.__last_percent!=self.percent:
+            self.context.update_ui('install', self.get_status())
+            self.__last_percent = self.percent
+
     def run(self):
         """
         Start flash process. Does nothing until start_flash is called
@@ -150,7 +159,7 @@ class Install(CleepDesktopModule):
                     #update ui
                     self.status = self.STATUS_REQUEST_WRITE_PERMISSIONS
                     self.logger.debug('Status after download: %s' % self.get_status())
-                    self.context.update_ui('install', self.get_status())
+                    self.__update_ui()
 
                     #file downloaded successfully, launch flash+validation
                     self.__flash_drive()
@@ -173,8 +182,7 @@ class Install(CleepDesktopModule):
                         self.status = self.STATUS_DONE
                         
                     #update ui
-                    self.logger.debug('Send status to ui: %s' % self.get_status())
-                    self.context.update_ui('install', self.get_status())
+                    self.__update_ui()
                     
                 elif self.cancel:
                     #handle cancelation
@@ -209,7 +217,7 @@ class Install(CleepDesktopModule):
                 self.logger.info('Flash process terminated')
                 
                 #update ui
-                self.context.update_ui('install', self.get_status())
+                self.__update_ui()
 
             else:
                 #no process, release cpu
@@ -706,7 +714,7 @@ class Install(CleepDesktopModule):
                 self.dl.cancel()
 
         #update ui
-        self.context.update_ui('install', self.get_status())
+        self.__update_ui()
 
     def __download_file(self):
         """
@@ -779,7 +787,7 @@ class Install(CleepDesktopModule):
                     self.eta = items[2]
 
                     #update ui
-                    self.context.update_ui('install', self.get_status())
+                    self.__update_ui()
         except:
             if not self.__flash_output_error:
                 self.context.crash_report.report_exception()
@@ -808,7 +816,7 @@ class Install(CleepDesktopModule):
             self.__flash_output_error = False
 
         #update ui
-        self.context.update_ui('install', self.get_status())
+        self.__update_ui()
         
         #reset console
         self.console = None
@@ -834,9 +842,9 @@ class Install(CleepDesktopModule):
             #start command in admin endless console
             self.console = AdminEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
             if self.env=='windows':
-                self.console.set_cmdlogger(os.path.join(self.context.paths.app_path, self.CMDLOGGER_WINDOWS))
+                self.console.set_cmdlogger(os.path.join(self.context.paths.app, self.CMDLOGGER_WINDOWS))
             elif self.env=='darwin':
-                self.console.set_cmdlogger(os.path.join(self.context.paths.app_path, self.CMDLOGGER_MAC))
+                self.console.set_cmdlogger(os.path.join(self.context.paths.app, self.CMDLOGGER_MAC))
             else:
                 #workaround for AppImage issue https://github.com/AppImage/AppImageKit/issues/146
                 #cmdlogger is copied under config directory like etcher
