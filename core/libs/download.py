@@ -398,6 +398,9 @@ class Download():
         Return:
             string: cached filename
         """
+        if not url or len(url)==0:
+            raise Exception('Invalid url "%s" specified' % url)
+
         #consider last part of url as filename
         url_parsed = urllib3.util.parse_url(url)
         filename = url_parsed.path.split(u'/')[-1]

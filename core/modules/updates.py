@@ -72,6 +72,7 @@ class Updates(CleepDesktopModule):
         self.etcher_status = self.STATUS_IDLE
         self.etcher_download_status = Download.STATUS_IDLE
         self.etcher_download_percent = 0
+        self.last_check = 0
         
         #running env
         self.env = platform.system().lower()
@@ -150,9 +151,6 @@ class Updates(CleepDesktopModule):
 
         #copy cmdlogger to config folder
         self.__copy_cmdlogger()
-
-        #check updates at startup
-        self.check_updates()
 
         #endless loop
         while self.running:
@@ -337,6 +335,7 @@ class Updates(CleepDesktopModule):
 
         except:
             self.logger.exception('Latest balena-cli release not found:')
+            infos.error = True
 
         return infos
 
@@ -358,7 +357,7 @@ class Updates(CleepDesktopModule):
         config = self.context.config.get_config()
         infos = self.__check_etcher_updates(config['config']['etcher']['version'])
         self.logger.debug('Check balena-cli version: %s' % infos)
-        if infos.update_available:
+        if infos.update_available and not infos.error:
             #set member to trigger download in run function
             self.__download_etcher = infos
 
