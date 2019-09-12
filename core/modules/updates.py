@@ -323,7 +323,7 @@ class Updates(CleepDesktopModule):
                 infos.update_available = True
                 (infos.filename, infos.url, infos.size) = self.__get_etcher_version_infos(latest['assets'])
 
-            elif latest['tag_name']!=etcher_version:
+            elif latest['tag_name']>etcher_version:
                 #new version available, find cli version for current user platform
                 self.logger.debug('Update available (online version=%s, installed version=%s)' % (latest['tag_name'], etcher_version))
                 infos.version = latest['tag_name']
