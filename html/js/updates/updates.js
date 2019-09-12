@@ -3,7 +3,7 @@ var Cleep = angular.module('Cleep')
 /**
  * Updates controller
  */
-var updatesController = function($rootScope, $scope, cleepService, toast, logger, appUpdater, $timeout, updateService)
+var updatesController = function($rootScope, toast, updateService)
 {
     var self = this;
     self.cleepdesktopStatus = updateService.cleepdesktopStatus;
@@ -55,10 +55,9 @@ var updatesController = function($rootScope, $scope, cleepService, toast, logger
             })
             .finally(function() {
                 self.loading = false;
-            })
+            });
     };
 
 };
-Cleep.controller('updatesController', ['$rootScope', '$scope', 'cleepService', 'toastService', 'logger', 'appUpdater', 
-                                        '$timeout', 'updateService', updatesController]);
+Cleep.controller('updatesController', ['$rootScope', 'toastService', 'updateService', updatesController]);
 

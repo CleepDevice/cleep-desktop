@@ -67,15 +67,13 @@ var devicesService = function($rootScope, $timeout)
     //update devices list
     self.updateDevices = function(data) 
     {
-        $timeout(function() {
-            //sync devices
-            self.syncDevices(data.devices);
+        //sync devices
+        self.syncDevices(data.devices);
 
-            //update some controller members value
-            self.unconfigured = data.unconfigured;
-            self.configured = self.devices.length - self.unconfigured;
-            self.loading = false;
-        }, 0);
+        //update some controller members value
+        self.unconfigured = data.unconfigured;
+        self.configured = self.devices.length - self.unconfigured;
+        self.loading = false;
     };
 
     //watch for devices event to refresh devices list

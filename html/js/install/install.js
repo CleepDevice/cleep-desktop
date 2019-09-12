@@ -5,7 +5,7 @@ var path = require('electron').remote.require('path');
 /**
  * Install controller
  */
-var installController = function($rootScope, toast, confirm, logger, updateService, installService, modalService, cleepService)
+var installController = function($rootScope, $scope, toast, confirm, logger, updateService, installService, modalService, cleepService)
 {
     var self = this;
     self.flashing = false;
@@ -187,40 +187,39 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
 
     //flash update received
     $rootScope.$on('install', function(_event, data) {
-        $timeout(() => {
-            if( !data )
-            {
-                return;
-            }
+        if( !data )
+        {
+            return;
+        }
 
-            //save status
-            var flashing = self.flashing;
-            self.status = data;
+        //save status
+        var flashing = self.flashing;
+        self.status = data;
 
-            //enable/disable flash button
-            if( self.status.status===self.STATUS.IDLE || self.status.status>=self.STATUS.DONE )
-            {
-                self.flashing = false;
-            }
-            else
-            {
-                self.flashing = true;
-            }
+        //enable/disable flash button
+        if( self.status.status===self.STATUS.IDLE || self.status.status>=self.STATUS.DONE )
+        {
+            self.flashing = false;
+        }
+        else
+        {
+            self.flashing = true;
+        }
 
-            //end of flash
-            if( self.flashing==false && flashing!=self.flashing )
-            {
-                logger.info('Flashing is terminated. Restore ui');
+        //end of flash
+        if( self.flashing==false && flashing!=self.flashing )
+        {
+            logger.info('Flashing is terminated. Restore ui');
 
-                //suppress warning dialog
-                $rootScope.$broadcast('enablequit');
-            }
-        });
+            //suppress warning dialog
+            $rootScope.$broadcast('enablequit');
+        }
+
+        //tell angular to digest
+        $scope.$apply();
     });
 
 };
 
-Cleep.controller('installController', ['$rootScope', 'toastService', 'confirmService', 'logger', 'updateService', 
+Cleep.controller('installController', ['$rootScope', '$scope', 'toastService', 'confirmService', 'logger', 'updateService', 
                                         'installService', 'modalService', 'cleepService', installController]);
-
-
