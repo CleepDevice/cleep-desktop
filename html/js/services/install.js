@@ -4,6 +4,22 @@
 var installService = function($rootScope, logger, cleepService)
 {
     var self = this;
+    self.flashing = false;
+    self.STATUS = {
+        IDLE: 0,
+        DOWNLOADING: 1,
+        DOWNLOADING_NOSIZE: 2,
+        FLASHING: 3,
+        VALIDATING: 4,
+        REQUEST_WRITE_PERMISSIONS: 5,
+        DONE: 6,
+        CANCELED: 7,
+        ERROR: 8,
+        ERROR_INVALIDSIZE: 9,
+        ERROR_BADCHECKSUM: 10,
+        ERROR_FLASH: 11,
+        ERROR_NETWORK: 12,
+    };
     self.status = {
         percent: 0,
         total_percent: 0,
@@ -23,7 +39,7 @@ var installService = function($rootScope, logger, cleepService)
         adapter: false
     }
     //save flash config in service for data persistence
-    self.flashConfig = {
+    self.installConfig = {
         drive: null,
         iso: null,
         wifiChoice: 0,
@@ -102,6 +118,7 @@ var installService = function($rootScope, logger, cleepService)
      */
     self.startFlash = function(data)
     {
+        self.flashing = true;
         return cleepService.sendCommand('start_flash', 'install', data);
     };
 
@@ -112,6 +129,7 @@ var installService = function($rootScope, logger, cleepService)
     {
         return cleepService.sendCommand('cancel_flash', 'install')
             .then(function() {
+                self.flashing = false;
                 toast.info('Installation canceled');
             });
     };
@@ -131,6 +149,37 @@ var installService = function($rootScope, logger, cleepService)
     $rootScope.$on('configchanged', function(config) {
         logger.debug('Configuration changed, refresh install service values');
         self.init();
+    });
+
+    //flash update received
+    $rootScope.$on('install', function(_event, data) {
+        if( !data )
+        {
+            return;
+        }
+
+        //save status
+        self.status = data;
+
+        //enable/disable flash button
+        if( self.status.status===self.STATUS.IDLE || self.status.status>=self.STATUS.DONE )
+        {
+            self.flashing = false;
+        }
+        else
+        {
+            self.flashing = true;
+        }
+        logger.debug('Status=' + self.status.status + ' flashing=' + self.flashing, self.status);
+
+        //end of flash
+        if( self.flashing==false )
+        {
+            logger.info('Flashing is terminated. Restore ui');
+
+            //suppress warning dialog
+            $rootScope.$broadcast('enablequit');
+        }
     });
 
 };

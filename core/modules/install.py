@@ -86,6 +86,7 @@ class Install(CleepDesktopModule):
         self.total_percent = 0
         self.eta = 0
         self.status = self.STATUS_IDLE
+        self.__last_status = self.STATUS_IDLE
         self.drive = None
         self.iso = None
         self.iso_sha256 = None
@@ -137,9 +138,10 @@ class Install(CleepDesktopModule):
         """
         Update ui if necessary
         """
-        if self.__last_percent!=self.percent:
+        if self.__last_percent!=self.percent or self.__last_status!=self.status:
             self.context.update_ui('install', self.get_status())
             self.__last_percent = self.percent
+            self.__last_status = self.status
 
     def run(self):
         """

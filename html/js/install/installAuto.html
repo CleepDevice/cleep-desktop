@@ -34,9 +34,9 @@
                             <p ng-if="!ctl.prefs.isoraspbian">Select Cleep version you want to install on your SD card</p>
                             <p ng-if="ctl.prefs.isoraspbian">Select distribution you want to install on your SD card</p>
                             <span class="md-secondary md-caption">
-                                {{ctl.config.iso ? ctl.config.iso.label : 'No version selected'}}
+                                {{ctl.installService.installConfig.iso ? ctl.installService.installConfig.iso.label : 'No version selected'}}
                             </span>
-                            <md-button ng-click="ctl.openIsoDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.flashing">
+                            <md-button ng-click="ctl.openIsoDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.installService.flashing">
                                 <md-icon md-svg-icon="open-in-app"></md-icon>
                             </md-button>
                         </md-list-item>
@@ -46,19 +46,22 @@
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Plug your SD card or your USB card reader on your computer and select it from drives list</p>
                             <span class="md-secondary md-caption">
-                                {{ctl.config.drive ? ctl.config.drive.desc : 'No drive selected'}}
+                                {{ctl.installService.installConfig.drive ? ctl.installService.installConfig.drive.desc : 'No drive selected'}}
                             </span>
-                            <md-button ng-click="ctl.openDriveDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.flashing">
+                            <md-button ng-click="ctl.openDriveDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.installService.flashing">
                                 <md-icon md-svg-icon="open-in-app"></md-icon>
                             </md-button>
                         </md-list-item>
 
                         <!-- network choice -->
-                        <md-list-item ng-if="ctl.config.iso.category=='cleep'">
+                        <md-list-item ng-if="ctl.installService.installConfig.iso.category=='cleep'">
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Choose way your device will connect to your network</p>
                             <md-input-container class="md-secondary">
-                                <md-select ng-model="ctl.config.wifiChoice" placeholder="Network connection" class="md-no-underline" ng-disabled="ctl.flashing || ctl.config.iso.category!='cleep'">
+                                <md-select ng-model="ctl.installService.installConfig.wifiChoice"
+                                    placeholder="Network connection"
+                                    class="md-no-underline"
+                                    ng-disabled="ctl.installService.flashing || ctl.installService.installConfig.iso.category!='cleep'">
                                     <md-option ng-value="0">Wired connection</md-option>
                                     <md-option ng-value="1">Wifi on available network</md-option>
                                     <md-option ng-value="2">Wifi on hidden network</md-option>
@@ -67,13 +70,14 @@
                         </md-list-item>
 
                         <!-- wifi configuration -->
-                        <md-list-item ng-if="(ctl.config.wifiChoice==1 || ctl.config.wifiChoice==2) && ctl.config.iso.category=='cleep'">
+                        <md-list-item 
+                            ng-if="(ctl.installService.installConfig.wifiChoice==1 || ctl.installService.installConfig.wifiChoice==2) && ctl.installService.installConfig.iso.category=='cleep'">
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Wifi configuration</p>
                             <span class="md-secondary md-caption">
-                                {{ctl.config.wifi ? ctl.config.wifi.network : 'Wifi not configured'}}
+                                {{ctl.installService.installConfig.wifi ? ctl.installService.installConfig.wifi.network : 'Wifi not configured'}}
                             </span>
-                            <md-button ng-click="ctl.openWifiDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.flashing">
+                            <md-button ng-click="ctl.openWifiDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.installService.flashing">
                                 <md-icon md-svg-icon="open-in-app"></md-icon>
                             </md-button>
                         </md-list-item>
@@ -82,7 +86,7 @@
                         <md-list-item>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Click on button to install Cleep and follow install process below</p>
-                            <md-button ng-click="ctl.startFlash()" ng-disabled="ctl.flashing || !ctl.isEtcherAvailable()" class="md-secondary md-raised md-accent">
+                            <md-button ng-click="ctl.startFlash()" ng-disabled="ctl.installService.flashing || !ctl.isEtcherAvailable()" class="md-secondary md-raised md-accent">
                                 Install on selected drive
                             </md-button>
                         </md-list-item>
@@ -106,29 +110,29 @@
                     <div layout="row" layout-align="space-between center">
                         <div>
                             Status: 
-                            <span ng-if="ctl.status.status==0">Idle</span>
-                            <span ng-if="ctl.status.status==1">Downloading file {{ctl.status.percent}}% ({{ctl.status.eta}})</span>
-                            <span ng-if="ctl.status.status==2">Downloading file ({{ctl.status.eta}})</span>
-                            <span ng-if="ctl.status.status==3">Installing on drive {{ctl.status.percent}}% ({{ctl.status.eta}})</span>
-                            <span ng-if="ctl.status.status==4">Validating operation {{ctl.status.percent}}% ({{ctl.status.eta}})</span>
-                            <span ng-if="ctl.status.status==5">Requesting write permissions to system...</span>
-                            <span ng-if="ctl.status.status==6">Installation completed. You can unplug your SD card.</span>
-                            <span ng-if="ctl.status.status==7">Installation canceled</span>
-                            <span ng-if="ctl.status.status==8">Internal error occured</span>
-                            <span ng-if="ctl.status.status==9">Downloaded file size is invalid</span>
-                            <span ng-if="ctl.status.status==10">Downloaded file seems to be corrupted</span>
-                            <span ng-if="ctl.status.status==11">Problem during data copy on drive</span>
-                            <span ng-if="ctl.status.status==12">Network error occured during file download</span>
+                            <span ng-if="ctl.installService.status.status==0">Idle</span>
+                            <span ng-if="ctl.installService.status.status==1">Downloading file {{ctl.installService.status.percent}}% ({{ctl.installService.status.eta}})</span>
+                            <span ng-if="ctl.installService.status.status==2">Downloading file ({{ctl.installService.status.eta}})</span>
+                            <span ng-if="ctl.installService.status.status==3">Installing on drive {{ctl.installService.status.percent}}% ({{ctl.installService.status.eta}})</span>
+                            <span ng-if="ctl.installService.status.status==4">Validating operation {{ctl.installService.status.percent}}% ({{ctl.installService.status.eta}})</span>
+                            <span ng-if="ctl.installService.status.status==5">Requesting write permissions to system...</span>
+                            <span ng-if="ctl.installService.status.status==6">Installation completed. You can unplug your SD card.</span>
+                            <span ng-if="ctl.installService.status.status==7">Installation canceled</span>
+                            <span ng-if="ctl.installService.status.status==8">Internal error occured</span>
+                            <span ng-if="ctl.installService.status.status==9">Downloaded file size is invalid</span>
+                            <span ng-if="ctl.installService.status.status==10">Downloaded file seems to be corrupted</span>
+                            <span ng-if="ctl.installService.status.status==11">Problem during data copy on drive</span>
+                            <span ng-if="ctl.installService.status.status==12">Network error occured during file download</span>
                         </div>
                         <div>
-                            <md-button ng-click="ctl.cancelFlash()" class="md-raised md-primary" ng-disabled="!ctl.flashing">Cancel</md-button>
+                            <md-button ng-click="ctl.cancelFlash()" class="md-raised md-primary" ng-disabled="!ctl.installService.flashing">Cancel</md-button>
                         </div>
                     </div>
                     <div style="padding-top:15px;">
                         Overall progress status:
                     </div>
                     <div>
-                        <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.status.total_percent || 0}}" style="padding-top: 15px !important;"></md-progress-linear>
+                        <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.installService.status.total_percent || 0}}" style="padding-top: 15px !important;"></md-progress-linear>
                     </div>
                     <div layout="row" layout-align="end center" style="padding-top:30px;">
                         Powered by&nbsp;<a href="https://www.balena.io/etcher" target="_blank"><img style="height:25px;" src="images/balena-etcher.png"/></a>
