@@ -174,9 +174,6 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
                     }
                 );
             }
-
-            //tell angular to digest
-            $scope.$apply();
         });
         appUpdater.addListener('update-downloaded', function(info) {
             //update downloaded, close task panel
@@ -199,9 +196,6 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
 
                 //save changelog
                 $rootScope.$broadcast('savechangelog', self.changelog);
-
-                //tell angular to digest
-                $scope.$apply();
             }
         });
         appUpdater.addListener('error', function(error) {
@@ -220,9 +214,6 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
                 $timeout(function() {
                     self.__handleUpdateTaskPanel();
                 }, 1500);
-
-                //tell angular to digest
-                $scope.$apply();
             }
         });
         appUpdater.addListener('download-progress', function(progress) {
@@ -232,9 +223,6 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
             self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
             self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
             self.cleepdesktopStatus.downloadpercent = percent;
-
-            //tell angular to digest
-            $scope.$apply();
         });
         appUpdater.addListener('checking-for-update', function() {
             logger.info('Checking for CleepDesktop updates...');
