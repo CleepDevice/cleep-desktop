@@ -263,12 +263,12 @@ function createMenu()
             {
                 label: 'Updates',
                 click: () => {
-                    mainWindow.webContents.send('openPage', 'updates');
+                    mainWindow.webContents.send('openpage', 'updates');
                 }
             }, {
                 label: 'Preferences',
                 click: () => {
-                    mainWindow.webContents.send('openModal', 'preferencesController', 'js/preferences/preferences-dialog.html');
+                    mainWindow.webContents.send('openmodal', 'preferencesController', 'js/preferences/preferences-dialog.html');
                 }
             }, {
                 type: 'separator'
@@ -312,14 +312,14 @@ function createMenu()
             {
                 label: 'Install',
                 click: () => {
-                    mainWindow.webContents.send('openPage', 'installAuto');
+                    mainWindow.webContents.send('openpage', 'installAuto');
                 }
             }, {
                 type: 'separator'
             }, {
                 label: 'Monitoring',
                 click: () => {
-                    mainWindow.webContents.send('openPage', 'monitoring');
+                    mainWindow.webContents.send('openpage', 'monitoring');
                 }
             }
         ]
@@ -330,21 +330,21 @@ function createMenu()
             {
                 label: 'Application help',
                 click: () => {
-                    mainWindow.webContents.send('openPage', 'help');
+                    mainWindow.webContents.send('openpage', 'help');
                 }
             }, {
                 type: 'separator'
             }, {
                 label: 'Get support',
                 click: () => {
-                    mainWindow.webContents.send('openPage', 'support');
+                    mainWindow.webContents.send('openpage', 'support');
                 }
             }, {
                 type: 'separator'
             }, {
                 label: 'About',
                 click: () => {
-                    mainWindow.webContents.send('openPage', 'about');
+                    mainWindow.webContents.send('openpage', 'about');
                 }
             }
         ]

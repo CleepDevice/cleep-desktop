@@ -36,7 +36,7 @@
                             <span class="md-secondary md-caption">
                                 {{ctl.installService.installConfig.iso ? ctl.installService.installConfig.iso.label : 'No version selected'}}
                             </span>
-                            <md-button ng-click="ctl.openIsoDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.installService.flashing">
+                            <md-button ng-click="ctl.openIsoDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.installService.installing">
                                 <md-icon md-svg-icon="open-in-app"></md-icon>
                             </md-button>
                         </md-list-item>
@@ -48,7 +48,7 @@
                             <span class="md-secondary md-caption">
                                 {{ctl.installService.installConfig.drive ? ctl.installService.installConfig.drive.desc : 'No drive selected'}}
                             </span>
-                            <md-button ng-click="ctl.openDriveDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.installService.flashing">
+                            <md-button ng-click="ctl.openDriveDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.installService.installing">
                                 <md-icon md-svg-icon="open-in-app"></md-icon>
                             </md-button>
                         </md-list-item>
@@ -61,7 +61,7 @@
                                 <md-select ng-model="ctl.installService.installConfig.wifiChoice"
                                     placeholder="Network connection"
                                     class="md-no-underline"
-                                    ng-disabled="ctl.installService.flashing || ctl.installService.installConfig.iso.category!='cleep'">
+                                    ng-disabled="ctl.installService.installing || ctl.installService.installConfig.iso.category!='cleep'">
                                     <md-option ng-value="0">Wired connection</md-option>
                                     <md-option ng-value="1">Wifi on available network</md-option>
                                     <md-option ng-value="2">Wifi on hidden network</md-option>
@@ -77,7 +77,7 @@
                             <span class="md-secondary md-caption">
                                 {{ctl.installService.installConfig.wifi ? ctl.installService.installConfig.wifi.network : 'Wifi not configured'}}
                             </span>
-                            <md-button ng-click="ctl.openWifiDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.installService.flashing">
+                            <md-button ng-click="ctl.openWifiDialog()" class="md-secondary md-icon-button md-raised md-primary" ng-disabled="ctl.installService.installing">
                                 <md-icon md-svg-icon="open-in-app"></md-icon>
                             </md-button>
                         </md-list-item>
@@ -86,7 +86,7 @@
                         <md-list-item>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Click on button to install Cleep and follow install process below</p>
-                            <md-button ng-click="ctl.startFlash()" ng-disabled="ctl.installService.flashing || !ctl.isEtcherAvailable()" class="md-secondary md-raised md-accent">
+                            <md-button ng-click="ctl.startInstall()" ng-disabled="ctl.installService.installing || !ctl.isEtcherAvailable()" class="md-secondary md-raised md-accent">
                                 Install on selected drive
                             </md-button>
                         </md-list-item>
@@ -125,7 +125,7 @@
                             <span ng-if="ctl.installService.status.status==12">Network error occured during file download</span>
                         </div>
                         <div>
-                            <md-button ng-click="ctl.cancelFlash()" class="md-raised md-primary" ng-disabled="!ctl.installService.flashing">Cancel</md-button>
+                            <md-button ng-click="ctl.cancelFlash()" class="md-raised md-primary" ng-disabled="!ctl.installService.installing">Cancel</md-button>
                         </div>
                     </div>
                     <div style="padding-top:15px;">

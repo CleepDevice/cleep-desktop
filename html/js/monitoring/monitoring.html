@@ -27,17 +27,17 @@
             <md-card-content>
 
                 <!-- no message -->
-                <div layout="row" ng-if="ctl.messages.length==0" layout-align="start center">
+                <div layout="row" ng-if="ctl.monitoring.messages.length===0" layout-align="start center">
                     <span style="padding: 30px 0px 30px;">
                         This area will display messages received from your devices during current session. When CleepDesktop is closed, all messages are lost.
                         <br><br>
-                        For now your devices have not published any messages.
+                        For now your devices have not published any message.
                     </span>
                 </div>
 
                 <!-- messages list -->
-                <md-list ng-if="ctl.messages.length>0">
-                    <md-list-item ng-repeat="message in ctl.messages" class="md-2-line" ng-click="null">
+                <md-list ng-if="ctl.monitoring.messages.length>0">
+                    <md-list-item ng-repeat="message in ctl.monitoring.messages" class="md-2-line" ng-click="null">
                         <md-icon md-svg-icon="message-text"></md-icon>
                         <div class="md-list-item-text">
                             <h3>{{message.peer_hostname}}: {{message.event}}</h3>

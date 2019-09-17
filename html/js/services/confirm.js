@@ -15,10 +15,8 @@ var confirmService = function($mdDialog) {
     self.open = function(title, message, okLabel, cancelLabel, container) {
         //container
         var container_ = angular.element(document.body);
-        if( !angular.isUndefined(container) )
-        {
-            if( !container.startsWith('#') )
-            {
+        if( !angular.isUndefined(container) ) {
+            if( !container.startsWith('#') ) {
                 container = '#' + container;
             }
             _container = angular.element(document.querySelector(container));

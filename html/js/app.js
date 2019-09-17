@@ -12,10 +12,6 @@ let cleepUi = {
 //declare angular module
 var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router', 'ngSanitize', 'ngWebSocket']);
 
-//globals
-//keep track of all devices messages while CleepDesktop is running
-Cleep.value('deviceMessages', []);
-
 //inject electron values
 Cleep.value('logger', logger)
     .value('appUpdater', appUpdater)
@@ -206,8 +202,8 @@ Cleep.controller('emptyDialogController', ['$rootScope', '$scope', '$state', 'cl
 /**
  * Cleep controller
  */
-var cleepController = function($rootScope, $scope, $state, cleepService, tasksPanelService, modalService, deviceMessages, 
-                            updateService, cleepUi, settings, $timeout, installService, $transitions, toast, devicesService)
+var cleepController = function($rootScope, $state, cleepService, tasksPanelService, modalService, updateService, 
+                                cleepUi, settings, $timeout, installService, $transitions, toast, devicesService)
 {
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
@@ -217,15 +213,13 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
     self.selectedToolbarItem = null;
     self.toolbarCollapsed = true;
 
-    //Toggle toolbar
-    self.toggleToolbar = function()
-    {
+    // toggle toolbar
+    self.toggleToolbar = function() {
         self.toolbarCollapsed = !self.toolbarCollapsed;
     };
 
-    //Open page in content area (right side) handling 'openPage' event
-    self.openPage = function(page)
-    {
+    // open page in content area (right side) handling 'openPage' event
+    self.openPage = function(page) {
         //unselect all devices
         devicesService.selectDevice(null);
 
@@ -233,59 +227,43 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         $state.go(page);
     };
     cleepUi.openPage = self.openPage;
-    self.ipcRenderer.on('openPage', function(event, page) {
+    self.ipcRenderer.on('openpage', function(_event, page) {
         self.openPage(page);
     });
 
-    //Open modal handling 'openModal' event
-    //Data must be a map
-    self.openModal = function(controllerName, templateUrl, data)
-    {
+    // open modal handling 'openModal' event
+    // data must be a map
+    self.openModal = function(controllerName, templateUrl, data) {
         if( data===undefined || data===null ) {
             data = {}
         }
         modalService.open(controllerName, templateUrl, data);
     };
     cleepUi.openModal = self.openModal;
-    self.ipcRenderer.on('openModal', function(_event, controllerName, templateUrl, data) {
+    self.ipcRenderer.on('openmodal', function(_event, controllerName, templateUrl, data) {
         self.openModal(controllerName, templateUrl, data);
     });
 
-    //Jump to auto install page
-    self.jumpToInstallAuto = function() {
-        $state.go('installAuto');
-    };
-
-    //On close flash task panel
-    self.onCloseFlashTaskPanel = function()
-    {
-        //reset variable
-        self.taskFlashPanel = null;
-        self.taskFlashPanelClosed = true;
-    };
-
-    //On close restart required task panel
-    self.onCloseRestartRequiredTaskPanel = function()
-    {
+    // on close restart required task panel
+    self.onCloseRestartRequiredTaskPanel = function() {
         //reset variable
         self.taskRestartRequiredPanel = null;
     };
 
-    //Restart appliation
-    self.restartApplication = function()
-    {
-        //introduce small sleep before closing application
+    // restart application
+    self.restartApplication = function() {
+        //introduce small pause before closing application
         $timeout(function() {
             appUpdater.quitAndInstall();
         }, 1000);
     };
 
-    //Select toolbar icons
-    $transitions.onEnter({}, function(trans, state) {
+    // select toolbar icons
+    $transitions.onEnter({}, function(_trans, state) {
         self.selectedToolbarItem = state.name;
     });
 
-    //handle file download
+    // handle file download
     self.cancelDownload = function() {
         ipcRenderer.send('download-file-cancel');
     };
@@ -335,56 +313,9 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         ipcRenderer.send('download-file', data);
     });
 
-    //Add flash task panel info
-    $rootScope.$on('install', function(event, data) {
-        if( !data )
-            return;
-
-        if( data.status>=5 )
-        {
-            //flash is terminated
-            tasksPanelService.removeItem(self.taskFlashPanel);
-            self.taskFlashPanel = null;
-            self.taskFlashPanelClosed = false;
-        }
-        else if( self.taskFlashPanelClosed )
-        {
-            //flash task panel closed by user, do not open it again
-        }
-        else if( data.status>0 && !self.taskFlashPanel )
-        {
-            //flash is started
-            self.taskFlashPanel = tasksPanelService.addItem(
-                'Installing Cleep on drive...',
-                {
-                    onAction: self.jumpToInstallAuto,
-                    tooltip: 'Go to install',
-                    icon: 'sd'
-                },
-                {
-                    onClose: self.onCloseFlashTaskPanel,
-                    disabled: false
-                },
-                true
-            );
-        }
-    });
-
-    //Watch for device messages event to append them in global value deviceMessages
-    //message are handled in main application to keep the messages alive.
-    $rootScope.$on('message', function(event, data) {
-        if( !data )
-            return;
-
-        //append at beginning new message
-        logger.debug('New message:', data);
-        deviceMessages.unshift(data);
-    });
-
-    //Handle restart required event adding a task panel
-    $rootScope.$on('restartrequired', function(event, data) {
-        if( !self.taskRestartRequired )
-        {
+    // handle restart required event adding a task panel
+    $rootScope.$on('restartrequired', function(_event, _data) {
+        if( !self.taskRestartRequired ) {
             self.taskRestartRequired = tasksPanelService.addItem(
                 'Restart application to apply changes.', 
                 {
@@ -401,27 +332,26 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
         }
     });
 
-    //Restart application
-    $rootScope.$on('restart', function(event, data) {
+    // restart application
+    $rootScope.$on('restart', function(_event, _data) {
         self.restartApplication();
     });
 
-    //disable/enable application quit when process is running (like flash)
-    $rootScope.$on('disablequit', function(event, data) {
+    // disable/enable application quit when process is running (like install process)
+    $rootScope.$on('disablequit', function(_event, _data) {
         ipcRenderer.send('allow-quit', false);
     });
-    $rootScope.$on('enablequit', function(event, data) {
+    $rootScope.$on('enablequit', function(_event, _data) {
         ipcRenderer.send('allow-quit', true);
     });
 
-    //save changelog
-    $rootScope.$on('savechangelog', function(event, data) {
+    // save changelog
+    $rootScope.$on('savechangelog', function(_event, data) {
         ipcRenderer.send('save-changelog', data);
     });
 
-    //Controller init
-    self.init = function()
-    {
+    // controller init
+    self.init = function() {
         //init websocket asap
         cleepService.connectWebSocket()
         .then(function() {
@@ -431,6 +361,9 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
             updateService.init();
             //and check for updates (defer it to make almost sure core is launched)
             updateService.checkForUpdates();
+
+            //init devices service
+            devicesService.getDevices();
 
             //init install service
             installService.init();
@@ -450,7 +383,7 @@ var cleepController = function($rootScope, $scope, $state, cleepService, tasksPa
     self.init();
 
 };
-Cleep.controller('cleepController', ['$rootScope', '$scope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 
-                                    'deviceMessages', 'updateService', 'cleepUi', 'settings', '$timeout', 'installService', 
+Cleep.controller('cleepController', ['$rootScope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 
+                                    'updateService', 'cleepUi', 'settings', '$timeout', 'installService', 
                                     '$transitions', 'toastService', 'devicesService', cleepController]);
 

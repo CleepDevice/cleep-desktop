@@ -34,7 +34,7 @@ else:
 
 class Install(CleepDesktopModule):
     """
-    Flash drive helper
+    Install iso helper
     """
 
     CACHE_DURATION = 900.0
@@ -145,7 +145,7 @@ class Install(CleepDesktopModule):
 
     def run(self):
         """
-        Start flash process. Does nothing until start_flash is called
+        Start install background task. Does nothing until start_install is called
         """
         self.logger.debug('Flashdrive thread started')
         
@@ -155,7 +155,7 @@ class Install(CleepDesktopModule):
         while self.running:
             #check if process requested
             if self.url and self.drive:
-                self.logger.info('Flash process started')
+                self.logger.info('Install process started')
 
                 if self.__download_file():
                     #update ui
@@ -195,7 +195,7 @@ class Install(CleepDesktopModule):
                     pass
 
                 #reset everything
-                self.logger.debug('Reset flash variables')
+                self.logger.debug('Reset install variables')
                 self.total_percent = 100
                 if self.iso and os.path.exists(self.iso):
                     self.logger.debug('Purge downloaded file')
@@ -216,7 +216,7 @@ class Install(CleepDesktopModule):
                             self.logger.exception('Unable to delete wifi config file %s:' % self.wifi_config)
                 except:
                     pass
-                self.logger.info('Flash process terminated')
+                self.logger.info('Install process terminated')
                 
                 #update ui
                 self.__update_ui()
@@ -322,13 +322,13 @@ class Install(CleepDesktopModule):
         else:
             return self.github.get_release_assets_infos(release), release['name']
 
-    def start_flash(self, url, drive, wifi):
+    def start_install(self, url, drive, wifi):
         """
-        Set flash data before launching process
+        Set install data before launching process
 
         Args:
-            url (string): url of file to use during flash
-            drive (string): drive to flash
+            url (string): url of file to use during install
+            drive (string): drive to install
             wifi (dict): wifi configuration::
             
                 {
@@ -358,7 +358,7 @@ class Install(CleepDesktopModule):
         #generate wifi config file is needed
         wifi_config = None
         if wifi and wifi['network']:
-            self.logger.debug('Start flash: wifi infos available')
+            self.logger.debug('Start install: wifi infos available')
             try:
                 #prepare content
                 cleepwificonf = CleepWifiConf()
@@ -375,27 +375,27 @@ class Install(CleepDesktopModule):
                 self.logger.exception('Unable to store wifi config:')
                 wifi_config = None
         else:
-            self.logger.debug('Start flash: no wifi info specified')
+            self.logger.debug('Start install: no wifi info specified')
 
-        #store data (setting self.url and self.drive will trigger flashing in run method)
+        #store data (setting self.url and self.drive will trigger install in run method)
         self.url = url
         self.drive = drive
         self.wifi_config = wifi_config
-        self.logger.debug('Start flash: flash will start with values: %s %s %s' % (self.url, self.drive, self.wifi_config))
+        self.logger.debug('Start install: install will start with values: %s %s %s' % (self.url, self.drive, self.wifi_config))
 
-    def cancel_flash(self):
+    def cancel_install(self):
         """
         Cancel current process
         """
-        self.logger.debug('Flash canceled')
+        self.logger.debug('Install canceled')
         self.cancel = True
 
     def get_status(self):
         """
-        Return current flash process percent
+        Return current install process percent
 
         Returns:
-            int: flash process percent
+            int: install process percent
         """
         return {
             'percent': self.percent,
@@ -724,7 +724,7 @@ class Install(CleepDesktopModule):
         """
         #check values
         if self.url is None or self.drive is None:
-            self.logger.debug('No drive or url specified, flash process stopped')
+            self.logger.debug('No drive or url specified, install process stopped')
             return False
 
         #check if it is local file
@@ -748,9 +748,9 @@ class Install(CleepDesktopModule):
             return False
         return True
 
-    def __flash_callback(self, stdout, stderr):
+    def __install_callback(self, stdout, stderr):
         """
-        Flash process callback
+        Install process callback
 
         Args:
             stdout (string): stdout message
@@ -758,9 +758,9 @@ class Install(CleepDesktopModule):
         """
         #handle current flasing/validating status
         try:
-            #self.logger.debug('Flash stdout=%s' % stdout)
+            #self.logger.debug('Install stdout=%s' % stdout)
             matches = re.finditer(self.__etcher_output_pattern, stdout, re.UNICODE | re.DOTALL)
-            for matchNum, match in enumerate(matches):
+            for _, match in enumerate(matches):
                 group = match.group().strip()
                 if len(group)>0 and len(match.groups())>0:
                     items = match.groups()
@@ -793,12 +793,12 @@ class Install(CleepDesktopModule):
         except:
             if not self.__flash_output_error:
                 self.context.crash_report.report_exception()
-                self.logger.exception('Exception occured during flash callback:')
+                self.logger.exception('Exception occured during install callback:')
                 self.__flash_output_error = True
 
-    def __flash_end_callback(self):
+    def __install_end_callback(self):
         """
-        Flash process ended callback
+        Install process ended callback
         """
         if self.console is None:
             #process surely canceled
@@ -806,12 +806,12 @@ class Install(CleepDesktopModule):
 
         #get console return code
         return_code = self.console.get_return_code()
-        self.logger.info('Flash operation terminated with return code %s' % return_code)
+        self.logger.info('Install process terminated with return code %s' % return_code)
                 
         #check return code
         if return_code!=0:
-            #flash failed
-            self.logger.error('Flash failed. Return code awaited is 0, received %s' % return_code)
+            #install failed
+            self.logger.error('Install failed. Return code awaited is 0, received %s' % return_code)
             self.__flash_output_error = True
         else:
             #reset console and set status
@@ -842,7 +842,7 @@ class Install(CleepDesktopModule):
             self.logger.debug('Flash command to execute: %s' % cmd)
 
             #start command in admin endless console
-            self.console = AdminEndlessConsole(cmd, self.__flash_callback, self.__flash_end_callback)
+            self.console = AdminEndlessConsole(cmd, self.__install_callback, self.__install_end_callback)
             if self.env=='windows':
                 self.console.set_cmdlogger(os.path.join(self.context.paths.app, self.CMDLOGGER_WINDOWS))
             elif self.env=='darwin':

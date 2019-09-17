@@ -1,12 +1,11 @@
-var Cleep = angular.module('Cleep');
-
 /**
  * Monitoring controller
  * Display messages from all devices received on bus
  */
-var monitoringController = function($rootScope, $scope, cleepService, deviceMessages)
-{
+var monitoringController = function(monitoringService) {
     var self = this;
-    self.messages = deviceMessages
+    self.monitoring = monitoringService;
 };
-Cleep.controller('monitoringController', ['$rootScope', '$scope', 'cleepService', 'deviceMessages', monitoringController]);
+
+var Cleep = angular.module('Cleep');
+Cleep.controller('monitoringController', ['monitoringService', monitoringController]);

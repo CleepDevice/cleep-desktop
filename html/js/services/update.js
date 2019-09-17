@@ -3,8 +3,7 @@
  * This service handles properly update taskpanel
  * It can returns Cleepdesktop update status and last error
  */
-var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $q, cleepService, cleepdesktopInfos)
-{
+var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $q, cleepService, cleepdesktopInfos) {
     var self = this;
 
     //status from updates.py
@@ -46,34 +45,28 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
     };
     self.changelog = null;
 
-    //Go to updates page
-    self.__goToUpdates = function()
-    {
+    // go to updates page
+    self.__goToUpdates = function() {
         cleepUi.openPage('updates');
     };
 
-    //On close update task panel
-    self.__onCloseUpdateTaskPanel = function()
-    {
+    // on close update task panel
+    self.__onCloseUpdateTaskPanel = function() {
         //reset variable
         self.taskUpdatePanel = null;
         self.taskUpdatePanelClosedByUser = true;
     };
 
     //Handle opening/closing of update task panel according to current cleepdesktop and etcher update status
-    self.__handleUpdateTaskPanel = function()
-    {
-        if( (self.updatingCleepdesktop || self.updatingEtcher) && self.taskUpdatePanelClosedByUser )
-        {
+    self.__handleUpdateTaskPanel = function() {
+        if( (self.updatingCleepdesktop || self.updatingEtcher) && self.taskUpdatePanelClosedByUser ) {
             //update task panel closed by user, do not open again
-        }
-        else if( !self.updatingCleepdesktop && !self.updatingEtcher && self.taskUpdatePanelClosedByUser )
-        {
+
+        } else if( !self.updatingCleepdesktop && !self.updatingEtcher && self.taskUpdatePanelClosedByUser ) {
             //update task panel closed by user but updates terminated, reset flag
             self.taskUpdatePanelClosedByUser = false;
-        }
-        else if( (self.updatingCleepdesktop || self.updatingEtcher) && !self.taskUpdatePanel )
-        {
+
+        } else if( (self.updatingCleepdesktop || self.updatingEtcher) && !self.taskUpdatePanel ) {
             //no update task panel opened yet while update is in progress, open it
             self.taskUpdatePanel = tasksPanelService.addItem(
                 'Updating application...', 
@@ -88,9 +81,8 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
                 },
                 true
             );
-        }
-        else if( !self.updatingCleepdesktop && !self.updatingEtcher && self.taskUpdatePanel )
-        {
+
+        } else if( !self.updatingCleepdesktop && !self.updatingEtcher && self.taskUpdatePanel ) {
             //no update is running and task panel is opened, close it
             tasksPanelService.removeItem(self.taskUpdatePanel);
             self.taskUpdatePanel = null;
@@ -99,8 +91,7 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
     };
 
     //Init update service adding appUpdater and cleepdesktopcore events handlers
-    self.init = function()
-    {
+    self.init = function() {
         /*if( process.platform==='darwin' )
         {
             //disable auto updates on macos due to missing certification key that is needed :(
@@ -111,9 +102,10 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
         }*/
 
         //Handle etcher update here to add update task panel
-        $rootScope.$on('updates', function(event, data) {
-            if( !data )
+        $rootScope.$on('updates', function(_event, data) {
+            if( !data ) {
                 return;
+            }
 
             //update etcher status
             self.etcherStatus.version = data.etcherstatus.version;
@@ -123,13 +115,11 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
 
             //update internal flags
             self.lastUpdateCheck = data.lastUpdateCheck;
-            if( data.etcherstatus.status>=3 )
-            {
+            if( data.etcherstatus.status>=3 ) {
                 //etcher update is terminated
                 self.updatingEtcher = false;
-            }
-            else if( !self.taskUpdatePanel && data.etcherstatus.status>0 )
-            {
+
+            } else if( !self.taskUpdatePanel && data.etcherstatus.status>0 ) {
                 //etcher update has started
                 self.updatingEtcher = true;
             }
@@ -144,15 +134,13 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
             logger.debug('AppUpdater: update-available');
 
             //keep track of changelog
-            if( info && info.releaseNotes )
-            {
+            if( info && info.releaseNotes ) {
                 self.changelog = info.releaseNotes;
             }
 
             //update cleepdesktop flags
             self.cleepdesktopUpdateAvailable = true;
-            if( !self.cleepdesktopUpdatesDisabled )
-            {
+            if( !self.cleepdesktopUpdatesDisabled ) {
                 //update downloading flag
                 self.updatingCleepdesktop = true;
                 self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
@@ -161,9 +149,8 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
 
                 //update task panel
                 self.__handleUpdateTaskPanel();
-            }
-            else
-            {
+
+            } else {
                 //update is disabled, show message to user
                 self.taskUpdatePanel = tasksPanelService.addItem(
                     'New CleepDesktop version available.', 
@@ -175,11 +162,11 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
                 );
             }
         });
+
         appUpdater.addListener('update-downloaded', function(info) {
             //update downloaded, close task panel
             logger.debug('AppUpdater: update-downloaded');
-            if( !self.cleepdesktopUpdatesDisabled )
-            {
+            if( !self.cleepdesktopUpdatesDisabled ) {
                 //update flags
                 self.updatingCleepdesktop = false;
                 self.cleepdesktopUpdateAvailable = false;
@@ -200,8 +187,7 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
         });
         appUpdater.addListener('error', function(error) {
             //error during update, close task panel
-            if( !self.cleepdesktopUpdatesDisabled )
-            {
+            if( !self.cleepdesktopUpdatesDisabled ) {
                 //update flags
                 logger.error('AppUpdater: error ' + error.message);
                 self.updatingCleepdesktop = false;
@@ -245,8 +231,7 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
 
     //check for updates
     //@return promise: resolve returns true if update available, false otherwise. Reject returns software that fails ('etcher'|'cleepdesktop')
-    self.checkForUpdates = function()
-    {
+    self.checkForUpdates = function() {
         logger.info('Check for software updates');
         var defer = $q.defer();
 
@@ -287,44 +272,35 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
     };
 
     // Return Cleepdesktop update status
-    self.isUpdatingCleepdesktop = function()
-    {
+    self.isUpdatingCleepdesktop = function() {
         return self.updatingCleepdesktop;
     };
 
     // Return Etcher update status
-    self.isUpdatingEtcher = function()
-    {
+    self.isUpdatingEtcher = function() {
         return self.updatingEtcher;
     };
 
     //Is cleepdesktop updates disabled
-    self.isCleepdesktopUpdatesDisabled = function()
-    {
+    self.isCleepdesktopUpdatesDisabled = function() {
         return self.cleepdesktopUpdatesDisabled;
     };
 
     //Is cleepdesktop updates available
-    self.isCleepdesktopUpdatesAvailable = function()
-    {
+    self.isCleepdesktopUpdatesAvailable = function() {
         return self.cleepdesktopUpdateAvailable;
     };
 
     //Get last check time
-    self.getLastCheckTime = function()
-    {
+    self.getLastCheckTime = function() {
         return self.lastCheck;
     };
 
     //Return true if etcher is available (installed and no update in progress)
-    self.isEtcherAvailable = function()
-    {
-        if( self.etcherStatus.version=='v0.0.0' || self.etcherStatus.status==self.STATUS_DOWNLOADING || self.etcherStatus.status==self.STATUS_INSTALLING )
-        {
+    self.isEtcherAvailable = function() {
+        if( self.etcherStatus.version=='v0.0.0' || self.etcherStatus.status==self.STATUS_DOWNLOADING || self.etcherStatus.status==self.STATUS_INSTALLING ) {
             return false;
-        }
-        else
-        {
+        } else {
             return true;
         }
     };

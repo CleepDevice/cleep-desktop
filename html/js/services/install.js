@@ -1,10 +1,10 @@
 /**
  * Install service handles data useful to install module
  */
-var installService = function($rootScope, logger, cleepService)
+var installService = function($rootScope, $state, logger, cleepService, tasksPanelService)
 {
     var self = this;
-    self.flashing = false;
+    self.installing = false;
     self.STATUS = {
         IDLE: 0,
         DOWNLOADING: 1,
@@ -38,19 +38,20 @@ var installService = function($rootScope, logger, cleepService)
         networks: [],
         adapter: false
     }
-    //save flash config in service for data persistence
+    // save install config in service for data persistence
     self.installConfig = {
         drive: null,
         iso: null,
         wifiChoice: 0,
         wifi: null
     };
+    self.taskInstallPanelClosed = false;
+    self.taskInstallPanel = null;
 
     /**
      * Return current install status
      */
-    self.getStatus = function()
-    {
+    self.getStatus = function() {
         return cleepService.sendCommand('get_status', 'install')
             .then(function(resp) {
                 self.status = resp.data;
@@ -60,8 +61,7 @@ var installService = function($rootScope, logger, cleepService)
     /**
      * Return wifi adapter infos
      */
-    self.refreshWifiAdapter = function()
-    {
+    self.refreshWifiAdapter = function() {
         return cleepService.sendCommand('get_wifi_adapter', 'install')
             .then(function(resp) {
                 self.wifi.adapter = resp.data.adapter;
@@ -71,8 +71,7 @@ var installService = function($rootScope, logger, cleepService)
     /**
      * Refresh available wifi networks
      */
-    self.refreshWifiNetworks = function()
-    {
+    self.refreshWifiNetworks = function() {
         return cleepService.sendCommand('get_wifi_networks', 'install')
             .then(function(resp) {
                 self.wifi.networks = resp.data.networks;
@@ -82,16 +81,14 @@ var installService = function($rootScope, logger, cleepService)
     /**
      * Refresh list of available drives
      */
-    self.refreshDrives = function()
-    {
+    self.refreshDrives = function() {
         return cleepService.sendCommand('get_flashable_drives', 'install')
             .then(function(resp) {
                 //clear existing drives
                 self.drives.splice(0, self.drives.length);
 
                 //fill with new values
-                for( var i=0; i<resp.data.length; i++)
-                {
+                for( var i=0; i<resp.data.length; i++) {
                     self.drives.push(resp.data[i]);
                 }
             });
@@ -100,8 +97,7 @@ var installService = function($rootScope, logger, cleepService)
     /**
      * Refresh isos list
      */
-    self.refreshIsos = function()
-    {
+    self.refreshIsos = function() {
         return cleepService.sendCommand('get_isos', 'install')
             .then(function(resp) {
                 self.isos.isos = resp.data.isos;
@@ -113,23 +109,21 @@ var installService = function($rootScope, logger, cleepService)
     };
 
     /**
-     * Start flash
-     * @data: flash data (drive, iso, wifi...)
+     * Start install
+     * @data: install data (drive, iso, wifi...)
      */
-    self.startFlash = function(data)
-    {
-        self.flashing = true;
-        return cleepService.sendCommand('start_flash', 'install', data);
+    self.startInstall = function(data) {
+        self.installing = true;
+        return cleepService.sendCommand('start_install', 'install', data);
     };
 
     /**
-     * Cancel flash
+     * Cancel install
      */
-    self.cancelFlash = function()
-    {
-        return cleepService.sendCommand('cancel_flash', 'install')
+    self.cancelInstall = function() {
+        return cleepService.sendCommand('cancel_install', 'install')
             .then(function() {
-                self.flashing = false;
+                self.installing = false;
                 toast.info('Installation canceled');
             });
     };
@@ -137,8 +131,7 @@ var installService = function($rootScope, logger, cleepService)
     /**
      * Init service values
      */
-    self.init = function()
-    {
+    self.init = function() {
         //refresh only adapter at startup
         self.refreshWifiAdapter();
     };
@@ -146,36 +139,65 @@ var installService = function($rootScope, logger, cleepService)
     /**
      * Handle config changed to update internal values automatically
      */
-    $rootScope.$on('configchanged', function(config) {
+    $rootScope.$on('configchanged', function(_config) {
         logger.debug('Configuration changed, refresh install service values');
         self.init();
     });
 
-    //flash update received
+    // on close install task panel event
+    self.onCloseInstallTaskPanel = function() {
+        //reset variable
+        self.taskInstallPanel = null;
+        self.taskInstallPanelClosed = true;
+    };
+
+    // jump to auto install page
+    self.jumpToInstallAuto = function() {
+        $state.go('installAuto');
+    };
+
+    // install update received
     $rootScope.$on('install', function(_event, data) {
-        if( !data )
-        {
+        if( !data ) {
             return;
         }
 
         //save status
         self.status = data;
 
-        //enable/disable flash button
-        if( self.status.status===self.STATUS.IDLE || self.status.status>=self.STATUS.DONE )
-        {
-            self.flashing = false;
-        }
-        else
-        {
-            self.flashing = true;
-        }
-        logger.debug('Status=' + self.status.status + ' flashing=' + self.flashing, self.status);
+        //detect install process
+        if( self.status.status===self.STATUS.IDLE || self.status.status>=self.STATUS.DONE ) {
+            self.installing = false;
 
-        //end of flash
-        if( self.flashing==false )
-        {
-            logger.info('Flashing is terminated. Restore ui');
+        } else {
+            self.installing = true;
+
+            if(!self.taskInstallPanel && !self.taskInstallPanelClosed) {
+                self.taskInstallPanel = tasksPanelService.addItem(
+                    'Installing Cleep on drive...',
+                    {
+                        onAction: self.jumpToInstallAuto,
+                        tooltip: 'Go to install page',
+                        icon: 'sd'
+                    },
+                    {
+                        onClose: self.onCloseInstallTaskPanel,
+                        disabled: false
+                    },
+                    true
+                );
+            }
+        }
+        logger.debug('Status=' + self.status.status + ' installing=' + self.installing, self.status);
+
+        //end of install
+        if( self.installing===false ) {
+            logger.info('Install is terminated. Restore ui');
+
+            //close taskpanel
+            tasksPanelService.removeItem(self.taskInstallPanel);
+            self.taskInstallPanel = null;
+            self.taskInstallPanelClosed = false;
 
             //suppress warning dialog
             $rootScope.$broadcast('enablequit');
@@ -185,4 +207,4 @@ var installService = function($rootScope, logger, cleepService)
 };
 
 var Cleep = angular.module('Cleep');
-Cleep.service('installService', ['$rootScope', 'logger', 'cleepService', installService]);
+Cleep.service('installService', ['$rootScope', '$state', 'logger', 'cleepService', 'tasksPanelService', installService]);

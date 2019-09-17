@@ -5,42 +5,34 @@
  * This panel can display a progress linebar to display action in progress
  */
 
-var tasksPanelService = function($rootScope, $mdPanel, logger) {
+var tasksPanelService = function($mdPanel) {
     var self = this;
     self.mdPanelRef = null;
     self.items = [];
     self.panelSize = 500;
 
-    //panel controller
-    //used to close item and hide panel when items list is empty
-    self.PanelCtl = function(mdPanelRef)
-    {
+    // panel controller
+    // used to close item and hide panel when items list is empty
+    self.PanelCtl = function(mdPanelRef) {
         //set reference to current panel
         self.mdPanelRef = mdPanelRef;
 
         //click on item
-        this.click = function(callback)
-        {
-            if( callback )
-            {
+        this.click = function(callback) {
+            if( callback ) {
                 callback();
             }
         };
 
         //close action
-        this.close = function(id)
-        {
+        this.close = function(id) {
             //remove specified item
-            if( self.items.length>1 )
-            {
+            if( self.items.length>1 ) {
                 //search for item to remove it
-                for( i=0; i<self.items.length; i++ )
-                {
-                    if( self.items[i].id===id )
-                    {
+                for( i=0; i<self.items.length; i++ ) {
+                    if( self.items[i].id===id ) {
                         //close callback
-                        if( self.items[i].close.onClose )
-                        {
+                        if( self.items[i].close.onClose ) {
                             self.items[i].close.onClose(self.items[i].id);
                         }
 
@@ -49,12 +41,10 @@ var tasksPanelService = function($rootScope, $mdPanel, logger) {
                         break;
                     }
                 }
-            }
-            else
-            {
+
+            } else {
                 //close callback
-                if( self.items[0].close.onClose )
-                {
+                if( self.items[0].close.onClose ) {
                     self.items[0].close.onClose(self.items[0].id);
                 }
                 
@@ -65,19 +55,15 @@ var tasksPanelService = function($rootScope, $mdPanel, logger) {
     };
 
     //clear all items properly 
-    self.__clearItems = function()
-    {
-        while( self.items.length )
-        {
+    self.__clearItems = function() {
+        while( self.items.length ) {
             self.items.pop();
         }
     };
 
     //hide panel
-    self.__hidePanel = function()
-    {
-        if( self.mdPanelRef )
-        {
+    self.__hidePanel = function() {
+        if( self.mdPanelRef ) {
             self.mdPanelRef.close().then(function() {
                 self.__clearItems();
             }, function() {
@@ -89,11 +75,9 @@ var tasksPanelService = function($rootScope, $mdPanel, logger) {
     };
 
     //show panel
-    self.__showPanel = function()
-    {
+    self.__showPanel = function() {
         //stop if panel already exists
-        if( self.mdPanelRef )
-        {
+        if( self.mdPanelRef ) {
             return;
         }
 
@@ -167,8 +151,7 @@ var tasksPanelService = function($rootScope, $mdPanel, logger) {
     //                      }
     //@param loader (bool): display a circular progress
     //@return item identifier to close it programmatically
-    self.addItem = function(label, action, close, loader)
-    {
+    self.addItem = function(label, action, close, loader) {
         var defaultClose = {
             onClose: null,
             disabled: false
@@ -191,22 +174,17 @@ var tasksPanelService = function($rootScope, $mdPanel, logger) {
 
     //remove item id
     //@param itemId: item identifier returned by addItem
-    self.removeItem = function(itemId)
-    {
-        if( self.items.length>1 )
-        {
-            for( i=0; i<self.items.length; i++ )
-            {
-                if( self.items[i].id===itemId )
-                {
+    self.removeItem = function(itemId) {
+        if( self.items.length>1 ) {
+            for( i=0; i<self.items.length; i++ ) {
+                if( self.items[i].id===itemId ) {
                     //remove item
                     self.items.splice(i, 1);
                     break;
                 }
             }
-        }
-        else
-        {
+
+        } else {
             //hide panel if necessary
             self.__hidePanel();
         }
@@ -215,5 +193,5 @@ var tasksPanelService = function($rootScope, $mdPanel, logger) {
 };
     
 var Cleep = angular.module('Cleep');
-Cleep.service('tasksPanelService', ['$rootScope', '$mdPanel', 'logger', tasksPanelService]);
+Cleep.service('tasksPanelService', ['$mdPanel', tasksPanelService]);
 

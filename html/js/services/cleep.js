@@ -23,8 +23,7 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
     {
         var defer = $q.defer();
 
-        if( !self.__ws )
-        {
+        if( !self.__ws ) {
             self.__ws = $websocket('ws://localhost:'+self.port+'/cleepws', null, {reconnectIfNotNormalClose: true});
             self.__ws.onMessage(self.__websocketReceive);
             self.__ws.onClose(function() {
@@ -34,9 +33,7 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
                 logger.debug('Websocket opened');
                 defer.resolve('connected');
             });
-        }
-        else
-        {
+        } else {
             //websocket is already created
             defer.resolve('already created');
         }
@@ -47,10 +44,8 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
     /**
      * Callback when message is received on websocket
      */
-    self.__websocketReceive = function(event)
-    {
-        if( event && event.data && typeof(event.data)==='string' )
-        {
+    self.__websocketReceive = function(event) {
+        if( event && event.data && typeof(event.data)==='string' ) {
             //broadcast received data
             var data = JSON.parse(event.data);
             $rootScope.$broadcast(data.event, data.data);
@@ -65,14 +60,12 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
         var d = $q.defer();
 
         //prepare method
-        if( !method )
-        {
+        if( !method ) {
             method = 'POST';
         }
 
         //prepare data
-        if( params===undefined || params===null )
-        {
+        if( params===undefined || params===null ) {
             params = {};
         }
         var data = {
@@ -88,13 +81,11 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
             responseType:'json'
         })
         .then(function(resp) {
-            if( resp && resp.data && resp.data.error!==undefined && resp.data.error!==null && resp.data.error==true )
-            {
+            if( resp && resp.data && resp.data.error!==undefined && resp.data.error!==null && resp.data.error==true ) {
                 toast.error(resp.data.message);
                 d.reject(resp.data.message);
-            }
-            else
-            {
+
+            } else {
                 d.resolve(resp.data);
             }
         }, function(err) {
@@ -108,24 +99,21 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
     /**
      * Send command to rpcserver
      */
-    self.sendCommand = function(command, to, params)
-    {
+    self.sendCommand = function(command, to, params) {
         return self.send(self.urlCommand, command, to, params, 'POST');
     };
 
     /**
      * Get CleepDesktop config
      */
-    self.getConfig = function()
-    {
+    self.getConfig = function() {
         return self.send(self.urlCommand, 'get_config', 'config');
     };
 
     /**
      * Set CleepDesktop config
      */
-    self.setConfig = function(config)
-    {
+    self.setConfig = function(config) {
         return self.send(self.urlCommand, 'set_config', 'config', {config:config});
     };
 

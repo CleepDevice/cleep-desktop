@@ -13,8 +13,7 @@ var modalService = function($mdDialog, $routerTransitions) {
     //@param templateUrl: associated controller template
     //@param data: data to pass to modal controller
     //@service closeModal: inject this service in your controller to close modal
-    self.open = function(controllerName, templateUrl, data)
-    {
+    self.open = function(controllerName, templateUrl, data) {
         return $mdDialog.show({
             controller: controllerName,
             controllerAs: 'ctl',

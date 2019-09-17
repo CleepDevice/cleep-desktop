@@ -19,8 +19,7 @@ var debounceService = function($timeout, $q) {
      */
     self.exec = function(id, callback, timeout, params) {
         //init internal structure
-        if( !self.debounces[id] )
-        {
+        if( !self.debounces[id] ) {
             self.debounces[id] = {
                 promise: null,
                 promiseTimeout: null
@@ -28,21 +27,18 @@ var debounceService = function($timeout, $q) {
         }
 
         //check debounce for current callback
-        if( self.debounces[id].promise===null )
-        {
+        if( self.debounces[id].promise===null ) {
             //init promise
             self.debounces[id].promise = $q.defer();
-        }
-        else
-        {
+
+        } else {
             //reject previous promise
             self.debounces[id].promise.reject('debounced');
             self.debounces[id].promise = $q.defer();
         }
 
         //check if timeout is not already running
-        if( self.debounces[id].timeoutPromise )
-        {
+        if( self.debounces[id].timeoutPromise ) {
             $timeout.cancel(self.debounces[id].timeoutPromise);
             self.debounces[id].timeoutPromise = null;
         }
@@ -55,6 +51,7 @@ var debounceService = function($timeout, $q) {
 
         return self.debounces[id].promise.promise;
     };
+
 };
     
 var Cleep = angular.module('Cleep');

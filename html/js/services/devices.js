@@ -1,7 +1,7 @@
 /**
  * Devices service handles all devices
  */
-var devicesService = function($rootScope, $timeout)
+var devicesService = function($rootScope, cleepService)
 {
     var self = this;
     self.loading = true;
@@ -10,18 +10,13 @@ var devicesService = function($rootScope, $timeout)
     self.configured = 0;
 
     //synchronize devices updating existing devices and adding new ones to avoir ui flickering
-    self.syncDevices = function(devices)
-    {
-        if( devices )
-        {
+    self.__syncDevices = function(devices) {
+        if( devices ) {
             var found = false;
-            for( var i=0; i<devices.length; i++ )
-            {
+            for( var i=0; i<devices.length; i++ ) {
                 found = false;
-                for( var j=0; j<self.devices.length; j++ )
-                {
-                    if( self.devices[j].uuid===devices[i].uuid )
-                    {
+                for( var j=0; j<self.devices.length; j++ ) {
+                    if( self.devices[j].uuid===devices[i].uuid ) {
                         //device found
                         found = true;
 
@@ -40,8 +35,7 @@ var devicesService = function($rootScope, $timeout)
                 }
 
                 //add new device
-                if( !found )
-                {
+                if( !found ) {
                     //save entry
                     self.devices.push(devices[i]);
                 }
@@ -49,26 +43,10 @@ var devicesService = function($rootScope, $timeout)
         }
     };
 
-    //select device in devices panel
-    self.selectDevice = function(selectedDevice) {
-        for( var i=0; i<self.devices.length; i++ )
-        {
-            if( selectedDevice && self.devices[i].ip===selectedDevice.ip )
-            {
-                self.devices[i].selected = true;
-            }
-            else
-            {
-                self.devices[i].selected = false;
-            }
-        }
-    }
-
     //update devices list
-    self.updateDevices = function(data) 
-    {
+    self.__updateDevices = function(data) {
         //sync devices
-        self.syncDevices(data.devices);
+        self.__syncDevices(data.devices);
 
         //update some controller members value
         self.unconfigured = data.unconfigured;
@@ -76,12 +54,30 @@ var devicesService = function($rootScope, $timeout)
         self.loading = false;
     };
 
+    //select device in devices panel
+    self.selectDevice = function(selectedDevice) {
+        for( var i=0; i<self.devices.length; i++ ) {
+            if( selectedDevice && self.devices[i].ip===selectedDevice.ip ) {
+                self.devices[i].selected = true;
+            } else {
+                self.devices[i].selected = false;
+            }
+        }
+    };
+
+    //get devices
+    self.getDevices = function() {
+        return cleepService.sendCommand('get_devices', 'devices')
+            .then((resp) => {
+                self.__updateDevices(resp.data);
+            });
+    };
+
     //watch for devices event to refresh devices list
-    $rootScope.$on('devices', function(event, data)
-    {
-        self.updateDevices(data);
+    $rootScope.$on('devices', function(_event, data) {
+        self.__updateDevices(data);
     });
 }
 
 var Cleep = angular.module('Cleep');
-Cleep.service('devicesService', ['$rootScope', '$timeout', devicesService]);
+Cleep.service('devicesService', ['$rootScope', 'cleepService', devicesService]);

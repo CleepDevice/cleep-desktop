@@ -157,7 +157,11 @@ class MessageResponse():
         """ 
         Return message response
         """
-        return {'error':self.error, 'message':self.message, 'data':self.data}
+        return {
+            'error': self.error,
+            'message': self.message,
+            'data':self.data
+        }
 
 class MessageRequest():
     """
@@ -205,9 +209,18 @@ class MessageRequest():
         @raise InvalidMessage if message is not valid
         """
         if self.command:
-            return {'command':self.command, 'params':self.params, 'from':self.from_}
+            return {
+                'command': self.command,
+                'params': self.params,
+                'from': self.from_
+            }
         elif self.event:
-            return {'event':self.event, 'params':self.params, 'startup':startup, 'uuid':self.uuid}
+            return {
+                'event': self.event,
+                'params': self.params,
+                'startup': startup,
+                'uuid': self.uuid
+            }
         else:
             raise InvalidMessage()
 

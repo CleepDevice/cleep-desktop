@@ -72,8 +72,8 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
         return updateService.isEtcherAvailable();
     }
 
-    //start flash process
-    self.startFlash = function()
+    //start install process
+    self.startInstall = function()
     {
         //check values
         if( !self.installService.installConfig.iso || !self.installService.installConfig.drive )
@@ -106,7 +106,7 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
                 logger.debug('Flash data:', data);
 
                 //launch flash process
-                installService.startFlash(data)
+                installService.startInstall(data)
                     .then(function() {
                         toast.info('Installation started');
                     }, function(err) {
@@ -118,7 +118,7 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
     };
 
     //cancel flash process
-    self.cancelFlash = function()
+    self.cancelInstall = function()
     {
         if( !self.installService.status )
         {
@@ -137,7 +137,7 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
         {
             confirm.open('Cancel installation?', null, 'Yes', 'No')
                 .then(function() {
-                    installService.cancelFlash();
+                    installService.cancelInstall();
                 });
         }
         else if( self.installService.status.status===self.installService.STATUS.FLASHING ||
@@ -145,7 +145,7 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
         {
             confirm.open('Cancel installation?', 'Canceling installation during this step of process will put your removable media in inconsistant state.', 'Yes, cancel', 'No, continue')
                 .then(function() {
-                    installService.cancelFlash();
+                    installService.cancelInstall();
                 });
         }
         else if( self.installService.status.status===self.installService.STATUS.REQUEST_WRITE_PERMISSIONS )
@@ -153,7 +153,7 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
             //can cancel if permissions is blocked. Can happen if user take too much time filling password
             confirm.open('Cancel installation?', null, 'Yes', 'No')
                 .then(function() {
-                    installService.cancelFlash();
+                    installService.cancelInstall();
                 });
         }
         else
