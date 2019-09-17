@@ -16,7 +16,7 @@ echo.
 echo Packaging cleepdesktopcore...
 echo -----------------------------
 xcopy /Q /Y config\cleepdesktopcore-windows32.spec .
-pyinstaller --clean --noconfirm --noupx --windowed --debug --log-level INFO cleepdesktopcore-windows32.spec
+pyinstaller --clean --noconfirm --noupx --windowed --debug all --log-level INFO cleepdesktopcore-windows32.spec
 del /Q cleepdesktopcore-windows32.spec
 move dist\cleepdesktopcore %CLEEPDESKTOPPATH%
 

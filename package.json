@@ -23,7 +23,7 @@
         "core-win": "scripts\\launch-core-windows.bat",
         "linux-archive": "scripts/linux-archive.sh"
     },
-    "repository": "https://github.com/tangb/CleepDesktop",
+    "repository": "https://github.com/tangb/cleep-desktop",
     "keywords": [
         "cleep",
         "rasperrypi",
@@ -34,7 +34,7 @@
     "license": "GPLv3",
     "devDependencies": {
         "devtron": "^1.4.0",
-        "electron": "^6.0.9",
+        "electron": "6.0.9",
         "electron-builder": "^21.2.0"
     },
     "dependencies": {
@@ -60,11 +60,8 @@
             "maintainer": "Tanguy Bonneau <tanguy.bonneau@gmail.com>",
             "category": "Network",
             "executableName": "cleepdesktop",
-            "synopsis": "Cleep devices manager",
+            "synopsis": "Cleep desktop application",
             "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
-        },
-        "appImage": {
-            "systemIntegration": "ask"
         },
         "deb": {
             "icon": "resources/256x256.png",
@@ -97,8 +94,7 @@
         },
         "publish": {
             "provider": "github",
-            "owner": "tangb",
-            "repo": "CleepDesktop"
+            "owner": "tangb"
         }
     }
 }
