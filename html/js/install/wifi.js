@@ -16,49 +16,38 @@ var wifiController = function(closeModal, installService, modalData)
     self.wifiChoice = modalData.wifiChoice;
 
     //refresh wifi networks
-    self.refreshWifiNetworks = function()
-    {
+    self.refreshWifiNetworks = function() {
         return installService.refreshWifiNetworks();
     };
 
-    self.disableSaveButton = function()
-    {
-        if( self.wifiChoice==1 )
-        {
+    self.disableSaveButton = function() {
+        if( self.wifiChoice==1 ) {
             //user wants to connect to available wifi network
-            if( !self.config.adapter && !self.wifiNetworkName )
-            {
-                //toast.error('Please set wifi network name');
+            if( !self.config.adapter && !self.wifiNetworkName ) {
                 return true;
-            }
-            else if( self.config.adapter && (!self.selectedWifi || !self.selectedWifi.network) )
-            {
-                //toast.error('Please select wifi network');
+
+            } else if( self.config.adapter && (!self.selectedWifi || !self.selectedWifi.network) ) {
                 return true;
-            }
-            else if( self.wifiNetworkEncryption!='unsecured' && !self.wifiPassword )
-            {
-                //toast.error('Please fill wifi network password');
+
+            } else if( self.wifiNetworkEncryption!='unsecured' && !self.wifiPassword ) {
                 return true;
             }
         }
-        if( self.wifiChoice==2 ) 
-        {
+
+        if( self.wifiChoice==2 ) {
             //user wants to connect to hidden network
-            if( !self.wifiNetworkName )
-            {
+            if( !self.wifiNetworkName ) {
                 //toast.error('Please set wifi network name');
                 return true;
-            }
-            else if( self.wifiNetworkEncryption!='unsecured' && !self.wifiPassword )
-            {
+
+            } else if( self.wifiNetworkEncryption!='unsecured' && !self.wifiPassword ) {
                 //toast.error('Please fill wifi network password');
                 return true;
             }
         }
 
         return false;
-    }
+    };
 
     //save config
     self.save = function() {
@@ -77,7 +66,7 @@ var wifiController = function(closeModal, installService, modalData)
                 hidden: (self.wifiChoice===2 ? true : false)
             });
         }
-    }
+    };
     
 };
 Cleep.controller('wifiController', ['closeModal', 'installService', 'modalData', wifiController]);
