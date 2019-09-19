@@ -559,7 +559,9 @@ function launchCore(rpcport)
 			python_args.unshift('-3');
         }
         coreStartupTime = Math.round(Date.now()/1000);
-        coreProcess = require('child_process').spawn(python_bin, python_args);
+        coreProcess = require('child_process').spawn(python_bin, python_args, {
+            stdio: 'ignore'
+        });
     }
 
     //handle core stderr

@@ -9,13 +9,13 @@ import time
 
 #parameters
 if len(sys.argv)!=7:
-    print('Missing parameter. Usage: cleepdesktopcore <rpcport> <config path> <config filename> <mode> <isdev>')
+    print('Missing parameter. Usage: cleepdesktopcore <rpcport> <cache path> <config path> <config filename> <mode> <isdev>')
     print(' - rpcport (int): rpc port to allow communication between ui and core')
     print(' - cache path (string): cache path')
     print(' - config path (string): configuration path')
     print(' - config filename (string): configuration filename (without path!)')
     print(' - mode (string): starting mode (release|debug)')
-    print(' - isdev (bool): true if dev mode enabled')
+    print(' - isdev (string): true if dev mode enabled (true|false)')
     sys.exit(2)
 try:
     rpcport = int(sys.argv[1])
