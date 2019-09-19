@@ -18,7 +18,7 @@ echo
 echo "Packaging cleepdesktopcore..."
 echo "-----------------------------"
 /bin/cp config/cleepdesktopcore-mac64.spec cleepdesktopcore-mac64.spec
-/usr/local/bin/pyinstaller --clean --noconfirm --noupx --debug --log-level all INFO cleepdesktopcore-mac64.spec
+/usr/local/bin/pyinstaller --clean --noconfirm --noupx --debug all --log-level INFO cleepdesktopcore-mac64.spec
 /bin/rm cleepdesktopcore-mac64.spec
 /bin/mv dist/cleepdesktopcore "$CLEEPDESKTOPPATH"
 
