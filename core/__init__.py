@@ -1,5 +1,5 @@
 from .version import version as VERSION
 
-__all__ = ['rpcserver', 'utils', 'libs', 'flashdrive', 'devices']
+__all__ = ['exceptions', 'rpcserver', 'utils']
 __version__ = VERSION
 
