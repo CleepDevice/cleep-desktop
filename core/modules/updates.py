@@ -247,7 +247,7 @@ class Updates(CleepDesktopModule):
         if self.env=='linux':
             pattern = 'linux-x64'
         elif self.env=='darwin':
-            pattern = 'macOS-x64'
+            pattern = 'macos-x64'
         elif self.env=='windows':
             pattern = 'windows-x64'
         self.logger.debug('Search release using pattern: %s' % pattern)
