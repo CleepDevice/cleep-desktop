@@ -3,7 +3,7 @@
 
 import logging
 import sys
-from raven import Client
+import sentry_sdk as Sentry
 import platform
 import traceback
 
@@ -28,7 +28,7 @@ class CrashReport():
         self.enabled = False
 
         #create and configure raven client
-        self.client = Client('https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385')
+        Sentry.init('https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io213385')
         self.report_exception = self.__unbinded_report_exception
         sys.excepthook = self.crash_report
 
@@ -46,7 +46,7 @@ class CrashReport():
         self.enabled = True
 
         #bind report_exception
-        self.report_exception = self.client.captureException
+        self.report_exception = Sentry.capture_exception
 
     def disable(self):
         """
@@ -66,8 +66,19 @@ class CrashReport():
         message += '\n%s %s' % (str(type), value)
         self.logger.fatal(message)
         if self.enabled:
-            self.client.captureException((type, value, tb), extra=self.extra)
+            with Sentry.push_scope() as scope:
+                self.__set_extra(scope)
+                Sentry.capture_exception((type, value, tb))
 
+    def __set_extra(self, scope):
+        """
+        Set extra data to specified Sentry scope
+
+        Args:
+            scope: Sentry scope
+        """
+        for key, value in self.extra.items():
+            scope.set_extra(key, value)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
