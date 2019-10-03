@@ -4,6 +4,6 @@ gevent-websocket==0.10.1
 requests==2.22.0
 PyInstaller==3.5
 passlib==1.7.1
-pyre-gevent==0.2.3-dev1
+pyre-gevent==0.2.3
 raven==6.10.0
 win32wifi==0.1.0; sys_platform=='win32'

@@ -65,7 +65,7 @@ class Install(CleepDesktopModule):
 
     RASPIOT_REPO = {
         'owner': 'tangb',
-        'repository': 'raspiot'
+        'repository': 'cleep-os'
     }
 
     def __init__(self, context, debug_enabled):
