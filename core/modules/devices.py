@@ -207,7 +207,7 @@ class Devices(CleepDesktopModule):
             dict of devices
         """
         #compute unconfigured devices
-        unconfigured = len([dev for dev in list(self.devices.values()) if len(dev['hostname'])==0])
+        unconfigured = len([dev for dev in list(self.devices.values()) if dev['configured']])
 
         #prepare output
         out = {
