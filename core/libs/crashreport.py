@@ -28,7 +28,8 @@ class CrashReport():
         self.enabled = False
 
         #create and configure raven client
-        Sentry.init('https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io213385')
+        
+        Sentry.init('https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385')
         self.report_exception = self.__unbinded_report_exception
         sys.excepthook = self.crash_report
 
