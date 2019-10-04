@@ -18,7 +18,7 @@ class AppContext():
     main_logger = None
     #string: log filepath
     log_filepath = None
-    #AppConfig: application config instance
+    #Config: application config instance
     config = None
     #CrashReport: crash report instance
     crash_report = None

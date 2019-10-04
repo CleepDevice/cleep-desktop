@@ -13,6 +13,7 @@ var confirmService = function($mdDialog) {
      * @param cancelLabel: ok message (default 'Cancel')
      */
     self.open = function(title, message, okLabel, cancelLabel, container) {
+        //TODO useful ?
         //container
         var container_ = angular.element(document.body);
         if( !angular.isUndefined(container) ) {

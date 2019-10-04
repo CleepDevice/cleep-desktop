@@ -9,6 +9,7 @@ const DEFAULT_PROXYHOST = 'localhost';
 const DEFAULT_PROXYPORT = 8080;
 const DEFAULT_CRASHREPORT = true;
 const DEFAULT_FIRSTRUN = true;
+const DEFAULT_DEVICES = {};
 
 //logger
 const logger = require('electron-log')
@@ -178,75 +179,70 @@ function parseArgs()
     }
 }
 
-// Create application configuration file
-function createConfig()
-{
+// Check application configuration file
+// Create missing entries if necessary
+function checkConfig() {
     let delay = 0;
 
     //cleep
     settings.set('cleep.version', app.getVersion());
-    if( !settings.has('cleep.isoraspbian') )
-    {
+    if( !settings.has('cleep.isoraspbian') ) {
         settings.set('cleep.isoraspbian', DEFAULT_ISORASPBIAN);
         delay = 2;
     }
-    if( !settings.has('cleep.isolocal') )
-    {
+    if( !settings.has('cleep.isolocal') ) {
         settings.set('cleep.isolocal', DEFAULT_ISOLOCAL);
         delay = 2;
     }
-    if( !settings.has('cleep.locale') )
-    {
+    if( !settings.has('cleep.locale') ) {
         settings.set('cleep.locale', DEFAULT_LOCALE);
         delay = 2;
     }
-    if( !settings.has('cleep.debug') )
-    {
+    if( !settings.has('cleep.debug') ) {
         settings.set('cleep.debug', DEFAULT_DEBUG);
         delay = 2;
     }
     settings.set('cleep.isdev', isDev);
-    if( !settings.has('cleep.crashreport') )
-    {
+    if( !settings.has('cleep.crashreport') ) {
         settings.set('cleep.crashreport', DEFAULT_CRASHREPORT);
         delay = 2;
     }
 
     //etcher
-    if( !settings.has('etcher.version') )
-    {
+    if( !settings.has('etcher.version') ) {
         settings.set('etcher.version', 'v0.0.0');
         delay = 2;
     }
 
     //remote
-    if( !settings.has('remote.rpcport') )
-    {
+    if( !settings.has('remote.rpcport') ) {
         settings.set('remote.rpcport', DEFAULT_RPCPORT);
         delay = 2;
     }
 
     //proxy
-    if( !settings.has('proxy.mode') )
-    {
+    if( !settings.has('proxy.mode') ) {
         settings.set('proxy.mode', DEFAULT_PROXYMODE);
         delay = 2;
     }
-    if( !settings.has('proxy.host') )
-    {
+    if( !settings.has('proxy.host') ) {
         settings.set('proxy.host', DEFAULT_PROXYHOST);
         delay = 2;
     }
-    if( !settings.has('proxy.port') )
-    {
+    if( !settings.has('proxy.port') ) {
         settings.set('proxy.port', DEFAULT_PROXYPORT);
         delay = 2;
     }
 
     //firstrun
-    if( !settings.has('cleep.firstrun') )
-    {
+    if( !settings.has('cleep.firstrun') ) {
         settings.set('cleep.firstrun', DEFAULT_FIRSTRUN);
+        delay = 2;
+    }
+
+    //devices
+    if( !settings.has('devices') ) {
+        settings.set('devices', DEFAULT_DEVICES);
         delay = 2;
     }
 
@@ -255,8 +251,7 @@ function createConfig()
 };
 
 // Create application menu
-function createMenu()
-{
+function createMenu() {
     const subMenuFile = {
         label: 'File',
         submenu: [
@@ -617,7 +612,7 @@ app.on('ready', function() {
     parseArgs();
 
     //fill configuration file
-    createConfig();
+    checkConfig();
 
     //fill changelog
     fillChangelog();

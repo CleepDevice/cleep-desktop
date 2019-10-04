@@ -29,7 +29,7 @@ class Config(CleepDesktopModule):
         Save specified value on specified key
 
         Args:
-            key (string): key to update (x.x.x)
+            key (string): key to update. Can be a deep key like xxx.yyy.zzz
 
         Returns:
             bool: True if value updated
@@ -93,7 +93,7 @@ class Config(CleepDesktopModule):
         Return config value for specified key
 
         Args:
-            key (string): config key
+            key (string): config key. Can be deep key like xxx.yyy.zzz
 
         Returns:
             any: config key value

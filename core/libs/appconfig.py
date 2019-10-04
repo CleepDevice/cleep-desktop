@@ -7,6 +7,11 @@ import os
 from threading import Lock
 
 class AppConfig():
+    """
+    Handle application configuration file.
+    The file is handled by electron app for creation and check (in cleepdesktop.js => checkConfig())
+    This class only allow you to update or get existing values.
+    """
 
     def __init__(self, filepath):
         """
@@ -90,3 +95,9 @@ class AppConfig():
             self.__load_config()
 
         return self.__config
+
+    def get_config(self):
+        """
+        Shortcut to load_config
+        """
+        return self.load_config()

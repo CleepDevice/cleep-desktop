@@ -39,6 +39,9 @@ class Devices(CleepDesktopModule):
         )
         self.peers_uuids = {}
 
+        #load devices
+        self.__load_devices()
+
         #debug bus (full log report!)
         #pyre_logger = logging.getLogger("pyre")
         #pyre_logger.setLevel(logging.WARN)
@@ -64,6 +67,20 @@ class Devices(CleepDesktopModule):
         """
         if self.external_bus:
             self.external_bus.stop()
+
+    def __load_devices(self):
+        """
+        Load devices from configuration
+        """
+        self.devices = self.context.config.get_config_value('devices')
+        self.logger.debug('Initial devices: %s' % self.devices)
+
+    def __save_devices(self):
+        """
+        Save devices states
+        """
+        if not self.context.config.set_config_value('devices', self.devices):
+            self.logger.error('Unable to save devices in configuration file')
 
     def get_bus_headers(self):
         """
@@ -157,6 +174,7 @@ class Devices(CleepDesktopModule):
 
         #save peer infos
         self.devices[infos['uuid']] = infos
+        self.__save_devices()
 
         #update ui
         self.context.update_ui('devices', self.get_devices())
@@ -176,6 +194,7 @@ class Devices(CleepDesktopModule):
         #only update online status of disconnected device
         if device_uuid:
             self.devices[device_uuid]['online'] = False
+            self.__save_devices()
 
         #always update ui
         self.context.update_ui('devices', self.get_devices())
@@ -199,4 +218,19 @@ class Devices(CleepDesktopModule):
 
         return out
 
+    def delete_device(self, device_uuid):
+        """
+        Delete devices from internal list
 
+        Returns:
+            dict of devices like returned in get_devices()
+        """
+        if device_uuid not in self.devices:
+            self.logger.error('Device "%s" does not exist in internal devices' % device_uuid)
+            raise Exception('Device not found')
+
+        #delete device
+        del self.devices[device_uuid]
+        self.__save_devices()
+
+        return self.get_devices()

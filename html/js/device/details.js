@@ -3,7 +3,7 @@ var Cleep = angular.module('Cleep')
 /**
  * Device details controller
  */
-var deviceDetailsController = function(modalData, closeModal)
+var deviceDetailsController = function(modalData, closeModal, confirmService, toastService)
 {
     var self = this;
     self.device = modalData;
@@ -63,5 +63,16 @@ var deviceDetailsController = function(modalData, closeModal)
         'a020a0': 'images/raspberry-pi-compute-module-3.jpg',
     }
     self.boardImg = self.boardImages[self.device['hwcode']];
+
+    // delete device
+    deleteDevice = function() {
+        confirmService.open('Delete device', 'Confirm device deletion ?')
+            .then(() => {
+                return devicesService.deleteDevice(self.device);
+            })
+            .then(() => {
+                toastService.Success('Device deleted');
+            });
+    }
 };
-Cleep.controller('deviceDetailsController', ['modalData', 'closeModal', deviceDetailsController]);
+Cleep.controller('deviceDetailsController', ['modalData', 'closeModal', 'confirmService', 'toastService', deviceDetailsController]);
