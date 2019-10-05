@@ -63,16 +63,5 @@ var deviceDetailsController = function(modalData, closeModal, confirmService, to
         'a020a0': 'images/raspberry-pi-compute-module-3.jpg',
     }
     self.boardImg = self.boardImages[self.device['hwcode']];
-
-    // delete device
-    self.deleteDevice = function() {
-        confirmService.open('Delete device', 'Confirm device deletion ?')
-            .then(() => {
-                return devicesService.deleteDevice(self.device);
-            })
-            .then(() => {
-                toastService.success('Device deleted');
-            });
-    }
 };
 Cleep.controller('deviceDetailsController', ['modalData', 'closeModal', 'confirmService', 'toastService', 'devicesService', deviceDetailsController]);

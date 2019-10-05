@@ -2,7 +2,7 @@
 
     <md-toolbar>
         <div class="md-toolbar-tools">
-            <h2>Device details</h2>
+            <h2>{{::ctl.device.hostname}} informations</h2>
             <span flex></span>
             <md-button class="md-icon-button" ng-click="ctl.closeModal()">
                 <md-icon md-svg-icon="close"></md-icon>
@@ -16,8 +16,8 @@
             <md-tabs md-border-bottom md-dynamic-height style="height:400px;">
 
                 <!-- software -->
-                <md-tab label="Software">
-                    <md-list>
+                <md-tab label="Software" style="padding:15px;">
+                    <md-list style="padding-right:15px;">
                         <md-list-item>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Device name</p>
@@ -47,7 +47,7 @@
 
                 <!-- hardware -->
                 <md-tab label="Hardware">
-                    <md-list>
+                    <md-list style="padding-right:15px;">
                         <md-list-item>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Raspberry pi model</p>
@@ -96,12 +96,5 @@
             
         </div>
     </md-dialog-content>
-
-    <md-dialog-actions>
-        <md-button class="md-raised md-accent" ng-click="ctl.deleteDevice()">
-            <md-icon md-svg-icon="delete"></md-icon>
-            Delete device
-        </md-button>
-    </md-dialog-actions>
 
 </md-dialog>

@@ -101,7 +101,26 @@
                         <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
                         <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin"></md-icon>
                         <p>{{device.hostname}}</p>
-                        <md-icon class="md-secondary" ng-click="cleep.openModal('deviceDetailsController', 'js/device/details-dialog.html', device)" aria-label="Details" md-svg-icon="information-outline"></md-icon>
+                        <md-menu class="md-secondary">
+                            <md-button class="md-icon-button">
+                                <md-icon md-svg-icon="dots-vertical"></md-icon>
+                            </md-button>
+                            <md-menu-content>
+                                <md-menu-item>
+                                    <md-button aria-label="Device infos" ng-click="cleep.openModal('deviceDetailsController', 'js/device/details-dialog.html', device)">
+                                        <md-icon md-svg-icon="information-outline"></md-icon>
+                                        Device infos
+                                    </md-button>
+                                </md-menu-item>
+                                <md-menu-divider></md-menu-divider>
+                                <md-menu-item>
+                                    <md-button aria-label="Delete device">
+                                        <md-icon md-svg-icon="delete"></md-icon>
+                                        Delete
+                                    </md-button>
+                                </md-menu-item>
+                            </md-menu-content>
+                        </md-menu>
                     </md-list-item>
                 </md-list>
 
@@ -117,7 +136,26 @@
                         <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
                         <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin"></md-icon>
                         <p>{{device.hostname}}</p>
-                        <md-icon class="md-secondary" ng-click="cleep.openModal('deviceDetailsController', 'js/device/details-dialog.html', device)" aria-label="Details" md-svg-icon="information-outline"></md-icon>
+                        <md-menu class="md-secondary">
+                            <md-button class="md-icon-button" ng-click="ctl.openDeviceMenu($mdMenu, $event)">
+                                <md-icon md-svg-icon="dots-vertical"></md-icon>
+                            </md-button>
+                            <md-menu-content>
+                                <md-menu-item>
+                                    <md-button aria-label="Device infos" ng-click="cleep.openModal('deviceDetailsController', 'js/device/details-dialog.html', device)">
+                                        <md-icon md-svg-icon="information-outline"></md-icon>
+                                        Device infos
+                                    </md-button>
+                                </md-menu-item>
+                                <md-menu-divider></md-menu-divider>
+                                <md-menu-item>
+                                    <md-button aria-label="Delete device" ng-click="ctl.deleteDevice(device)">
+                                        <md-icon md-svg-icon="delete"></md-icon>
+                                        Delete
+                                    </md-button>
+                                </md-menu-item>
+                            </md-menu-content>
+                        </md-menu>
                     </md-list-item>
                 </md-list>
 

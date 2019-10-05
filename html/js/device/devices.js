@@ -3,7 +3,7 @@ var Cleep = angular.module('Cleep')
 /**
  * Devices controller
  */
-var devicesController = function($state, devicesService)
+var devicesController = function($state, devicesService, toastService, confirmService)
 {
     var self = this;
     self.devicesService = devicesService;
@@ -34,12 +34,28 @@ var devicesController = function($state, devicesService)
         }
     };
 
+    //open device menu
+    self.openDeviceMenu = function($mdMenu, ev) {
+        $mdMenu.open(ev);
+    };
+
     //open install page
     self.openInstallPage = function()
     {
         $state.go('installAuto');
     };
 
+    //delete device
+    self.deleteDevice = function(device) {
+        confirmService.open('Confirm device deletion ?', 'Device will only be removed from list.<br>This is useful to delete obsolete entries.')
+            .then(() => {
+                return devicesService.deleteDevice(device);
+            })
+            .then(() => {
+                toastService.success('Device deleted');
+            });
+    }
+
 };
-Cleep.controller('devicesController', ['$state', 'devicesService', devicesController]);
+Cleep.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', devicesController]);
 
