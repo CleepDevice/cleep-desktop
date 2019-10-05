@@ -194,6 +194,10 @@ var installService = function($rootScope, $state, logger, cleepService, tasksPan
         if( self.installing===false ) {
             logger.info('Install is terminated. Restore ui');
 
+            //force percents to 100%
+            self.status.percent = 100;
+            self.status.total_percent = 100;
+
             //close taskpanel
             tasksPanelService.removeItem(self.taskInstallPanel);
             self.taskInstallPanel = null;
