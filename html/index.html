@@ -97,7 +97,7 @@
                     </div>
                 </div>
                 <md-list ng-if="!ctl.devicesService.loading && ctl.devicesService.unconfigured>0" style="padding:0px;">
-                    <md-list-item ng-repeat="device in ctl.devicesService.devices | filter: {configured:false}" ng-if="ctl.devicesService.unconfigured>0" ng-click="ctl.openDevicePage(device)">
+                    <md-list-item ng-repeat="device in ctl.devicesService.devices | filter: {configured:false}" ng-if="ctl.devicesService.unconfigured>0" ng-click="ctl.openDevicePage(device)" md-colors="device.selected ? {background: 'accent-400'} : {background: 'background'}">
                         <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
                         <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin"></md-icon>
                         <p>{{device.hostname}}</p>
