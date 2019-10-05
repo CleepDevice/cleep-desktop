@@ -3,13 +3,13 @@ var Cleep = angular.module('Cleep')
 /**
  * Device controller
  */
-var deviceController = function($rootScope, $scope, $stateParams, logger, $document, $timeout)
+var deviceController = function($rootScope, $stateParams, logger, $document, $timeout, deviceService)
 {
     var self = this;
     self.shell = require('electron').shell;
     self.deviceUrl = $stateParams.url;
     self.wv = document.getElementById('deviceWv');
-    self.loading = true;
+    self.deviceService = deviceService;
 
     //handle external link
     self.wv.addEventListener('new-window', (event) => {
@@ -31,13 +31,13 @@ var deviceController = function($rootScope, $scope, $stateParams, logger, $docum
 
     //device loading
     self.wv.addEventListener('did-start-loading', () => {
-        self.loading = true;
+        deviceService.loading = true;
     });
 
     //device loaded
     self.wv.addEventListener('did-stop-loading', () => {
         $timeout(function() {
-            self.loading = false;
+            deviceService.loading = false;
         }, 1000);
     }, true);
 
@@ -49,4 +49,4 @@ var deviceController = function($rootScope, $scope, $stateParams, logger, $docum
     });
 
 };
-Cleep.controller('deviceController', ['$rootScope', '$scope', '$stateParams', 'logger', '$document', '$timeout', deviceController]);
+Cleep.controller('deviceController', ['$rootScope', '$stateParams', 'logger', '$document', '$timeout', 'deviceService', deviceController]);

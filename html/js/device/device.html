@@ -1,7 +1,7 @@
 <div>
 
     <!-- loader -->
-    <div ng-if="ctl.loading" style="width:100%; height:80%;">
+    <div ng-if="ctl.deviceService.loading" style="width:100%; height:80%;">
         <md-toolbar flex="initial">
             <div class="md-toolbar-tools">
                 <h2>
@@ -22,7 +22,7 @@
     </div>
 
     <!-- device content -->
-    <div ng-show="!ctl.loading" layout-fill>
+    <div ng-show="!ctl.deviceService.loading" layout-fill>
         <webview disablewebsecurity id="deviceWv" src="" style="height:100%; width:100%;"></webview>
     </div>
 
