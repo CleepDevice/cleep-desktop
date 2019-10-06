@@ -29,7 +29,6 @@ var devicesService = function($rootScope, cleepService)
                         self.devices[j].port = devices[i].port;
                         self.devices[j].ssl = devices[i].ssl;
                         self.devices[j].version = devices[i].version;
-                        self.devices[j].selected = false;
 
                         break;
                     }
