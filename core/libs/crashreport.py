@@ -13,6 +13,15 @@ class CrashReport():
     """
 
     def __init__(self, product, product_version, libs_version={}, debug=False):
+        """
+        Constructor
+
+        Args:
+            product (string): product name
+            prodcut_version (string): product version
+            libs_version (dict): important libraries version
+            debug (bool): debug flag
+        """
         #logger
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug:
@@ -22,13 +31,25 @@ class CrashReport():
 
         #members
         self.extra = libs_version
+        self.enabled = False
+
+        #fill metadata collection
         self.extra['platform'] = platform.platform()
         self.extra['product'] = product
         self.extra['product_version'] = product_version
-        self.enabled = False
-
-        #create and configure raven client
+        try:
+            #append more metadata for raspberry
+            import gpiozero
+            info = gpiozero.pi_info()
+            self.extra['raspberrypi_model'] = info.model
+            self.extra['raspberrypi_revision'] = info.revision
+            self.extra['raspberrypi_pcb_revision'] = info.pcb_revision
+            self.extra['raspberrypi_memory'] = info.memory
+            self.extra['raspberrypi_storage'] = info.storage
+        except:
+            self.logger.debug('Application is not running on a reaspberry pi')
         
+        #create and configure raven client
         Sentry.init('https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385')
         self.report_exception = self.__unbinded_report_exception
         sys.excepthook = self.crash_report
@@ -62,6 +83,8 @@ class CrashReport():
     def crash_report(self, type, value, tb):
         """
         Exception handler that report crashes
+        This function is binded to system exception hook to be triggered automatically when uncatched exception occured
+        /!\ Do not use this function in your code, prefer using report_exception() function instead of it.
         """
         message = u'\n'.join(traceback.format_tb(tb))
         message += '\n%s %s' % (str(type), value)
@@ -73,7 +96,7 @@ class CrashReport():
 
     def __set_extra(self, scope):
         """
-        Set extra data to specified Sentry scope
+        Set extra data to specified Sentry scope (typically )
 
         Args:
             scope: Sentry scope
