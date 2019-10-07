@@ -537,9 +537,7 @@ function launchCore(rpcport)
         let debug = settings.has('cleep.debug') && settings.get('cleep.debug') ? 'debug' : 'release';
         logger.debug('Core commandline: '+commandline+' ' + rpcport + ' ' + cachePath + ' ' + configPath + ' ' + configFilename + ' ' + debug);
         coreStartupTime = Math.round(Date.now()/1000);
-        coreProcess = require('child_process').spawn(commandline, [rpcport, cachePath, configPath, configFilename, 'release', 'false'], {
-            stdio: 'ignore'
-        });
+        coreProcess = require('child_process').spawn(commandline, [rpcport, cachePath, configPath, configFilename, 'release', 'false']);
     }
     else
     {
@@ -554,10 +552,17 @@ function launchCore(rpcport)
 			python_args.unshift('-3');
         }
         coreStartupTime = Math.round(Date.now()/1000);
-        coreProcess = require('child_process').spawn(python_bin, python_args, {
-            stdio: 'ignore'
-        });
+        coreProcess = require('child_process').spawn(python_bin, python_args);
     }
+
+    //handle core stdout
+    coreProcess.stdout.on('data', (data) => {
+        if( isDev ) {
+            //only log message in developer mode
+            var message = data.toString('utf8');
+            logger.debug(message);
+        }
+    });
 
     //handle core stderr
     coreProcess.stderr.on('data', (data) => {
@@ -569,7 +574,7 @@ function launchCore(rpcport)
             return;
         }
 
-        //only handle startup crash (5 first seconds), after, core will handle it
+        //only handle startup crash (5 first seconds), after core will handle it
         var now = Math.round(Date.now()/1000);
         if( now<=coreStartupTime+5 )
         {
