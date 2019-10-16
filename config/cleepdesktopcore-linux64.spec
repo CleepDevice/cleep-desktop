@@ -1,6 +1,9 @@
 # -*- mode: python -*-
 
+from PyInstaller.utils.hooks import collect_submodules
+
 block_cipher = None
+sentry_sdk_submodules = collect_submodules('sentry_sdk')
 
 a = Analysis(['cleepdesktopcore.py'],
              pathex=[],
@@ -11,7 +14,7 @@ a = Analysis(['cleepdesktopcore.py'],
                 ('tools/install-etcher.linux.sh', 'tools/'),
                 ('tools/cmdlogger-linux64', 'tools/cmdlogger-linux')
              ],
-             hiddenimports=[],
+             hiddenimports=sentry_sdk_submodules,
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
