@@ -591,7 +591,7 @@ function launchCore(rpcport)
             if( code!==0 )
             {
                 //error occured, display error to user before terminates application
-                dialog.showErrorBox("Fatal error", "Unable to start properly application.\nCleepDesktop will stop now.");
+                dialog.showErrorBox("Fatal error", "Unable to properly start application.\nCleepDesktop will stop now.");
 
                 //stop application
                 app.quit();
