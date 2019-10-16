@@ -34,7 +34,7 @@
     "license": "GPLv3",
     "devDependencies": {
         "devtron": "^1.4.0",
-        "electron": "^6.0.11",
+        "electron": "6.0.12",
         "electron-builder": "^21.2.0"
     },
     "dependencies": {
@@ -49,6 +49,7 @@
         "appId": "com.cleep.cleepdesktop",
         "productName": "CleepDesktop",
         "asar": true,
+        "afterPack": "./buildAfterPackHook.js",
         "asarUnpack": [
             "cleepdesktopcore/**"
         ],
