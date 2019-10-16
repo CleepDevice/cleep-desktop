@@ -425,6 +425,9 @@ function createWindow ()
         }
 
         setTimeout( function() {
+            if(!mainWindow) {
+                return;
+            }
             mainWindow.maximize();
             mainWindow.show();
             mainWindow.focus();
