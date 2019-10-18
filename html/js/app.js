@@ -317,7 +317,7 @@ var cleepController = function($rootScope, $state, cleepService, tasksPanelServi
     $rootScope.$on('restartrequired', function(_event, _data) {
         if( !self.taskRestartRequired ) {
             self.taskRestartRequired = tasksPanelService.addItem(
-                'Restart application to apply changes.', 
+                'Please restart application to apply changes.', 
                 {
                     onAction: self.restartApplication,
                     tooltip: 'Restart now!',
