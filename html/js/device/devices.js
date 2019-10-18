@@ -12,11 +12,8 @@ var devicesController = function($state, devicesService, toastService, confirmSe
     self.openDevicePage = function(device)
     {
         if( !device ) {
-            toast.error('Invalid device');
+            toastService.error('Invalid device');
         }
-
-        //select device
-        devicesService.selectDevice(device);
 
         if( device.online ) {
             //prepare device url
@@ -28,9 +25,12 @@ var devicesController = function($state, devicesService, toastService, confirmSe
                 url,
                 hostname: device.hostname
             });
+
+            //select device
+            devicesService.selectDevice(device);
         }
         else {
-            toast.info('You can\'t connect to offline devices');
+            toastService.info('You can\'t connect to offline devices');
         }
     };
 
