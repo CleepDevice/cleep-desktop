@@ -99,10 +99,10 @@
                 <md-list ng-if="!ctl.devicesService.loading && ctl.devicesService.unconfigured>0" style="padding:0px;">
                     <md-list-item ng-repeat="device in ctl.devicesService.devices | filter: {configured:false}" ng-if="ctl.devicesService.unconfigured>0" ng-click="ctl.openDevicePage(device)" md-colors="device.selected ? {background: 'accent-400'} : {background: 'background'}">
                         <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
-                        <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin"></md-icon>
+                        <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin md-accent"></md-icon>
                         <p>{{device.hostname}}</p>
                         <md-menu class="md-secondary">
-                            <md-button class="md-icon-button">
+                            <md-button class="md-icon-button" ng-click="ctl.openDeviceMenu($mdMenu, $event)">
                                 <md-icon md-svg-icon="dots-vertical"></md-icon>
                             </md-button>
                             <md-menu-content>
@@ -114,7 +114,7 @@
                                 </md-menu-item>
                                 <md-menu-divider></md-menu-divider>
                                 <md-menu-item>
-                                    <md-button aria-label="Delete device">
+                                    <md-button aria-label="Delete device" ng-click="ctl.deleteDevice(device)">
                                         <md-icon md-svg-icon="delete"></md-icon>
                                         Delete
                                     </md-button>
@@ -134,7 +134,7 @@
                 <md-list ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length>0" style="padding:0px;">
                     <md-list-item ng-repeat="device in ctl.devicesService.devices | filter: {configured:true}" ng-click="ctl.openDevicePage(device)" md-colors="device.selected ? {background: 'accent-400'} : {background: 'background'}">
                         <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
-                        <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin"></md-icon>
+                        <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin md-accent"></md-icon>
                         <p>{{device.hostname}}</p>
                         <md-menu class="md-secondary">
                             <md-button class="md-icon-button" ng-click="ctl.openDeviceMenu($mdMenu, $event)">
