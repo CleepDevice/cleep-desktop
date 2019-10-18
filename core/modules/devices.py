@@ -73,6 +73,10 @@ class Devices(CleepDesktopModule):
         Load devices from configuration
         """
         self.devices = self.context.config.get_config_value('devices')
+        # force device to offline at startup. If devices are discovered
+        # event will be triggered to update device status
+        for device in self.devices.values():
+            device['online'] = False
         self.logger.debug('Initial devices: %s' % self.devices)
 
     def __save_devices(self):
