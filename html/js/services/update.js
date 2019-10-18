@@ -44,6 +44,7 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
         downloadstatus: null
     };
     self.changelog = null;
+    self.currentVersion = '0.0.0';
 
     // go to updates page
     self.__goToUpdates = function() {
@@ -216,6 +217,16 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
         appUpdater.addListener('update-not-available', function(info) {
             logger.info('No CleepDesktop update available');
             logger.debug(info);
+
+            //keep track of current version infos
+            if( info ) {
+                if( info.releaseNotes ) {
+                    self.changelog = info.releaseNotes;
+                }
+                if( info.version ) {
+                    self.currentVersion = info.version;
+                }
+            }
         });
 
         //get initial status

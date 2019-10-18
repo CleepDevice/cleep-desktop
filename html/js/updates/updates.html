@@ -63,14 +63,18 @@
                             <span>Update available:</span>
                             <span>Please download latest version <a href="https://github.com/tangb/CleepDesktop/releases" target="_blank">here</a></span>
                         </div>
+                        <!-- changelog -->
+                        <md-button class="md-secondary md-raised md-primary" aria-label="Restart" ng-click="ctl.openChangelog()" ng-if="!ctl.cleepdesktopStatus.restartrequired ">
+                            <md-icon md-svg-icon="notebook"></md-icon>
+                            Changelog
+                        </md-button>
                         <!-- application restart -->
                         <div class="md-secondary" ng-if="ctl.cleepdesktopStatus.restartrequired">
                             <span>Please restart to install latest update</span>
                         </div>
-                        <md-button class="md-secondary md-icon-button" aria-label="Restart" ng-click="ctl.restart()" ng-if="ctl.cleepdesktopStatus.restartrequired">
-                            <md-icon md-svg-icon="restart">
-                                <md-tooltip>Restart</md-tooltip>
-                            </md-icon>
+                        <md-button class="md-secondary md-raised md-accent" aria-label="Restart" ng-click="ctl.restart()" ng-if="ctl.cleepdesktopStatus.restartrequired">
+                            <md-icon md-svg-icon="restart"></md-icon>
+                            Restart
                         </md-button>
                     </md-list-item>
 

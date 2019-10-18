@@ -18,12 +18,7 @@ var modalService = function($mdDialog, $routerTransitions) {
             controller: controllerName,
             controllerAs: 'ctl',
             locals: {
-                closeModal: function(result) {
-                    if( result===undefined || result===null ) {
-                        $mdDialog.cancel();
-                    }
-                    $mdDialog.hide(result);
-                },
+                closeModal: self.closeModal,
                 modalData: data,
             },
             templateUrl: templateUrl,
@@ -37,6 +32,13 @@ var modalService = function($mdDialog, $routerTransitions) {
     $routerTransitions.onStart({}, function() {
         $mdDialog.cancel();
     });
+
+    self.closeModal = function(result) {
+        if( result===undefined || result===null ) {
+            $mdDialog.cancel();
+        }
+        $mdDialog.hide(result);
+    };
 };
     
 var Cleep = angular.module('Cleep');
