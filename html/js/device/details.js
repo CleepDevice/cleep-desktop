@@ -62,6 +62,6 @@ var deviceDetailsController = function(modalData, closeModal, confirmService, to
         //Compute Module 3
         'a020a0': 'images/raspberry-pi-compute-module-3.jpg',
     }
-    self.boardImg = self.boardImages[self.device['hwcode']];
+    self.boardImg = self.boardImages[self.device['hwrevision']];
 };
 Cleep.controller('deviceDetailsController', ['modalData', 'closeModal', 'confirmService', 'toastService', 'devicesService', deviceDetailsController]);
