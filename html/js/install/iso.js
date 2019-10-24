@@ -60,8 +60,7 @@ var isoController = function(closeModal, installService)
             ]
         };
         dialog.showOpenDialog(options, function(filenames) {
-            if( filenames===undefined )
-            {
+            if( !filenames || filenames.length===0 ) {
                 //no file selected
                 return;
             }
