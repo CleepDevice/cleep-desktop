@@ -119,6 +119,14 @@ md-toast.info .md-toast-content {
     fill: white;
 }
 
+/* rounded icons */
+.rounded-icon {
+    color: white;
+    background-color: #607D8B;
+    border-radius: 20px;
+    padding: 5px;
+}
+
 /* toolbar */
 .toolbar-content {
     height: 64px;
