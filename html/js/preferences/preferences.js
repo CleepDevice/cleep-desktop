@@ -3,8 +3,7 @@ var Cleep = angular.module('Cleep');
 /**
  * Preferences controller
  */
-var preferencesController = function($rootScope, $scope, cleepService, debounce, closeModal)
-{
+var preferencesController = function($rootScope, $scope, cleepService, debounce, closeModal) {
     var self = this;
 
     self.shell = require('electron').shell;
@@ -20,10 +19,8 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
     $scope.$watch(function() {
         return self.config;
     }, function(newValue, oldValue) {
-        if( Object.keys(newValue).length>0 && Object.keys(oldValue).length>0 )
-        {
-            if( self.checkConfig() )
-            {
+        if( Object.keys(newValue).length>0 && Object.keys(oldValue).length>0 ) {
+            if( self.checkConfig() ) {
                 debounce.exec('config', self.setConfig, 500)
                     .then(function() {
                         //console.log('Config saved');
@@ -34,10 +31,8 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
 
     //check configuration
     //@return true if config is valid, false otherwise
-    self.checkConfig = function()
-    {
-        if( self.config )
-        {
+    self.checkConfig = function() {
+        if( self.config ) {
             if( self.config.remote && !self.config.remote.rpcport )
                 return false;
             if( self.config.proxy && !self.config.proxy.host )
@@ -46,16 +41,13 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
                 return false;
 
             return true;
-        }
-        else
-        {
+        } else {
             return false;
         }
     };
 
     //get configuration
-    self.getConfig = function()
-    {
+    self.getConfig = function() {
         cleepService.getConfig()
             .then(function(resp) {
                 //save config
@@ -73,13 +65,11 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
     };
 
     //set configuration
-    self.setConfig = function()
-    {
+    self.setConfig = function() {
         cleepService.setConfig(self.config)
             .then(function(resp) {
                 //overwrite config if specified
-                if( resp && resp.data && resp.data.config )
-                {
+                if( resp && resp.data && resp.data.config ) {
                     self.config = resp.data.config;
                 }
 
@@ -89,15 +79,11 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
     };
 
     //update proxy mode
-    self.updateProxyMode = function(mode)
-    {
-        if( mode==='noproxy' )
-        {
+    self.updateProxyMode = function(mode) {
+        if( mode==='noproxy' ) {
             self.noproxy = true;
             self.manualproxy = false;
-        }
-        else if( mode==='manualproxy' )
-        {
+        } else if( mode==='manualproxy' ) {
             self.noproxy = false;
             self.manualproxy = true;
         }
@@ -105,14 +91,12 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
     };
 
     // Open logs
-    self.openLogs = function()
-    {
+    self.openLogs = function() {
         self.shell.openItem(self.logs);
     };
 
     // Open logs archive (zip format)
-    self.zipLogs = function()
-    {
+    self.zipLogs = function() {
         cleepService.sendCommand('get_zipped_logs', 'cache')
             .then(function(resp) {
                 self.shell.openItem(resp.data);
@@ -120,8 +104,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
     };
 
     // Delete specified cached file
-    self.purgeCacheFile = function(filename)
-    {
+    self.purgeCacheFile = function(filename) {
         cleepService.sendCommand('delete_cached_file', 'cache', {filename:filename})
             .then(function(resp) {
                 self.cacheds = resp.data;
@@ -129,8 +112,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
     };
 
     // Purge all cached files
-    self.purgeCachedFiles = function()
-    {
+    self.purgeCachedFiles = function() {
         cleepService.sendCommand('purge_cached_files', 'cache')
             .then(function(resp) {
                 self.cacheds = resp.data;
