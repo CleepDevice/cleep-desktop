@@ -64,6 +64,9 @@
                         <md-card-actions layout="row" layout-align="end center">
                             <md-button class="md-raised md-primary" ng-click="ctl.purgeCachedFiles()" ng-disabled="ctl.cacheds.length==0">Clear all cached files</md-button>
                         </md-card-actions>
+                        <div layout="row" layout-align="start center">
+                            <span class="md-caption">Files are stored in {{ctl.cacheDir}}</span>
+                        </div>
                     </md-card-content>
                 </md-card>
             </md-tab>

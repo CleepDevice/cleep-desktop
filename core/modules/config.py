@@ -112,6 +112,7 @@ class Config(CleepDesktopModule):
         return {
             'config': self.app_config.load_config(),
             'logs': self.context.log_filepath,
+            'cachedir': self.context.paths.cache,
         }
 
     def __deep_get(self, dictionary, keys, default=None):

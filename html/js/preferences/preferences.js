@@ -12,6 +12,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
     self.noproxy = false;
     self.manualproxy = false;
     self.logs = '';
+    self.cacheDir = '';
     self.cacheds = [];
     self.closeModal = closeModal;
 
@@ -53,6 +54,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
                 //save config
                 self.config = resp.data.config;
                 self.logs = resp.data.logs;
+                self.cacheDir = resp.data.cachedir;
 
                 //update proxy mode
                 self.updateProxyMode(self.config.proxy.mode);
@@ -123,4 +125,3 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
     self.getConfig();
 };
 Cleep.controller('preferencesController', ['$rootScope', '$scope', 'cleepService', 'debounceService', 'closeModal', preferencesController]);
-
