@@ -113,7 +113,7 @@ def configure_app(app_path, cache_path, config_path, config_filename, debug, is_
     Returns:
         AppContext: application context (that contains crash_report, logger...)
     """
-    global app, context, modules
+    global app, context
 
     #fill context
     context.paths.app = '.' if len(app_path)==0 else app_path 
@@ -188,25 +188,25 @@ def configure_app(app_path, cache_path, config_path, config_filename, debug, is_
         context.crash_report.disable()
 
     #launch config module
-    modules['config'] = Config(context, app_config, debug)
-    context.config = modules['config']
-    modules['config'].start()
+    context.modules['config'] = Config(context, app_config, debug)
+    context.config = context.modules['config']
+    context.modules['config'].start()
 
     #launch cache module
-    modules['cache'] = Cache(context, debug)
-    modules['cache'].start()
+    context.modules['cache'] = Cache(context, debug)
+    context.modules['cache'].start()
 
     #launch install module
-    modules['install'] = Install(context, debug)
-    modules['install'].start()
+    context.modules['install'] = Install(context, debug)
+    context.modules['install'].start()
 
     #launch devices module
-    modules['devices'] = Devices(context, debug)
-    modules['devices'].start()
+    context.modules['devices'] = Devices(context, debug)
+    context.modules['devices'].start()
 
     #launch updates module
-    modules['updates'] = Updates(context, debug)
-    modules['updates'].start()
+    context.modules['updates'] = Updates(context, debug)
+    context.modules['updates'].start()
 
     return context
 
@@ -222,11 +222,11 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
         key (string): SSL key file
         cert (string): SSL certificate file
     """
-    global app, context, modules
+    global app, context
 
     #populate some stuff at startup
-    modules['devices'].get_devices()
-    modules['updates'].get_status()
+    context.modules['devices'].get_devices()
+    context.modules['updates'].get_status()
 
     try:
         if key is not None and len(key)>0 and cert is not None and len(cert)>0:
@@ -252,9 +252,9 @@ def stop():
     """
     Stop all running processes
     """
-    global modules
+    global context
 
-    for _, module in modules.items():
+    for _, module in context.modules.items():
         module.stop()
 
 @app.hook('after_request')
@@ -271,7 +271,7 @@ def command():
     """
     Communication between javascript and python
     """
-    global context, modules
+    global context
 
     #context.main_logger.debug('Command (method=%s)' % bottle.request.method)
     if bottle.request.method=='OPTIONS':
@@ -289,9 +289,9 @@ def command():
 
             #and execute command
             #context.main_logger.debug('Execute command %s with params %s' % (command, params))
-            if not to in modules:
+            if not to in context.modules:
                 raise CommandError('Module "%s" does not exist' % to)
-            resp.data = modules[to].execute_command(command, params)
+            resp.data = context.modules[to].execute_command(command, params)
 
         except Exception as e:
             context.main_logger.exception('Error occured during command execution:')

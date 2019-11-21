@@ -26,6 +26,8 @@ class AppContext():
     paths = AppPaths()
     #function: callback to ui update
     update_ui = None
+    #list of internal modules
+    modules = {}
 
 class CleepDesktopModule(Thread):
     """
