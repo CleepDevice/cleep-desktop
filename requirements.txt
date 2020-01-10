@@ -1,9 +1,9 @@
 gevent==1.4.0
-bottle==0.12.17
+bottle==0.12.18
 gevent-websocket==0.10.1
 requests==2.22.0
-PyInstaller==3.5
-passlib==1.7.1
+PyInstaller==3.6
+passlib==1.7.2
 pyre-gevent==0.2.3
-sentry-sdk==0.12.3
+sentry-sdk==0.14.0
 win32wifi==0.1.0; sys_platform=='win32'
