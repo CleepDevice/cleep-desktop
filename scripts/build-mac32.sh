@@ -12,6 +12,9 @@ CLEEPDESKTOPPATH=build/cleepdesktop_tree
 /bin/mkdir -p "$CLEEPDESKTOPPATH"
 /bin/mkdir dist
 
+#update python libs
+/usr/bin/pip install -r requirements.txt
+
 #pyinstaller
 echo
 echo

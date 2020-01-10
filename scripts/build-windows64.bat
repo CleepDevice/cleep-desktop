@@ -10,6 +10,9 @@ rmdir /Q /S build
 mkdir %CLEEPDESKTOPPATH%
 mkdir dist
 
+:: update python libs
+pip install -r ./requirements.txt
+
 :: pyinstaller
 echo.
 echo.
