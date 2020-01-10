@@ -210,7 +210,7 @@ def configure_app(app_path, cache_path, config_path, config_filename, debug, is_
 
     return context
 
-def start(host='0.0.0.0', port=80, key=None, cert=None):
+def start(host='127.0.0.1', port=80, key=None, cert=None):
     """
     Start RPC server. This function is blocking.
     Start by default unsecure web server
@@ -244,8 +244,25 @@ def start(host='0.0.0.0', port=80, key=None, cert=None):
             server.serve_forever()
 
     except KeyboardInterrupt:
-        #user stops raspiot, close server properly
-        if not server.closed:
+        #user stops raspiot
+        pass
+
+    except UnicodeDecodeError:
+        #maybe unsupported character in hostname
+        #this is a unfixed bug in python https://bugs.python.org/issue9377
+        #topic about it (no solution @ 2019/12/12)
+        #https://stackoverflow.com/questions/23109244/unicodedecodeerror-with-runserver
+        context.main_logger.exception('HTTP server failed to start because computer hostname seems to have unsupported characters. Please use only ASCII.')
+        context.crash_report.report_exception()
+
+    except:
+        #unhandled exception
+        context.main_logger.exception('HTTP server failed to start:')
+        context.crash_report.report_exception()
+
+    finally:
+        #close server properly
+        if server and not server.closed:
             server.close()
 
 def stop():

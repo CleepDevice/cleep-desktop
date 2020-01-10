@@ -504,6 +504,7 @@ function launchCore(rpcport)
     var cachePath = path.join(app.getPath('userData'), 'cache_cleepdesktop');
     var configPath = path.dirname(configFile);
     var configFilename = path.basename(configFile);
+    var startupError = '';
 
     //check whether cache dir exists or not
     if( !fs.existsSync(cachePath) )
@@ -571,16 +572,19 @@ function launchCore(rpcport)
     coreProcess.stderr.on('data', (data) => {
         //do not send user warnings
         var message = data.toString('utf8');
-        if( message.search('UserWarning:')!=-1 )
-        {
+        if( message.search('UserWarning:')!=-1 ) {
             logger.debug('Drop UserWarning message');
             return;
         }
 
+        //handle ASCII error
+        if( message.search('hostname seems to have unsupported characters')!=-1 ) {
+            startupError = 'Your computer hostname "'+os.hostname()+'" contains invalid characters. Please update it using only ASCII chars.'
+        }
+
         //only handle startup crash (5 first seconds), after core will handle it
         var now = Math.round(Date.now()/1000);
-        if( now<=coreStartupTime+5 )
-        {
+        if( now<=coreStartupTime+5 ) {
             logger.error(message);
             throw new Error(message);
         }
