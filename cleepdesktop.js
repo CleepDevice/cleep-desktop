@@ -53,6 +53,7 @@ const url = require('url');
 const detectPort = require('detect-port');
 const fs = require('fs');
 const {download} = require('electron-dl');
+const os = require('os');
 
 //variables
 var corePath = path.join(__dirname, 'cleepdesktopcore.py');
@@ -418,9 +419,10 @@ function createWindow ()
     mainWindow.once('ready-to-show', function(e) {
         if( splashScreen )
         {
-            let splashScreenBounds = splashScreen.getBounds();
             setTimeout( function() {
-                splashScreen.close();
+                if (splashScreen) {
+                    splashScreen.close();
+                }
             }, 1500 );
         }
 
@@ -592,13 +594,11 @@ function launchCore(rpcport)
 
     //handle end of process
     coreProcess.on('close', (code) => {
-        if( !closingApplication )
-        {
+        if( !closingApplication ) {
             logger.error('Core process exited with code "' + code + '"');
-            if( code!==0 )
-            {
+            if( code!==0 ) {
                 //error occured, display error to user before terminates application
-                dialog.showErrorBox("Fatal error", "Unable to properly start application.\nCleepDesktop will stop now.");
+                dialog.showErrorBox('Fatal error', 'Unable to properly start application.\n' +startupError+'\nCleepDesktop will stop now.');
 
                 //stop application
                 app.quit();
@@ -629,8 +629,7 @@ app.on('ready', function() {
     //fill changelog
     fillChangelog();
 
-    if( isDev )
-    {
+    if( isDev ) {
         //use static rpc port in development mode
         
         //save rpcport to config to be used in js app
@@ -640,9 +639,7 @@ app.on('ready', function() {
         createWindow();
         createMenu();
         launchCore(DEFAULT_RPCPORT);
-    }
-    else
-    {
+    } else {
         //detect available port
         detectPort(null, (err, rpcport) => {
             if( err )

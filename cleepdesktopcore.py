@@ -42,7 +42,7 @@ try:
 
     #start rpc server
     app_context.main_logger.debug('Serving files from "%s" folder.' % rpcserver.HTML_DIR)
-    rpcserver.start(u'127.0.0.1', rpcport, None, None)
+    rpcserver.start('127.0.0.1', rpcport, None, None)
 
 except Exception as e:
     #print exception to stderr to be catched by electron
@@ -50,7 +50,7 @@ except Exception as e:
     traceback.print_exception(ex_type, ex_value, ex_traceback, None, sys.stderr)
 
     #crash report if possible
-    if app_context:
+    if app_context and app_context.crash_report:
         app_context.crash_report.report_exception()
 
 finally:
