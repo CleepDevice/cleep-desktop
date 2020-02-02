@@ -71,22 +71,17 @@ let downloadFilename = '';
 logger.transports.file.level = 'info';
 logger.transports.file.maxSize = 1 * 1024 * 1024;
 logger.transports.console.level = 'info';
-if( isDev )
-{
+if( isDev ) {
     //during development always enable debug on both console and log file
     logger.transports.console.level = 'debug';
     logger.transports.file.level = 'debug';
     logger.info('Dev mode enabled');
-}
-else if( fs.existsSync(settings.file()) && settings.has('cleep.debug') && settings.get('cleep.debug') )
-{
+} else if( fs.existsSync(settings.file()) && settings.has('cleep.debug') && settings.get('cleep.debug') ) {
     //release mode with debug enabled
     logger.transports.console.level = 'debug';
     logger.transports.file.level = 'debug';
     logger.info('Debug mode enabled according to user preferences');
-}
-else
-{
+} else {
     //release mode without debug, enable only info on console and do not touch log file config
     //logger.transports.console.level = 'info';
 }
@@ -97,10 +92,10 @@ let mainWindow
 let splashScreen
 
 // Pause process during specified amount of seconds
-function pause(seconds)
-{
-    if (seconds<=0)
+function pause(seconds) {
+    if (seconds<=0) {
         return;
+    }
     var now = new Date();
     var exitTime = now.getTime() + seconds * 1000;
     while (true) {
@@ -111,13 +106,11 @@ function pause(seconds)
 }
 
 // Fill changelog content in cleepdesktopInfos global variable
-function fillChangelog()
-{
+function fillChangelog() {
     var changelogPath = path.join(app.getPath('userData'), 'changelog.txt');
     logger.debug('changelog.txt file path: ' + changelogPath);
     var changelogExists = fs.existsSync(changelogPath);
-    if( !changelogExists )
-    {
+    if( !changelogExists ) {
         //changelog file doesn't exist, create empty one for later use
         logger.debug('Create changelog.txt file');
         fs.writeFileSync(changelogPath, '');
@@ -129,50 +122,33 @@ function fillChangelog()
 };
 
 // Parse command line arguments
-function parseArgs()
-{
-    for (let i = 0; i < argv.length; i++)
-    {
-        if( argv[i]==='--nocore' )
-        {
+function parseArgs() {
+    for (let i = 0; i < argv.length; i++) {
+        if( argv[i]==='--nocore' ) {
             //disable core. Useful to debug python aside
             coreDisabled = true;
-        }
-        else if( argv[i].match(/^--logfile=/) )
-        {
+        } else if( argv[i].match(/^--logfile=/) ) {
             //log to file
             logger.transports.file.level = false;
             var level = argv[i].split('=')[1];
-            if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' )
-            {
+            if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' ) {
                 logger.transports.file.level = level;
-            }
-            else if( level==='no' )
-            {
+            } else if( level==='no' ) {
                 //disable log
                 logger.transports.file.level = false;
-            }
-            else
-            {
+            } else {
                 //invalid log level, set to default 'info'
                 logger.transports.file.level = 'info';
             }
-        }
-        else if( argv[i].match(/^--logconsole=/) )
-        {
+        } else if( argv[i].match(/^--logconsole=/) ) {
             //log to console
             var level = argv[i].split('=')[1];
-            if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' )
-            {
+            if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' ) {
                 logger.transports.console.level = level;
-            }
-            else if( level==='no' )
-            {
+            } else if( level==='no' ) {
                 //disable log
                 logger.transports.console.level = false;
-            }
-            else
-            {
+            } else {
                 //invalid log level, set to default 'info'
                 logger.transports.console.level = 'info';
             }
@@ -277,6 +253,7 @@ function createMenu() {
             }
         ]
     };
+
     const subMenuEdit = {
         label: 'Edit',
         submenu: [
@@ -302,6 +279,7 @@ function createMenu() {
             }
         ]
     };
+
     const subMenuDevice = {
         label: 'Device',
         submenu: [
@@ -320,6 +298,7 @@ function createMenu() {
             }
         ]
     };
+
     const subMenuHelp = {
         label: 'Help',
         submenu: [
@@ -345,14 +324,12 @@ function createMenu() {
             }
         ]
     };
-    if( process.platform==='darwin' )
-    {
+
+    if( process.platform==='darwin' ) {
         const menuTemplate = [subMenuFile, subMenuEdit, subMenuHelp];
         const menu = Menu.buildFromTemplate(menuTemplate);
         Menu.setApplicationMenu(menu);
-    }
-    else
-    {
+    } else {
         const menuTemplate = [subMenuFile, subMenuHelp];
         const menu = Menu.buildFromTemplate(menuTemplate);
         Menu.setApplicationMenu(menu);
@@ -361,8 +338,7 @@ function createMenu() {
 
 // Create splash screen
 // Code from https://github.com/buz-zard/random/blob/master/electron-compile-1/src/main.js
-function createSplashScreen()
-{
+function createSplashScreen() {
     //create splashscreen window
     splashScreen = new BrowserWindow({
         width: 250,
@@ -392,8 +368,7 @@ function createSplashScreen()
 };
 
 // Create application main window
-function createWindow ()
-{
+function createWindow () {
     // Create the browser window.
     mainWindow = new BrowserWindow({
         webPreferences: {
@@ -417,8 +392,7 @@ function createWindow ()
 
     // close splashscreen when loaded
     mainWindow.once('ready-to-show', function(e) {
-        if( splashScreen )
-        {
+        if( splashScreen ) {
             setTimeout( function() {
                 if (splashScreen) {
                     splashScreen.close();
@@ -446,8 +420,7 @@ function createWindow ()
     });
 
     // Open the DevTools in dev mode only
-    if( isDev || process.env.CLEEPDESKTOP_DEBUG )
-    {
+    if( isDev || process.env.CLEEPDESKTOP_DEBUG ) {
         //open devtool in dev mode
         mainWindow.webContents.openDevTools();
 
@@ -461,8 +434,7 @@ function createWindow ()
         //set closing flag (to avoid catching core process error)
         closingApplication = true;
 
-        if( !allowQuit )
-        {
+        if( !allowQuit ) {
             //something does not allow application to quit. Request user to quit or not
             var btnIndex = dialog.showMessageBoxSync(mainWindow, {
                 type: 'question',
@@ -472,8 +444,7 @@ function createWindow ()
                 message: 'A process is running. Quit application now can let inconsistent data. Quit anyway?'
             });
 
-            if( btnIndex!=0 )
-            {
+            if( btnIndex!=0 ) {
                 //user do not quit
                 logger.debug('User cancels application closing');
                 e.preventDefault();
@@ -492,10 +463,8 @@ function createWindow ()
 };
 
 // Launch core python application
-function launchCore(rpcport)
-{
-    if( coreDisabled )
-    {
+function launchCore(rpcport) {
+    if( coreDisabled ) {
         logger.debug('Core disabled');
         return;
     }
@@ -509,33 +478,27 @@ function launchCore(rpcport)
     var startupError = '';
 
     //check whether cache dir exists or not
-    if( !fs.existsSync(cachePath) )
-    {
+    if( !fs.existsSync(cachePath) ) {
         logger.debug('Create cache dir' + cachePath);
         fs.mkdirSync(cachePath);
     }
 
-    if( !isDev )
-    {
+    if( !isDev ) {
         //launch release mode
         logger.debug('Launch release mode');
 
         //prepare command line
         let commandline = path.join(__dirname + '.unpacked/', 'cleepdesktopcore/');
         logger.debug('cmdline with asar: ' + commandline);
-        if( !fs.existsSync(commandline) )
-        {
+        if( !fs.existsSync(commandline) ) {
             commandline = path.join(__dirname, 'cleepdesktopcore/');
             logger.info('cmdline without asar: ' + commandline);
         }
 
         //append bin name
-        if( process.platform=='win32' )
-        {
+        if( process.platform=='win32' ) {
             commandline = path.join(commandline, 'cleepdesktopcore.exe');
-        }
-        else
-        {
+        } else {
             commandline = path.join(commandline, 'cleepdesktopcore');
         }
 
@@ -544,9 +507,8 @@ function launchCore(rpcport)
         logger.debug('Core commandline: '+commandline+' ' + rpcport + ' ' + cachePath + ' ' + configPath + ' ' + configFilename + ' ' + debug);
         coreStartupTime = Math.round(Date.now()/1000);
         coreProcess = require('child_process').spawn(commandline, [rpcport, cachePath, configPath, configFilename, 'release', 'false']);
-    }
-    else
-    {
+
+    } else {
         //launch dev
         logger.debug('Launch development mode');
         logger.debug('Core commandline: python3 cleepdesktopcore.py ' + rpcport + ' ' + cachePath + ' ' + configPath + ' ' + configFilename + ' debug');
@@ -755,8 +717,7 @@ app.on('will-quit', function(e) {
 app.on('window-all-closed', function () {
     // On OS X it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
-    if( process.platform!=='darwin' )
-    {
+    if( process.platform!=='darwin' ) {
         app.quit()
     }
 });
@@ -764,9 +725,7 @@ app.on('window-all-closed', function () {
 app.on('activate', function () {
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (mainWindow === null)
-    {
+    if (mainWindow === null) {
         createWindow()
     }
 });
-
