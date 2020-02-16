@@ -34,7 +34,7 @@
     "license": "GPLv3",
     "devDependencies": {
         "devtron": "^1.4.0",
-        "electron": "^7.1.11",
+        "electron": "^8.0.1",
         "electron-builder": "^22.2.0"
     },
     "dependencies": {
