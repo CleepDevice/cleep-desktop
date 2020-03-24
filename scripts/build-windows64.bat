@@ -11,7 +11,7 @@ mkdir %CLEEPDESKTOPPATH%
 mkdir dist
 
 :: update python libs
-pip install -r ./requirements.txt
+pip3 install -r ./requirements.txt
 
 :: pyinstaller
 echo.
