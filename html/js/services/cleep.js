@@ -47,7 +47,6 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
     self.__websocketReceive = function(event) {
         if( event && event.data && typeof(event.data)==='string' ) {
             //broadcast received data
-            logger.debug('Websocket: ', event);
             var data = JSON.parse(event.data);
             $rootScope.$broadcast(data.event, data.data);
         }
