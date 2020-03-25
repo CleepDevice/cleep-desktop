@@ -35,7 +35,8 @@
     "devDependencies": {
         "devtron": "^1.4.0",
         "electron": "8.2.0",
-        "electron-builder": "^22.4.1"
+        "electron-builder": "^22.4.1",
+        "electron-notarize": "^0.2.1"
     },
     "dependencies": {
         "@sentry/electron": "^1.3.0",
@@ -50,6 +51,7 @@
         "productName": "CleepDesktop",
         "asar": true,
         "afterPack": "./buildAfterPackHook.js",
+        "afterSign": "config/notarize.js",
         "asarUnpack": [
             "cleepdesktopcore/**"
         ],
@@ -85,13 +87,20 @@
                 "dmg",
                 "zip"
             ],
+            "identity": "tanguy.bonneau@gmail.com",
             "icon": "resources/icon",
             "extendInfo": "config/Info.plist",
             "binaries": [],
-            "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
+            "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+            "hardenedRuntime": true,
+            "entitlements": "config/entitlements.mac.plist",
+            "entitlementsInherit": "config/entitlements.mac.plist",
+            "gatekeeperAssess": false,
+            "minimumSystemVersion": "10.11.0"
         },
         "dmg": {
-            "icon": "resources/icon.icns"
+            "icon": "resources/icon.icns",
+            "sign": false
         },
         "publish": {
             "provider": "github",
