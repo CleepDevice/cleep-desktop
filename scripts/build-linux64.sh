@@ -21,7 +21,7 @@ echo
 echo "Packaging cleepdesktopcore..."
 echo "-----------------------------"
 /bin/cp config/cleepdesktopcore-linux64.spec cleepdesktopcore-linux64.spec
-/usr/local/bin/pyinstaller --clean --noconfirm --noupx --debug all --log-level INFO cleepdesktopcore-linux64.spec
+pyinstaller --clean --noconfirm --noupx --debug all --log-level INFO cleepdesktopcore-linux64.spec
 /bin/rm cleepdesktopcore-linux64.spec
 /bin/mv dist/cleepdesktopcore "$CLEEPDESKTOPPATH"
 
@@ -67,10 +67,13 @@ echo "Finalizing..."
 echo "-------------"
 /bin/sleep 1
 /bin/mv "./$CLEEPDESKTOPPATH/dist" .
-/bin/rm -rf build
-/bin/rm -rf __pycache__
-/bin/rm -rf cleep/__pycache__
-/bin/rm -rf cleep/libs/__pycache__
+if [ "$1" == "publish" ]
+then
+    /bin/rm -rf build
+    /bin/rm -rf __pycache__
+    /bin/rm -rf cleep/__pycache__
+    /bin/rm -rf cleep/libs/__pycache__
+fi
 echo "Done"
 
 echo

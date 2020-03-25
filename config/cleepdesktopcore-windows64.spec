@@ -4,6 +4,8 @@ from PyInstaller.utils.hooks import collect_submodules
 
 block_cipher = None
 sentry_sdk_submodules = collect_submodules('sentry_sdk')
+hidden_imports = sentry_sdk_submodules
+hidden_imports.append('pkg_resources.py2_warn')
 
 a = Analysis(['cleepdesktopcore.py'],
              pathex=[],
@@ -15,7 +17,7 @@ a = Analysis(['cleepdesktopcore.py'],
                 ('tools/7z', 'tools/7z'),
                 ('tools/cmdlogger-windows64', 'tools/cmdlogger-windows')
              ],
-             hiddenimports=sentry_sdk_submodules,
+             hiddenimports=hidden_imports,
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
