@@ -53,8 +53,7 @@ if [ "$1" == "publish" ]
 then
     echo "Publishing cleepdesktop..."
     echo "--------------------------"
-    echo "GHTOKEN=$GH_TOKEN"
-    node_modules/.bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH" --publish onTagOrDraft
+    GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP node_modules/.bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH" --publish onTagOrDraft
 else
     echo "Packaging cleepdesktop..."
     echo "-------------------------"
