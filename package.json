@@ -87,7 +87,6 @@
                 "dmg",
                 "zip"
             ],
-            "identity": "tanguy.bonneau@gmail.com",
             "icon": "resources/icon",
             "extendInfo": "config/Info.plist",
             "binaries": [],
