@@ -34,7 +34,7 @@
     "license": "GPLv3",
     "devDependencies": {
         "devtron": "^1.4.0",
-        "electron": "8.2.0",
+        "electron": "8.2.1",
         "electron-builder": "^22.4.1",
         "electron-notarize": "^0.2.1"
     },
@@ -51,7 +51,7 @@
         "productName": "CleepDesktop",
         "asar": true,
         "afterPack": "./buildAfterPackHook.js",
-        "afterSign": "config/notarize.js",
+        "afterSign": "./config/notarize.js",
         "asarUnpack": [
             "cleepdesktopcore/**"
         ],
