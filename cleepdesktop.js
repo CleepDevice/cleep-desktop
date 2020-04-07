@@ -39,7 +39,7 @@ global.cleepdesktopInfos = {
     version: app.getVersion(),
     changelog: null
 };
-app.setName('CleepDesktop');
+app.name = 'CleepDesktop';
 const BrowserWindow = electron.BrowserWindow;
 const argv = process.argv.slice(1);
 
