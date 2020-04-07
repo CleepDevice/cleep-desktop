@@ -87,6 +87,7 @@
                 "dmg",
                 "zip"
             ],
+            "identity": null,
             "icon": "resources/icon",
             "extendInfo": "config/Info.plist",
             "binaries": [],
