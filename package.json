@@ -99,7 +99,7 @@
         },
         "dmg": {
             "icon": "resources/icon.icns",
-            "sign": false
+            "sign": true
         },
         "publish": {
             "provider": "github",
