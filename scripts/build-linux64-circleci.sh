@@ -24,10 +24,6 @@ sudo apt-get install python3 python3-distutils python3-dev gcc g++ make
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 python3 get-pip.py
 echo
-echo " -> node 12"
-curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
-sudo apt-get install -y nodejs
-echo
 echo " -> tools versions:"
 python3 --version
 pip3 --version
