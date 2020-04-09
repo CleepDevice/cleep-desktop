@@ -11,7 +11,7 @@ jobs:
       - run: npm run publish-win64
   publish-linux64:
     machine:
-      image: image: ubuntu-1604:201903-01
+      image: ubuntu-1604:201903-01
     steps:
       - checkout
       - run: npm run publish-linux64
