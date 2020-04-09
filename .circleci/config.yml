@@ -8,8 +8,6 @@ jobs:
       shell: powershell.exe
     steps:
       - checkout
-      - run: curl https://bootstrap.pypa.io/get-pip.py -O get-pip.py 
-      - run: python ./get-pip.py
       - run: npm start publish-win64
 workflows:
     deploy:
