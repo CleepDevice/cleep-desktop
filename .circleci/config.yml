@@ -1,0 +1,37 @@
+version: 2.1
+orbs:
+  win: circleci/windows@2.2.0
+jobs:
+  publish-windows64:
+    executor:
+      name: win/default
+      shell: powershell.exe
+    steps:
+      - checkout
+      - run: npm run publish-win64
+  publish-linux64:
+    docker:
+      - image: circleci/buildpack-deps:bionic
+    steps:
+      - run: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+      - run: sudo apt-get install -y nodejs
+      - checkout
+      - run: npm run publish-linux64-circleci
+workflows:
+  version: 2
+  publish-windows64:
+    jobs:
+      - publish-windows64:
+        filters:
+          tags:
+            only: /^v.*/
+          branches:
+            ignore: /.*/
+  publish-linux64:
+    jobs:
+      - publish-linux64:
+        filters:
+          tags:
+            only: /^v.*/
+          branches:
+            ignore: /.*/
