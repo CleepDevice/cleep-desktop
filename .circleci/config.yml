@@ -11,7 +11,7 @@ jobs:
       - run: npm run publish-win64
   publish-linux64:
     docker:
-      image: circleci/buildpack-deps:bionic
+      - image: circleci/buildpack-deps:bionic
     steps:
       - checkout
       - run: npm run publish-linux64-circleci
