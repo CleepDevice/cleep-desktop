@@ -8,7 +8,7 @@ jobs:
       shell: powershell.exe
     steps:
       - checkout
-      - run: npm start publish-win64
+      - run: npm run publish-win64
 workflows:
     deploy:
       jobs:
