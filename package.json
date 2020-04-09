@@ -11,6 +11,7 @@
         "build-win32": "scripts\\build-windows32.bat",
         "build-win64": "scripts\\build-windows64.bat",
         "publish-linux64": "scripts/build-linux64.sh publish",
+        "publish-linux64-circleci": "scripts/build-linux64-circleci.sh publish",
         "publish-mac32": "scripts/build-mac32.sh publish",
         "publish-mac64": "scripts/build-mac64.sh publish",
         "publish-win32": "scripts\\build-windows32.bat publish",

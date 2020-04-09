@@ -12,7 +12,23 @@ CLEEPDESKTOPPATH=build/cleepdesktop_tree
 /bin/mkdir -p "$CLEEPDESKTOPPATH"
 /bin/mkdir dist
 
+# check tools
+echo
+echo
+echo "Tools versions..."
+echo "-----------------"
+python3.7 --version
+pip3.7 --version
+/usr/bin/pip3.7 install --upgrade pip
+~/.local/bin/pip --version
+echo "Node:" `node --version`
+echo "Npm:" `npm --version`
+
 #update python libs
+echo
+echo
+echo "Installing python libs..."
+echo "-------------------------"
 /usr/bin/pip install -r requirements.txt
 
 #pyinstaller
@@ -21,7 +37,7 @@ echo
 echo "Packaging cleepdesktopcore..."
 echo "-----------------------------"
 /bin/cp config/cleepdesktopcore-linux64.spec cleepdesktopcore-linux64.spec
-pyinstaller --clean --noconfirm --noupx --debug all --log-level INFO cleepdesktopcore-linux64.spec
+~/.local/bin/pyinstaller --clean --noconfirm --noupx --debug all --log-level INFO cleepdesktopcore-linux64.spec
 /bin/rm cleepdesktopcore-linux64.spec
 /bin/mv dist/cleepdesktopcore "$CLEEPDESKTOPPATH"
 
@@ -41,8 +57,8 @@ echo "Done"
 #update npm
 echo
 echo
-echo "Updating npm libs..."
-echo "--------------------"
+echo "Installing node libs..."
+echo "-----------------------"
 /usr/bin/npm install
 echo "Done"
 

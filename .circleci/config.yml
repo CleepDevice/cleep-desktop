@@ -14,7 +14,7 @@ jobs:
       image: ubuntu-1604:201903-01
     steps:
       - checkout
-      - run: npm run publish-linux64
+      - run: npm run publish-linux64-circleci
 workflows:
     publish-linux64:
       jobs:
