@@ -17,6 +17,12 @@ echo
 echo
 echo "Tools versions..."
 echo "-----------------"
+echo "python3 - begin"
+which python3
+ls -l /usr/bin | grep python
+ls -l /usr/local/bin | grep python
+ls -l ~/.local/bin
+echo "python3 -end"
 python3.7.0 --version
 pip3.7.0 --version
 pip3.7.0 install --upgrade pip
