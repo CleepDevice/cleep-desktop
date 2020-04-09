@@ -11,7 +11,7 @@ jobs:
       - run: npm run publish-win64
   publish-linux64:
     machine:
-      image: cimg/base:2020.01
+      docker: circleci/buildpack-deps:bionic
     steps:
       - checkout
       - run: npm run publish-linux64-circleci
