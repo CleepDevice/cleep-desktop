@@ -18,9 +18,18 @@ jobs:
       - checkout
       - run: npm run publish-linux64-circleci
 workflows:
-    publish-linux64:
-      jobs:
-        - publish-linux64:
-          filters:
-            branches:
-              only: master
+  version: 2
+  publish-windows64:
+    triggers:
+      filters:
+        branches:
+          only: master
+    jobs:
+      - publish-windows64:
+  publish-linux64:
+    triggers:
+      filters:
+        branches:
+          only: master
+    jobs:
+      - publish-linux64:
