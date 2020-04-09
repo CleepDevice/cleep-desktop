@@ -4,18 +4,13 @@ orbs:
 jobs:
   deploy:
     executor:
-      name: win/default   
+      name: win/default
+      shell: powershell.exe
     steps:
       - checkout
-      - install-pip:
-        steps:
-          - run:
-            command: curl https://bootstrap.pypa.io/get-pip.py -O get-pip.py 
-            shell: powershell.exe
-          - run: python ./get-pip.py
-      - deploy-cleep-desktop:
-        steps:
-          - run: npm start publish-win64
+      - run: curl https://bootstrap.pypa.io/get-pip.py -O get-pip.py 
+      - run: python ./get-pip.py
+      - run: npm start publish-win64
 workflows:
     deploy:
       jobs:
