@@ -23,11 +23,11 @@ workflows:
     jobs:
       - publish-windows64:
         filters:
-          branches:
-            only: master
+          tags:
+            only: /^v.*/
   publish-linux64:
     jobs:
       - publish-linux64:
         filters:
-          branches:
-            only: master
+          tags:
+            only: /^v.*/
