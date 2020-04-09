@@ -15,29 +15,31 @@ CLEEPDESKTOPPATH=build/cleepdesktop_tree
 # check tools
 echo
 echo
-echo "Tools versions..."
-echo "-----------------"
-apt-get update
-apt-get install python3 python3-distutils python3-dev
-echo "python3 - begin"
-which python3
-ls -l /usr/bin | grep python
-ls -l /usr/local/bin | grep python
-ls -l ~/.local/bin
-echo "python3 -end"
+echo "Installing tools..."
+echo "-------------------"
+echo
+echo " -> python 3"
+sudo apt-get update
+sudo apt-get install python3 python3-distutils python3-dev gcc g++ make
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+python3 get-pip.py
+echo
+echo " -> node 12"
+curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+sudo apt-get install -y nodejs
+echo
+echo " -> tools versions:"
 python3 --version
-pip3.7.0 --version
-pip3.7.0 install --upgrade pip
-ll ~/.local/bin/
-echo "Node:" `node --version`
-echo "Npm:" `npm --version`
+pip3 --version
+echo "Node" `node --version`
+echo "Npm" `npm --version`
 
 #update python libs
 echo
 echo
 echo "Installing python libs..."
 echo "-------------------------"
-/usr/bin/pip3.7.0 install -r requirements.txt
+pip3 install -r requirements.txt
 
 #pyinstaller
 echo
@@ -45,7 +47,7 @@ echo
 echo "Packaging cleepdesktopcore..."
 echo "-----------------------------"
 /bin/cp config/cleepdesktopcore-linux64.spec cleepdesktopcore-linux64.spec
-~/.local/bin/pyinstaller --clean --noconfirm --noupx --debug all --log-level INFO cleepdesktopcore-linux64.spec
+pyinstaller --clean --noconfirm --noupx --debug all --log-level INFO cleepdesktopcore-linux64.spec
 /bin/rm cleepdesktopcore-linux64.spec
 /bin/mv dist/cleepdesktopcore "$CLEEPDESKTOPPATH"
 
