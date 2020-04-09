@@ -2,14 +2,30 @@ version: 2.1
 orbs:
   win: circleci/windows@2.2.0
 jobs:
-  deploy:
+  publish-win64:
     executor:
       name: win/default
       shell: powershell.exe
     steps:
       - checkout
       - run: npm run publish-win64
+  publish-linux64:
+    machine:
+      image: image: ubuntu-1604:201903-01
+    steps:
+      - checkout
+      - run: npm run publish-linux64
 workflows:
-    deploy:
+    publish-win64:
       jobs:
-        - deploy
+        - publish-win64
+          filters:
+            branches:
+              only: circleci-project-setup
+                
+    publish-linux64:
+      jobs:
+        - publish-linux64
+          filters:
+            branches:
+              only: master
