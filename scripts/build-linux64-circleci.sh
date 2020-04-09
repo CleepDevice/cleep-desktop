@@ -17,10 +17,10 @@ echo
 echo
 echo "Tools versions..."
 echo "-----------------"
-python3.7 --version
-pip3.7 --version
-/usr/bin/pip3.7 install --upgrade pip
-~/.local/bin/pip --version
+python3.7.0 --version
+pip3.7.0 --version
+pip3.7.0 install --upgrade pip
+ll ~/.local/bin/
 echo "Node:" `node --version`
 echo "Npm:" `npm --version`
 
@@ -29,7 +29,7 @@ echo
 echo
 echo "Installing python libs..."
 echo "-------------------------"
-/usr/bin/pip install -r requirements.txt
+/usr/bin/pip3.7.0 install -r requirements.txt
 
 #pyinstaller
 echo
