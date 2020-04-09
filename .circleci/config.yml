@@ -10,8 +10,8 @@ jobs:
       - checkout
       - run: npm run publish-win64
   publish-linux64:
-    machine:
-      docker: circleci/buildpack-deps:bionic
+    docker:
+      image: circleci/buildpack-deps:bionic
     steps:
       - checkout
       - run: npm run publish-linux64-circleci
