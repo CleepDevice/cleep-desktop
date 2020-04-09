@@ -22,14 +22,12 @@ workflows:
   publish-windows64:
     jobs:
       - publish-windows64:
-        type: approval
         filters:
           branches:
             only: master
   publish-linux64:
     jobs:
       - publish-linux64:
-        type: approval
         filters:
           branches:
             only: master
