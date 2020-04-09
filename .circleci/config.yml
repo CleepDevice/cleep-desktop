@@ -18,14 +18,14 @@ jobs:
 workflows:
     publish-win64:
       jobs:
-        - publish-win64
+        - publish-win64:
           filters:
             branches:
               only: circleci-project-setup
                 
     publish-linux64:
       jobs:
-        - publish-linux64
+        - publish-linux64:
           filters:
             branches:
               only: master
