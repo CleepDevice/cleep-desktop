@@ -20,16 +20,16 @@ jobs:
 workflows:
   version: 2
   publish-windows64:
-    triggers:
-      filters:
-        branches:
-          only: master
     jobs:
       - publish-windows64:
+        type: approval
+        filters:
+          branches:
+            only: master
   publish-linux64:
-    triggers:
-      filters:
-        branches:
-          only: master
     jobs:
       - publish-linux64:
+        type: approval
+        filters:
+          branches:
+            only: master
