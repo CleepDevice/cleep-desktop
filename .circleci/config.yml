@@ -25,9 +25,13 @@ workflows:
         filters:
           tags:
             only: /^v.*/
+          branches:
+            ignore: /.*/
   publish-linux64:
     jobs:
       - publish-linux64:
         filters:
           tags:
             only: /^v.*/
+          branches:
+            ignore: /.*/
