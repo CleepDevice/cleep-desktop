@@ -2,7 +2,7 @@ version: 2.1
 orbs:
   win: circleci/windows@2.2.0
 jobs:
-  publish-win64:
+  publish-windows64:
     executor:
       name: win/default
       shell: powershell.exe
