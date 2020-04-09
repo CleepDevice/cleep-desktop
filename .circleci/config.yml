@@ -1,17 +1,22 @@
 version: 2.1
 orbs:
-  node: circleci/node@1.1.6
+  win: circleci/windows@2.2.0
 jobs:
-  build-and-test:
+  deploy:
     executor:
-      name: node/default
+      name: win/default   
     steps:
       - checkout
-      - node/with-cache:
-          steps:
-            - run: npm install
-            - run: npm test
+      - install-pip:
+        steps:
+          - run:
+            command: curl https://bootstrap.pypa.io/get-pip.py -O get-pip.py 
+            shell: powershell.exe
+          - run: python ./get-pip.py
+      - deploy-cleep-desktop:
+        steps:
+          - run: npm start publish-win64
 workflows:
-    build-and-test:
+    deploy:
       jobs:
-        - build-and-test
+        - deploy
