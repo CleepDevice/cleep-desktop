@@ -16,18 +16,9 @@ jobs:
       - checkout
       - run: npm run publish-linux64
 workflows:
-    publish-win64:
-      jobs:
-        - publish-win64:
-          type: approval
-          filters:
-            branches:
-              only: circleci-project-setup
-                
     publish-linux64:
       jobs:
         - publish-linux64:
-          type: approval
           filters:
             branches:
               only: master
