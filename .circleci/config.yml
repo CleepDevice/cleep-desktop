@@ -19,17 +19,19 @@ jobs:
       - run: npm run publish-linux64-circleci
 workflows:
   version: 2
-  publish-linux-windows:
+  windows64:
     jobs:
       - publish-windows64:
-        filters:
-          tags:
-            only: /^v.*/
-          branches:
-            ignore: /.*/
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+  linux64:
+    jobs:
       - publish-linux64:
-        filters:
-          tags:
-            only: /^v.*/
-          branches:
-            ignore: /.*/
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
