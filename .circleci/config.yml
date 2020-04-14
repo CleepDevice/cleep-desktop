@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  win: circleci/windows@2.2.0
+  win: circleci/windows@2.4.0
 jobs:
   publish-windows64:
     executor:
@@ -19,7 +19,7 @@ jobs:
       - run: npm run publish-linux64-circleci
 workflows:
   version: 2
-  publish-windows64:
+  publish-linux-windows:
     jobs:
       - publish-windows64:
         filters:
@@ -27,8 +27,6 @@ workflows:
             only: /^v.*/
           branches:
             ignore: /.*/
-  publish-linux64:
-    jobs:
       - publish-linux64:
         filters:
           tags:
