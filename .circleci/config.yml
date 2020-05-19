@@ -11,8 +11,10 @@ jobs:
       - checkout
       - run: npm run publish-win64
       - slack/status:
+        channel: "#cleep-desktop-deploy"
         success_message: "Build Succeeded!"
         failure_message: "Build failed!"
+        webhook: "SLACK_WEBHOOK"
   publish-linux64:
     docker:
       - image: circleci/buildpack-deps:bionic
@@ -22,8 +24,10 @@ jobs:
       - checkout
       - run: npm run publish-linux64-circleci
       - slack/status:
+        channel: "#cleep-desktop-deploy"
         success_message: "Build Succeeded!"
         failure_message: "Build failed!"
+        webhook: "SLACK_WEBHOOK"
   build-linux64:
     docker:
       - image: circleci/buildpack-deps:bionic
