@@ -56,7 +56,7 @@ if "%1" == "publish" (
     echo Publishing cleepdesktop...
     echo --------------------------
     set "GH_TOKEN=%GH_TOKEN_CLEEPDESKTOP%"
-    cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH%" --publish onTagOrDraft
+    cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH%" --publish always
 ) else (
     echo Packaging cleepdesktop...
     echo -------------------------
