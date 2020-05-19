@@ -1,6 +1,6 @@
 {
     "name": "CleepDesktop",
-    "version": "0.0.16",
+    "version": "0.1.0",
     "description": "Desktop application to manage your Cleep devices",
     "main": "cleepdesktop.js",
     "scripts": {
@@ -35,7 +35,7 @@
     "license": "MIT",
     "devDependencies": {
         "devtron": "^1.4.0",
-        "electron": "^8.3.0",
+        "electron": "8.3.0",
         "electron-builder": "^22.6.1",
         "electron-notarize": "^0.2.1"
     },
