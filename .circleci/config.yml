@@ -11,8 +11,8 @@ jobs:
       - checkout
       - run: npm run publish-win64
       - slack/status:
-          success_message: "Build Succeeded!"
-          failure_message: "Build failed!"
+          success_message: "Windows publish Succeeded!"
+          failure_message: "Windows publish failed!"
   publish-linux64:
     docker:
       - image: circleci/buildpack-deps:bionic
@@ -22,8 +22,8 @@ jobs:
       - checkout
       - run: npm run publish-linux64-circleci
       - slack/status:
-          success_message: "Build Succeeded!"
-          failure_message: "Build failed!"
+          success_message: "Linux publish Succeeded!"
+          failure_message: "Linux publish failed!"
   build-linux64:
     docker:
       - image: circleci/buildpack-deps:bionic
@@ -33,8 +33,8 @@ jobs:
       - checkout
       - run: npm run build-linux64-circleci
       - slack/status:
-          success_message: "Build Succeeded!"
-          failure_message: "Build failed!"
+          success_message: "Linux build Succeeded!"
+          failure_message: "Linux build failed!"
 workflows:
   version: 2
   windows64:
@@ -58,4 +58,3 @@ workflows:
             branches:
               only: /build.*/
 
-        
