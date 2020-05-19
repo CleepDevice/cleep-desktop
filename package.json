@@ -103,7 +103,8 @@
         },
         "publish": {
             "provider": "github",
-            "owner": "tangb"
+            "owner": "tangb",
+            "releaseType": "release"
         }
     }
 }
