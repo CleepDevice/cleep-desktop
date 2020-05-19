@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   win: circleci/windows@2.4.0
+  slack: circleci/slack@3.4.2
 jobs:
   publish-windows64:
     executor:
@@ -9,6 +10,9 @@ jobs:
     steps:
       - checkout
       - run: npm run publish-win64
+      - slack/status:
+        success_message: "Build Succeeded!"
+        failure_message: "Build failed!"
   publish-linux64:
     docker:
       - image: circleci/buildpack-deps:bionic
@@ -17,6 +21,20 @@ jobs:
       - run: sudo apt-get install -y nodejs
       - checkout
       - run: npm run publish-linux64-circleci
+      - slack/status:
+        success_message: "Build Succeeded!"
+        failure_message: "Build failed!"
+  build-linux64:
+    docker:
+      - image: circleci/buildpack-deps:bionic
+    steps:
+      - run: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+      - run: sudo apt-get install -y nodejs
+      - checkout
+      - run: npm run build-linux64-circleci
+      - slack/status:
+        success_message: "Build Succeeded!"
+        failure_message: "Build failed!"
 workflows:
   version: 2
   windows64:
@@ -35,3 +53,7 @@ workflows:
               only: /^v.*/
             branches:
               ignore: /.*/
+      - build-linux64:
+          filters:
+            branches:
+              only: /build.*/
