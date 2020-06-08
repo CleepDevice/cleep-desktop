@@ -5,6 +5,7 @@
     "main": "cleepdesktop.js",
     "scripts": {
         "start": "electron .",
+        "start-debug": "electron . --inspect-brk",
         "build-linux64": "scripts/build-linux64.sh",
         "build-linux64-circleci": "scripts/build-linux64-circleci.sh",
         "build-mac32": "scripts/build-mac32.sh",
@@ -36,8 +37,8 @@
     "license": "MIT",
     "devDependencies": {
         "devtron": "^1.4.0",
-        "electron": "8.3.0",
-        "electron-builder": "^22.6.1",
+        "electron": "9.0.2",
+        "electron-builder": "^22.7.0",
         "electron-notarize": "^0.2.1"
     },
     "dependencies": {
