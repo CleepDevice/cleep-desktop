@@ -1,6 +1,4 @@
 var Cleep = angular.module('Cleep');
-const { dialog } = require('electron').remote;
-var path = require('electron').remote.require('path');
 
 /**
  * Install controller

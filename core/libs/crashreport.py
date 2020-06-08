@@ -47,7 +47,7 @@ class CrashReport():
             self.extra['raspberrypi_memory'] = info.memory
             self.extra['raspberrypi_storage'] = info.storage
         except:
-            self.logger.debug('Application is not running on a reaspberry pi')
+            self.logger.debug('Application is not running on a raspberry pi')
         
         #create and configure raven client
         Sentry.init('https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385')
