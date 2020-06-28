@@ -29,7 +29,7 @@ Cleep.filter('hrDatetime', function($filter, settings) {
         else
         {
             //date format https://en.wikipedia.org/wiki/Date_format_by_country
-            var locale = settings.get('cleep.locale');
+            var locale = settings.getSync('cleep.locale');
             if( angular.isUndefined(shortYear) )
             {
                 if( locale=='en' )
@@ -369,12 +369,12 @@ var cleepController = function($rootScope, $state, cleepService, tasksPanelServi
             installService.init();
 
             //first run? open application help
-            if( settings.get('cleep.firstrun') )
+            if( settings.getSync('cleep.firstrun') )
             {
                 logger.debug('First run');
                 $timeout(function() {
                     self.openModal('emptyDialogController', 'js/help/helpdialog.html');
-                    settings.set('cleep.firstrun', false);
+                    settings.setSync('cleep.firstrun', false);
                 }, 500);
             }
         });

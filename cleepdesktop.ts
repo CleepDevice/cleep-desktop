@@ -1,4 +1,17 @@
-//default config
+import { Menu, app, BrowserWindow, dialog, screen, ipcMain, MenuItem, shell, DownloadItem } from 'electron';
+import { autoUpdater } from "electron-updater"
+import logger from 'electron-log';
+import { init } from '@sentry/electron';
+import settings from 'electron-settings';
+import * as path from 'path';
+import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
+import * as url from 'url';
+import { download as Download } from 'electron-dl';
+const DetectPort = require('detect-port');
+import * as fs from 'fs';
+import * as os from 'os';
+
+// default config
 const DEFAULT_RPCPORT = 5610;
 const DEFAULT_DEBUG = false;
 const DEFAULT_ISORASPBIAN = false;
@@ -11,88 +24,69 @@ const DEFAULT_CRASHREPORT = true;
 const DEFAULT_FIRSTRUN = true;
 const DEFAULT_DEVICES = {};
 
-//logger
-const logger = require('electron-log')
-global.logger = logger
+// logger
+(<any>global).logger = logger;
 
-//crash report
-const { init } = require('@sentry/electron');
-init({
-    dsn: 'https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385'
-})
-
-//electron
-const electron = require('electron');
-const {ipcMain} = electron;
-const {dialog} = electron;
-
-//electron updater
-const {autoUpdater} = require('electron-updater');
+// electron updater
 autoUpdater.logger = logger;
-//enable this flag to test pre release
-//autoUpdater.allowPrerelease = true;
-global.appUpdater = autoUpdater;
+// enable this flag to test pre release
+// autoUpdater.allowPrerelease = true;
+(<any>global).appUpdater = autoUpdater;
 
-//create default variables
-const app = electron.app;
-global.cleepdesktopInfos = {
+// create default variables
+(<any>global).cleepdesktopInfos = {
     version: app.getVersion(),
     changelog: null
 };
 app.name = 'CleepDesktop';
-const BrowserWindow = electron.BrowserWindow;
 const argv = process.argv.slice(1);
+(<any>global).settings = settings;
 
-//imports
-const Menu = require('electron').Menu;
-const shell = require('electron').shell;
-const settings = require('electron-settings');
-global.settings = settings;
-const path = require('path');
-const url = require('url');
-const detectPort = require('detect-port');
-const fs = require('fs');
-const {download} = require('electron-dl');
-const os = require('os');
-
-//variables
+// variables
 var corePath = path.join(__dirname, 'cleepdesktopcore.py');
-let isDev = fs.existsSync(corePath);
+let isDev = !fs.existsSync(corePath);
 logger.info('Check if ' + corePath + ' exists: ' + isDev);
-let coreProcess = null;
+let coreProcess: ChildProcessWithoutNullStreams = null;
 let coreDisabled = false;
 let allowQuit = true;
 let closingApplication = false;
 let coreStartupTime = 0;
-let downloadItem = null;
+let downloadItem: DownloadItem = null;
 let downloadFilename = '';
 
-//logger configuration
+// logger
 logger.transports.file.level = 'info';
 logger.transports.file.maxSize = 1 * 1024 * 1024;
 logger.transports.console.level = 'info';
 if( isDev ) {
-    //during development always enable debug on both console and log file
+    // during development always enable debug on both console and log file
     logger.transports.console.level = 'debug';
     logger.transports.file.level = 'debug';
     logger.info('Dev mode enabled');
-} else if( fs.existsSync(settings.file()) && settings.has('cleep.debug') && settings.get('cleep.debug') ) {
-    //release mode with debug enabled
+} else if( fs.existsSync(settings.file()) && settings.hasSync('cleep.debug') && settings.getSync('cleep.debug') ) {
+    // release mode with debug enabled
     logger.transports.console.level = 'debug';
     logger.transports.file.level = 'debug';
     logger.info('Debug mode enabled according to user preferences');
 } else {
-    //release mode without debug, enable only info on console and do not touch log file config
-    //logger.transports.console.level = 'info';
+    // release mode without debug, enable only info on console and do not touch log file config
+    // logger.transports.console.level = 'info';
+}
+
+// crash report
+if (!isDev) {
+    init({
+        dsn: 'https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385'
+    });
 }
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let mainWindow
-let splashScreen
+let mainWindow: BrowserWindow;
+let splashScreen: BrowserWindow;
 
 // Pause process during specified amount of seconds
-function pause(seconds) {
+function pause(seconds: number) {
     if (seconds<=0) {
         return;
     }
@@ -117,39 +111,39 @@ function fillChangelog() {
     }
 
     //load changelog
-    cleepdesktopInfos.changelog = fs.readFileSync(changelogPath, {encoding:'utf8'});
-    logger.debug('changelog: ' + cleepdesktopInfos.changelog);
+    (<any>global).cleepdesktopInfos.changelog = fs.readFileSync(changelogPath, {encoding:'utf8'});
+    logger.debug('changelog: ' + (<any>global).cleepdesktopInfos.changelog);
 };
 
 // Parse command line arguments
 function parseArgs() {
     for (let i = 0; i < argv.length; i++) {
         if( argv[i]==='--nocore' ) {
-            //disable core. Useful to debug python aside
+            // disable core. Useful to debug python aside
             coreDisabled = true;
         } else if( argv[i].match(/^--logfile=/) ) {
-            //log to file
+            // log to file
             logger.transports.file.level = false;
             var level = argv[i].split('=')[1];
             if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' ) {
                 logger.transports.file.level = level;
             } else if( level==='no' ) {
-                //disable log
+                // disable log
                 logger.transports.file.level = false;
             } else {
-                //invalid log level, set to default 'info'
+                // invalid log level, set to default 'info'
                 logger.transports.file.level = 'info';
             }
         } else if( argv[i].match(/^--logconsole=/) ) {
-            //log to console
+            // log to console
             var level = argv[i].split('=')[1];
             if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' ) {
                 logger.transports.console.level = level;
             } else if( level==='no' ) {
-                //disable log
+                // disable log
                 logger.transports.console.level = false;
             } else {
-                //invalid log level, set to default 'info'
+                // invalid log level, set to default 'info'
                 logger.transports.console.level = 'info';
             }
         }
@@ -162,26 +156,26 @@ function checkConfig() {
     let delay = 0;
 
     //cleep
-    settings.set('cleep.version', app.getVersion());
-    if( !settings.has('cleep.isoraspbian') ) {
-        settings.set('cleep.isoraspbian', DEFAULT_ISORASPBIAN);
+    settings.setSync('cleep.version', app.getVersion());
+    if( !settings.hasSync('cleep.isoraspbian') ) {
+        settings.setSync('cleep.isoraspbian', DEFAULT_ISORASPBIAN);
         delay = 2;
     }
-    if( !settings.has('cleep.isolocal') ) {
-        settings.set('cleep.isolocal', DEFAULT_ISOLOCAL);
+    if( !settings.hasSync('cleep.isolocal') ) {
+        settings.setSync('cleep.isolocal', DEFAULT_ISOLOCAL);
         delay = 2;
     }
-    if( !settings.has('cleep.locale') ) {
-        settings.set('cleep.locale', DEFAULT_LOCALE);
+    if( !settings.hasSync('cleep.locale') ) {
+        settings.setSync('cleep.locale', DEFAULT_LOCALE);
         delay = 2;
     }
-    if( !settings.has('cleep.debug') ) {
-        settings.set('cleep.debug', DEFAULT_DEBUG);
+    if( !settings.hasSync('cleep.debug') ) {
+        settings.setSync('cleep.debug', DEFAULT_DEBUG);
         delay = 2;
     }
-    settings.set('cleep.isdev', isDev);
-    if( !settings.has('cleep.crashreport') ) {
-        settings.set('cleep.crashreport', DEFAULT_CRASHREPORT);
+    settings.setSync('cleep.isdev', isDev);
+    if( !settings.hasSync('cleep.crashreport') ) {
+        settings.setSync('cleep.crashreport', DEFAULT_CRASHREPORT);
         delay = 2;
     }
 
@@ -192,34 +186,34 @@ function checkConfig() {
     }
 
     //remote
-    if( !settings.has('remote.rpcport') ) {
-        settings.set('remote.rpcport', DEFAULT_RPCPORT);
+    if( !settings.hasSync('remote.rpcport') ) {
+        settings.setSync('remote.rpcport', DEFAULT_RPCPORT);
         delay = 2;
     }
 
     //proxy
-    if( !settings.has('proxy.mode') ) {
-        settings.set('proxy.mode', DEFAULT_PROXYMODE);
+    if( !settings.hasSync('proxy.mode') ) {
+        settings.setSync('proxy.mode', DEFAULT_PROXYMODE);
         delay = 2;
     }
-    if( !settings.has('proxy.host') ) {
-        settings.set('proxy.host', DEFAULT_PROXYHOST);
+    if( !settings.hasSync('proxy.host') ) {
+        settings.setSync('proxy.host', DEFAULT_PROXYHOST);
         delay = 2;
     }
-    if( !settings.has('proxy.port') ) {
-        settings.set('proxy.port', DEFAULT_PROXYPORT);
+    if( !settings.hasSync('proxy.port') ) {
+        settings.setSync('proxy.port', DEFAULT_PROXYPORT);
         delay = 2;
     }
 
     //firstrun
-    if( !settings.has('cleep.firstrun') ) {
-        settings.set('cleep.firstrun', DEFAULT_FIRSTRUN);
+    if( !settings.hasSync('cleep.firstrun') ) {
+        settings.setSync('cleep.firstrun', DEFAULT_FIRSTRUN);
         delay = 2;
     }
 
     //devices
-    if( !settings.has('devices') ) {
-        settings.set('devices', DEFAULT_DEVICES);
+    if( !settings.hasSync('devices') ) {
+        settings.setSync('devices', DEFAULT_DEVICES);
         delay = 2;
     }
 
@@ -229,7 +223,7 @@ function checkConfig() {
 
 // Create application menu
 function createMenu() {
-    const subMenuFile = {
+    const subMenuFile = new MenuItem({
         label: 'File',
         submenu: [
             {
@@ -252,54 +246,38 @@ function createMenu() {
                 }
             }
         ]
-    };
+    });
 
-    const subMenuEdit = {
+    const subMenuEdit = new MenuItem({
         label: 'Edit',
         submenu: [
-            {
-                label: "Cut",
-                accelerator: "CmdOrCtrl+X",
-                selector: "cut:"
-            },
-            {
-                label: "Copy",
-                accelerator: "CmdOrCtrl+C",
-                selector: "copy:"
-            },
-            {
-                label: "Paste",
-                accelerator: "CmdOrCtrl+V",
-                selector: "paste:"
-            },
-            {
-                label: "Select All",
-                accelerator: "CmdOrCtrl+A",
-                selector: "selectAll:"
-            }
+            { role: 'cut' },
+            { role: "copy" },
+            { role: "paste" },
+            { role: "selectAll" }
         ]
-    };
+    });
 
-    const subMenuDevice = {
-        label: 'Device',
-        submenu: [
-            {
-                label: 'Install',
-                click: () => {
-                    mainWindow.webContents.send('openpage', 'installAuto');
-                }
-            }, {
-                type: 'separator'
-            }, {
-                label: 'Monitoring',
-                click: () => {
-                    mainWindow.webContents.send('openpage', 'monitoring');
-                }
-            }
-        ]
-    };
+    // const subMenuDevice = new MenuItem({
+    //     label: 'Device',
+    //     submenu: [
+    //         {
+    //             label: 'Install',
+    //             click: () => {
+    //                 mainWindow.webContents.send('openpage', 'installAuto');
+    //             }
+    //         }, {
+    //             type: 'separator'
+    //         }, {
+    //             label: 'Monitoring',
+    //             click: () => {
+    //                 mainWindow.webContents.send('openpage', 'monitoring');
+    //             }
+    //         }
+    //     ]
+    // });
 
-    const subMenuHelp = {
+    const subMenuHelp = new MenuItem({
         label: 'Help',
         submenu: [
             {
@@ -323,7 +301,7 @@ function createMenu() {
                 }
             }
         ]
-    };
+    });
 
     if( process.platform==='darwin' ) {
         const menuTemplate = [subMenuFile, subMenuEdit, subMenuHelp];
@@ -361,7 +339,9 @@ function createSplashScreen() {
     }), {"extraHeaders" : "pragma: no-cache\n"})
 
     //handle splashscreen events
-    splashScreen.on('closed', () => splashScreen = null);
+    splashScreen.on('closed', () => {
+        splashScreen = null
+    });
     splashScreen.webContents.on('did-finish-load', () => {
         splashScreen.show();
     });
@@ -391,7 +371,7 @@ function createWindow () {
     });
 
     // close splashscreen when loaded
-    mainWindow.once('ready-to-show', function(e) {
+    mainWindow.once('ready-to-show', function() {
         if( splashScreen ) {
             setTimeout( function() {
                 if (splashScreen) {
@@ -463,7 +443,7 @@ function createWindow () {
 };
 
 // Launch core python application
-function launchCore(rpcport) {
+function launchCore(rpcport: number) {
     if( coreDisabled ) {
         logger.debug('Core disabled');
         return;
@@ -503,10 +483,10 @@ function launchCore(rpcport) {
         }
 
         //launch command line
-        let debug = settings.has('cleep.debug') && settings.get('cleep.debug') ? 'debug' : 'release';
+        let debug = settings.hasSync('cleep.debug') && settings.getSync('cleep.debug') ? 'debug' : 'release';
         logger.debug('Core commandline: '+commandline+' ' + rpcport + ' ' + cachePath + ' ' + configPath + ' ' + configFilename + ' ' + debug);
         coreStartupTime = Math.round(Date.now()/1000);
-        coreProcess = require('child_process').spawn(commandline, [rpcport, cachePath, configPath, configFilename, 'release', 'false']);
+        coreProcess = spawn(commandline, [`${rpcport}`, cachePath, configPath, configFilename, 'release', 'false']);
 
     } else {
         //launch dev
@@ -575,7 +555,7 @@ function launchCore(rpcport) {
 app.on('ready', function() {
     logger.info('===== CleepDesktop started =====');
     logger.info('Platform: ' + process.platform);
-    var display = electron.screen.getPrimaryDisplay();
+    var display = screen.getPrimaryDisplay();
     logger.info('Display: ' + display.size.width + 'x' + display.size.height);
     logger.info('Version: ' + app.getVersion());
 
@@ -595,7 +575,7 @@ app.on('ready', function() {
         //use static rpc port in development mode
         
         //save rpcport to config to be used in js app
-        settings.set('remote.rpcport', DEFAULT_RPCPORT);
+        settings.setSync('remote.rpcport', DEFAULT_RPCPORT);
 
         //launch application
         createWindow();
@@ -603,14 +583,14 @@ app.on('ready', function() {
         launchCore(DEFAULT_RPCPORT);
     } else {
         //detect available port
-        detectPort(null, (err, rpcport) => {
+        DetectPort(null, (err: any, rpcport: number) => {
             if( err )
             {
                 logger.error('Error detecting available port:', err);
             }
 
             //save rpcport to config to be used in js app
-            settings.set('remote.rpcport', rpcport);
+            settings.setSync('remote.rpcport', rpcport);
 
             //launch application
             createWindow();
@@ -659,9 +639,9 @@ ipcMain.on('download-file', (event, args) => {
     downloadItem = undefined;
 
     //launch download
-    download(BrowserWindow.getFocusedWindow(), args.url, {
+    Download(BrowserWindow.getFocusedWindow(), args.url, {
         saveAs: true,
-        onStarted: function(item) {
+        onStarted: function(item: DownloadItem) {
             downloadItem = item;
             downloadFilename = item.getFilename();
         },

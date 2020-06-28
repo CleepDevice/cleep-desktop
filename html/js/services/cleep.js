@@ -13,7 +13,7 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
 
     //set members
     self.__ws = null;
-    self.port = settings.get('remote.rpcport');
+    self.port = settings.getSync('remote.rpcport');
     self.urlCommand = 'http://localhost:' + self.port + '/command';
 
     /**

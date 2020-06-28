@@ -1,11 +1,13 @@
 {
-    "name": "CleepDesktop",
+    "name": "cleepdesktop",
     "version": "0.1.0",
     "description": "Desktop application to manage your Cleep devices",
-    "main": "cleepdesktop.js",
+    "main": "cleepdesktop.ts",
     "scripts": {
-        "start": "electron .",
-        "start-debug": "electron . --inspect-brk",
+        "build": "tsc",
+        "lint": "tslint -c tslint.json -p tsconfig.json",
+        "start": "npm run build && electron ./dist/cleepdesktop.js",
+        "start-debug": "npm run build && electron ./dist/cleepdesktop.js --inspect-brk",
         "build-linux64": "scripts/build-linux64.sh",
         "build-linux64-circleci": "scripts/build-linux64-circleci.sh",
         "build-mac32": "scripts/build-mac32.sh",
@@ -37,17 +39,19 @@
     "license": "MIT",
     "devDependencies": {
         "devtron": "^1.4.0",
-        "electron": "9.0.2",
+        "electron": "^9.0.5",
         "electron-builder": "^22.7.0",
         "electron-notarize": "^0.2.1"
     },
     "dependencies": {
         "@sentry/electron": "^1.3.0",
         "detect-port": "^1.3.0",
-        "electron-dl": "^1.14.0",
-        "electron-log": "^3.0.9",
-        "electron-settings": "^3.2.0",
-        "electron-updater": "^4.3.1"
+        "electron-dl": "^3.0.1",
+        "electron-log": "^4.2.2",
+        "electron-settings": "^4.0.1",
+        "electron-updater": "^4.3.1",
+        "tslint": "^6.1.2",
+        "typescript": "^3.9.5"
     },
     "build": {
         "appId": "com.cleep.cleepdesktop",
