@@ -7,6 +7,8 @@
  * It implements command sending with response (send() function)
  * Some commands shortcuts are also available (getConfig, setConfig...)
  */
+// const path = require("path");
+// const { context } = require(path.resolve('./context'));
 var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, settings) {
 
     var self = this;
@@ -27,6 +29,7 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
             self.__ws = $websocket('ws://localhost:'+self.port+'/cleepws', null, {reconnectIfNotNormalClose: true});
             self.__ws.onMessage(self.__websocketReceive);
             self.__ws.onClose(function() {
+                console.log('CONTEXT-WS', context);
                 logger.debug('Websocket closed');
             });
             self.__ws.onOpen(function() {

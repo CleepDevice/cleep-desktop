@@ -1,23 +1,27 @@
 const electron = require('electron');
-const {remote, ipcRenderer} = electron;
-const cleepdesktopInfos = remote.getGlobal('cleepdesktopInfos');
-const logger = remote.getGlobal('logger');
-const appUpdater = remote.getGlobal('appUpdater');
-const settings = remote.getGlobal('settings');
+const path = require("path");
+const { ipcRenderer } = electron;
+const { context } = require(path.resolve('./context'));
+console.log('CONTEXT', context);
+const { logger } = require(path.resolve('./log'));
+// const appUpdater = ipcRenderer.sendSync('get-app-updater');
+// const { updater } = require(path.resolve('./update'));
+const { settings } = require(path.resolve('./config'));
+// const settings = ipcRenderer.sendSync('get-settings');
 let cleepUi = {
     openPage: null,
     openModal: null
 };
 
-//declare angular module
+// declare angular module
 var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router', 'ngSanitize', 'ngWebSocket']);
 
-//inject electron values
+// inject electron values
 Cleep.value('logger', logger)
-    .value('appUpdater', appUpdater)
     .value('settings', settings)
-    .value('cleepdesktopInfos', cleepdesktopInfos)
-    .value('cleepUi', cleepUi);
+    .value('cleepUi', cleepUi)
+    .value('appUpdater', {})
+    .value('cleepdesktopInfos', context);
 
 /**
  * Timestamp to human readable string
@@ -29,7 +33,7 @@ Cleep.filter('hrDatetime', function($filter, settings) {
         else
         {
             //date format https://en.wikipedia.org/wiki/Date_format_by_country
-            var locale = settings.get('cleep.locale');
+            var locale = settings.getSync('cleep.locale');
             if( angular.isUndefined(shortYear) )
             {
                 if( locale=='en' )
@@ -357,9 +361,9 @@ var cleepController = function($rootScope, $state, cleepService, tasksPanelServi
         .then(function() {
             logger.debug('Websocket connected, init angular stuff');
 
-            //init update service
+            // init update service
             updateService.init();
-            //and check for updates (defer it to make almost sure core is launched)
+            // and check for updates (defer it to make almost sure core is launched)
             updateService.checkForUpdates();
 
             //init devices service
@@ -369,12 +373,12 @@ var cleepController = function($rootScope, $state, cleepService, tasksPanelServi
             installService.init();
 
             //first run? open application help
-            if( settings.get('cleep.firstrun') )
+            if( settings.getSync('cleep.firstrun') )
             {
                 logger.debug('First run');
                 $timeout(function() {
                     self.openModal('emptyDialogController', 'js/help/helpdialog.html');
-                    settings.set('cleep.firstrun', false);
+                    settings.setSync('cleep.firstrun', false);
                 }, 500);
             }
         });
