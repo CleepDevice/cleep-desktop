@@ -12,13 +12,13 @@ class CleepWifiConf(Config):
     Helper class to read and write cleepwifi.conf
     """
 
-    CONF = u'/boot/cleepwifi.conf'
+    CONF = '/boot/cleepwifi.conf'
 
     def __init__(self):
         """
         Constructor
         """
-        Config.__init__(self, self.CONF, u'', False)
+        Config.__init__(self, self.CONF, '', False)
 
         #members
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -40,7 +40,7 @@ class CleepWifiConf(Config):
             content = self.get_content()[0]
             return json.loads(content)
         except:
-            self.logger.exception(u'Unable to load %s:' % self.CONF)
+            self.logger.exception('Unable to load %s:' % self.CONF)
 
         return None
 
@@ -62,10 +62,10 @@ class CleepWifiConf(Config):
             password = converters.wpa_passphrase(network, password)
         
         config = {
-            u'network': network,
-            u'password': password,
-            u'encryption': encryption,
-            u'hidden': hidden
+            'network': network,
+            'password': password,
+            'encryption': encryption,
+            'hidden': hidden
         }
 
         return json.dumps(config)

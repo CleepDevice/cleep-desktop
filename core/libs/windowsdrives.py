@@ -181,9 +181,9 @@ class WindowsDrives():
         for device in devices.keys():
             devices[device]['temp_displayname'].sort()
             if len(devices[device]['temp_displayname'])==0:
-                devices[device]['displayName'] = u'no partition'
+                devices[device]['displayName'] = 'no partition'
             else:
-                devices[device]['displayName'] = u', '.join(devices[device]['temp_displayname'])
+                devices[device]['displayName'] = ', '.join(devices[device]['temp_displayname'])
             del devices[device]['temp_displayname']
             del devices[device]['temp_partitions']
             del devices[device]['temp_device']

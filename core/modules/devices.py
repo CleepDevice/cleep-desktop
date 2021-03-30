@@ -94,7 +94,7 @@ class Devices(CleepDesktopModule):
             dict: dict of headers (only string supported)
         """
         macs = self.external_bus.get_mac_addresses()
-        #TODO handle port and ssl when security implemented
+        # TODO handle port and ssl when security implemented
         headers = {
             'version': VERSION,
             'hostname': self.CLEEPDESKTOP_HOSTNAME,
@@ -118,14 +118,14 @@ class Devices(CleepDesktopModule):
         Returns:
             dict: dict with parsed values
         """
-        if u'port' in headers.keys():
-            headers[u'port'] = int(headers[u'port'])
-        if u'ssl' in headers.keys():
-            headers[u'ssl'] = bool(eval(headers[u'ssl']))
-        if u'cleepdesktop' in headers.keys():
-            headers[u'cleepdesktop'] = bool(eval(headers[u'cleepdesktop']))
-        if u'macs' in headers.keys():
-            headers[u'macs'] = json.loads(headers[u'macs'])
+        if 'port' in headers.keys():
+            headers['port'] = int(headers['port'])
+        if 'ssl' in headers.keys():
+            headers['ssl'] = bool(eval(headers['ssl']))
+        if 'cleepdesktop' in headers.keys():
+            headers['cleepdesktop'] = bool(eval(headers['cleepdesktop']))
+        if 'macs' in headers.keys():
+            headers['macs'] = json.loads(headers['macs'])
 
         return headers
 

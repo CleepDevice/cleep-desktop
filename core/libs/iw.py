@@ -24,7 +24,7 @@ class Iw(AdvancedConsole):
         AdvancedConsole.__init__(self)
 
         #members
-        self._command = u'/sbin/iw dev'
+        self._command = '/sbin/iw dev'
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
         self.connections = {}
@@ -37,7 +37,7 @@ class Iw(AdvancedConsole):
         Return:
             bool: True is installed
         """
-        return os.path.exists(u'/sbin/iw')
+        return os.path.exists('/sbin/iw')
 
     def __refresh(self):
         """
@@ -54,22 +54,22 @@ class Iw(AdvancedConsole):
             return
     
         entries = {}
-        current_entry = None
+        current_entry = {}
         for group, groups in results:
             #filter non values
             groups = list(filter(None, groups))
         
-            if group.startswith(u'ssid') and current_entry is not None:
-                current_entry[u'network'] = groups[0]
-            elif group.startswith(u'Interface'):
+            if group.startswith('ssid') and current_entry:
+                current_entry['network'] = groups[0]
+            elif group.startswith('Interface'):
                 current_entry = {
-                    u'interface': groups[0],
-                    u'network': None
+                    'interface': groups[0],
+                    'network': None
                 }
                 entries[groups[0]] = current_entry
 
-            elif group.startswith(u'ssid') and current_entry is not None:
-                current_entry[u'network'] = groups[0]
+            elif group.startswith('ssid') and current_entry:
+                current_entry['network'] = groups[0]
 
         #save connections
         self.connections = entries

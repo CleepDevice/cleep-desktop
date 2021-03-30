@@ -26,7 +26,7 @@ class Nmcli(AdvancedConsole):
 
     CACHE_DURATION = 30.0
     MAX_RETRY = 30
-    NO_SCAN_RESULTS = u'No scan results'
+    NO_SCAN_RESULTS = 'No scan results'
 
     TYPE_UNKNOWN = 'unknown'
     TYPE_WIFI = 'wifi'
@@ -42,8 +42,8 @@ class Nmcli(AdvancedConsole):
         AdvancedConsole.__init__(self)
 
         #members
-        self._command_wifi_networks = u'/usr/bin/nmcli -f SSID,SIGNAL,SECURITY dev wifi list'
-        self._command_interfaces = u'/usr/bin/nmcli -f TYPE,STATE,DEVICE device'
+        self._command_wifi_networks = '/usr/bin/nmcli -f SSID,SIGNAL,SECURITY dev wifi list'
+        self._command_interfaces = '/usr/bin/nmcli -f TYPE,STATE,DEVICE device'
         self.timestamp = None
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
@@ -59,7 +59,7 @@ class Nmcli(AdvancedConsole):
         results = self.find(self._command_wifi_networks, r'^(.*)\s+(\d+)\s+(.*)$', timeout=5.0)
 
         entries = {}
-        for group, groups in results:
+        for _, groups in results:
             #filter None values
             groups = list(filter(None, groups))
             #self.logger.debug(groups)
@@ -100,7 +100,7 @@ class Nmcli(AdvancedConsole):
         """
         Return True if command is installed
         """
-        return os.path.exists(u'/usr/bin/nmcli')
+        return os.path.exists('/usr/bin/nmcli')
 
     def get_interfaces(self):
         """
@@ -124,7 +124,7 @@ class Nmcli(AdvancedConsole):
             return {}
 
         entries = {}
-        for group, groups in results:
+        for _, groups in results:
             #filter None values
             groups = list(filter(None, groups))
             #self.logger.debug(groups)

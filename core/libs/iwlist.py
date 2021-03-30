@@ -26,7 +26,7 @@ class Iwlist(AdvancedConsole):
 
     CACHE_DURATION = 30.0
     MAX_RETRY = 30
-    NO_SCAN_RESULTS = u'No scan results'
+    NO_SCAN_RESULTS = 'No scan results'
 
     def __init__(self):
         """
@@ -35,7 +35,7 @@ class Iwlist(AdvancedConsole):
         AdvancedConsole.__init__(self)
 
         #members
-        self._command = u'/sbin/iwlist %s scan last'
+        self._command = '/sbin/iwlist %s scan last'
         self.timestamp = None
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
@@ -68,7 +68,7 @@ class Iwlist(AdvancedConsole):
             self.error = True
             return None
 
-        current_entry = None
+        current_entry = {}
         entries = {}
         for group, groups in results:
             #filter None values
@@ -79,57 +79,57 @@ class Iwlist(AdvancedConsole):
                 #need to retry
                 return False
 
-            if group.startswith(u'Cell'):
+            if group.startswith('Cell'):
                 current_entry = {
-                    u'interface': interface,
-                    u'network': None,
-                    u'encryption': None,
-                    u'signallevel': 0,
-                    u'wpa2': False,
-                    u'wpa': False,
-                    u'encryption_key': None
+                    'interface': interface,
+                    'network': None,
+                    'encryption': None,
+                    'signallevel': 0,
+                    'wpa2': False,
+                    'wpa': False,
+                    'encryption_key': None
                 }
-            elif current_entry is None or len(groups)==0:
+            elif not current_entry or len(groups)==0:
                 continue
-            elif group.startswith(u'ESSID'):
-                current_entry[u'network'] = groups[0]
+            elif group.startswith('ESSID'):
+                current_entry['network'] = groups[0]
                 entries[groups[0]] = current_entry
-            elif group.startswith(u'IE') and current_entry is not None and groups[0].lower().find(u'wpa2')>=0:
-                current_entry[u'wpa2'] = True
-            elif group.startswith(u'IE') and current_entry is not None and groups[0].lower().find(u'wpa')>=0:
-                current_entry[u'wpa'] = True
-            elif group.startswith(u'Encryption key') and current_entry is not None:
-                current_entry[u'encryption_key'] = groups[0]
-            elif group.startswith(u'Signal level') and current_entry is not None:
+            elif group.startswith('IE') and current_entry is not None and groups[0].lower().find('wpa2')>=0:
+                current_entry['wpa2'] = True
+            elif group.startswith('IE') and current_entry is not None and groups[0].lower().find('wpa')>=0:
+                current_entry['wpa'] = True
+            elif group.startswith('Encryption key') and current_entry is not None:
+                current_entry['encryption_key'] = groups[0]
+            elif group.startswith('Signal level') and current_entry is not None:
                 if groups[0].isdigit():
                     try:
-                        current_entry[u'signallevel'] = float(groups[0])
+                        current_entry['signallevel'] = float(groups[0])
                     except:
-                        current_entry[u'signallevel'] = 0
-                elif groups[0].startswith(u'-'):
+                        current_entry['signallevel'] = 0
+                elif groups[0].startswith('-'):
                     try:
-                        current_entry[u'signallevel'] = Converters.dbm_to_percent(int(groups[0]))
+                        current_entry['signallevel'] = Converters.dbm_to_percent(int(groups[0]))
                     except:
-                        current_entry[u'signallevel'] = 0
+                        current_entry['signallevel'] = 0
                 else:
-                    current_entry[u'signallevel'] = groups[0]
+                    current_entry['signallevel'] = groups[0]
         self.logger.debug('entries: %s' % entries)
 
         #compute encryption value
         for network in entries:
-            if entries[network][u'wpa2']:
-                entries[network][u'encryption'] = WpaSupplicantConf.ENCRYPTION_TYPE_WPA2
-            elif entries[network][u'wpa']:
-                entries[network][u'encryption'] = WpaSupplicantConf.ENCRYPTION_TYPE_WPA
-            elif entries[network][u'encryption_key'].lower()=='on':
-                entries[network][u'encryption'] = WpaSupplicantConf.ENCRYPTION_TYPE_WEP
-            elif entries[network][u'encryption_key'].lower()=='off':
-                entries[network][u'encryption'] = WpaSupplicantConf.ENCRYPTION_TYPE_UNSECURED
+            if entries[network]['wpa2']:
+                entries[network]['encryption'] = WpaSupplicantConf.ENCRYPTION_TYPE_WPA2
+            elif entries[network]['wpa']:
+                entries[network]['encryption'] = WpaSupplicantConf.ENCRYPTION_TYPE_WPA
+            elif entries[network]['encryption_key'].lower()=='on':
+                entries[network]['encryption'] = WpaSupplicantConf.ENCRYPTION_TYPE_WEP
+            elif entries[network]['encryption_key'].lower()=='off':
+                entries[network]['encryption'] = WpaSupplicantConf.ENCRYPTION_TYPE_UNSECURED
             else:
-                entries[network][u'encryption'] = WpaSupplicantConf.ENCRYPTION_TYPE_UNKNOWN
-            del entries[network][u'wpa2']
-            del entries[network][u'wpa']
-            del entries[network][u'encryption_key']
+                entries[network]['encryption'] = WpaSupplicantConf.ENCRYPTION_TYPE_UNKNOWN
+            del entries[network]['wpa2']
+            del entries[network]['wpa']
+            del entries[network]['encryption_key']
         
         #save networks and error
         self.networks = entries
@@ -144,7 +144,7 @@ class Iwlist(AdvancedConsole):
         """
         Return True if command is installed
         """
-        return os.path.exists(u'/sbin/iwlist')
+        return os.path.exists('/sbin/iwlist')
 
     def has_error(self):
         """

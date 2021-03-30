@@ -86,7 +86,7 @@ class CrashReport():
         This function is binded to system exception hook to be triggered automatically when uncatched exception occured
         /!\ Do not use this function in your code, prefer using report_exception() function instead of it.
         """
-        message = u'\n'.join(traceback.format_tb(tb))
+        message = '\n'.join(traceback.format_tb(tb))
         message += '\n%s %s' % (str(type), value)
         self.logger.fatal(message)
         if self.enabled:

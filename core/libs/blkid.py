@@ -26,11 +26,11 @@ class Blkid():
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             return
 
-        res = self.console.command(u'/sbin/blkid')
-        if not res[u'error'] and not res[u'killed']:
+        res = self.console.command('/sbin/blkid')
+        if not res['error'] and not res['killed']:
             #parse data
-            matches = re.finditer(r'^(\/dev\/.*?):.*\s+UUID=\"(.*?)\"\s+.*$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
-            for matchNum, match in enumerate(matches):
+            matches = re.finditer(r'^(\/dev\/.*?):.*\s+UUID=\"(.*?)\"\s+.*$', '\n'.join(res['stdout']), re.UNICODE | re.MULTILINE)
+            for _, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==2:
                     self.devices[groups[0]] = groups[1]

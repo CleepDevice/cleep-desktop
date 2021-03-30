@@ -452,7 +452,7 @@ class Install(CleepDesktopModule):
 
         #fill flashable drives list
         for drive in drives:
-            if drives[drive][u'removable']:
+            if drives[drive]['removable']:
                 #save entry
                 flashables.append({
                     'desc': '%s' % drives[drive]['name'],
@@ -828,7 +828,7 @@ class Install(CleepDesktopModule):
         Flash drive
         """
         if self.console is not None:
-            raise Exception(u'Flashing operation is already running')
+            raise Exception('Flashing operation is already running')
 
         self.status = self.STATUS_FLASHING
         try:

@@ -9,7 +9,7 @@ import json
 from threading import Timer, Thread
 import time
 
-__all__ = [u'Task', u'BackgroundTask', u'CountTask']
+__all__ = ['Task', 'BackgroundTask', 'CountTask']
 
 class Task:
     """

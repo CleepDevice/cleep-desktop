@@ -15,12 +15,12 @@ class Config():
      - to set entry
      - to load and save file content
      - to backup and restore configuration file
-    It also ensures to read file content as unicode
+    It also ensures to read file content as str
     """
 
-    MODE_WRITE = u'w'
-    MODE_READ = u'r'
-    MODE_APPEND = u'a'
+    MODE_WRITE = 'w'
+    MODE_READ = 'r'
+    MODE_APPEND = 'a'
 
     def __init__(self, path, comment_tag, backup=True):
         """
@@ -75,7 +75,7 @@ class Config():
         filename = os.path.split(base)[1]
         return os.path.join(base_path, '%s.backup%s' % (filename, ext))
 
-    def _open(self, mode=u'r'):
+    def _open(self, mode='r'):
         """
         Open config file
 
@@ -86,9 +86,9 @@ class Config():
             Exception if file doesn't exist
         """
         if not os.path.exists(self.path):
-            raise Exception(u'%s file does not exist' % self.path)
+            raise Exception('%s file does not exist' % self.path)
 
-        self.__fd = io.open(self.path, mode, encoding=u'utf-8')
+        self.__fd = io.open(self.path, mode, encoding='utf-8')
         return self.__fd
 
     def _close(self):
@@ -149,9 +149,9 @@ class Config():
 
         #concat content list if options singleline specified (DOTALL)
         #if re.DOTALL & options:
-        #    content = u''.join(content)
+        #    content = ''.join(content)
 
-        for matchNum, match in enumerate(matches):
+        for _, match in enumerate(matches):
             group = match.group().strip()
             if len(group)>0 and len(match.groups())>0:
                 #results[group] = match.groups()
@@ -178,7 +178,7 @@ class Config():
         results = []
         matches = re.finditer(pattern, content, options)
 
-        for matchNum, match in enumerate(matches):
+        for _, match in enumerate(matches):
             group = match.group().strip()
             if len(group)>0 and len(match.groups())>0:
                 #results[group] = match.groups()
@@ -221,7 +221,7 @@ class Config():
 
         if found:
             #write config file
-            return self._write(u''.join(lines))
+            return self._write(''.join(lines))
 
         return False
 
@@ -253,13 +253,13 @@ class Config():
         for line in lines:
             if line.strip()==comment.strip():
                 found = True
-                lines[index] = u'%s%s' % (self.comment_tag, lines[index])
+                lines[index] = '%s%s' % (self.comment_tag, lines[index])
                 break
             index += 1
 
         if found:
             #write config file
-            return self._write(u''.join(lines))
+            return self._write(''.join(lines))
 
         return False
 
@@ -274,8 +274,8 @@ class Config():
             bool: True if content removed
         """
         #check params
-        if not isinstance(content, unicode):
-            raise Exception('Content parameter must be unicode')
+        if not isinstance(content, str):
+            raise Exception('Content parameter must be str')
 
         fd = self._open()
         lines = fd.read()
@@ -288,7 +288,7 @@ class Config():
 
         if before!=after:
             #write config file
-            return self._write(u''.join(lines))
+            return self._write(''.join(lines))
             
         return False
 
@@ -328,7 +328,7 @@ class Config():
 
         if len(indexes)>0:
             #write config file
-            return self._write(u''.join(lines))
+            return self._write(''.join(lines))
 
         return False
 
@@ -367,7 +367,7 @@ class Config():
         #write config file
         if len(indexes)>0:
             #write config file
-            if self._write(u''.join(lines)):
+            if self._write(''.join(lines)):
                 return count
             else:
                 return 0
@@ -423,7 +423,7 @@ class Config():
         #write config file
         if len(indexes)>0:
             #write config file
-            if self._write(u''.join(lines)):
+            if self._write(''.join(lines)):
                 return count
             else:
                 return 0
@@ -451,12 +451,12 @@ class Config():
 
         #add new line
         if len(lines[len(lines)-1])!=0:
-            content.append(u'\n')
+            content.append('\n')
         for line in lines:
             content.append(line)
 
         #write config file
-        return self._write(u''.join(content))
+        return self._write(''.join(content))
 
     def add(self, content):
         """
@@ -469,7 +469,7 @@ class Config():
             bool: True if content added
         """
         #check params
-        if not isinstance(content, unicode):
+        if not isinstance(content, str):
             raise Exception('Lines parameter must be list of string')
 
         #read content
@@ -508,6 +508,6 @@ class Config():
         self._close()
 
         #print lines
-        print(u''.join(lines))
+        print(''.join(lines))
 
 

@@ -46,33 +46,33 @@ class Udevadm():
         if device not in self.devices:
             self.devices[device] = self.TYPE_UNKNOWN
 
-        res = self.console.command(u'/bin/udevadm info --query=property --name="%s"' % device)
-        if not res[u'error'] and not res[u'killed']:
+        res = self.console.command('/bin/udevadm info --query=property --name="%s"' % device)
+        if not res['error'] and not res['killed']:
             #parse data
-            matches = re.finditer(r'^(?:(ID_DRIVE_FLASH_SD)=(\d)|(ID_DRIVE_MEDIA_FLASH_SD)=(\d)|(ID_BUS)=(.*?)|(ID_USB_DRIVER)=(.*?)|(ID_ATA)=(\d))$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
-            for matchNum, match in enumerate(matches):
+            matches = re.finditer(r'^(?:(ID_DRIVE_FLASH_SD)=(\d)|(ID_DRIVE_MEDIA_FLASH_SD)=(\d)|(ID_BUS)=(.*?)|(ID_USB_DRIVER)=(.*?)|(ID_ATA)=(\d))$', '\n'.join(res['stdout']), re.UNICODE | re.MULTILINE)
+            for _, match in enumerate(matches):
                 #get values and filter None values
                 groups = match.groups()
                 groups = list(filter(None, groups))
 
                 if len(groups)==2:
-                    if groups[0]==u'ID_BUS' and groups[1]=='usb':
+                    if groups[0]=='ID_BUS' and groups[1]=='usb':
                         #usb stuff (usb stick, usb card reader...)
                         self.devices[device] = self.TYPE_USB
                         break
-                    elif groups[0]==u'ID_DRIVE_FLASH_SD' and groups[1]=='1':
+                    elif groups[0]=='ID_DRIVE_FLASH_SD' and groups[1]=='1':
                         #sdcard
                         self.devices[device] = self.TYPE_SDCARD
                         break
-                    elif groups[0]==u'ID_DRIVE_MEDIA_FLASH_SD' and groups[1]=='1':
+                    elif groups[0]=='ID_DRIVE_MEDIA_FLASH_SD' and groups[1]=='1':
                         #sdcard
                         self.devices[device] = self.TYPE_SDCARD
                         break
-                    elif groups[0]==u'ID_BUS' and groups[1]=='ata':
+                    elif groups[0]=='ID_BUS' and groups[1]=='ata':
                         #ata device (SATA, PATA)
                         self.devices[device] = self.TYPE_ATA
                         break
-                    elif groups[0]==u'ID_ATA':
+                    elif groups[0]=='ID_ATA':
                         #ata device (SATA, PATA)
                         self.devices[device] = self.TYPE_ATA
                         break

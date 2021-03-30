@@ -1,4 +1,4 @@
-//default config
+// default config
 const DEFAULT_RPCPORT = 5610;
 const DEFAULT_DEBUG = false;
 const DEFAULT_ISORASPBIAN = false;
@@ -11,41 +11,29 @@ const DEFAULT_CRASHREPORT = true;
 const DEFAULT_FIRSTRUN = true;
 const DEFAULT_DEVICES = {};
 
-//logger
+// logger
 const logger = require('electron-log')
 global.logger = logger
 
-//crash report
-const { init } = require('@sentry/electron');
-init({
-    dsn: 'https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385'
-})
+// electron
+const { app, ipcMain, dialog, BrowserWindow, Menu, shell, screen } = require('electron')
 
-//electron
-const electron = require('electron');
-const {ipcMain} = electron;
-const {dialog} = electron;
-
-//electron updater
+// electron updater
 const {autoUpdater} = require('electron-updater');
 autoUpdater.logger = logger;
-//enable this flag to test pre release
-//autoUpdater.allowPrerelease = true;
+// enable this flag to test pre release
+// autoUpdater.allowPrerelease = true;
 global.appUpdater = autoUpdater;
 
-//create default variables
-const app = electron.app;
+// create default variables
 global.cleepdesktopInfos = {
     version: app.getVersion(),
     changelog: null
 };
 app.name = 'CleepDesktop';
-const BrowserWindow = electron.BrowserWindow;
 const argv = process.argv.slice(1);
 
-//imports
-const Menu = require('electron').Menu;
-const shell = require('electron').shell;
+// imports
 const settings = require('electron-settings');
 global.settings = settings;
 const path = require('path');
@@ -54,11 +42,21 @@ const detectPort = require('detect-port');
 const fs = require('fs');
 const {download} = require('electron-dl');
 const os = require('os');
+const corePath = path.join(__dirname, 'cleepdesktopcore.py');
+const isDev = fs.existsSync(corePath);
+logger.debug('Core path "' + corePath + '" exists? ' + isDev);
+logger.debug('Settings filepath: "' + settings.file() + '"');
 
-//variables
-var corePath = path.join(__dirname, 'cleepdesktopcore.py');
-let isDev = fs.existsSync(corePath);
-logger.info('Check if ' + corePath + ' exists: ' + isDev);
+// crash report
+if (!isDev) {
+    logger.debug('Enable crash report')
+    const { init } = require('@sentry/electron');
+    init({
+        dsn: 'https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385'
+    })
+}
+
+// variables
 let coreProcess = null;
 let coreDisabled = false;
 let allowQuit = true;
@@ -67,23 +65,23 @@ let coreStartupTime = 0;
 let downloadItem = null;
 let downloadFilename = '';
 
-//logger configuration
+// logger configuration
 logger.transports.file.level = 'info';
 logger.transports.file.maxSize = 1 * 1024 * 1024;
 logger.transports.console.level = 'info';
 if( isDev ) {
-    //during development always enable debug on both console and log file
+    // during development always enable debug on both console and log file
     logger.transports.console.level = 'debug';
     logger.transports.file.level = 'debug';
     logger.info('Dev mode enabled');
-} else if( fs.existsSync(settings.file()) && settings.has('cleep.debug') && settings.get('cleep.debug') ) {
+} else if( fs.existsSync(settings.file()) && settings.hasSync('cleep.debug') && settings.getSync('cleep.debug') ) {
     //release mode with debug enabled
     logger.transports.console.level = 'debug';
     logger.transports.file.level = 'debug';
     logger.info('Debug mode enabled according to user preferences');
 } else {
-    //release mode without debug, enable only info on console and do not touch log file config
-    //logger.transports.console.level = 'info';
+    // release mode without debug, enable only info on console and do not touch log file config
+    // logger.transports.console.level = 'info';
 }
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -91,143 +89,111 @@ if( isDev ) {
 let mainWindow
 let splashScreen
 
-// Pause process during specified amount of seconds
-function pause(seconds) {
-    if (seconds<=0) {
-        return;
-    }
-    var now = new Date();
-    var exitTime = now.getTime() + seconds * 1000;
-    while (true) {
-        now = new Date();
-        if (now.getTime() > exitTime)
-            return;
-    }
-}
-
-// Fill changelog content in cleepdesktopInfos global variable
+// fill changelog content in cleepdesktopInfos global variable
 function fillChangelog() {
     var changelogPath = path.join(app.getPath('userData'), 'changelog.txt');
     logger.debug('changelog.txt file path: ' + changelogPath);
     var changelogExists = fs.existsSync(changelogPath);
     if( !changelogExists ) {
-        //changelog file doesn't exist, create empty one for later use
+        // changelog file doesn't exist, create empty one for later use
         logger.debug('Create changelog.txt file');
         fs.writeFileSync(changelogPath, '');
     }
 
-    //load changelog
+    // load changelog
     cleepdesktopInfos.changelog = fs.readFileSync(changelogPath, {encoding:'utf8'});
     logger.debug('changelog: ' + cleepdesktopInfos.changelog);
 };
 
-// Parse command line arguments
+// parse command line arguments
 function parseArgs() {
     for (let i = 0; i < argv.length; i++) {
         if( argv[i]==='--nocore' ) {
-            //disable core. Useful to debug python aside
+            // disable core. Useful to debug python aside
             coreDisabled = true;
         } else if( argv[i].match(/^--logfile=/) ) {
-            //log to file
+            // log to file
             logger.transports.file.level = false;
             var level = argv[i].split('=')[1];
             if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' ) {
                 logger.transports.file.level = level;
             } else if( level==='no' ) {
-                //disable log
+                // disable log
                 logger.transports.file.level = false;
             } else {
-                //invalid log level, set to default 'info'
+                // invalid log level, set to default 'info'
                 logger.transports.file.level = 'info';
             }
         } else if( argv[i].match(/^--logconsole=/) ) {
-            //log to console
+            // log to console
             var level = argv[i].split('=')[1];
             if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' ) {
                 logger.transports.console.level = level;
             } else if( level==='no' ) {
-                //disable log
+                // disable log
                 logger.transports.console.level = false;
             } else {
-                //invalid log level, set to default 'info'
+                // invalid log level, set to default 'info'
                 logger.transports.console.level = 'info';
             }
         }
     }
 }
 
-// Check application configuration file
-// Create missing entries if necessary
+// check application configuration file creating missing entries if necessary
 function checkConfig() {
-    let delay = 0;
-
-    //cleep
-    settings.set('cleep.version', app.getVersion());
-    if( !settings.has('cleep.isoraspbian') ) {
-        settings.set('cleep.isoraspbian', DEFAULT_ISORASPBIAN);
-        delay = 2;
+    // cleep
+    settings.setSync('cleep.version', app.getVersion());
+    if( !settings.hasSync('cleep.isoraspbian') ) {
+        settings.setSync('cleep.isoraspbian', DEFAULT_ISORASPBIAN);
     }
-    if( !settings.has('cleep.isolocal') ) {
-        settings.set('cleep.isolocal', DEFAULT_ISOLOCAL);
-        delay = 2;
+    if( !settings.hasSync('cleep.isolocal') ) {
+        settings.setSync('cleep.isolocal', DEFAULT_ISOLOCAL);
     }
-    if( !settings.has('cleep.locale') ) {
-        settings.set('cleep.locale', DEFAULT_LOCALE);
-        delay = 2;
+    if( !settings.hasSync('cleep.locale') ) {
+        settings.setSync('cleep.locale', DEFAULT_LOCALE);
     }
-    if( !settings.has('cleep.debug') ) {
-        settings.set('cleep.debug', DEFAULT_DEBUG);
-        delay = 2;
+    if( !settings.hasSync('cleep.debug') ) {
+        settings.setSync('cleep.debug', DEFAULT_DEBUG);
     }
-    settings.set('cleep.isdev', isDev);
-    if( !settings.has('cleep.crashreport') ) {
-        settings.set('cleep.crashreport', DEFAULT_CRASHREPORT);
-        delay = 2;
+    settings.setSync('cleep.isdev', isDev);
+    if( !settings.hasSync('cleep.crashreport') ) {
+        settings.setSync('cleep.crashreport', DEFAULT_CRASHREPORT);
     }
 
-    //etcher
-    if( !settings.has('etcher.version') ) {
-        settings.set('etcher.version', 'v0.0.0');
-        delay = 2;
+    // balena
+    if( !settings.hasSync('etcher.version') ) {
+        settings.setSync('etcher.version', 'v0.0.0');
     }
 
-    //remote
-    if( !settings.has('remote.rpcport') ) {
-        settings.set('remote.rpcport', DEFAULT_RPCPORT);
-        delay = 2;
+    // remote
+    if( !settings.hasSync('remote.rpcport') ) {
+        settings.setSync('remote.rpcport', DEFAULT_RPCPORT);
     }
 
-    //proxy
-    if( !settings.has('proxy.mode') ) {
-        settings.set('proxy.mode', DEFAULT_PROXYMODE);
-        delay = 2;
+    // proxy
+    if( !settings.hasSync('proxy.mode') ) {
+        settings.setSync('proxy.mode', DEFAULT_PROXYMODE);
     }
-    if( !settings.has('proxy.host') ) {
-        settings.set('proxy.host', DEFAULT_PROXYHOST);
-        delay = 2;
+    if( !settings.hasSync('proxy.host') ) {
+        settings.setSync('proxy.host', DEFAULT_PROXYHOST);
     }
-    if( !settings.has('proxy.port') ) {
-        settings.set('proxy.port', DEFAULT_PROXYPORT);
-        delay = 2;
+    if( !settings.hasSync('proxy.port') ) {
+        settings.setSync('proxy.port', DEFAULT_PROXYPORT);
     }
 
-    //firstrun
-    if( !settings.has('cleep.firstrun') ) {
-        settings.set('cleep.firstrun', DEFAULT_FIRSTRUN);
-        delay = 2;
+    // firstrun
+    if( !settings.hasSync('cleep.firstrun') ) {
+        settings.setSync('cleep.firstrun', DEFAULT_FIRSTRUN);
     }
 
-    //devices
-    if( !settings.has('devices') ) {
-        settings.set('devices', DEFAULT_DEVICES);
-        delay = 2;
+    // devices
+    if( !settings.hasSync('devices') ) {
+        settings.setSync('devices', DEFAULT_DEVICES);
     }
-
-    //in case of config file modification, make sure everything is written to disk
-    pause(delay);
 };
 
-// Create application menu
+// create application menu
 function createMenu() {
     const subMenuFile = {
         label: 'File',
@@ -336,10 +302,10 @@ function createMenu() {
     }
 };
 
-// Create splash screen
-// Code from https://github.com/buz-zard/random/blob/master/electron-compile-1/src/main.js
+// create splash screen
+// code from https://github.com/buz-zard/random/blob/master/electron-compile-1/src/main.js
 function createSplashScreen() {
-    //create splashscreen window
+    // create splashscreen window
     splashScreen = new BrowserWindow({
         width: 250,
         height: 350,
@@ -353,27 +319,29 @@ function createSplashScreen() {
         }
     });
 
-    //load splashscreen content
+    // load splashscreen content
     splashScreen.loadURL(url.format({
         pathname: path.join(__dirname, 'html/loading.html'),
         protocol: 'file:',
         slashes: true
     }), {"extraHeaders" : "pragma: no-cache\n"})
 
-    //handle splashscreen events
+    // handle splashscreen events
     splashScreen.on('closed', () => splashScreen = null);
     splashScreen.webContents.on('did-finish-load', () => {
         splashScreen.show();
     });
 };
 
-// Create application main window
+// create application main window
 function createWindow () {
-    // Create the browser window.
+    // create the browser window.
     mainWindow = new BrowserWindow({
         webPreferences: {
+            webviewTag: true,
             nodeIntegration: true,
-            webviewTag: true
+            contextIsolation: false,
+            enableRemoteModule: true,
         },
         width:1024,
         height:600,
@@ -421,21 +389,21 @@ function createWindow () {
 
     // Open the DevTools in dev mode only
     if( isDev || process.env.CLEEPDESKTOP_DEBUG ) {
-        //open devtool in dev mode
+        // open devtool in dev mode
         mainWindow.webContents.openDevTools();
 
-        //log electron and chrome versions
+        // log electron and chrome versions
         logger.debug('Electron version: ' + process.versions.electron);
         logger.debug('Chrome version: ' + process.versions.chrome);
     }
 
-    //give a chance to user to not stop current running action
+    // give a chance to user to not stop current running action
     mainWindow.on('close', function(e) {
-        //set closing flag (to avoid catching core process error)
+        // set closing flag (to avoid catching core process error)
         closingApplication = true;
 
         if( !allowQuit ) {
-            //something does not allow application to quit. Request user to quit or not
+            // something does not allow application to quit. Request user to quit or not
             var btnIndex = dialog.showMessageBoxSync(mainWindow, {
                 type: 'question',
                 buttons: ['Confirm quit', 'Cancel'],
@@ -445,7 +413,7 @@ function createWindow () {
             });
 
             if( btnIndex!=0 ) {
-                //user do not quit
+                // user do not quit
                 logger.debug('User cancels application closing');
                 e.preventDefault();
             }
@@ -462,32 +430,31 @@ function createWindow () {
 
 };
 
-// Launch core python application
+// launch python core application
 function launchCore(rpcport) {
     if( coreDisabled ) {
         logger.debug('Core disabled');
         return;
     }
 
-    //get config file path
+    // get config file path
     var configFile = settings.file();
-    logger.debug('Config path: '+configFile);
     var cachePath = path.join(app.getPath('userData'), 'cache_cleepdesktop');
     var configPath = path.dirname(configFile);
     var configFilename = path.basename(configFile);
     var startupError = '';
 
-    //check whether cache dir exists or not
+    // check whether cache dir exists or not
     if( !fs.existsSync(cachePath) ) {
         logger.debug('Create cache dir' + cachePath);
         fs.mkdirSync(cachePath);
     }
 
     if( !isDev ) {
-        //launch release mode
+        // launch release mode
         logger.debug('Launch release mode');
 
-        //prepare command line
+        // prepare command line
         let commandline = path.join(__dirname + '.unpacked/', 'cleepdesktopcore/');
         logger.debug('cmdline with asar: ' + commandline);
         if( !fs.existsSync(commandline) ) {
@@ -495,26 +462,26 @@ function launchCore(rpcport) {
             logger.info('cmdline without asar: ' + commandline);
         }
 
-        //append bin name
+        // append bin name
         if( process.platform=='win32' ) {
             commandline = path.join(commandline, 'cleepdesktopcore.exe');
         } else {
             commandline = path.join(commandline, 'cleepdesktopcore');
         }
 
-        //launch command line
-        let debug = settings.has('cleep.debug') && settings.get('cleep.debug') ? 'debug' : 'release';
+        // launch command line
+        let debug = settings.hasSync('cleep.debug') && settings.getSync('cleep.debug') ? 'debug' : 'release';
         logger.debug('Core commandline: '+commandline+' ' + rpcport + ' ' + cachePath + ' ' + configPath + ' ' + configFilename + ' ' + debug);
         coreStartupTime = Math.round(Date.now()/1000);
         coreProcess = require('child_process').spawn(commandline, [rpcport, cachePath, configPath, configFilename, 'release', 'false']);
 
     } else {
-        //launch dev
+        // launch dev
         logger.debug('Launch development mode');
         logger.debug('Core commandline: python3 cleepdesktopcore.py ' + rpcport + ' ' + cachePath + ' ' + configPath + ' ' + configFilename + ' debug');
 		var python_bin = 'python3'
         var python_args = ['cleepdesktopcore.py', rpcport, cachePath, configPath, configFilename, 'debug', 'true']
-		if( process.platform=='win32' )
+		if( process.platform==='win32' )
 		{
 			python_bin = 'py';
 			python_args.unshift('-3');
@@ -523,7 +490,7 @@ function launchCore(rpcport) {
         coreProcess = require('child_process').spawn(python_bin, python_args);
     }
 
-    //handle core stdout
+    // handle core stdout
     coreProcess.stdout.on('data', (data) => {
         if( isDev ) {
             //only log message in developer mode
@@ -532,7 +499,7 @@ function launchCore(rpcport) {
         }
     });
 
-    //handle core stderr
+    // handle core stderr
     coreProcess.stderr.on('data', (data) => {
         //do not send user warnings
         var message = data.toString('utf8');
@@ -541,12 +508,12 @@ function launchCore(rpcport) {
             return;
         }
 
-        //handle ASCII error
+        // handle ASCII error
         if( message.search('hostname seems to have unsupported characters')!=-1 ) {
             startupError = 'Your computer hostname "'+os.hostname()+'" contains invalid characters. Please update it using only ASCII chars.'
         }
 
-        //only handle startup crash (5 first seconds), after core will handle it
+        // only handle startup crash (5 first seconds), after core will handle it
         var now = Math.round(Date.now()/1000);
         if( now<=coreStartupTime+5 ) {
             logger.error(message);
@@ -554,15 +521,15 @@ function launchCore(rpcport) {
         }
     });
 
-    //handle end of process
+    // handle end of process
     coreProcess.on('close', (code) => {
         if( !closingApplication ) {
             logger.error('Core process exited with code "' + code + '"');
             if( code!==0 ) {
-                //error occured, display error to user before terminates application
+                // error occured, display error to user before terminates application
                 dialog.showErrorBox('Fatal error', 'Unable to properly start application.\n' +startupError+'\nCleepDesktop will stop now.');
 
-                //stop application
+                // stop application
                 app.quit();
             }
         }
@@ -575,34 +542,34 @@ function launchCore(rpcport) {
 app.on('ready', function() {
     logger.info('===== CleepDesktop started =====');
     logger.info('Platform: ' + process.platform);
-    var display = electron.screen.getPrimaryDisplay();
+    var display = screen.getPrimaryDisplay();
     logger.info('Display: ' + display.size.width + 'x' + display.size.height);
     logger.info('Version: ' + app.getVersion());
 
-    //spashscreen asap
+    // spashscreen asap
     createSplashScreen();
 
-    //parse command line arguments
+    // parse command line arguments
     parseArgs();
 
-    //fill configuration file
+    // fill configuration file
     checkConfig();
 
-    //fill changelog
+    // fill changelog
     fillChangelog();
 
     if( isDev ) {
-        //use static rpc port in development mode
+        // use static rpc port in development mode
         
-        //save rpcport to config to be used in js app
-        settings.set('remote.rpcport', DEFAULT_RPCPORT);
+        // save rpcport to config to be used in js app
+        settings.setSync('remote.rpcport', DEFAULT_RPCPORT);
 
         //launch application
         createWindow();
         createMenu();
         launchCore(DEFAULT_RPCPORT);
     } else {
-        //detect available port
+        // choose available port
         detectPort(null, (err, rpcport) => {
             if( err )
             {
@@ -610,7 +577,7 @@ app.on('ready', function() {
             }
 
             //save rpcport to config to be used in js app
-            settings.set('remote.rpcport', rpcport);
+            settings.setSync('remote.rpcport', rpcport);
 
             //launch application
             createWindow();
@@ -620,13 +587,13 @@ app.on('ready', function() {
     }
 });
 
-// Handle event to allow to quit application (or not)
+// handle event to allow to quit application (or not)
 ipcMain.on('allow-quit', (event, arg) => {
     logger.debug('allow-quit=' + arg);
     allowQuit = arg;
 });
 
-// Handle event to save changelog
+// handle event to save changelog
 ipcMain.on('save-changelog', (event, arg) => {
     logger.debug('Saving changelog...');
     var changelogPath = path.join(app.getPath('userData'), 'changelog.txt');
@@ -639,7 +606,7 @@ ipcMain.on('save-changelog', (event, arg) => {
     });
 });
 
-// Handle file download
+// handle file download
 ipcMain.on('download-file-cancel', (event, args) => {
     if( downloadItem!==null ) {
         //cancel running download
@@ -648,17 +615,17 @@ ipcMain.on('download-file-cancel', (event, args) => {
 });
 ipcMain.on('download-file', (event, args) => {
     if( downloadItem!==null ) {
-        //download already running, do not launch this one
+        // download already running, do not launch this one
         mainWindow.webContents.send('download-file-status', {
             status: 'alreadyrunning',
             percent: 0
         });
         return;
     }
-    //make sure downloadItem is different from null asap
+    // make sure downloadItem is different from null asap
     downloadItem = undefined;
 
-    //launch download
+    // launch download
     download(BrowserWindow.getFocusedWindow(), args.url, {
         saveAs: true,
         onStarted: function(item) {
@@ -704,7 +671,7 @@ ipcMain.on('download-file', (event, args) => {
         });
 });
 
-// Application will quit, kill python process
+// application will quit, kill python process
 app.on('will-quit', function(e) {
     if( coreProcess )
     {
@@ -713,7 +680,7 @@ app.on('will-quit', function(e) {
     }
 });
 
-// Quit when all windows are closed.
+// quit when all windows are closed.
 app.on('window-all-closed', function () {
     // On OS X it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q

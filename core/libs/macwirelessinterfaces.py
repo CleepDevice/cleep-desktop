@@ -20,7 +20,7 @@ class MacWirelessInterfaces(AdvancedConsole):
     """
 
     CACHE_DURATION = 10.0
-    WIFI = u'Wi-Fi'
+    WIFI = 'Wi-Fi'
     
     def __init__(self):
         """
@@ -29,8 +29,8 @@ class MacWirelessInterfaces(AdvancedConsole):
         AdvancedConsole.__init__(self)
 
         #members
-        self._binary = u'/usr/sbin/networksetup'
-        self._command = u'/usr/sbin/networksetup -listallhardwareports'
+        self._binary = '/usr/sbin/networksetup'
+        self._command = '/usr/sbin/networksetup -listallhardwareports'
         self.logger = logging.getLogger(self.__class__.__name__)
         self.interfaces = {}
         self.timestamp = None
@@ -59,7 +59,7 @@ class MacWirelessInterfaces(AdvancedConsole):
 
         #parse results
         entries = []
-        for group, groups in results:
+        for _, groups in results:
             #filter None values
             groups = list(filter(None, groups))
             self.logger.debug('groups=%s' % groups)

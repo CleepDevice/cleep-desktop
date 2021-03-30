@@ -255,7 +255,7 @@ class Download():
         #prepare download
         download = None
         try:
-            download = open(self.download, u'wb')
+            download = open(self.download, 'wb')
         except:
             self.logger.exception('Unable to create file:')
             self.status = self.STATUS_ERROR
@@ -377,7 +377,7 @@ class Download():
             shutil.move(self.download, download)
             self.download = download
         except:
-            self.logger.exception(u'Unable to rename downloaded file:')
+            self.logger.exception('Unable to rename downloaded file:')
             self.status = self.STATUS_ERROR
             self.__status_callback(self.status, file_size, 100)
             return None
@@ -403,7 +403,7 @@ class Download():
 
         #consider last part of url as filename
         url_parsed = urllib3.util.parse_url(url)
-        filename = url_parsed.path.split(u'/')[-1]
+        filename = url_parsed.path.split('/')[-1]
 
         #encode filename for safety
         safe_filename = base64.b16encode(filename.encode('utf-8')).decode('utf-8')

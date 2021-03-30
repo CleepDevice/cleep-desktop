@@ -42,17 +42,17 @@ class AppConfig():
 
         #check if module have config file
         if not self.filepath:
-            raise Exception(u'Config filepath not set. Unable to save configuration')
+            raise Exception('Config filepath not set. Unable to save configuration')
 
         self.__lock.acquire(True)
         try:
-            f = open(self.filepath, u'w')
+            f = open(self.filepath, 'w')
             f.write(json.dumps(config))
             f.close()
             force_reload = True
             out = True
         except:
-            self.logger.exception(u'Unable to write config file %s:' % self.filepath)
+            self.logger.exception('Unable to write config file %s:' % self.filepath)
         self.__lock.release()
 
         if force_reload:
@@ -67,13 +67,13 @@ class AppConfig():
         """
         #check if module have config file
         if not self.filepath:
-            raise Exception(u'Config filepath not set. Unable to load configuration')
+            raise Exception('Config filepath not set. Unable to load configuration')
 
         self.__lock.acquire(True)
         try:
-            self.logger.debug(u'Loading conf file %s' % self.filepath)
+            self.logger.debug('Loading conf file %s' % self.filepath)
             if os.path.exists(self.filepath):
-                f = open(self.filepath, u'r')
+                f = open(self.filepath, 'r')
                 raw = f.read()
                 f.close()
                 self.__config = json.loads(raw)
@@ -81,7 +81,7 @@ class AppConfig():
                 #no conf file yet
                 self.logger.warning('No config file found at "%s"' % self.filepath)
         except:
-            self.logger.exception(u'Unable to load config file %s:' % self.filepath)
+            self.logger.exception('Unable to load config file %s:' % self.filepath)
         self.__lock.release()
 
     def load_config(self):

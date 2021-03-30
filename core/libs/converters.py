@@ -54,7 +54,7 @@ def file_to_base64(path):
     Return:
         string: base64 encoded file content
     """
-    with io.open(path, u'rb') as file_to_convert:
+    with io.open(path, 'rb') as file_to_convert:
         return base64.b64encode(file_to_convert.read())
 
 

@@ -31,17 +31,17 @@ class Lsblk():
         """
         #check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
-            self.logger.debug(u'Don\'t refresh')
+            self.logger.debug('Don\'t refresh')
             return
 
-        res = self.console.command(u'/bin/lsblk --list --bytes --output NAME,MAJ:MIN,TYPE,RM,SIZE,RO,MOUNTPOINT,RA,MODEL')
+        res = self.console.command('/bin/lsblk --list --bytes --output NAME,MAJ:MIN,TYPE,RM,SIZE,RO,MOUNTPOINT,RA,MODEL')
         devices = {}
-        if not res[u'error'] and not res[u'killed']:
+        if not res['error'] and not res['killed']:
             self.partitions = []
 
             #parse data
-            matches = re.finditer(r'^(.*?)\s+(\d+):(\d+)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d)\s+(\D*)?\s+(\d+)(\s|.*?)$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
-            for matchNum, match in enumerate(matches):
+            matches = re.finditer(r'^(.*?)\s+(\d+):(\d+)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d)\s+(\D*)?\s+(\d+)(\s|.*?)$', '\n'.join(res['stdout']), re.UNICODE | re.MULTILINE)
+            for _, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==10:
                     #name
@@ -52,7 +52,7 @@ class Lsblk():
                     model = None
                     total_size = 0
                     current_drive = None
-                    if groups[3].find(u'disk')!=-1:
+                    if groups[3].find('disk')!=-1:
                         current_drive = name
                         model = groups[9].strip()
                         partition = False
@@ -64,12 +64,12 @@ class Lsblk():
 
                     #readonly flag
                     readonly = True
-                    if groups[6]==u'0':
+                    if groups[6]=='0':
                         readonly = False
 
                     #removable flag
                     removable = True
-                    if groups[4]==u'0':
+                    if groups[4]=='0':
                         removable = False
 
                     #mountpoint
@@ -86,17 +86,17 @@ class Lsblk():
 
                     #fill device
                     device = {
-                        u'name': name,
-                        u'major': groups[1],
-                        u'minor': groups[2],
-                        u'size': size,
-                        u'totalsize': total_size,
-                        u'percent': percent,
-                        u'readonly': readonly,
-                        u'mountpoint': mountpoint,
-                        u'partition': partition,
-                        u'removable': removable,
-                        u'drivemodel': model
+                        'name': name,
+                        'major': groups[1],
+                        'minor': groups[2],
+                        'size': size,
+                        'totalsize': total_size,
+                        'percent': percent,
+                        'readonly': readonly,
+                        'mountpoint': mountpoint,
+                        'partition': partition,
+                        'removable': removable,
+                        'drivemodel': model
                     }
 
                     #save device
@@ -138,7 +138,7 @@ class Lsblk():
         drives = {}
         for drive in self.devices:
             for device in self.devices[drive]:
-                if not self.devices[drive][device][u'partition']:
+                if not self.devices[drive][device]['partition']:
                     #it's a drive
                     drives[drive] = self.devices[drive][device]
                 
@@ -156,7 +156,7 @@ class Lsblk():
         partitions = {}
         for drive in self.devices:
             for device in self.devices[drive]:
-                if self.devices[drive][device][u'partition']:
+                if self.devices[drive][device]['partition']:
                     #it's a partition
                     partitions[device] = self.devices[drive][device]
                 

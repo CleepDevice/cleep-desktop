@@ -15,9 +15,9 @@ class Github():
     This class get releases from specified project and return content as dict
     """
 
-    GITHUB_RELEASES = u'https://api.github.com/repos/%s/%s/releases'
-    GITHUB_RELEASES_TAG = GITHUB_RELEASES + u'/tags/%s'
-    GITHUB_RELEASES_LATEST = GITHUB_RELEASES + u'/latest'
+    GITHUB_RELEASES = 'https://api.github.com/repos/%s/%s/releases'
+    GITHUB_RELEASES_TAG = GITHUB_RELEASES + '/tags/%s'
+    GITHUB_RELEASES_LATEST = GITHUB_RELEASES + '/latest'
 
     def __init__(self, owner, repository):
         """
@@ -50,8 +50,8 @@ class Github():
         if not isinstance(release, dict):
             raise Exception('Invalid release format. Dict type awaited')
 
-        if u'tag_name' in release.keys():
-            return release[u'tag_name']
+        if 'tag_name' in release.keys():
+            return release['tag_name']
         else:
             raise Exception('Specified release has no version field')
 
@@ -75,26 +75,26 @@ class Github():
                 ]
         """
         if not isinstance(release, dict):
-            raise Exception(u'Invalid release format. Dict type awaited')
-        if u'assets' not in release.keys():
-            raise Exception(u'Invalid release format.')
+            raise Exception('Invalid release format. Dict type awaited')
+        if 'assets' not in release.keys():
+            raise Exception('Invalid release format.')
 
         out = []
-        for asset in release[u'assets']:
-            if u'browser_download_url' and u'size' and u'name' in asset.keys():
+        for asset in release['assets']:
+            if 'browser_download_url' and 'size' and 'name' in asset.keys():
                 #convert universal time to timestamp
                 updated_at = 0
                 try:
-                    updated_at = int(datetime.strptime(asset[u'updated_at'], '%Y-%m-%dT%H:%M:%SZ').timestamp())
+                    updated_at = int(datetime.strptime(asset['updated_at'], '%Y-%m-%dT%H:%M:%SZ').timestamp())
                 except:
-                    self.logger.exception('Unable to parse updated_at time "%s"' % asset[u'updated_at'])
+                    self.logger.exception('Unable to parse updated_at time "%s"' % asset['updated_at'])
 
                 #store entry
                 out.append({
-                    u'name': asset[u'name'],
-                    u'url': asset[u'browser_download_url'],
-                    u'size': asset[u'size'],
-                    u'timestamp': updated_at
+                    'name': asset['name'],
+                    'url': asset['browser_download_url'],
+                    'size': asset['size'],
+                    'timestamp': updated_at
                 })
 
         return out
@@ -122,16 +122,16 @@ class Github():
                 return data
 
             elif resp.status==404:
-                self.logger.warning(u'No release found (404)')
+                self.logger.warning('No release found (404)')
                 return None
 
             else:
                 #invalid request
-                self.logger.error(u'Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
+                self.logger.error('Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
                 return None
 
         except urllib3.exceptions.MaxRetryError:
-            self.logger.error(u'Unable to connect to github (no internet connection?)')
+            self.logger.error('Unable to connect to github (no internet connection?)')
             return None
 
     def get_releases(self):
@@ -194,12 +194,12 @@ class Github():
             return data
 
         elif resp.status==404:
-            self.logger.warning(u'Nothing found at %s (404)' % url)
+            self.logger.warning('Nothing found at %s (404)' % url)
             return None
 
         else:
             #invalid request
-            self.logger.error(u'Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
+            self.logger.error('Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
             return None
     
 if __name__=='__main__':

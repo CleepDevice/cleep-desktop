@@ -29,17 +29,17 @@ class Cmdline():
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             return
 
-        res = self.console.command(u'/bin/cat /proc/cmdline')
-        if not res[u'error'] and not res[u'killed']:
+        res = self.console.command('/bin/cat /proc/cmdline')
+        if not res['error'] and not res['killed']:
             #parse data
-            matches = re.finditer(r'root=(.*?)\s', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
+            matches = re.finditer(r'root=(.*?)\s', '\n'.join(res['stdout']), re.UNICODE | re.MULTILINE)
 
-            for matchNum, match in enumerate(matches):
+            for _, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==1:
-                    if groups[0].startswith(u'UUID='):
+                    if groups[0].startswith('UUID='):
                         #get device from uuid
-                        uuid = groups[0].replace(u'UUID=', u'')
+                        uuid = groups[0].replace('UUID=', '')
                         root_device = self.blkid.get_device_by_uuid(uuid)
                     else:
                         #get device from path
@@ -49,7 +49,7 @@ class Cmdline():
                     drives = self.lsblk.get_drives()
 
                     #save data
-                    self.root_partition = root_device.replace(u'/dev/', u'')
+                    self.root_partition = root_device.replace('/dev/', '')
                     self.root_drive = None
                     for drive in drives:
                         if self.root_partition.find(drive)!=-1:
