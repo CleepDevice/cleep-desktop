@@ -1,5 +1,7 @@
-import { app } from 'electron';
 import settings from 'electron-settings';
+const appVersion = require('./package.json').version;
+
+(<any>global).settings = settings;
 
 const DEFAULT_SETTINGS: {[k: string]: any} = {
     rpcPort: 5610,
@@ -24,6 +26,7 @@ export type KeyPath = string | Array<string | number>;
 
 export class AppSettings {
     constructor(isDev: boolean) {
+        settings.configure({prettify: true})
         this.checkAndFixConfig(isDev)
     }
 
@@ -45,7 +48,7 @@ export class AppSettings {
 
     private checkAndFixConfig(isDev: boolean) {
         // cleep
-        settings.setSync('cleep.version', app.getVersion());
+        settings.setSync('cleep.version', appVersion);
         if( !settings.hasSync('cleep.isoraspbian') ) {
             settings.setSync('cleep.isoraspbian', DEFAULT_SETTINGS.isoRaspbian);
         }

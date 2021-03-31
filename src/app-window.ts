@@ -14,13 +14,13 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
             contextIsolation: false,
             enableRemoteModule: true,
         },
-        width:1024,
-        height:600,
+        width: 1024,
+        height: 600,
         minHeight: 640,
         minWidth: 375,
         show: false,
-        icon:__dirname+'/resources/256x256.png',
-        title:'CleepDesktop'
+        icon: __dirname+'/resources/256x256.png',
+        title: 'CleepDesktop'
     });
 
     // handle external url
@@ -50,15 +50,12 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     });
 
     // and load the index.html of the app.
-    mainWindow.loadURL(url.format({
-        pathname: path.join(__dirname, 'html/index.html'),
-        protocol: 'file:',
-        slashes: true
-    }), {
+    mainWindow.loadURL(`file://${__dirname}/html/index.html`, {
         'extraHeaders': 'pragma: no-cache\n'
     });
 
     // Open the DevTools in dev mode only
+    console.log('=====>', appContext);
     if( appContext.isDev || process.env.CLEEPDESKTOP_DEBUG ) {
         // open devtool in dev mode
         mainWindow.webContents.openDevTools();

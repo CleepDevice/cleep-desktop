@@ -1,10 +1,12 @@
-import fs from 'fs'
-import path from "path";
 import { AppSettings } from './app-settings';
 import { DownloadItem } from 'electron';
+import isDev from 'electron-is-dev';
+const appVersion = require('./package.json').version;
+
+(<any>global).isDev = isDev;
 
 class AppContext {
-    public allowQuit = false;
+    public allowQuit = true;
     public closingApplication = false;
     public rpcPort = 0;
     public coreDisabled = false;
@@ -13,11 +15,13 @@ class AppContext {
     public settings: AppSettings;
     public changelog: string;
     public download: DownloadItem; // TODO handle multiple files ?
+    public version = appVersion;
 
     constructor() {
-        this.isDev = fs.existsSync(path.join(__dirname, 'cleepdesktopcore.py'));
+        this.isDev = isDev;
         this.settings = new AppSettings(this.isDev);
     }
 }
 
 export const appContext = new AppContext();
+(<any>global).appContext = appContext;

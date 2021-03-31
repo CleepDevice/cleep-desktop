@@ -10,6 +10,7 @@ import fs from 'fs'
 import { fillChangelog, parseArgs } from "./utils";
 import { download } from 'electron-dl';
 import { autoUpdater } from 'electron-updater';
+const appVersion = require('./package.json').version;
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
@@ -32,6 +33,7 @@ if( appContext.isDev ) {
     // release mode without debug, enable only info on console and do not touch log file config
     // logger.transports.console.level = 'info';
 }
+(<any>global).logger = logger;
 
 // crash report
 if (!appContext.isDev) {
@@ -46,14 +48,11 @@ if (!appContext.isDev) {
 autoUpdater.logger = logger;
 // enable this flag to test pre release
 // autoUpdater.allowPrerelease = true;
-(<any>global).sharedObject = { 
-    appUpdater: autoUpdater
-};
+(<any>global).appUpdater = autoUpdater;
 
 // application will quit, kill python process
 app.on('will-quit', function() {
-    if( appContext.coreProcess )
-    {
+    if( appContext.coreProcess ) {
         logger.debug('Kill core');
         appContext.coreProcess.kill('SIGTERM');
     }
@@ -81,7 +80,7 @@ app.on('ready', function() {
     logger.info('Platform: ' + process.platform);
     var display = screen.getPrimaryDisplay();
     logger.info('Display: ' + display.size.width + 'x' + display.size.height);
-    logger.info('Version: ' + app.getVersion());
+    logger.info('Version: ' + appVersion);
 
     // splashscreen asap
     splashScreenWindow = createSplashscreenWindow(mainWindow);

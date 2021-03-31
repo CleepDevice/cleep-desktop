@@ -90,7 +90,7 @@ export function launchCore(rpcPort: number) {
         if( appContext.isDev ) {
             //only log message in developer mode
             var message = data.toString('utf8');
-            logger.debug(message);
+            // logger.debug(message);
         }
     });
 

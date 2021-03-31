@@ -3,6 +3,7 @@ const cleepdesktopInfos = remote.getGlobal('cleepdesktopInfos');
 const logger = remote.getGlobal('logger');
 const appUpdater = remote.getGlobal('appUpdater');
 const settings = remote.getGlobal('settings');
+const appContext = remote.getGlobal('appContext');
 let cleepUi = {
     openPage: null,
     openModal: null
@@ -15,7 +16,7 @@ var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'u
 Cleep.value('logger', logger)
     .value('appUpdater', appUpdater)
     .value('settings', settings)
-    .value('cleepdesktopInfos', cleepdesktopInfos)
+    .value('appContext', appContext)
     .value('cleepUi', cleepUi);
 
 /**
@@ -28,7 +29,7 @@ Cleep.filter('hrDatetime', function($filter, settings) {
         else
         {
             //date format https://en.wikipedia.org/wiki/Date_format_by_country
-            var locale = settings.getSync('cleep.locale');
+            var locale = settings.get('cleep.locale');
             if( angular.isUndefined(shortYear) )
             {
                 if( locale=='en' )
