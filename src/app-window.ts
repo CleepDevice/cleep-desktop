@@ -55,7 +55,6 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     });
 
     // Open the DevTools in dev mode only
-    console.log('=====>', appContext);
     if( appContext.isDev || process.env.CLEEPDESKTOP_DEBUG ) {
         // open devtool in dev mode
         mainWindow.webContents.openDevTools();
