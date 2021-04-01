@@ -10,7 +10,6 @@ import fs from 'fs'
 import { fillChangelog, parseArgs } from "./utils";
 import { download } from 'electron-dl';
 import { autoUpdater } from 'electron-updater';
-const appVersion = require('./package.json').version;
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
@@ -80,7 +79,11 @@ app.on('ready', function() {
     logger.info('Platform: ' + process.platform);
     var display = screen.getPrimaryDisplay();
     logger.info('Display: ' + display.size.width + 'x' + display.size.height);
-    logger.info('Version: ' + appVersion);
+    if(appContext.isDev) {
+        logger.info('Version: ' + require('./package.json').version);
+    } else {
+        logger.info('Version: ' + app.getVersion());
+    }
 
     // splashscreen asap
     splashScreenWindow = createSplashscreenWindow(mainWindow);

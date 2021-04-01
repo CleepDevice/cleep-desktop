@@ -2,14 +2,13 @@
     "name": "cleep-desktop",
     "version": "0.1.0",
     "description": "Desktop application to manage your Cleep devices",
-    "main": "cleepdesktop.js",
+    "main": "main.js",
     "scripts": {
         "copyfiles": "copyfiles html/**/* build/ && copyfiles core/**/* build/ && copyfiles cleepdesktopcore.py build/ && copyfiles dev-app-update.yml build/ && copyfiles package.json build/",
         "build": "rimraf build && tsc && npm run copyfiles",
         "watch": "tsc -w",
         "lint": "eslint -c .eslintrc --ext .ts ./src",
-        "startts": "npm run build && electron ./build/main.js",
-        "start": "electron .",
+        "start": "npm run build && electron ./build/main.js",
         "build-linux64": "scripts/build-linux64.sh",
         "build-linux64-circleci": "scripts/build-linux64-circleci.sh",
         "build-mac32": "scripts/build-mac32.sh",
@@ -44,7 +43,7 @@
         "@types/electron-settings": "^3.1.2",
         "copyfiles": "^2.4.1",
         "devtron": "^1.4.0",
-        "electron": "^12.0.1",
+        "electron": "12.0.1",
         "electron-builder": "^22.10.5",
         "electron-notarize": "^1.0.0",
         "rimraf": "^3.0.2",
@@ -118,7 +117,8 @@
         "publish": {
             "provider": "github",
             "owner": "tangb",
-            "releaseType": "release"
+            "releaseType": "release",
+            "project": "cleep-desktop"
         }
     }
 }

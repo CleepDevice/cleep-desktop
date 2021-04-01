@@ -1,27 +1,40 @@
 @echo off
 :: variables
-set "CLEEPDESKTOPPATH=build\cleepdesktop_tree"
+set "CLEEPDESKTOPPATH=packaging\cleepdesktop_tree"
 
 :: clear previous process files
 rmdir /Q /S dist
-rmdir /Q /S build
+rmdir /Q /S packaging
 
 :: create dirs
 mkdir %CLEEPDESKTOPPATH%
-mkdir dist
-
-:: update python libs
-pip install -r ./requirements.txt
 
 :: pyinstaller
 echo.
 echo.
 echo Packaging cleepdesktopcore...
 echo -----------------------------
-xcopy /Q /Y config\cleepdesktopcore-windows64.spec .
-pyinstaller --clean --noconfirm --noupx --windowed --debug all --log-level INFO cleepdesktopcore-windows64.spec
-del /Q cleepdesktopcore-windows64.spec
+pip install -r ./requirements.txt
+xcopy /q /y config\cleepdesktopcore-windows64.spec .
+pyinstaller --workpath packaging --clean --noconfirm --noupx --windowed --debug all --log-level INFO cleepdesktopcore-windows64.spec
+del /q cleepdesktopcore-windows64.spec
 move dist\cleepdesktopcore %CLEEPDESKTOPPATH%
+:: 2021-04-01 WORKAROUND: fix with pyzmq that moves libs from different place. Wait for new pyinstaller release (>2021.1)
+echo Workaround with pyzmq dlls that are missing...
+py -3 -c "import site; print(site.getsitepackages()[1])" > pysite.txt
+set /P pysite=<pysite.txt
+del pysite.txt
+mkdir %CLEEPDESKTOPPATH%\cleepdesktopcore\pyzmq.libs
+xcopy /S %pysite%\pyzmq.libs %CLEEPDESKTOPPATH%\cleepdesktopcore\pyzmq.libs
+
+:: electron
+echo.
+echo.
+echo Building electron app...
+echo ------------------------
+call npm ci
+cmd /C "node_modules\.bin\tsc --outDir %CLEEPDESKTOPPATH%"
+echo Done
 
 :: copy files and dirs
 echo.
@@ -32,19 +45,10 @@ echo html...
 mkdir %CLEEPDESKTOPPATH%\html
 xcopy /S html %CLEEPDESKTOPPATH%\html
 xcopy LICENSE.txt %CLEEPDESKTOPPATH%\
-xcopy cleepdesktop.js %CLEEPDESKTOPPATH%\
 xcopy package.json %CLEEPDESKTOPPATH%\
 xcopy README.md %CLEEPDESKTOPPATH%\
 mkdir %CLEEPDESKTOPPATH%\resources
 xcopy /S resources %CLEEPDESKTOPPATH%\resources
-echo Done
-
-:: Updating npm libs
-echo.
-echo.
-echo Updating npm libs...
-echo --------------------
-call npm install
 echo Done
 
 :: electron-builder
@@ -56,14 +60,14 @@ if "%1" == "publish" (
     echo Publishing cleepdesktop...
     echo --------------------------
     set "GH_TOKEN=%GH_TOKEN_CLEEPDESKTOP%"
-    cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH%" --publish always
+    cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH% --publish always"
 ) else (
     echo Packaging cleepdesktop...
     echo -------------------------
     cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH%"
 )
 
-:: cleaning
+:: finalizing moving generated stuff to dist directory and removing temp stuff
 echo.
 echo.
 echo Finalizing...
@@ -71,10 +75,11 @@ echo -------------
 ping 127.0.0.1 -n 2 > nul
 mkdir dist
 xcopy /Q /S %CLEEPDESKTOPPATH%\dist dist
-rmdir /Q /S build
+rmdir /Q /S packaging
 rmdir /Q /S __pycache__
-rmdir /Q /S cleep\__pycache__
-rmdir /Q /S cleep\libs\__pycache__
+rmdir /Q /S core\__pycache__
+rmdir /Q /S core\libs\__pycache__
+rmdir /Q /S core\modules\__pycache__
 echo Done
 
 echo.

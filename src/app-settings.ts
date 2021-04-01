@@ -1,6 +1,5 @@
+import { app } from 'electron';
 import settings from 'electron-settings';
-const appVersion = require('./package.json').version;
-
 (<any>global).settings = settings;
 
 const DEFAULT_SETTINGS: {[k: string]: any} = {
@@ -48,7 +47,11 @@ export class AppSettings {
 
     private checkAndFixConfig(isDev: boolean) {
         // cleep
-        settings.setSync('cleep.version', appVersion);
+        if(isDev) {
+            settings.setSync('cleep.version', require('./package.json').version);
+        } else {
+            settings.setSync('cleep.version', app.getVersion());
+        }
         if( !settings.hasSync('cleep.isoraspbian') ) {
             settings.setSync('cleep.isoraspbian', DEFAULT_SETTINGS.isoRaspbian);
         }

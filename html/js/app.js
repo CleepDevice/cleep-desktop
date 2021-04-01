@@ -357,25 +357,25 @@ var cleepController = function($rootScope, $state, cleepService, tasksPanelServi
         .then(function() {
             logger.debug('Websocket connected, init angular stuff');
 
-            //init update service
+            // init update service
             updateService.init();
-            //and check for updates (defer it to make almost sure core is launched)
+            // and check for updates (defer it to make almost sure core is launched)
             updateService.checkForUpdates();
 
             //init devices service
             devicesService.getDevices();
 
-            //init install service
+            // init install service
             installService.init();
 
-            //first run? open application help
+            // first run? open application help
             if( settings.getSync('cleep.firstrun') )
             {
                 logger.debug('First run');
                 $timeout(function() {
                     self.openModal('emptyDialogController', 'js/help/helpdialog.html');
-                    settings.setSync('cleep.firstrun', false);
                 }, 500);
+                settings.setSync('cleep.firstrun', false);
             }
         });
     };

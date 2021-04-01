@@ -1,8 +1,6 @@
 import { AppSettings } from './app-settings';
-import { DownloadItem } from 'electron';
+import { app, DownloadItem } from 'electron';
 import isDev from 'electron-is-dev';
-const appVersion = require('./package.json').version;
-
 (<any>global).isDev = isDev;
 
 class AppContext {
@@ -15,10 +13,15 @@ class AppContext {
     public settings: AppSettings;
     public changelog: string;
     public download: DownloadItem; // TODO handle multiple files ?
-    public version = appVersion;
+    public version: string;
 
     constructor() {
         this.isDev = isDev;
+        if(this.isDev) {
+            this.version = require('./package.json').version;
+        } else {
+            this.version = app.getVersion();
+        }
         this.settings = new AppSettings(this.isDev);
     }
 }
