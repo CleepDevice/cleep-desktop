@@ -32,6 +32,7 @@ if( appContext.isDev ) {
     // release mode without debug, enable only info on console and do not touch log file config
     // logger.transports.console.level = 'info';
 }
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 (<any>global).logger = logger;
 
 // crash report
@@ -47,6 +48,7 @@ if (!appContext.isDev) {
 autoUpdater.logger = logger;
 // enable this flag to test pre release
 // autoUpdater.allowPrerelease = true;
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 (<any>global).appUpdater = autoUpdater;
 
 // application will quit, kill python process
@@ -77,7 +79,7 @@ app.on('activate', function () {
 app.on('ready', function() {
     logger.info('===== cleep-desktop started =====');
     logger.info('Platform: ' + process.platform);
-    var display = screen.getPrimaryDisplay();
+    const display = screen.getPrimaryDisplay();
     logger.info('Display: ' + display.size.width + 'x' + display.size.height);
     if(appContext.isDev) {
         logger.info('Version: ' + require('./package.json').version);
@@ -123,7 +125,7 @@ ipcMain.on('allow-quit', (event, arg) => {
 // handle event to save changelog
 ipcMain.on('save-changelog', (event, arg) => {
     logger.debug('Saving changelog...');
-    var changelogPath = path.join(app.getPath('userData'), 'changelog.txt');
+    const changelogPath = path.join(app.getPath('userData'), 'changelog.txt');
     fs.writeFile(changelogPath, arg, (err) => {
         if( err )
         {
@@ -134,13 +136,13 @@ ipcMain.on('save-changelog', (event, arg) => {
 });
 
 // handle file download
-ipcMain.on('download-file-cancel', (event, args) => {
+ipcMain.on('download-file-cancel', () => {
     if( appContext.download !== null ) {
         //cancel running download
         appContext.download.cancel();
     }
 });
-ipcMain.on('download-file', (event, args) => {
+ipcMain.on('download-file', (_, args) => {
     if( appContext.download !== null ) {
         // download already running, do not launch this one
         mainWindow.webContents.send('download-file-status', {
@@ -167,7 +169,7 @@ ipcMain.on('download-file', (event, args) => {
                 });
             }
         },
-        onCancel: function(item) {
+        onCancel: function() {
             mainWindow.webContents.send('download-file-status', {
                 filename: appContext.download.getFilename(),
                 status: 'canceled',

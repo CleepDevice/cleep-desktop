@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, MenuItemConstructorOptions } from "electron";
+import { appContext } from "./app-context";
 
-export function createAppMenu(window: BrowserWindow) {
+export function createAppMenu(window: BrowserWindow): void {
     const subMenuFile: MenuItemConstructorOptions = {
         label: 'File',
         submenu: [
@@ -40,24 +41,24 @@ export function createAppMenu(window: BrowserWindow) {
         ]
     }
 
-    const subMenuDevice: MenuItemConstructorOptions = {
-        label: 'Device',
-        submenu: Menu.buildFromTemplate([
-            {
-                label: 'Install',
-                click: () => {
-                    window.webContents.send('openpage', 'installAuto');
-                }
-            }, {
-                type: 'separator'
-            }, {
-                label: 'Monitoring',
-                click: () => {
-                    window.webContents.send('openpage', 'monitoring');
-                }
-            }
-        ])
-    };
+    // const subMenuDevice: MenuItemConstructorOptions = {
+    //     label: 'Device',
+    //     submenu: Menu.buildFromTemplate([
+    //         {
+    //             label: 'Install',
+    //             click: () => {
+    //                 window.webContents.send('openpage', 'installAuto');
+    //             }
+    //         }, {
+    //             type: 'separator'
+    //         }, {
+    //             label: 'Monitoring',
+    //             click: () => {
+    //                 window.webContents.send('openpage', 'monitoring');
+    //             }
+    //         }
+    //     ])
+    // };
 
     const subMenuHelp: MenuItemConstructorOptions = {
         label: 'Help',
@@ -101,8 +102,12 @@ export function createAppMenu(window: BrowserWindow) {
     };
 
     const isMac = process.platform === 'darwin'
-    const template: MenuItemConstructorOptions[] = [subMenuFile, ...(isMac ? [subMenuEdit] : []), subMenuHelp]
+    const template: MenuItemConstructorOptions[] = [
+        subMenuFile,
+        ...(isMac ? [subMenuEdit] : []),
+        subMenuHelp,
+        ...(appContext.isDev ? [subMenuView] : [])
+    ]
     const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
-};
-
+}

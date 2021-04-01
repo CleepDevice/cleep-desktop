@@ -4,7 +4,7 @@ import path from "path";
 import fs from 'fs'
 import { app } from 'electron';
 
-export function parseArgs(argv: string[]) {
+export function parseArgs(argv: string[]): void {
     for (let i = 0; i < argv.length; i++) {
         if( argv[i]==='--nocore' ) {
             // disable core. Useful to debug python aside
@@ -12,7 +12,7 @@ export function parseArgs(argv: string[]) {
         } else if( argv[i].match(/^--logfile=/) ) {
             // log to file
             logger.transports.file.level = false;
-            var level = argv[i].split('=')[1];
+            const level = argv[i].split('=')[1];
             if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' ) {
                 logger.transports.file.level = level;
             } else if( level==='no' ) {
@@ -24,7 +24,7 @@ export function parseArgs(argv: string[]) {
             }
         } else if( argv[i].match(/^--logconsole=/) ) {
             // log to console
-            var level = argv[i].split('=')[1];
+            const level = argv[i].split('=')[1];
             if( level==='error' || level==='warn' || level==='info' || level==='verbose' || level==='debug' || level==='silly' ) {
                 logger.transports.console.level = level;
             } else if( level==='no' ) {
@@ -38,10 +38,10 @@ export function parseArgs(argv: string[]) {
     }
 }
 
-export function fillChangelog() {
-    var changelogPath = path.join(app.getPath('userData'), 'changelog.txt');
+export function fillChangelog(): void {
+    const changelogPath = path.join(app.getPath('userData'), 'changelog.txt');
     logger.debug('changelog.txt file path: ' + changelogPath);
-    var changelogExists = fs.existsSync(changelogPath);
+    const changelogExists = fs.existsSync(changelogPath);
     if( !changelogExists ) {
         // changelog file doesn't exist, create empty one for later use
         logger.debug('Create changelog.txt file');
@@ -51,4 +51,4 @@ export function fillChangelog() {
     // load changelog
     appContext.changelog = fs.readFileSync(changelogPath, {encoding:'utf8'});
     logger.debug('changelog: ' + appContext.changelog);
-};
+}

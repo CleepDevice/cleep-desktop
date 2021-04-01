@@ -1,6 +1,7 @@
 import { AppSettings } from './app-settings';
 import { app, DownloadItem } from 'electron';
 import isDev from 'electron-is-dev';
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 (<any>global).isDev = isDev;
 
 class AppContext {
@@ -9,6 +10,7 @@ class AppContext {
     public rpcPort = 0;
     public coreDisabled = false;
     public isDev: boolean;
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     public coreProcess: any;
     public settings: AppSettings;
     public changelog: string;
@@ -27,4 +29,5 @@ class AppContext {
 }
 
 export const appContext = new AppContext();
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 (<any>global).appContext = appContext;

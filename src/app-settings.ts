@@ -1,8 +1,9 @@
 import { app } from 'electron';
 import settings from 'electron-settings';
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 (<any>global).settings = settings;
 
-const DEFAULT_SETTINGS: {[k: string]: any} = {
+const DEFAULT_SETTINGS: {[k: string]: string | number | boolean| {[k: string]: string}} = {
     rpcPort: 5610,
     debug: false,
     isoRaspbian: false,

@@ -5,8 +5,9 @@ import { appContext } from './app-context';
 import { app, dialog } from 'electron';
 import { spawn } from 'child_process';
 import os from 'os';
+import { Readable } from 'node:stream';
 
-export function launchCore(rpcPort: number) {
+export function launchCore(rpcPort: number): void {
     // save rpcport to config to be used in js app and python app
     appContext.rpcPort = rpcPort;
     appContext.settings.set('remote.rpcport', rpcPort);
@@ -17,11 +18,11 @@ export function launchCore(rpcPort: number) {
     }
 
     // get config file path
-    var configFile = appContext.settings.filepath();
-    var cachePath = path.join(app.getPath('userData'), 'cache_cleepdesktop');
-    var configPath = path.dirname(configFile);
-    var configFilename = path.basename(configFile);
-    var startupError = '';
+    const configFile = appContext.settings.filepath();
+    const cachePath = path.join(app.getPath('userData'), 'cache_cleepdesktop');
+    const configPath = path.dirname(configFile);
+    const configFilename = path.basename(configFile);
+    let startupError = '';
     let coreStartupTime: number;
 
     // check whether cache dir exists or not
@@ -50,7 +51,7 @@ export function launchCore(rpcPort: number) {
         }
 
         // launch command line
-        let debug = appContext.settings.has('cleep.debug') && appContext.settings.get('cleep.debug') ? 'debug' : 'release';
+        const debug = appContext.settings.has('cleep.debug') && appContext.settings.get('cleep.debug') ? 'debug' : 'release';
         logger.debug('Core commandline: '+commandline+' ' + appContext.rpcPort + ' ' + cachePath + ' ' + configPath + ' ' + configFilename + ' ' + debug);
         coreStartupTime = Math.round(Date.now()/1000);
         appContext.coreProcess = spawn(commandline, [
@@ -67,7 +68,7 @@ export function launchCore(rpcPort: number) {
         logger.debug('Launch development mode');
         logger.debug('Core commandline: python3 cleepdesktopcore.py ' + appContext.rpcPort + ' ' + cachePath + ' ' + configPath + ' ' + configFilename + ' debug');
 		let python_bin = 'python3'
-        let python_args = [
+        const python_args = [
             'cleepdesktopcore.py',
             String(appContext.rpcPort),
             cachePath,
@@ -86,18 +87,18 @@ export function launchCore(rpcPort: number) {
     }
 
     // handle core stdout
-    appContext.coreProcess.stdout.on('data', (data: any) => {
+    appContext.coreProcess.stdout.on('data', (data: Readable) => {
         if( appContext.isDev ) {
-            //only log message in developer mode
-            var message = data.toString('utf8');
-            // logger.debug(message);
+            // only log message in developer mode
+            const message = data.toString();
+            logger.debug(message);
         }
     });
 
     // handle core stderr
-    appContext.coreProcess.stderr.on('data', (data: any) => {
+    appContext.coreProcess.stderr.on('data', (data: Readable) => {
         //do not send user warnings
-        var message = data.toString('utf8');
+        const message = data.toString();
         if( message.search('UserWarning:')!=-1 ) {
             logger.debug('Drop UserWarning message');
             return;
@@ -109,7 +110,7 @@ export function launchCore(rpcPort: number) {
         }
 
         // only handle startup crash (5 first seconds), after core will handle it
-        var now = Math.round(Date.now()/1000);
+        const now = Math.round(Date.now()/1000);
         if( now <= coreStartupTime + 5 ) {
             logger.error(message);
             throw new Error(message);
@@ -117,10 +118,10 @@ export function launchCore(rpcPort: number) {
     });
 
     // handle end of process
-    appContext.coreProcess.on('close', (code: any) => {
+    appContext.coreProcess.on('close', (code: number) => {
         if( !appContext.closingApplication ) {
             logger.error('Core process exited with code "' + code + '"');
-            if( code!==0 ) {
+            if(code !== 0) {
                 // error occured, display error to user before terminates application
                 dialog.showErrorBox('Fatal error', 'Unable to properly start application.\n' +startupError+'\nCleepDesktop will stop now.');
 
@@ -129,4 +130,4 @@ export function launchCore(rpcPort: number) {
             }
         }
     });
-};
+}

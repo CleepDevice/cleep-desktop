@@ -72,7 +72,7 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
 
         if( !appContext.allowQuit ) {
             // something does not allow application to quit. Request user to quit or not
-            var btnIndex = dialog.showMessageBoxSync(mainWindow, {
+            const btnIndex = dialog.showMessageBoxSync(mainWindow, {
                 type: 'question',
                 buttons: ['Confirm quit', 'Cancel'],
                 defaultId: 1,
@@ -97,7 +97,7 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     })
 
     return mainWindow;
-};
+}
 
 // create splash screen window
 // code from https://github.com/buz-zard/random/blob/master/electron-compile-1/src/main.js
@@ -132,4 +132,4 @@ export function createSplashscreenWindow(mainWindow: BrowserWindow): BrowserWind
     });
 
     return splashScreenWindow;
-};
+}
