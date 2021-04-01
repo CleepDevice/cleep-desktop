@@ -44,11 +44,11 @@ echo ------------------------
 echo html...
 mkdir %CLEEPDESKTOPPATH%\html
 xcopy /S html %CLEEPDESKTOPPATH%\html
+mkdir %CLEEPDESKTOPPATH%\resources
+xcopy /S resources %CLEEPDESKTOPPATH%\resources
 xcopy LICENSE.txt %CLEEPDESKTOPPATH%\
 xcopy package.json %CLEEPDESKTOPPATH%\
 xcopy README.md %CLEEPDESKTOPPATH%\
-mkdir %CLEEPDESKTOPPATH%\resources
-xcopy /S resources %CLEEPDESKTOPPATH%\resources
 echo Done
 
 :: electron-builder
