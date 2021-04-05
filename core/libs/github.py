@@ -27,11 +27,11 @@ class Github():
             owner (string): name of repository owner
             repository (string): name of repository
         """
-        #logger
+        # logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
 
-        #members
+        # members
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.http = urllib3.PoolManager(num_pools=3)
         self.owner = owner
@@ -82,14 +82,14 @@ class Github():
         out = []
         for asset in release['assets']:
             if 'browser_download_url' and 'size' and 'name' in asset.keys():
-                #convert universal time to timestamp
+                # convert universal time to timestamp
                 updated_at = 0
                 try:
                     updated_at = int(datetime.strptime(asset['updated_at'], '%Y-%m-%dT%H:%M:%SZ').timestamp())
                 except:
                     self.logger.exception('Unable to parse updated_at time "%s"' % asset['updated_at'])
 
-                #store entry
+                # store entry
                 out.append({
                     'name': asset['name'],
                     'url': asset['browser_download_url'],
@@ -112,13 +112,13 @@ class Github():
         Raises:
             Exception
         """
-        #request url
+        # request url
         try:
             resp = self.http.urlopen('GET', url, headers=self.http_headers)
             if resp.status==200:
-                #response successful, parse data to get current latest version
+                # response successful, parse data to get current latest version
                 data = json.loads(resp.data.decode('utf-8'))
-                #self.logger.debug('Data: %s' % data)
+                # self.logger.debug('Data: %s' % data)
                 return data
 
             elif resp.status==404:
@@ -126,7 +126,7 @@ class Github():
                 return None
 
             else:
-                #invalid request
+                # invalid request
                 self.logger.error('Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
                 return None
 
@@ -141,13 +141,13 @@ class Github():
         Return:
             list: list of releases. Format can be found here https://developer.github.com/v3/repos/releases/
         """
-        #get url
+        # get url
         url = self.GITHUB_RELEASES % (self.owner, self.repository)
             
-        #request
+        # request
         data = self.__request_github(url)
         if len(data)==0:
-            #no release yet?
+            # no release yet?
             return []
         else:
             return data
@@ -159,20 +159,20 @@ class Github():
         Args:
             tag_name (string): tag name
         """
-        #get url
+        # get url
         url = self.GITHUB_RELEASES_TAG % (self.owner, self.repository, tag_name)
             
-        #request
+        # request
         return self.__request_github(url)
 
     def get_latest_release(self):
         """
         Return latest release
         """
-        #get url
+        # get url
         url = self.GITHUB_RELEASES_LATEST % (self.owner, self.repository)
             
-        #request
+        # request
         return self.__request_github(url)
 
     def get_file_content(self, url):
@@ -188,9 +188,9 @@ class Github():
         """
         resp = self.http.urlopen('GET', url, headers=self.http_headers)
         if resp.status==200:
-            #response successful, parse data to get current latest version
+            # response successful, parse data to get current latest version
             data = resp.data.decode('utf-8')
-            #self.logger.debug('Data: %s' % data)
+            # self.logger.debug('Data: %s' % data)
             return data
 
         elif resp.status==404:
@@ -198,7 +198,7 @@ class Github():
             return None
 
         else:
-            #invalid request
+            # invalid request
             self.logger.error('Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
             return None
     

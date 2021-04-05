@@ -32,7 +32,7 @@ class Config():
             backup (bool): auto backup original file (default True)
         """
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
         path = os.path.expanduser(path)
         path = os.path.realpath(path)
         self.path = path
@@ -40,7 +40,7 @@ class Config():
         self.comment_tag = comment_tag
         self.__fd = None
 
-        #backup original file
+        # backup original file
         if backup:
             self.__make_backup()
 
@@ -147,9 +147,9 @@ class Config():
         self._close()
         matches = re.finditer(pattern, content, options)
 
-        #concat content list if options singleline specified (DOTALL)
-        #if re.DOTALL & options:
-        #    content = ''.join(content)
+        # concat content list if options singleline specified (DOTALL)
+        # if re.DOTALL & options:
+        #     content = ''.join(content)
 
         for _, match in enumerate(matches):
             group = match.group().strip()
@@ -181,7 +181,6 @@ class Config():
         for _, match in enumerate(matches):
             group = match.group().strip()
             if len(group)>0 and len(match.groups())>0:
-                #results[group] = match.groups()
                 results.append((group, match.groups()))
 
         return results

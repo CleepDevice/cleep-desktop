@@ -38,7 +38,7 @@ class WindowsDrives():
         Constructor
         """
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
         self.timestamp = None
         self.devices = {}
         client = win32com.client.Dispatch('WbemScripting.SWbemLocator')
@@ -67,16 +67,16 @@ class WindowsDrives():
         """
         Refresh all data (fill self.devices)
         """
-        #check if refresh is needed
+        # check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             self.logger.debug('Don\'t refresh')
             return
 
-        #get system drive
+        # get system drive
         system_drive = self.__get_system_drive()
         self.logger.debug('System drive: %s' % system_drive)
         
-        #get infos from DiskDrive command and init devices
+        # get infos from DiskDrive command and init devices
         devices = {}
         disks = self.winService.ExecQuery('SELECT * FROM Win32_DiskDrive')
         for disk in disks:
@@ -98,17 +98,17 @@ class WindowsDrives():
             for property in disk.Properties_:
                 if property.Name=='DeviceID':
                     current_device['temp_device'] = property.Value
-                    #workaround for etcher-cli >=1.3.1 and balena-cli
-                    #balena.exe util available-drives
-                    #DEVICE             SIZE    DESCRIPTION
-                    #\\.\PhysicalDrive3 30.9 GB Kingston DataTraveler 3.0 USB Device
+                    # workaround for etcher-cli >=1.3.1 and balena-cli
+                    # balena.exe util available-drives
+                    # DEVICE             SIZE    DESCRIPTION
+                    # \\.\PhysicalDrive3 30.9 GB Kingston DataTraveler 3.0 USB Device
                     current_device['device'] = property.Value.replace('PHYSICALDRIVE', 'PhysicalDrive')
                     #current_device['device'] = property.Value
                     current_device['raw'] = property.Value
                 elif property.Name=='Caption':
                     current_device['description'] = property.Value
                 elif property.Name=='MediaType':
-                    #try to set drive type. If drive has partitions, it will be overwritten below
+                    # try to set drive type. If drive has partitions, it will be overwritten below
                     if property.Value is None:
                         current_device['deviceType'] = self.DEVICE_TYPE_UNKNOWN
                     elif property.Value.lower() in (self.MEDIA_TYPE_EXTERNAL_HD, self.MEDIA_TYPE_FIXED_HD):
@@ -126,14 +126,14 @@ class WindowsDrives():
                 
             devices[current_device['temp_device']] = current_device
             
-        #get infos from DiskDriveToDiskPartitions command
+        # get infos from DiskDriveToDiskPartitions command
         partitions = self.winService.ExecQuery('SELECT * FROM Win32_DiskDriveToDiskPartition')
         for partition in partitions:
             for device in devices.keys():
                 if device.replace('\\', '') in str(partition.Antecedent.replace('\\', '')):
                     devices[device]['temp_partitions'].append(partition.Dependent.split('=')[1].replace('"', ''))
 
-        #get infos from LogicalDiskToPartition
+        # get infos from LogicalDiskToPartition
         logicals = self.winService.ExecQuery('SELECT * FROM Win32_LogicalDiskToPartition')
         for logical in logicals:
             for device in devices.keys():
@@ -142,13 +142,13 @@ class WindowsDrives():
                     if partition in str(logical.Antecedent):
                         mountpoint = logical.Dependent.split('=')[1].replace('"', '')
 
-                        #save system
+                        # save system
                         if mountpoint==system_drive:
                             devices[device]['system'] = True
                         elif not devices[device]['system']:
                             devices[device]['system'] = False
 
-                        #save mountpoint (and its guid to allow mouting it)
+                        # save mountpoint (and its guid to allow mouting it)
                         guid = None
                         try:
                             guid = win32file.GetVolumeNameForVolumeMountPoint('%s\\\\' % mountpoint).replace('\\\\', '\\')
@@ -159,16 +159,16 @@ class WindowsDrives():
                             'guid': guid
                         })
 
-                        #save displayName
+                        # save displayName
                         devices[device]['temp_displayname'].append(mountpoint)
 
-                        #save device type
+                        # save device type
                         if devices[device]['deviceType'] in (None, self.DEVICE_TYPE_UNKNOWN):
                             devices[device]['deviceType'] = win32file.GetDriveType(mountpoint)
                             
-                        #save protected
+                        # save protected
                         try:
-                            #https://msdn.microsoft.com/en-us/library/windows/desktop/aa364993(v=vs.85).aspx
+                            # https://msdn.microsoft.com/en-us/library/windows/desktop/aa364993(v=vs.85).aspx
                             (_, _, _, readonly, _) = win32api.GetVolumeInformation('%s\\' % mountpoint)
                             if (int(readonly) & 0x00080000)==0:
                                 devices[device]['protected'] = False
@@ -177,7 +177,7 @@ class WindowsDrives():
                         except Exception as e:
                             pass
 
-        #clean dicts
+        # clean dicts
         for device in devices.keys():
             devices[device]['temp_displayname'].sort()
             if len(devices[device]['temp_displayname'])==0:
@@ -188,10 +188,10 @@ class WindowsDrives():
             del devices[device]['temp_partitions']
             del devices[device]['temp_device']
        
-        #save devices
+        # save devices
         self.devices = list(devices.values())
 
-        #update timestamp
+        # update timestamp
         self.timestamp = time.time()
 
     def get_drives(self):
@@ -228,7 +228,7 @@ if __name__ == '__main__':
     import pprint
     pp = pprint.PrettyPrinter(indent=2)
 
-    #logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
     
     d = WindowsDrives()
     devices = d.get_drives()

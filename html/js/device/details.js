@@ -8,7 +8,7 @@ var deviceDetailsController = function(modalData, closeModal)
     var self = this;
     self.device = modalData;
     self.closeModal = closeModal;
-    self.deviceApps = self.device.apps.split(',').filter((app) => {
+    self.deviceApps = self.device.extra.apps.filter((app) => {
         return ['audio', 'cleepbus', 'network', 'parameters', 'system', 'update'].indexOf(app)===-1;
     });
     self.boardImages = {
@@ -62,6 +62,6 @@ var deviceDetailsController = function(modalData, closeModal)
         // Compute Module 3
         'a020a0': 'images/raspberry-pi-compute-module-3.jpg',
     }
-    self.boardImg = self.boardImages[self.device['hwrevision']];
+    self.boardImg = self.boardImages[self.device.extra['hwrevision']];
 };
 Cleep.controller('deviceDetailsController', ['modalData', 'closeModal', 'confirmService', 'toastService', 'devicesService', deviceDetailsController]);

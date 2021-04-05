@@ -19,7 +19,7 @@ class Raspbians():
         """
         Constructor
         """
-        #members
+        # members
         self.logger = logging.getLogger(self.__class__.__name__)
         self.crash_report = crash_report
 
@@ -53,25 +53,25 @@ class Raspbians():
             'timestamp': None
         }
 
-        #get release infos
+        # get release infos
         try:
             self.logger.debug('Requesting %s' % release['url'])
             resp = requests.get(release['url'])
             if resp.status_code==200:
-                #self.logger.debug('Resp content: %s' % resp.text)
-                #parse response content
+                # self.logger.debug('Resp content: %s' % resp.text)
+                # parse response content
                 matches = re.finditer(r'href=\"(%s.*?)\"' % release['prefix'], resp.text, re.UNICODE)
-                for matchNum, match in enumerate(matches):
+                for _, match in enumerate(matches):
                     groups = match.groups()
                     self.logger.debug('Groups: %s' % groups)
 
                     if len(groups)==1:
-                        #main archive
+                        # main archive
                         if groups[0].endswith('.zip'):
                             infos['url'] = '%s%s' % (release['url'], groups[0])
                             infos['timestamp'] = release['timestamp']
 
-                        #sha1 checksum
+                        # sha1 checksum
                         elif groups[0].endswith('.sha1'):
                             url = '%s%s' % (release['url'], groups[0])
                             try:
@@ -82,7 +82,7 @@ class Raspbians():
                                 self.__crash_report()
                                 self.logger.exception('Exception occured during %s request' % url)
 
-                        #sha256 checksum
+                        # sha256 checksum
                         elif groups[0].endswith('.sha256'):
                             url = '%s%s' % (release['url'], groups[0])
                             try:
@@ -127,12 +127,12 @@ class Raspbians():
         latest_raspbian = None
         latest_raspbian_lite = None
 
-        #get latest raspbian release infos
+        # get latest raspbian release infos
         try:
             self.logger.debug('Requesting %s' % self.RASPBIAN_URL)
             resp = requests.get(self.RASPBIAN_URL)
             if resp.status_code==200:
-                #parse response content
+                # parse response content
                 matches = re.finditer(r'href=\"((raspbian)-(\d*)-(\d*)-(\d*)/)\"', resp.text, re.UNICODE)
                 results = list(matches)
                 if len(results)>0:
@@ -154,12 +154,12 @@ class Raspbians():
             self.__crash_report()
             self.logger.exception('Exception occured during %s read:' % self.RASPBIAN_URL)
 
-        #get latest raspbian_lite release infos
+        # get latest raspbian_lite release infos
         try:
             self.logger.debug('Requesting %s' % self.RASPBIAN_LITE_URL)
             resp = requests.get(self.RASPBIAN_LITE_URL)
             if resp.status_code==200:
-                #parse response content
+                # parse response content
                 matches = re.finditer(r'href=\"((raspbian_lite)-(\d*)-(\d*)-(\d*)/)\"', resp.text, re.UNICODE)
                 results = list(matches)
                 if len(results)>0:

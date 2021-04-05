@@ -47,7 +47,7 @@ class Diskutil():
 
         res = self.console.command('/usr/sbin/diskutil info "%s"' % device)
         if not res['error'] and not res['killed']:
-            #parse data
+            # parse data
             matches = re.finditer(
                 r'^\s+(Device / Media Name:\s+(.*?))$|^\s+(Volume Name:\s+(.*?))$|^\s+(Removable Media:\s+(.*?))$|^\s+(Read-Only Media:\s+(.*?))$|^\s+(Device Location:\s+(.*?))$|^\s+(Total Size:\s+.*?\s.*?\s\((\d+)\sBytes\).*?)$',
                 '\n'.join(res['stdout']),
@@ -87,7 +87,7 @@ class Diskutil():
         """
         Refresh all data
         """
-        #check if refresh is needed
+        # check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             self.logger.debug('Don\'t refresh')
             return
@@ -95,7 +95,7 @@ class Diskutil():
         res = self.console.command('/usr/sbin/diskutil list | /usr/bin/grep \'^\\/\' | /usr/bin/awk \'match($0, "\\\\(|$"){ print substr($0, 0, RSTART - 1) }\'')
         devices = {}
         if not res['error'] and not res['killed']:
-            #parse data
+            # parse data
             matches = re.finditer(r'^(/dev/.*?)$', '\n'.join(res['stdout']), re.UNICODE | re.MULTILINE)
             for _, match in enumerate(matches):
                 groups = match.groups()
@@ -103,23 +103,23 @@ class Diskutil():
                     drive = groups[0]
                     infos = self.__device_infos(drive)
 
-                    #drop dmg image
+                    # drop dmg image
                     if infos['description'].find('Disk Image')!=-1:
                         continue
 
-                    #fix device name
+                    # fix device name
                     name = infos['description']
                     if infos['volumename'].lower().find('not applicable')==-1:
                         name = '%s - %s' % (infos['volumename'], name)
 
-                    #is drive system one?
+                    # is drive system one?
                     system = False
                     if drive=='/dev/disk0' or (infos['location'].lower().find('internal')!=-1 and not infos['removable']):
                         system = True
 
-                    #TODO add mountpoints parsing result of command "mount"
+                    # TODO add mountpoints parsing result of command "mount"
                     
-                    #fill device
+                    # fill device
                     device = {
                         'device': drive,
                         'raw': drive.replace('/disk', '/rdisk'),
@@ -130,13 +130,13 @@ class Diskutil():
                         'system': system
                     }
 
-                    #save drive
+                    # save drive
                     devices[drive] = device
 
-        #save devices
+        # save devices
         self.devices = devices
 
-        #update timestamp
+        # update timestamp
         self.timestamp = time.time()
 
     def get_devices_infos(self):

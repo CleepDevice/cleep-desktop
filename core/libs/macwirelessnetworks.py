@@ -30,7 +30,7 @@ class MacWirelessNetworks(AdvancedConsole):
         """
         AdvancedConsole.__init__(self)
 
-        #members
+        # members
         self._binary = '/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport'
         self._command = '/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --scan'
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -52,30 +52,30 @@ class MacWirelessNetworks(AdvancedConsole):
         """
         Refresh list of networks
         """
-        #check if refresh is needed
+        # check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION and self.__last_scanned_interface==interface:
             self.logger.debug('Don\'t refresh')
             return
 
-        #execute command
+        # execute command
         self.__last_scanned_interface = interface
         results = self.find(self._command, r'\s+(.*?)\s+(?:(?:.{2}:){5}.{2})\s+(-\d+)\s+(?:.*)\s+(?:Y|N)\s+.{2}\s+(.*)', timeout=15.0)
         self.logger.debug(results)
 
-        #handle invalid interface for wifi scanning or disabled interface
+        # handle invalid interface for wifi scanning or disabled interface
         if len(results)==0 and self.get_last_return_code()!=0:
             self.networks = {}
             self.error = True
             return
 
-        #parse results
+        # parse results
         entries = {}
         for _, groups in results:
-            #filter None values
+            # filter None values
             groups = list(filter(None, groups))
             self.logger.debug(groups)
 
-            #handle encryption
+            # handle encryption
             encryption = groups[2].lower()
             if encryption.find('wpa2')!=-1:
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WPA2
@@ -88,10 +88,10 @@ class MacWirelessNetworks(AdvancedConsole):
             else:
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_UNKNOWN
 
-            #handle signal level
+            # handle signal level
             signal_level = Converters.dbm_to_percent(int(groups[1]))
 
-            #save entry
+            # save entry
             entries[groups[0]] = {
                 'interface': interface,
                 'network': groups[0],
@@ -100,7 +100,7 @@ class MacWirelessNetworks(AdvancedConsole):
             }
         self.logger.debug('entries: %s' % entries)
 
-        #save networks and error
+        # save networks and error
         self.networks = entries
         self.error = False
 

@@ -39,7 +39,6 @@ from passlib import __version__ as passlib_version
 from passlib.hash import sha256_crypt
 from requests import __version__ as requests_version
 from queue import Queue, Empty
-
 from core.libs.appconfig import AppConfig
 from core.utils import MessageResponse, AppContext
 from core.modules.install import Install
@@ -50,16 +49,16 @@ from core.modules.cache import Cache
 from core.libs.crashreport import CrashReport
 from core.libs.download import Download
 from core.libs.cleepdesktoplogs import CleepDesktopLogs
-from core.exceptions import CommandError
+from core.exception import CommandError
 
 __all__ = ['app']
 
-#constants
+# constants
 BASE_DIR = ''
 HTML_DIR = os.path.join(BASE_DIR, 'html')
 ETCHER_DIR = 'etcher-cli'
 
-#globals
+# globals
 context = AppContext()
 app = bottle.app()
 modules = {}
@@ -92,7 +91,7 @@ def update_ui(event, data):
     """
     global  ws_updates
 
-    #push data to queue
+    # push data to queue
     ws_updates.put_nowait({
         'event': event,
         'data': data,
@@ -115,20 +114,20 @@ def configure_app(app_path, cache_path, config_path, config_filename, debug, is_
     """
     global app, context
 
-    #fill context
+    # fill context
     context.paths.app = '.' if len(app_path)==0 else app_path 
     context.paths.cache = cache_path
     context.paths.config = config_path
     context.update_ui = update_ui
 
-    #logging
+    # logging
     logging_formatter = logging.Formatter('%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
     root_logger = logging.getLogger()
     context.log_filepath = os.path.join(config_path, 'cleepdesktopcore.log')
     file_handler = RotatingFileHandler(context.log_filepath, maxBytes=2*1024*1024, backupCount=2, encoding='utf-8')
     file_handler.setFormatter(logging_formatter)
     if is_dev:
-        #dev mode: log to file and console with DEBUG level
+        # dev mode: log to file and console with DEBUG level
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(logging_formatter)
 
@@ -139,31 +138,31 @@ def configure_app(app_path, cache_path, config_path, config_filename, debug, is_
         root_logger.addHandler(console_handler)
         root_logger.setLevel(logging.DEBUG)
     elif debug:
-        #debug mode: log to file with DEBUG level
+        # debug mode: log to file with DEBUG level
         root_logger.addHandler(file_handler)
         root_logger.setLevel(logging.DEBUG)
     else:
-        #other mode: log to file with INFO level
+        # other mode: log to file with INFO level
         root_logger.addHandler(file_handler)
         root_logger.setLevel(logging.INFO)
 
-    #set rpclogger
+    # set rpclogger
     context.main_logger = logging.getLogger('RpcServer')
     context.main_logger.info('===== CleepDesktopCore started =====')
     context.main_logger.info('Python version: %s' % platform.python_version())
     context.main_logger.info('Application path: %s' % app_path)
     context.main_logger.info('Configuration path: %s' % config_path)
     
-    #load config
+    # load config
     app_config = AppConfig(os.path.join(config_path, config_filename))
     config = app_config.load_config()
 
-    #handle debug
+    # handle debug
     debug = False
     if config['cleep']['isdev']:
-        #force debug in dev mode (update config file to sync ui and core)
+        # force debug in dev mode (update config file to sync ui and core)
         config['cleep']['debug'] = True
-    #update logger level
+    # update logger level
     if config['cleep']['debug']:
         debug = True
         context.main_logger.setLevel(logging.DEBUG)
@@ -171,7 +170,7 @@ def configure_app(app_path, cache_path, config_path, config_filename, debug, is_
         context.main_logger.setLevel(logging.WARN)
     context.main_logger.debug('Config: %s' % config)
 
-    #init crash report (disabled by default)
+    # init crash report (disabled by default)
     libs_version = {
         'gevent': gevent_version,
         'bottle': bottle.__version__,
@@ -179,32 +178,38 @@ def configure_app(app_path, cache_path, config_path, config_filename, debug, is_
         'requests': requests_version,
         'geventwebsocket': geventwebsocket_version()
     }
-    context.crash_report = CrashReport('CleepDesktop', config['cleep']['version'], libs_version, config['cleep']['isdev'])
+    context.crash_report = CrashReport(
+        'https://8e703f88899c42c18b8466c44b612472@o97410.ingest.sentry.io/213385',
+        'CleepDesktop',
+        config['cleep']['version'],
+        libs_version,
+        config['cleep']['isdev']
+    )
     if config['cleep']['crashreport']:
         context.crash_report.enable()
     if config['cleep']['isdev']:
-        #disable crash report during developments
+        # disable crash report during developments
         context.main_logger.debug('Crash report disabled during developments')
         context.crash_report.disable()
 
-    #launch config module
+    # launch config module
     context.modules['config'] = Config(context, app_config, debug)
     context.config = context.modules['config']
     context.modules['config'].start()
 
-    #launch cache module
+    # launch cache module
     context.modules['cache'] = Cache(context, debug)
     context.modules['cache'].start()
 
-    #launch install module
+    # launch install module
     context.modules['install'] = Install(context, debug)
     context.modules['install'].start()
 
-    #launch devices module
+    # launch devices module
     context.modules['devices'] = Devices(context, debug)
     context.modules['devices'].start()
 
-    #launch updates module
+    # launch updates module
     context.modules['updates'] = Updates(context, debug)
     context.modules['updates'].start()
 
@@ -224,44 +229,44 @@ def start(host='127.0.0.1', port=80, key=None, cert=None):
     """
     global app, context
 
-    #populate some stuff at startup
+    # populate some stuff at startup
     context.modules['devices'].get_devices()
     context.modules['updates'].get_status()
 
     try:
         if key is not None and len(key)>0 and cert is not None and len(cert)>0:
-            #start HTTPS server
+            # start HTTPS server
             context.main_logger.info('Starting HTTPS server on %s:%d' % (host, port))
             server_logger = LoggingLogAdapter(context.main_logger, logging.INFO)
             server = pywsgi.WSGIServer((host, port), app, keyfile=key, certfile=cert, log=server_logger, handler_class=WebSocketHandler)
             server.serve_forever()
 
         else:
-            #start HTTP server
+            # start HTTP server
             context.main_logger.info('Starting HTTP server on %s:%d' % (host, port))
             server_logger = LoggingLogAdapter(context.main_logger, logging.INFO)
             server = pywsgi.WSGIServer((host, port), app, log=server_logger, handler_class=WebSocketHandler)
             server.serve_forever()
 
     except KeyboardInterrupt:
-        #user stops raspiot
+        # user stops raspiot
         pass
 
     except UnicodeDecodeError:
-        #maybe unsupported character in hostname
-        #this is a unfixed bug in python https://bugs.python.org/issue9377
-        #topic about it (no solution @ 2019/12/12)
-        #https://stackoverflow.com/questions/23109244/unicodedecodeerror-with-runserver
+        # maybe unsupported character in hostname
+        # this is a unfixed bug in python https://bugs.python.org/issue9377
+        # topic about it (no solution @ 2019/12/12)
+        # https://stackoverflow.com/questions/23109244/unicodedecodeerror-with-runserver
         context.main_logger.exception('HTTP server failed to start because computer hostname seems to have unsupported characters. Please use only ASCII.')
         context.crash_report.report_exception()
 
     except:
-        #unhandled exception
+        # unhandled exception
         context.main_logger.exception('HTTP server failed to start:')
         context.crash_report.report_exception()
 
     finally:
-        #close server properly
+        # close server properly
         if server and not server.closed:
             server.close()
 
@@ -290,13 +295,13 @@ def command():
     """
     global context
 
-    #context.main_logger.debug('Command (method=%s)' % bottle.request.method)
+    # context.main_logger.debug('Command (method=%s)' % bottle.request.method)
     if bottle.request.method=='OPTIONS':
         return {}
     else:
         resp = MessageResponse()
         try:
-            #convert command to cleep command
+            # convert command to cleep command
             data = bottle.request.json
             # pylint: disable=E1136, E1135
             command = data['command'] if 'command' in data else None
@@ -304,8 +309,8 @@ def command():
             params = data['params'] if 'params' in data else None
             # pylint: enable=E1136, E1135
 
-            #and execute command
-            #context.main_logger.debug('Execute command %s with params %s' % (command, params))
+            # and execute command
+            # context.main_logger.debug('Execute command %s with params %s' % (command, params))
             if not to in context.modules:
                 raise CommandError('Module "%s" does not exist' % to)
             resp.data = context.modules[to].execute_command(command, params)
@@ -316,7 +321,7 @@ def command():
             resp.error = True
             resp.message = str(e)
 
-        #send response
+        # send response
         return json.dumps(resp.to_dict())
 
 @app.route('/cleepws')
@@ -326,19 +331,19 @@ def handle_cleepwebsocket():
     """
     global context, ws_updates
 
-    #init websocket
+    # init websocket
     wsock = bottle.request.environ.get('wsgi.websocket')
     if not wsock:
         context.main_logger.error('Expected WebSocket request')
         bottle.abort(400, 'Expected WebSocket request')
 
-    #now wait for data to send
+    # now wait for data to send
     while True:
 
         try:
             event = ws_updates.get(block=True, timeout=0.25)
 
-            #send data to socket
+            # send data to socket
             send = CleepWebSocketMessage()
             send.event = event['event']
             send.data = event['data']

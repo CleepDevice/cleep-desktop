@@ -12,11 +12,10 @@ class CleepDesktopLogs():
     """
     Handle cleepdesktop logs files
     """
-
     LOGS_CORE = 'cleepdesktopcore.log'
     LOGS_UI = 'log.log'
 
-    #those paths are based on electron-log doc (https://github.com/megahertz/electron-log)
+    # those paths are based on electron-log doc (https://github.com/megahertz/electron-log)
     PATH_LINUX = '~/.config/CleepDesktop'
     PATH_MAC = '~/Library/Logs/CleepDesktop'
     PATH_WIN = '%USERPROFILE%\\AppData\\Roaming\\CleepDesktop'
@@ -28,11 +27,11 @@ class CleepDesktopLogs():
         Args:
             logs_path (string): path of logs files
         """
-        #logger
+        # logger
         self.logger = logging.getLogger(self.__class__.__name__)
         #self.logger.setLevel(logging.DEBUG)
 
-        #build logs path according to platform
+        # build logs path according to platform
         if platform.system()=='Windows':
             self.logs_path = os.path.expandvars(self.PATH_WIN)
         elif platform.system()=='Darwin':
@@ -41,7 +40,7 @@ class CleepDesktopLogs():
             self.logs_path = os.path.expanduser(self.PATH_LINUX)
         self.logger.debug('Log path: %s' % self.logs_path)
 
-        #members
+        # members
         self.temp_dir = tempfile.gettempdir()
 
     def get_logs_path(self):
@@ -60,10 +59,10 @@ class CleepDesktopLogs():
         Return:
             string: zipped archive path
         """
-        #generate filename in tmp dir
+        # generate filename in tmp dir
         filename = os.path.join(self.temp_dir, str(uuid.uuid4()))
 
-        #build archive
+        # build archive
         try:
             archive = zipfile.ZipFile(filename, 'w')
             core_file = os.path.join(self.logs_path, self.LOGS_CORE)

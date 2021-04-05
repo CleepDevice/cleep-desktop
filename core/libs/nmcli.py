@@ -20,7 +20,7 @@ except:
 
 class Nmcli(AdvancedConsole):
     """
-    Command /sbin/iwlist helper.
+    Command /usr/bin/nmcli helper.
     Get list of wifi networks in range.
     """
 
@@ -41,12 +41,12 @@ class Nmcli(AdvancedConsole):
         """
         AdvancedConsole.__init__(self)
 
-        #members
+        # members
         self._command_wifi_networks = '/usr/bin/nmcli -f SSID,SIGNAL,SECURITY dev wifi list'
         self._command_interfaces = '/usr/bin/nmcli -f TYPE,STATE,DEVICE device'
         self.timestamp = None
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
         self.networks = {}
 
     def __refresh(self, interface):
@@ -60,14 +60,14 @@ class Nmcli(AdvancedConsole):
 
         entries = {}
         for _, groups in results:
-            #filter None values
+            # filter None values
             groups = list(filter(None, groups))
-            #self.logger.debug(groups)
+            # self.logger.debug(groups)
 
-            #get network name
+            # get network name
             network = groups[0].strip()
 
-            #get encryption
+            # get encryption
             encryption = WpaSupplicantConf.ENCRYPTION_TYPE_UNKNOWN
             if groups[2].lower().find('wpa2')>=0:
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WPA2
@@ -78,14 +78,14 @@ class Nmcli(AdvancedConsole):
             elif groups[2].lower().find('--')>=0:
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_UNSECURED
 
-            #get signal level
+            # get signal level
             try:
                 signal_level = float(groups[1])
             except:
                 self.logger.exception('Unable to convert to float signal level value "%s":' % groups[1])
                 signal_level = 0
 
-            #create entry
+            # create entry
             entries[network] = {
                 'interface': interface,
                 'network': network,
@@ -93,7 +93,7 @@ class Nmcli(AdvancedConsole):
                 'signallevel': signal_level
             }
         
-        #save networks and error
+        # save networks
         self.networks = entries
 
     def is_installed(self):
@@ -117,34 +117,34 @@ class Nmcli(AdvancedConsole):
                 }
         """
         results = self.find(self._command_interfaces, r'^(wifi|ethernet|loopback)\s+(disconnected|connected|unavailable|unmanaged)\s+(.*)$', timeout=5.0)
-        #self.logger.debug(results)
+        # self.logger.debug(results)
 
-        #handle errors
+        # handle errors
         if len(results)==0 and self.get_last_return_code()!=0:
             return {}
 
         entries = {}
         for _, groups in results:
-            #filter None values
+            # filter None values
             groups = list(filter(None, groups))
-            #self.logger.debug(groups)
+            # self.logger.debug(groups)
 
-            #get type
+            # get type
             type_ = self.TYPE_UNKNOWN
             if groups[0].lower()==self.TYPE_ETHERNET:
                 type_ = self.TYPE_ETHERNET
             if groups[0].lower()==self.TYPE_WIFI:
                 type_ = self.TYPE_WIFI
 
-            #get state
+            # get state
             connected = False
             if groups[1].lower()==self.STATE_CONNECTED:
                 connected = True
 
-            #interface name
+            # interface name
             name = groups[2]
 
-            #create entry
+            # create entry
             entries[name] = {
                 'interface': name,
                 'type': type_,

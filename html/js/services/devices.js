@@ -9,20 +9,20 @@ var devicesService = function($rootScope, cleepService)
     self.unconfigured = 0;
     self.configured = 0;
 
-    //Smart devices sync, it updates existing devices, adds new ones and removes deleted ones
+    // smart devices sync, it updates existing devices, adds new ones and removes deleted ones
     self.__syncDevices = function(devices, removedDevice) {
-        if( devices ) {
-            //add and update devices
+        if (devices) {
+            // add and update devices
             var found = false;
-            for( var i=0; i<devices.length; i++ ) {
+            for (var i=0; i < devices.length; i++) {
                 found = false;
-                for( var j=0; j<self.devices.length; j++ ) {
-                    if( self.devices[j].uuid===devices[i].uuid ) {
-                        //device found
+                for (var j=0; j < self.devices.length; j++) {
+                    if (self.devices[j].uuid === devices[i].uuid) {
+                        // device found
                         found = true;
 
-                        //update device infos
-                        self.devices[j].configured = devices[i].configured;
+                        // update device infos
+                        self.devices[j].configured = devices[i].extra.configured;
                         self.devices[j].hostname = devices[i].hostname;
                         self.devices[j].ip = devices[i].ip;
                         self.devices[j].online = devices[i].online;
@@ -34,51 +34,53 @@ var devicesService = function($rootScope, cleepService)
                     }
                 }
 
-                //add new device
-                if( !found ) {
-                    //save entry
+                // add new device
+                if (!found) {
+                    // save entry
                     self.devices.push(devices[i]);
                 }
             }
         }
 
-        //remove device
-        if( removedDevice ) {
+        // remove device
+        if (removedDevice) {
             var indexToDelete = -1;
-            for( var i=0; i<self.devices.length; i++ ) {
-                if( self.devices[i].uuid===removedDevice.uuid ) {
+            for (var i=0; i < self.devices.length; i++) {
+                if (self.devices[i].uuid === removedDevice.uuid) {
                     indexToDelete = i;
                     break;
                 }
             }
-
-            if( indexToDelete>=0 ) {
+            if (indexToDelete >= 0) {
                 self.devices.splice(i, 1);
             }
         }
     };
 
-    //update devices list
+    // update devices list
     self.__updateDevices = function(responseData, removedDevice) {
-        //sync devices
+        // sync devices
         self.__syncDevices(responseData.devices, removedDevice);
 
-        //sort devices list
+        // sort devices list
         self.devices.sort((a, b) => {
             var lowerA = a.hostname.toLowerCase();
             var lowerB = b.hostname.toLowerCase();
-            if( lowerA>lowerB ) {
+            if (lowerA>lowerB) {
                 return 1;
-            } else if ( lowerA<lowerB ) {
+            }
+            if (lowerA<lowerB) {
                 return -1;
             }
             return 0;
         });
 
-        //update some controller members value
+        // update some controller members value
         self.unconfigured = responseData.unconfigured;
         self.configured = self.devices.length - self.unconfigured;
         self.loading = false;
+
+        console.log('DEV', self.devices);
     };
 
     //select device in devices panel
@@ -96,6 +98,7 @@ var devicesService = function($rootScope, cleepService)
     self.getDevices = function() {
         return cleepService.sendCommand('get_devices', 'devices')
             .then((resp) => {
+                console.log('====>', resp.data);
                 self.__updateDevices(resp.data);
             });
     };

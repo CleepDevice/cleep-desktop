@@ -886,14 +886,14 @@ class Install(CleepDesktopModule):
         Returns:
             bool: True if adapter exists
         """
-        #system check
+        # system check
         if not self.iw.is_installed():
             return False
 
-        #get wifi interfaces
-        wifi_connections = self.iw.get_connections()
+        # get wifi interfaces
+        wifi_adapters = self.iw.get_adapters()
 
-        return len(wifi_connections.keys())>0
+        return len(wifi_adapters.keys())>0
 
     def __get_wifi_adapter_windows(self):
         """

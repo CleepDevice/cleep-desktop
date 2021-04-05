@@ -25,30 +25,30 @@ class Cmdline():
         """
         Refresh data
         """
-        #check if refresh is needed
+        # check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             return
 
         res = self.console.command('/bin/cat /proc/cmdline')
         if not res['error'] and not res['killed']:
-            #parse data
+            # parse data
             matches = re.finditer(r'root=(.*?)\s', '\n'.join(res['stdout']), re.UNICODE | re.MULTILINE)
 
             for _, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==1:
                     if groups[0].startswith('UUID='):
-                        #get device from uuid
+                        # get device from uuid
                         uuid = groups[0].replace('UUID=', '')
                         root_device = self.blkid.get_device_by_uuid(uuid)
                     else:
-                        #get device from path
+                        # get device from path
                         root_device = groups[0]
 
-                    #get file system infos
+                    # get file system infos
                     drives = self.lsblk.get_drives()
 
-                    #save data
+                    # save data
                     self.root_partition = root_device.replace('/dev/', '')
                     self.root_drive = None
                     for drive in drives:
