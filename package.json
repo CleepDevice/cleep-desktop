@@ -4,7 +4,7 @@
     "description": "Desktop application to manage your Cleep devices",
     "main": "main.js",
     "scripts": {
-        "copyfiles": "copyfiles html/**/* build/ && copyfiles core/**/* build/ && copyfiles cleepdesktopcore.py build/ && copyfiles dev-app-update.yml build/ && copyfiles package.json build/",
+        "copyfiles": "copyfiles \"html/**/*\" build/ && copyfiles \"core/**/*\" build/ && copyfiles cleepdesktopcore.py build/ && copyfiles dev-app-update.yml build/ && copyfiles package.json build/",
         "build": "rimraf build && tsc && npm run copyfiles",
         "watch": "tsc -w",
         "lint": "eslint -c .eslintrc --ext .ts ./src",

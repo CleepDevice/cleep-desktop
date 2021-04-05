@@ -56,13 +56,13 @@ else
     node_modules/.bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH"
 fi
 
-#cleaning
+# cleaning
 echo
 echo
 echo "Finalizing..."
 echo "-------------"
 /bin/sleep 1
-/bin/mv "./$CLEEPDESKTOPPATH/dist" dist
+/bin/mv "./$CLEEPDESKTOPPATH/dist" .
 /bin/rm -rf packaging
 /bin/rm -rf __pycache__
 /bin/rm -rf core/__pycache__
