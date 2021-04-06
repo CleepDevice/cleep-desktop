@@ -66,7 +66,7 @@ class CleepCommClient(Thread):
             try:
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect((self.ip, self.port))
-                self.logger.debug(u'Connected to comm server')
+                self.logger.debug('Connected to comm server')
                 connected = True
                 break
 
@@ -87,7 +87,7 @@ class CleepCommClient(Thread):
 
     def send(self, command):
         if self.socket:
-            self.socket.send(command.to_json().encode(u'utf-8'))
+            self.socket.send(command.to_json().encode('utf-8'))
             return True
 
         return False

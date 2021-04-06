@@ -21,7 +21,7 @@ class Config(CleepDesktopModule):
         """
         CleepDesktopModule.__init__(self, context, debug_enabled)
 
-        #members
+        # members
         self.app_config = app_config
 
     def set_config_value(self, key, value):
@@ -37,17 +37,17 @@ class Config(CleepDesktopModule):
         def walk(node, keys, value):
             key = keys.pop(0)
             if len(keys)==0:
-                #leaf, update value
+                # leaf, update value
                 if key in node.keys():
                     node[key] = value
                     return True
                 else:
-                    #self.context.main_logger.debug('Key "%s" not found' % key)
+                    # self.context.main_logger.debug('Key "%s" not found' % key)
                     return False
             elif key in node.keys():
                 return walk(node[key], keys, value)
             else:
-                #self.context.main_logger.debug('Key "%s" not found' % key)
+                # self.context.main_logger.debug('Key "%s" not found' % key)
                 return False
 
         config = self.app_config.load_config()
@@ -68,7 +68,7 @@ class Config(CleepDesktopModule):
         """
         old = self.app_config.load_config()
 
-        #process debug flag
+        # process debug flag
         if old['cleep']['debug']!=config['cleep']['debug']:
             if config['cleep']['debug']:
                 self.context.main_logger.setLevel(True)
@@ -79,7 +79,7 @@ class Config(CleepDesktopModule):
                 for _, module in self.context.modules.items():
                     module.set_debug(False)
                 
-        #process crashreport flag
+        # process crashreport flag
         if old['cleep']['crashreport']!=config['cleep']['crashreport']:
             if config['cleep']['crashreport']:
                 self.crash_report.enable()

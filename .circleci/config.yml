@@ -1,7 +1,7 @@
 version: 2.1
 orbs:
   win: circleci/windows@2.4.0
-  slack: circleci/slack@3.4.2
+  slack: circleci/slack@4.3.3
 jobs:
   publish-windows64:
     executor:
@@ -10,11 +10,17 @@ jobs:
     steps:
       - checkout
       - run: npm run publish-win64
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: basic_success_1
   publish-linux64:
     docker:
       - image: circleci/buildpack-deps:bionic
     steps:
-      - run: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+      - run: curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
       - run: sudo apt-get install -y nodejs
       - checkout
       - run: npm run publish-linux64-circleci
@@ -22,13 +28,16 @@ jobs:
     docker:
       - image: circleci/buildpack-deps:bionic
     steps:
-      - run: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+      - run: curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
       - run: sudo apt-get install -y nodejs
       - checkout
       - run: npm run build-linux64-circleci
-      - slack/status:
-          success_message: "Build Succeeded!"
-          failure_message: "Build failed!"
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: basic_success_1
 workflows:
   version: 2
   windows64:

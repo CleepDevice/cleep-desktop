@@ -1,40 +1,51 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-try:
-    from console import Console
-except:
-    from core.libs.console import Console
+from core.libs.console import Console
 import re
 import time
 
-class Blkid():
+class Blkid(Console):
 
     CACHE_DURATION = 5.0
 
     def __init__(self):
-        self.console = Console()
+        """
+        Constructor
+        """
+        Console.__init__(self)
+
+        # set members
         self.timestamp = None
         self.devices = {}
-        self.uuids = {}
 
     def __refresh(self):
         """
         Refresh data
         """
-        #check if refresh is needed
+        # check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
+            self.logger.trace('Use cached data')
             return
 
-        res = self.console.command(u'/sbin/blkid')
+        res = self.command(u'/sbin/blkid')
         if not res[u'error'] and not res[u'killed']:
             #parse data
-            matches = re.finditer(r'^(\/dev\/.*?):.*\s+UUID=\"(.*?)\"\s+.*$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
-            for matchNum, match in enumerate(matches):
+            matches = re.finditer(r'^(\/dev\/.*?):.*\s+UUID=\"(.*?)\"\s+.*TYPE=\"(.*?)\"\s+.*PARTUUID=\"(.*?)\"$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
+            for _, match in enumerate(matches):
                 groups = match.groups()
-                if len(groups)==2:
-                    self.devices[groups[0]] = groups[1]
-                    self.uuids[groups[1]] = groups[0]
+                # group[0] = device
+                # group[1] = UUID
+                # group[2] = TYPE
+                # group[3] = PARTUUID
+                if len(groups)==4:
+                    data = {
+                        u'device': groups[0],
+                        u'uuid': groups[1],
+                        u'type': groups[2],
+                        u'partuuid': groups[3],
+                    }
+                    self.devices[data[u'device']] = data
 
         self.timestamp = time.time()
 
@@ -42,8 +53,19 @@ class Blkid():
         """
         Get all devices infos
 
-        Return:
-            dict: dict of devices
+        Returns:
+            dict: dict of devices::
+
+                {
+                    device (string): {
+                        device (string): device path,
+                        uuid (string): device uuid,
+                        type (string): device filesystem type,
+                        partuuid (string): device partuuid
+                    },
+                    ...
+                }
+
         """
         self.__refresh()
         return self.devices
@@ -55,14 +77,45 @@ class Blkid():
         Args:
             uuid (string): device uuid
 
-        Return:
-            dict: dict of device infos
+        Returns:
+            dict: device data::
+
+                {
+                    device (string): device path,
+                    uuid (string): device uuid,
+                    type (string): device filesystem type,
+                    partuuid (string): device partuuid
+                }
+
         """
         self.__refresh()
+        for device in self.devices.values():
+            if device[u'uuid']==uuid:
+                return device
+        return None
 
-        if uuid in self.uuids:
-            return self.uuids[uuid]
+    def get_device_by_partuuid(self, partuuid):
+        """
+        Get device specified by partuuid
 
+        Args:
+            partuuid (string): device partuuid
+
+        Returns:
+            dict: device data::
+
+                {
+                    device (string): device path,
+                    uuid (string): device uuid,
+                    type (string): device filesystem type,
+                    partuuid (string): device partuuid
+                }
+
+        """
+        self.__refresh()
+        for device in self.devices.values():
+            if device[u'partuuid']==partuuid:
+                return device
         return None
 
     def get_device(self, device):
@@ -72,13 +125,18 @@ class Blkid():
         Args:
             device (string): device to search for
 
-        Return:
-            dict: dict of device infos
+        Returns:
+            dict: device data::
+
+                {
+                    device (string): device path,
+                    uuid (string): device uuid,
+                    type (string): device filesystem type,
+                    partuuid (string): device partuuid
+                }
+
         """
         self.__refresh()
+        return self.devices[device] if device in self.devices.keys() else None
 
-        if device in self.devices:
-            return self.devices[device]
-
-        return None
 

@@ -41,11 +41,11 @@ class Download():
             cache_dir (string): directory to save cached files. If not specified default platform temp dir is setted (it means after a reboot, cache will surely be deleted)
             status_callback (function): status callback. Params: status, filesize, percent
         """
-        #logger
+        # logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
 
-        #members
+        # members
         self.temp_dir = tempfile.gettempdir()
         self.cache_dir = cache_dir
         if not self.cache_dir:
@@ -56,7 +56,7 @@ class Download():
         self.http = urllib3.PoolManager(num_pools=1)
         self.percent = 0
 
-        #purge previously downloaded files
+        # purge previously downloaded files
         self.purge_files()
 
     def cancel(self):
@@ -74,9 +74,9 @@ class Download():
         """
         cached_filename = self.__encode_cached_filename_by_filename(filename)
         self.logger.debug('Trying to delete cached filename %s (with real name %s)' % (cached_filename, filename))
-        for root, dirs, dls in os.walk(self.cache_dir):
+        for _, _, dls in os.walk(self.cache_dir):
             for dl in dls:
-                #delete cached file
+                # delete cached file
                 if os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX) and os.path.basename(dl).endswith(cached_filename):
                     self.logger.debug('Delete existing cached file: %s' % dl)
                     try:
@@ -91,9 +91,9 @@ class Download():
         Args:
             force_all (bool): force deletion of all files (cached ones too)
         """
-        for root, dirs, dls in os.walk(self.temp_dir):
+        for _, _, dls in os.walk(self.temp_dir):
             for dl in dls:
-                #delete temp files
+                # delete temp files
                 if os.path.basename(dl).startswith(self.DOWNLOAD_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded temp file: %s' % dl)
                     try:
@@ -101,7 +101,7 @@ class Download():
                     except:
                         pass
 
-                #delete cached files (on temp dir)
+                # delete cached files (on temp dir)
                 elif force_all and os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded cached file: %s' % dl)
                     try:
@@ -109,8 +109,8 @@ class Download():
                     except:
                         pass
 
-        #delete cached files (on cache dir)
-        for root, dirs, dls in os.walk(self.cache_dir):
+        # delete cached files (on cache dir)
+        for _, _, dls in os.walk(self.cache_dir):
             for dl in dls:
                 if force_all and os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
                     self.logger.debug('Purge existing downloaded cached file: %s' % dl)
@@ -134,7 +134,7 @@ class Download():
         cached = []
 
         self.logger.debug('Get cached files from "%s"' % self.cache_dir)
-        for root, dirs, dls in os.walk(self.cache_dir):
+        for _, _, dls in os.walk(self.cache_dir):
             for dl in dls:
                 self.logger.debug('Found cached file "%s"' % dl)
                 if os.path.basename(dl).startswith(self.CACHED_FILE_PREFIX):
@@ -150,8 +150,8 @@ class Download():
                         })
 
                     except:
-                        #unable to get cached filename, filename format changed surely
-                        #remove it from list and filesystem
+                        # unable to get cached filename, filename format changed surely
+                        # remove it from list and filesystem
                         self.logger.exception('Invalid cached file:')
                         os.remove(filepath)
                         self.logger.warning('Remove cached file "%s" because name format surely changed and is not compatible anymore' % filepath)
@@ -236,33 +236,33 @@ class Download():
         Returns:
             string: downloaded filepath (temp filename, it will be deleted during next download) or None if error occured
         """
-        #prepare filename
+        # prepare filename
         download_uuid = str(uuid.uuid4())
         self.download = os.path.join(self.temp_dir, '%s_%s' % (self.TMP_FILE_PREFIX, download_uuid))
         self.logger.debug('File will be saved to "%s"' % self.download)
 
-        #check if file is cached
+        # check if file is cached
         cached_filename = self.__encode_cached_filename_by_url(url)
         cached_download = os.path.join(self.cache_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, cached_filename))
         if cache and os.path.exists(cached_download):
-            #file cached, return it
+            # file cached, return it
             self.logger.debug('Return cached file (%s)' % cached_download)
             filesize = os.path.getsize(cached_download)
             self.download = cached_download
             self.__status_callback(self.STATUS_DONE, filesize, 100)
             return self.download
         
-        #prepare download
+        # prepare download
         download = None
         try:
-            download = open(self.download, u'wb')
+            download = open(self.download, 'wb')
         except:
             self.logger.exception('Unable to create file:')
             self.status = self.STATUS_ERROR
             self.__status_callback(self.status, 0, 0)
             return None
 
-        #initialize download
+        # initialize download
         try:
             resp = self.http.request('GET', url, preload_content=False)
         except:
@@ -271,7 +271,7 @@ class Download():
             self.__status_callback(self.status, 0, 0)
             return None
 
-        #get file size
+        # get file size
         file_size = 0
         try:
             file_size = int(resp.getheader('Content-Length'))
@@ -281,11 +281,11 @@ class Download():
         self.__status_callback(self.status, 0, 0)
         self.logger.debug('Size to download: %d bytes' % file_size)
 
-        #download file
+        # download file
         downloaded_size = 0
         last_percent = -1
         while True:
-            #read data
+            # read data
             try:
                 buf = resp.read(1024)
             except:
@@ -296,10 +296,10 @@ class Download():
                 return None
 
             if not buf:
-                #download ended or failed, stop statement
+                # download ended or failed, stop statement
                 break
 
-            #save date to output file
+            # save date to output file
             downloaded_size += len(buf)
             try:
                 download.write(buf)
@@ -310,7 +310,7 @@ class Download():
                 self.__status_callback(self.status, downloaded_size, self.percent)
                 return None
             
-            #compute percentage
+            # compute percentage
             if file_size!=0:
                 self.percent = int(float(downloaded_size) / float(file_size) * 100.0)
                 self.__status_callback(self.status, downloaded_size, self.percent)
@@ -318,7 +318,7 @@ class Download():
                     last_percent = self.percent
                     self.logger.debug('Downloading %s %d%%' % (self.download, self.percent))
 
-            #cancel download
+            # cancel download
             if self.__cancel:
                 download.close()
                 self.logger.debug('Flash process canceled during download')
@@ -326,10 +326,10 @@ class Download():
                 self.__status_callback(self.status, file_size, 100)
                 return None
 
-        #download terminated
+        # download terminated
         download.close()
 
-        #file size
+        # file size
         if downloaded_size==file_size:
             self.logger.debug('File size is valid')
         else:
@@ -338,7 +338,7 @@ class Download():
             self.__status_callback(self.status, downloaded_size, self.percent)
             return None
 
-        #checksum
+        # checksum
         checksum_computed = None
         checksum_provided = None
         if check_sha1:
@@ -364,25 +364,25 @@ class Download():
         else:
             self.logger.debug('No checksum to verify :(')
 
-        #rename file
+        # rename file
         if not cache:
-            #no cache, rename file with download prefix
+            # no cache, rename file with download prefix
             download = os.path.join(self.temp_dir, '%s_%s' % (self.DOWNLOAD_FILE_PREFIX, download_uuid))
             self.logger.debug('Cache disabled, rename download to "%s"', download)
         else:
-            #cache file, rename file with cache prefix
+            # cache file, rename file with cache prefix
             download = os.path.join(self.cache_dir, '%s_%s' % (self.CACHED_FILE_PREFIX, cached_filename))
             self.logger.debug('Cache enabled, rename download to "%s"', download)
         try:
             shutil.move(self.download, download)
             self.download = download
         except:
-            self.logger.exception(u'Unable to rename downloaded file:')
+            self.logger.exception('Unable to rename downloaded file:')
             self.status = self.STATUS_ERROR
             self.__status_callback(self.status, file_size, 100)
             return None
 
-        #final status callback
+        # final status callback
         self.status = self.STATUS_DONE
         self.__status_callback(self.status, file_size, 100)
 
@@ -401,11 +401,11 @@ class Download():
         if not url or len(url)==0:
             raise Exception('Invalid url "%s" specified' % url)
 
-        #consider last part of url as filename
+        # consider last part of url as filename
         url_parsed = urllib3.util.parse_url(url)
-        filename = url_parsed.path.split(u'/')[-1]
+        filename = url_parsed.path.split('/')[-1]
 
-        #encode filename for safety
+        # encode filename for safety
         safe_filename = base64.b16encode(filename.encode('utf-8')).decode('utf-8')
 
         return safe_filename
@@ -420,7 +420,7 @@ class Download():
         Return:
             string: cached filename
         """
-        #encode filename for safety
+        # encode filename for safety
         safe_filename = base64.b16encode(filename.encode('utf-8')).decode('utf-8')
 
         return safe_filename
@@ -436,17 +436,3 @@ class Download():
             string: decoded filename
         """
         return base64.b16decode(filename).decode('utf-8')
-
-
-#last_percent = 0
-#def cb(status, size, percent):
-#    global last_percent
-#    if not percent%5 and last_percent!=percent:
-#        print(status, size, percent)
-#        last_percent = percent
-#
-#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s: %(levelname)-8s [%(process)d] %(message)s')
-#d = Download(cb)
-#d.purge_files()
-#d.download_url('https://downloads.raspberrypi.org/raspbian_lite_latest', check_sha256='52e68130c152895905abe66279dd9feaa68091ba55619f5b900f2ebed381427b')
-    

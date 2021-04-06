@@ -13,8 +13,9 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
 
     //set members
     self.__ws = null;
-    self.port = settings.get('remote.rpcport');
+    self.port = settings.getSync('remote.rpcport');
     self.urlCommand = 'http://localhost:' + self.port + '/command';
+    self.urlWebsocket = 'ws://127.0.0.1:'+self.port+'/cleepws'
 
     /**
      * Connect websocket to python server
@@ -24,7 +25,7 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
         var defer = $q.defer();
 
         if( !self.__ws ) {
-            self.__ws = $websocket('ws://localhost:'+self.port+'/cleepws', null, {reconnectIfNotNormalClose: true});
+            self.__ws = $websocket(self.urlWebsocket, null, {reconnectIfNotNormalClose: true});
             self.__ws.onMessage(self.__websocketReceive);
             self.__ws.onClose(function() {
                 logger.debug('Websocket closed');

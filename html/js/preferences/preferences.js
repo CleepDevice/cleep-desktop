@@ -24,7 +24,7 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
             if( self.checkConfig() ) {
                 debounce.exec('config', self.setConfig, 500)
                     .then(function() {
-                        //console.log('Config saved');
+                        // console.log('Config saved');
                     }, function() {})
             }
         }
@@ -42,9 +42,9 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
                 return false;
 
             return true;
-        } else {
-            return false;
         }
+
+        return false;
     };
 
     //get configuration

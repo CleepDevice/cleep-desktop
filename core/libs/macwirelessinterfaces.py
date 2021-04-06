@@ -20,7 +20,7 @@ class MacWirelessInterfaces(AdvancedConsole):
     """
 
     CACHE_DURATION = 10.0
-    WIFI = u'Wi-Fi'
+    WIFI = 'Wi-Fi'
     
     def __init__(self):
         """
@@ -28,9 +28,9 @@ class MacWirelessInterfaces(AdvancedConsole):
         """
         AdvancedConsole.__init__(self)
 
-        #members
-        self._binary = u'/usr/sbin/networksetup'
-        self._command = u'/usr/sbin/networksetup -listallhardwareports'
+        # members
+        self._binary = '/usr/sbin/networksetup'
+        self._command = '/usr/sbin/networksetup -listallhardwareports'
         self.logger = logging.getLogger(self.__class__.__name__)
         self.interfaces = {}
         self.timestamp = None
@@ -48,31 +48,31 @@ class MacWirelessInterfaces(AdvancedConsole):
         """
         Refresh list of interfaces
         """
-        #check if refresh is needed
+        # check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             self.logger.debug('Don\'t refresh')
             return
 
-        #execute command
+        # execute command
         results = self.find(self._command, r'(?:Hardware Port:\s+(.*?)[\n\r\0]Device:\s+(.*?)[\n\r\0])', re.UNICODE | re.DOTALL, timeout=5.0)
         self.logger.debug(results)
 
-        #parse results
+        # parse results
         entries = []
-        for group, groups in results:
-            #filter None values
+        for _, groups in results:
+            # filter None values
             groups = list(filter(None, groups))
             self.logger.debug('groups=%s' % groups)
 
             if groups[0].startswith(self.WIFI):
-                #it's wifi interface
+                # it's wifi interface
                 entries.append(groups[1])
         self.logger.debug('entries: %s' % entries)
 
-        #save interfaces
+        # save interfaces
         self.interfaces = entries
 
-        #update timestamp
+        # update timestamp
         self.timestamp = time.time()
 
     def get_interfaces(self):

@@ -7,19 +7,19 @@ import requests
 import re
 import datetime
 
-class Raspbians():
+class Raspios():
     """
-    Get infos of Raspbians releases (desktop and lite version)
+    Get infos of Raspios releases (desktop and lite version)
     """
 
-    RASPBIAN_URL = 'http://downloads.raspberrypi.org/raspbian/images/'
-    RASPBIAN_LITE_URL = 'http://downloads.raspberrypi.org/raspbian_lite/images/'
+    RASPIOS_URL = 'http://downloads.raspberrypi.org/raspios_full_armhf/images/'
+    RASPIOS_LITE_URL = 'http://downloads.raspberrypi.org/raspios_lite_armhf/images/'
 
     def __init__(self, crash_report):
         """
         Constructor
         """
-        #members
+        # members
         self.logger = logging.getLogger(self.__class__.__name__)
         self.crash_report = crash_report
 
@@ -30,15 +30,15 @@ class Raspbians():
         if self.crash_report:
             self.crash_report.report_exception()
 
-    def get_raspbian_release_infos(self, release):
+    def get_raspios_release_infos(self, release):
         """
         Parse url specified in latest dict and get infos of release (checksum, link to archive...)
 
         Args:
-            release (dict): release infos as returned by __get_latest_raspbian_releases function
+            release (dict): release infos as returned by __get_latest_raspios_releases function
 
         Return:
-            dict: raspbian and raspbian lite infos::
+            dict: raspios and raspios lite infos::
                 {
                     url (string): file url
                     sha1 (string): sha1 checksum
@@ -53,25 +53,24 @@ class Raspbians():
             'timestamp': None
         }
 
-        #get release infos
+        # get release infos
         try:
             self.logger.debug('Requesting %s' % release['url'])
             resp = requests.get(release['url'])
             if resp.status_code==200:
-                #self.logger.debug('Resp content: %s' % resp.text)
-                #parse response content
+                # parse response content
                 matches = re.finditer(r'href=\"(%s.*?)\"' % release['prefix'], resp.text, re.UNICODE)
-                for matchNum, match in enumerate(matches):
+                for _, match in enumerate(matches):
                     groups = match.groups()
                     self.logger.debug('Groups: %s' % groups)
 
                     if len(groups)==1:
-                        #main archive
+                        # main archive
                         if groups[0].endswith('.zip'):
                             infos['url'] = '%s%s' % (release['url'], groups[0])
                             infos['timestamp'] = release['timestamp']
 
-                        #sha1 checksum
+                        # sha1 checksum
                         elif groups[0].endswith('.sha1'):
                             url = '%s%s' % (release['url'], groups[0])
                             try:
@@ -82,7 +81,7 @@ class Raspbians():
                                 self.__crash_report()
                                 self.logger.exception('Exception occured during %s request' % url)
 
-                        #sha256 checksum
+                        # sha256 checksum
                         elif groups[0].endswith('.sha256'):
                             url = '%s%s' % (release['url'], groups[0])
                             try:
@@ -97,7 +96,7 @@ class Raspbians():
                 self.logger.error('Request %s failed (status code=%d)' % (release['url'], resp.status_code))
 
         except requests.exceptions.ConnectionError:
-            self.logger.warning('Cannot get raspbians release infos: no internet connection')
+            self.logger.warning('Cannot get raspios release infos: no internet connection')
 
         except:
             self.__crash_report()
@@ -105,87 +104,87 @@ class Raspbians():
 
         return infos
 
-    def get_latest_raspbian_releases(self):
+    def get_latest_raspios_releases(self):
         """
-        Parse raspbian isos releases website and return latest release with it's informations
+        Parse raspios isos releases website and return latest release with it's informations
 
         Return:
             dict: infos about latest releases::
                 {
-                    raspbian: {
+                    raspios: {
                         prefix (string): prefix string (useful to search items in subfolder)
                         url (string): url of latest archive,
                         timestamp (int): timestamp of latest archive
                     },
-                    raspbian_lite: {
+                    raspios_lite: {
                         prefix (string): prefix string (useful to search items in subfolder)
                         url (string): url of latest archive,
                         timestamp (int): timestamp of latest archive
                     }
                 }
         """
-        latest_raspbian = None
-        latest_raspbian_lite = None
+        latest_raspios = None
+        latest_raspios_lite = None
 
-        #get latest raspbian release infos
+        # get latest raspios release infos
         try:
-            self.logger.debug('Requesting %s' % self.RASPBIAN_URL)
-            resp = requests.get(self.RASPBIAN_URL)
+            self.logger.debug('Requesting %s' % self.RASPIOS_URL)
+            resp = requests.get(self.RASPIOS_URL)
             if resp.status_code==200:
-                #parse response content
-                matches = re.finditer(r'href=\"((raspbian)-(\d*)-(\d*)-(\d*)/)\"', resp.text, re.UNICODE)
+                # parse response content
+                matches = re.finditer(r'href=\"((raspios_full_armhf)-(\d*)-(\d*)-(\d*)/)\"', resp.text, re.UNICODE)
                 results = list(matches)
                 if len(results)>0:
                     groups = results[-1].groups()
-                    if len(groups)==5 and groups[1]=='raspbian':
+                    if len(groups)==5 and groups[1].startswith('raspios'):
                         dt = datetime.datetime(year=int(groups[2]), month=int(groups[3]), day=int(groups[4]))
-                        latest_raspbian = {
+                        latest_raspios = {
                             'prefix': '%s' % (groups[2]),
-                            'url': '%s%s' % (self.RASPBIAN_URL, groups[0]),
+                            'url': '%s%s' % (self.RASPIOS_URL, groups[0]),
                             'timestamp': int(time.mktime(dt.timetuple()))
                         }
             else:
-                self.logger.error('Unable to request raspbian repository (status code=%d)' % resp.status_code)
+                self.logger.error('Unable to request raspios repository (status code=%d)' % resp.status_code)
 
         except requests.exceptions.ConnectionError:
-            self.logger.warning('Cannot get raspbians isos: no internet connection')
+            self.logger.warning('Cannot get raspios isos: no internet connection')
         
         except:
             self.__crash_report()
-            self.logger.exception('Exception occured during %s read:' % self.RASPBIAN_URL)
+            self.logger.exception('Exception occured during %s read:' % self.RASPIOS_URL)
 
-        #get latest raspbian_lite release infos
+        # get latest raspios_lite release infos
         try:
-            self.logger.debug('Requesting %s' % self.RASPBIAN_LITE_URL)
-            resp = requests.get(self.RASPBIAN_LITE_URL)
+            self.logger.debug('Requesting %s' % self.RASPIOS_LITE_URL)
+            resp = requests.get(self.RASPIOS_LITE_URL)
             if resp.status_code==200:
-                #parse response content
-                matches = re.finditer(r'href=\"((raspbian_lite)-(\d*)-(\d*)-(\d*)/)\"', resp.text, re.UNICODE)
+                # parse response content
+                matches = re.finditer(r'href=\"((raspios_lite_armhf)-(\d*)-(\d*)-(\d*)/)\"', resp.text, re.UNICODE)
                 results = list(matches)
                 if len(results)>0:
                     groups = results[-1].groups()
-                    if len(groups)==5 and groups[1]=='raspbian_lite':
+                    if len(groups)==5 and groups[1].startswith('raspios'):
                         dt = datetime.datetime(year=int(groups[2]), month=int(groups[3]), day=int(groups[4]))
-                        latest_raspbian_lite = {
+                        latest_raspios_lite = {
                             'prefix': '%s' % (groups[2]),
-                            'url': '%s%s' % (self.RASPBIAN_LITE_URL, groups[0]),
+                            'url': '%s%s' % (self.RASPIOS_LITE_URL, groups[0]),
                             'timestamp': int(time.mktime(dt.timetuple()))
                         }
                 else:
-                    self.logger.error('No result requesting %s' % self.RASPBIAN_LITE_URL)
+                    self.logger.error('No result requesting %s' % self.RASPIOS_LITE_URL)
             else:
-                self.logger.error('Unable to request raspbian_lite repository (status code=%d)' % resp.status_code)
+                self.logger.error('Unable to request raspios_lite repository (status code=%d)' % resp.status_code)
 
         except requests.exceptions.ConnectionError:
-            self.logger.warning('Cannot get raspbians isos: no internet connection')
+            self.logger.warning('Cannot get raspios isos: no internet connection')
 
         except:
             self.__crash_report()
-            self.logger.exception('Exception occured during %s request:' % self.RASPBIAN_LITE_URL)
+            self.logger.exception('Exception occured during %s request:' % self.RASPIOS_LITE_URL)
 
         return {
-            'raspbian': latest_raspbian,
-            'raspbian_lite': latest_raspbian_lite
+            'raspios': latest_raspios,
+            'raspios_lite': latest_raspios_lite
         }
 
 if __name__=='__main__':
@@ -193,11 +192,11 @@ if __name__=='__main__':
     from pprint import PrettyPrinter
     pp = PrettyPrinter(indent=2)
 
-    r = Raspbians(None)
-    releases = r.get_latest_raspbian_releases()
+    r = Raspios(None)
+    releases = r.get_latest_raspios_releases()
     pp.pprint(releases)
 
     print('*' * 40)
     for release in releases:
-        infos = r.get_raspbian_release_infos(releases[release])
+        infos = r.get_raspios_release_infos(releases[release])
         pp.pprint(infos)

@@ -6,7 +6,7 @@ __all__ = ['MessageResponse', 'MessageRequest', 'CleepDesktopModule', 'AppContex
 from threading import Thread
 import logging
 import time
-from core.exceptions import CommandError, InvalidMessage
+from core.exception import CommandError, InvalidMessage
 
 class AppPaths():
     app = None
@@ -14,19 +14,19 @@ class AppPaths():
     cache = None
 
 class AppContext():
-    #Logger: main logger instance
+    # Logger: main logger instance
     main_logger = None
-    #string: log filepath
+    # string: log filepath
     log_filepath = None
-    #Config: application config instance
+    # Config: application config instance
     config = None
-    #CrashReport: crash report instance
+    # CrashReport: crash report instance
     crash_report = None
-    #AppPaths: application paths
+    # AppPaths: application paths
     paths = AppPaths()
-    #function: callback to ui update
+    # function: callback to ui update
     update_ui = None
-    #list of internal modules
+    # list of internal modules
     modules = {}
 
 class CleepDesktopModule(Thread):
@@ -44,13 +44,13 @@ class CleepDesktopModule(Thread):
         Thread.__init__(self)
         Thread.daemon = True
 
-        #init logger
+        # init logger
         self.logger = logging.getLogger(self.__class__.__name__)
         if debug_enabled:
             self.logger.setLevel(logging.DEBUG)
         self.debug_enabled = debug_enabled
 
-        #members
+        # members
         self.context = context
         self.crash_report = context.crash_report
         self.running = True
@@ -77,13 +77,13 @@ class CleepDesktopModule(Thread):
         Args:
             debug (bool): debug enabled if True, otherwise info level
         """
-        #change current logger debug level
+        # change current logger debug level
         if debug:
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.WARN)
 
-        #update debug flag
+        # update debug flag
         self.debug_enabled = debug
 
     def stop(self):

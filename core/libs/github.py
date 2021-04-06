@@ -15,9 +15,9 @@ class Github():
     This class get releases from specified project and return content as dict
     """
 
-    GITHUB_RELEASES = u'https://api.github.com/repos/%s/%s/releases'
-    GITHUB_RELEASES_TAG = GITHUB_RELEASES + u'/tags/%s'
-    GITHUB_RELEASES_LATEST = GITHUB_RELEASES + u'/latest'
+    GITHUB_RELEASES = 'https://api.github.com/repos/%s/%s/releases'
+    GITHUB_RELEASES_TAG = GITHUB_RELEASES + '/tags/%s'
+    GITHUB_RELEASES_LATEST = GITHUB_RELEASES + '/latest'
 
     def __init__(self, owner, repository):
         """
@@ -27,11 +27,11 @@ class Github():
             owner (string): name of repository owner
             repository (string): name of repository
         """
-        #logger
+        # logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
 
-        #members
+        # members
         self.http_headers =  {'user-agent':'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
         self.http = urllib3.PoolManager(num_pools=3)
         self.owner = owner
@@ -50,8 +50,8 @@ class Github():
         if not isinstance(release, dict):
             raise Exception('Invalid release format. Dict type awaited')
 
-        if u'tag_name' in release.keys():
-            return release[u'tag_name']
+        if 'tag_name' in release.keys():
+            return release['tag_name']
         else:
             raise Exception('Specified release has no version field')
 
@@ -75,26 +75,26 @@ class Github():
                 ]
         """
         if not isinstance(release, dict):
-            raise Exception(u'Invalid release format. Dict type awaited')
-        if u'assets' not in release.keys():
-            raise Exception(u'Invalid release format.')
+            raise Exception('Invalid release format. Dict type awaited')
+        if 'assets' not in release.keys():
+            raise Exception('Invalid release format.')
 
         out = []
-        for asset in release[u'assets']:
-            if u'browser_download_url' and u'size' and u'name' in asset.keys():
-                #convert universal time to timestamp
+        for asset in release['assets']:
+            if 'browser_download_url' and 'size' and 'name' in asset.keys():
+                # convert universal time to timestamp
                 updated_at = 0
                 try:
-                    updated_at = int(datetime.strptime(asset[u'updated_at'], '%Y-%m-%dT%H:%M:%SZ').timestamp())
+                    updated_at = int(datetime.strptime(asset['updated_at'], '%Y-%m-%dT%H:%M:%SZ').timestamp())
                 except:
-                    self.logger.exception('Unable to parse updated_at time "%s"' % asset[u'updated_at'])
+                    self.logger.exception('Unable to parse updated_at time "%s"' % asset['updated_at'])
 
-                #store entry
+                # store entry
                 out.append({
-                    u'name': asset[u'name'],
-                    u'url': asset[u'browser_download_url'],
-                    u'size': asset[u'size'],
-                    u'timestamp': updated_at
+                    'name': asset['name'],
+                    'url': asset['browser_download_url'],
+                    'size': asset['size'],
+                    'timestamp': updated_at
                 })
 
         return out
@@ -112,26 +112,26 @@ class Github():
         Raises:
             Exception
         """
-        #request url
+        # request url
         try:
             resp = self.http.urlopen('GET', url, headers=self.http_headers)
             if resp.status==200:
-                #response successful, parse data to get current latest version
+                # response successful, parse data to get current latest version
                 data = json.loads(resp.data.decode('utf-8'))
-                #self.logger.debug('Data: %s' % data)
+                # self.logger.debug('Data: %s' % data)
                 return data
 
             elif resp.status==404:
-                self.logger.warning(u'No release found (404)')
+                self.logger.warning('No release found (404)')
                 return None
 
             else:
-                #invalid request
-                self.logger.error(u'Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
+                # invalid request
+                self.logger.error('Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
                 return None
 
         except urllib3.exceptions.MaxRetryError:
-            self.logger.error(u'Unable to connect to github (no internet connection?)')
+            self.logger.error('Unable to connect to github (no internet connection?)')
             return None
 
     def get_releases(self):
@@ -141,13 +141,13 @@ class Github():
         Return:
             list: list of releases. Format can be found here https://developer.github.com/v3/repos/releases/
         """
-        #get url
+        # get url
         url = self.GITHUB_RELEASES % (self.owner, self.repository)
             
-        #request
+        # request
         data = self.__request_github(url)
         if len(data)==0:
-            #no release yet?
+            # no release yet?
             return []
         else:
             return data
@@ -159,20 +159,20 @@ class Github():
         Args:
             tag_name (string): tag name
         """
-        #get url
+        # get url
         url = self.GITHUB_RELEASES_TAG % (self.owner, self.repository, tag_name)
             
-        #request
+        # request
         return self.__request_github(url)
 
     def get_latest_release(self):
         """
         Return latest release
         """
-        #get url
+        # get url
         url = self.GITHUB_RELEASES_LATEST % (self.owner, self.repository)
             
-        #request
+        # request
         return self.__request_github(url)
 
     def get_file_content(self, url):
@@ -188,18 +188,18 @@ class Github():
         """
         resp = self.http.urlopen('GET', url, headers=self.http_headers)
         if resp.status==200:
-            #response successful, parse data to get current latest version
+            # response successful, parse data to get current latest version
             data = resp.data.decode('utf-8')
-            #self.logger.debug('Data: %s' % data)
+            # self.logger.debug('Data: %s' % data)
             return data
 
         elif resp.status==404:
-            self.logger.warning(u'Nothing found at %s (404)' % url)
+            self.logger.warning('Nothing found at %s (404)' % url)
             return None
 
         else:
-            #invalid request
-            self.logger.error(u'Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
+            # invalid request
+            self.logger.error('Invalid response from %s: status=%s data=%s' % (url, resp.status, resp.data))
             return None
     
 if __name__=='__main__':

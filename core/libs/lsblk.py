@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-try:
-    from core.libs.console import Console
-except:
-    from console import Console
+from core.libs.console import Console
 import re
 import time
 import logging
 
-class Lsblk():
+class Lsblk(Console):
     """
     """
 
@@ -19,7 +16,9 @@ class Lsblk():
         """
         Constructor
         """
-        self.console = Console()
+        Console.__init__(self)
+
+        # members
         self.logger = logging.getLogger(self.__class__.__name__)
         self.timestamp = None
         self.devices = {}
@@ -28,98 +27,118 @@ class Lsblk():
     def __refresh(self):
         """
         Refresh all data
+
+        Returns:
+            dict: partitions infos::
+
+                {
+                    drive partition name (string): {
+                        partition name (string): {
+                            name (string): partition name
+                            major (string): major number,
+                            minor (string): minor number,
+                            size (long): partition size,
+                            totalsize (long): drive total size,
+                            percent (int): partition size over drive total size,
+                            readonly (bool): True if partition is readonly,
+                            mountpoint (string): mountpoint name,
+                            partition (string): ,
+                            removable (bool): True if partition is removable (external disk/usb stick...)
+                            drivemodel (string): drive model,
+                        },
+                        ...
+                    },
+                }
+
         """
-        #check if refresh is needed
+        # check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
-            self.logger.debug(u'Don\'t refresh')
+            self.logger.trace('Use cached data')
             return
 
-        res = self.console.command(u'/bin/lsblk --list --bytes --output NAME,MAJ:MIN,TYPE,RM,SIZE,RO,MOUNTPOINT,RA,MODEL')
+        res = self.command(u'/bin/lsblk --list --bytes --output NAME,MAJ:MIN,TYPE,RM,SIZE,RO,MOUNTPOINT,RA,MODEL')
         devices = {}
         if not res[u'error'] and not res[u'killed']:
             self.partitions = []
 
-            #parse data
-            matches = re.finditer(r'^(.*?)\s+(\d+):(\d+)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d)\s+(\D*)?\s+(\d+)(\s|.*?)$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
-            for matchNum, match in enumerate(matches):
+            # parse data
+            matches = re.finditer(r'^(.*?)\s+(\d+):(\d+)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d+)(\s|.*?)$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
+            for _, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==10:
-                    #name
+                    # name
                     name = groups[0]
                     
-                    #drive properties
+                    # drive properties
                     partition = True
                     model = None
-                    total_size = 0
-                    current_drive = None
-                    if groups[3].find(u'disk')!=-1:
+                    if groups[3].find('disk')!=-1:
                         current_drive = name
-                        model = groups[9].strip()
+                        model = groups[9]
                         partition = False
                         total_size = groups[5]
                         try:
                             total_size = int(total_size)
-                        except:
+                        except: # pragma: no cover
                             pass
 
-                    #readonly flag
+                    # readonly flag
                     readonly = True
-                    if groups[6]==u'0':
+                    if groups[6]=='0':
                         readonly = False
 
-                    #removable flag
+                    # removable flag
                     removable = True
-                    if groups[4]==u'0':
+                    if groups[4]=='0':
                         removable = False
 
-                    #mountpoint
+                    # mountpoint
                     mountpoint = groups[7]
 
-                    #size and percent
+                    # size and percent
                     size = groups[5]
                     percent = None
                     try:
                         size = int(size)
                         percent = int(float(size)/float(total_size)*100.0)
-                    except:
+                    except: # pragma: no cover
                         pass
 
-                    #fill device
+                    # fill device
                     device = {
-                        u'name': name,
-                        u'major': groups[1],
-                        u'minor': groups[2],
-                        u'size': size,
-                        u'totalsize': total_size,
-                        u'percent': percent,
-                        u'readonly': readonly,
-                        u'mountpoint': mountpoint,
-                        u'partition': partition,
-                        u'removable': removable,
-                        u'drivemodel': model
+                        'name': name,
+                        'major': groups[1],
+                        'minor': groups[2],
+                        'size': size,
+                        'totalsize': total_size,
+                        'percent': percent,
+                        'readonly': readonly,
+                        'mountpoint': mountpoint,
+                        'partition': partition,
+                        'removable': removable,
+                        'drivemodel': model
                     }
 
-                    #save device
-                    if current_drive:
-                        if current_drive not in devices:
-                            devices[current_drive] = {}
-                        devices[current_drive][name] = device
+                    # save device
+                    if current_drive not in devices:
+                        devices[current_drive] = {}
+                    devices[current_drive][name] = device
 
-                    #partition
+                    # partition
                     if partition:
                         self.partitions.append(name)
 
-        #save devices
+        # save devices
         self.devices = devices
 
-        #update timestamp
+        # update timestamp
         self.timestamp = time.time()
 
     def get_devices_infos(self):
         """
-        Return all devices ordered by drive/partition
+        Returns all devices ordered by drive/partition
 
-        Return:
+        Returns:
             dict: dict of devices
         """
         self.__refresh()
@@ -128,9 +147,9 @@ class Lsblk():
 
     def get_drives(self):
         """
-        Return drives infos only
+        Returns drives infos only
 
-        Return:
+        Returns:
             dict: dict of drives
         """
         self.__refresh()
@@ -138,17 +157,17 @@ class Lsblk():
         drives = {}
         for drive in self.devices:
             for device in self.devices[drive]:
-                if not self.devices[drive][device][u'partition']:
-                    #it's a drive
+                if not self.devices[drive][device]['partition']:
+                    # it's a drive
                     drives[drive] = self.devices[drive][device]
                 
         return drives
 
     def get_partitions(self):
         """
-        Return partitions infos only
+        Returns partitions infos only
 
-        Return:
+        Returns:
             dict: dict of partitions
         """
         self.__refresh()
@@ -156,20 +175,20 @@ class Lsblk():
         partitions = {}
         for drive in self.devices:
             for device in self.devices[drive]:
-                if self.devices[drive][device][u'partition']:
-                    #it's a partition
+                if self.devices[drive][device]['partition']:
+                    # it's a partition
                     partitions[device] = self.devices[drive][device]
                 
         return partitions
 
     def get_device_infos(self, device):
         """
-        Return device infos according to device name (sda, sdb1...)
+        Returns device infos according to device name (sda, sdb1...)
 
         Args:
             device (string): existing device name
 
-        Return:
+        Returns:
             dict: dict of device infos or None if device not found
         """
         self.__refresh()
@@ -179,4 +198,3 @@ class Lsblk():
                 return self.devices[drive][device]
 
         return None
-

@@ -1,9 +1,9 @@
-const electron = require('electron');
-const {remote, ipcRenderer} = electron;
+const { remote, ipcRenderer } = require('electron');
 const cleepdesktopInfos = remote.getGlobal('cleepdesktopInfos');
 const logger = remote.getGlobal('logger');
 const appUpdater = remote.getGlobal('appUpdater');
 const settings = remote.getGlobal('settings');
+const appContext = remote.getGlobal('appContext');
 let cleepUi = {
     openPage: null,
     openModal: null
@@ -16,7 +16,7 @@ var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'u
 Cleep.value('logger', logger)
     .value('appUpdater', appUpdater)
     .value('settings', settings)
-    .value('cleepdesktopInfos', cleepdesktopInfos)
+    .value('appContext', appContext)
     .value('cleepUi', cleepUi);
 
 /**
@@ -352,30 +352,30 @@ var cleepController = function($rootScope, $state, cleepService, tasksPanelServi
 
     // controller init
     self.init = function() {
-        //init websocket asap
+        // init websocket asap
         cleepService.connectWebSocket()
         .then(function() {
             logger.debug('Websocket connected, init angular stuff');
 
-            //init update service
+            // init update service
             updateService.init();
-            //and check for updates (defer it to make almost sure core is launched)
+            // and check for updates (defer it to make almost sure core is launched)
             updateService.checkForUpdates();
 
             //init devices service
             devicesService.getDevices();
 
-            //init install service
+            // init install service
             installService.init();
 
-            //first run? open application help
-            if( settings.get('cleep.firstrun') )
+            // first run? open application help
+            if( settings.getSync('cleep.firstrun') )
             {
                 logger.debug('First run');
                 $timeout(function() {
                     self.openModal('emptyDialogController', 'js/help/helpdialog.html');
-                    settings.set('cleep.firstrun', false);
                 }, 500);
+                settings.setSync('cleep.firstrun', false);
             }
         });
     };

@@ -16,7 +16,7 @@ import re
 import socket
 import platform
 if platform.system()=='Windows':
-    #windows console specific import
+    # windows console specific import
     import win32api, win32con, win32event, win32process
     from win32com.shell.shell import ShellExecuteEx
     from win32com.shell import shellcon
@@ -47,7 +47,7 @@ class EndlessConsole(Thread):
         Thread.__init__(self)
         Thread.daemon = True
 
-        #members
+        # members
         self.console_encoding = 'utf-8'
         self.on_posix = True
         if sys.platform == 'win32':
@@ -57,7 +57,7 @@ class EndlessConsole(Thread):
         self.callback = callback
         self.callback_end = callback_end
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
         self.running = True
         self.__start_time = 0
         self.__stdout_queue = Queue()
@@ -136,29 +136,29 @@ class EndlessConsole(Thread):
         """
         Console process
         """
-        #launch command
+        # launch command
         self.__start_time = time.time()
         p = subprocess.Popen(self.command, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=self.on_posix)
         pid = p.pid
         self.logger.debug('Command pid: %d' % pid)
 
         if self.callback:
-            #async stdout reading
+            # async stdout reading
             self.__stdout_thread = Thread(target=self.__enqueue_output, args=(p.stdout, self.__stdout_queue))
             self.__stdout_thread.daemon = True
             self.__stdout_thread.start()
 
-            #async stderr reading
+            # async stderr reading
             self.__stderr_thread = Thread(target=self.__enqueue_output, args=(p.stderr, self.__stderr_queue))
             self.__stderr_thread.daemon = True
             self.__stderr_thread.start()
 
-        #wait for end of command line
+        # wait for end of command line
         while self.running:
-            #check process status
+            # check process status
             p.poll()
 
-            #read outputs and trigger callback
+            # read outputs and trigger callback
             if self.callback:
                 stdout = None
                 stderr = None
@@ -177,19 +177,19 @@ class EndlessConsole(Thread):
                 if stdout is not None or stderr is not None:
                     self.callback(stdout, stderr)
 
-            #check end of command
+            # check end of command
             if p.returncode is not None:
                 self.return_code = p.returncode
                 self.logger.debug('Process is terminated with return code %s' % p.returncode)
                 break
             
-            #pause
+            # pause
             time.sleep(0.25)
             
-        #compute command duration
+        # compute command duration
         self.__duration = time.time() - self.__start_time
 
-        #make sure process (and child processes) is really killed
+        # make sure process (and child processes) is really killed
         try:
             if sys.platform == 'win32':
                 subprocess.Popen(u'taskkill /PID %s /F > nul 2>&1' % pid, shell=True)
@@ -198,10 +198,10 @@ class EndlessConsole(Thread):
         except Exception as e:
             self.logger.debug('Kill exception: %s' % str(e))
 
-        #process is over
+        # process is over
         self.running = False
 
-        #stop callback
+        # stop callback
         if self.callback_end:
             self.callback_end(self.return_code, not self.running)
 
@@ -218,7 +218,7 @@ class AdminEndlessConsole(EndlessConsole):
     Note: code adapted from https://stackoverflow.com/q/31480571
     """
     
-    #https://msdn.microsoft.com/fr-fr/library/windows/desktop/ms683189(v=vs.85).aspx
+    # https://msdn.microsoft.com/fr-fr/library/windows/desktop/ms683189(v=vs.85).aspx
     PROCESS_STILLACTIVE = 259
     
     def __init__(self, command, callback, callback_end=None):
@@ -233,11 +233,11 @@ class AdminEndlessConsole(EndlessConsole):
         EndlessConsole.__init__(self, command, callback, callback_end)
         self.logger.setLevel(logging.DEBUG)
         
-        #members
+        # members
         self.cmdlogger_path = None
         self.comm_port = None
         
-        #check command
+        # check command
         if not isinstance(command, list):
             raise Exception('Invalid command parameter: must be a list with the program in first position followed by its arguments')
 
@@ -245,11 +245,11 @@ class AdminEndlessConsole(EndlessConsole):
         """
         Set cmdlogger binary fullpath
         """
-        #check path validity        
+        # check path validity        
         if not os.path.exists(cmdlogger_path):
             raise Exception('Invalid cmdlogger path (%s). Binary file does not exist' % cmdlogger_path)
 
-        #set cmdlogger path with spaces protection
+        # set cmdlogger path with spaces protection
         if platform.system()=='Windows':
             self.cmdlogger_path = cmdlogger_path
         else:
@@ -267,12 +267,12 @@ class AdminEndlessConsole(EndlessConsole):
         """
         Console process
         """
-        #check cmdlogger
+        # check cmdlogger
         if self.cmdlogger_path is None:
             self.__quit_properly(self.ERROR_INTERNAL)
             raise Exception('Please configure cmdlogger path before launching command')
         
-        #get free communication port
+        # get free communication port
         comm_port = None
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -286,7 +286,7 @@ class AdminEndlessConsole(EndlessConsole):
             self.__quit_properly(self.ERROR_INTERNAL)
             return
             
-        #open communication socket
+        # open communication socket
         self.logger.debug('Start communication server')
         comm_server = None
         try:
@@ -304,80 +304,80 @@ class AdminEndlessConsole(EndlessConsole):
             
         self.__start_time = time.time()
         if platform.system()=='Windows':
-            #get command and command arguments (and protect arguments from spaces)
+            # get command and command arguments (and protect arguments from spaces)
             user_cmd = u'"%s"' % self.command[0]
             user_cmd_params = u' '.join([u'"%s"' % (x,) for x in self.command[1:]])
             self.logger.debug(u'user_cmd=%s user_cmd_params=%s' % (user_cmd, user_cmd_params))
 
-            #prepare cmdlogger command
+            # prepare cmdlogger command
             cmd = self.cmdlogger_path
             params = u'"%d" %s %s' % (comm_port, user_cmd, user_cmd_params)
             self.logger.debug(u'cmd=%s params=%s' % (cmd, params))
 
-            #launch Windows command with parameters:
-            # - hidden console
-            # - rise UAC elevation
+            # launch Windows command with parameters:
+            #  - hidden console
+            #  - rise UAC elevation
             self.logger.debug('Launch command on Windows')
             proc_info = ShellExecuteEx(nShow=win32con.SW_HIDE, fMask=shellcon.SEE_MASK_NOCLOSEPROCESS, lpVerb=u'runas', lpFile=cmd, lpParameters=params)
             proc_handle = proc_info[u'hProcess']
             pid = win32process.GetProcessId(proc_handle)
 
         elif platform.system()=='Darwin':
-            #protect cmdline arguments from spaces
+            # protect cmdline arguments from spaces
             command_params = [u"'%s'" % (x,) for x in self.command]
 
-            #prepare cmdline
+            # prepare cmdline
             params = [self.cmdlogger_path, str(comm_port), command_params[0]] + command_params[1:]
             self.logger.debug('params=%s' % params)
             cmd_line = 'osascript -e "do shell script \\"%s\\" with administrator privileges"' % u' '.join(params)
             self.logger.debug('cmdline=%s' % cmd_line)
 
-            #launch command on macos with password requested by osascript
+            # launch command on macos with password requested by osascript
             self.logger.debug('Launch command on Darwin')
             proc_info = subprocess.Popen(cmd_line, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=self.on_posix)
             pid = proc_info.pid
 
         elif platform.system()=='Linux':
-            #protect cmdline arguments from spaces
+            # protect cmdline arguments from spaces
             command_params = [u"'%s'" % (x,) for x in self.command]
 
-            #prepare cmdline
+            # prepare cmdline
             params = [self.cmdlogger_path, str(comm_port), command_params[0]] + command_params[1:]
             self.logger.debug('params=%s' % params)
             cmd_line = 'pkexec %s' % u' '.join(params)
             self.logger.debug('cmdline=%s' % cmd_line)
 
-            #launch command on linux with password requested by pkexec
+            # launch command on linux with password requested by pkexec
             self.logger.debug('Launch command on Linux')
             proc_info = subprocess.Popen(cmd_line, shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=self.on_posix)
             pid = proc_info.pid
 
         self.logger.debug(u'Command pid: %d' % pid)
         
-        #wait for cmdlogger connection
+        # wait for cmdlogger connection
         comm_server.listen(1)
         while self.running:
             try:
                 self.logger.debug('Accepting...')
                 (cmdlogger, (ip, port)) = comm_server.accept()
-                #cmdlogger connected, stop statement
+                # cmdlogger connected, stop statement
                 break
 
             except socket.timeout:
                 self.logger.debug('poll')
                 if platform.system()=='Windows':
-                    #http://docs.activestate.com/activepython/3.4/pywin32/win32event__WaitForSingleObject_meth.html
-                    #https://msdn.microsoft.com/fr-fr/library/windows/desktop/ms687032(v=vs.85).aspx
+                    # http://docs.activestate.com/activepython/3.4/pywin32/win32event__WaitForSingleObject_meth.html
+                    # https://msdn.microsoft.com/fr-fr/library/windows/desktop/ms687032(v=vs.85).aspx
                     wfso = win32event.WaitForSingleObject(proc_handle, 100.0)
                     self.logger.debug('waitforsingleobj=%s' % wfso)
-                    if wfso==win32event.WAIT_FAILED:
+                    if wfso == win32event.WAIT_FAILED:
                         self.logger.warn('No cmdlogger connected. Maybe command execution failed or was too quick')
                         self.__quit_properly(self.ERROR_INTERNAL)
                         return
 
                 else:
                     if proc_info.poll() is not None:
-                        #process is terminated with surely execution failure or short time execution
+                        # process is terminated with surely execution failure or short time execution
                         self.logger.warn('No cmdlogger connected. Maybe command execution failed or was too quick')
                         self.__quit_properly(self.ERROR_INTERNAL)
                         return
@@ -387,38 +387,36 @@ class AdminEndlessConsole(EndlessConsole):
                 self.__quit_properly(self.ERROR_INTERNAL)
                 return
         
-        #debug
+        # debug
         if self.running:
             self.logger.debug(u'Cmdlogger connected')
         else:
             self.logger.debug(u'Process canceled during cmdlogger sync')
 
-        #look for cmdlogger messages
+        # look for cmdlogger messages
         self.logger.debug('Start listening command output through communication server')
         while self.running:
             try:
                 message = cmdlogger.recv(4096)
-                #self.logger.debug(u'Message received: %s' % message)
+                # self.logger.debug(u'Message received: %s' % message)
                 if isinstance(message, bytes):
                     message = message.decode(self.console_encoding).rstrip()
             
-                #check socket disconnection
+                # check socket disconnection
                 if message is None or len(message)==0:
                     self.logger.debug(u'Cmdlogger disconnected')
                     break
                 else:
-                    #process received message
+                    # process received message
                     if message.startswith(u'STDOUT:'):
-                        #stdout
                         self.callback(message.replace(u'STDOUT:', u''), None)
                     else:
-                        #stderr
                         self.callback(None, message.replace(u'STDERR:', u''))
 
             except socket.error:
                 pass
 
-        #debug
+        # debug
         if self.running:
             self.logger.debug(u'Command terminated')
         else:
@@ -426,9 +424,9 @@ class AdminEndlessConsole(EndlessConsole):
                 
         time.sleep(1.0)
                 
-        #get process return code
+        # get process return code
         if self.return_code == self.ERROR_STOPPED:
-            #nothing to do, just avoid to update return code
+            # nothing to do, just avoid to update return code
             self.logger.debug(u'Process canceled')
         elif platform.system()=='Windows':
             self.return_code = win32process.GetExitCodeProcess(proc_handle)
@@ -436,12 +434,12 @@ class AdminEndlessConsole(EndlessConsole):
             self.return_code = proc_info.returncode
         self.logger.debug('Return code: %s' % self.return_code)
         
-        #close comm_server
+        # close comm_server
         if cmdlogger:
             cmdlogger.close()
         comm_server.close()
         
-        #make sure process is killed
+        # make sure process is killed
         try:
             if sys.platform == 'win32':
                 cmd = u'taskkill /PID %s /F > nul 2>&1' % pid
@@ -449,14 +447,14 @@ class AdminEndlessConsole(EndlessConsole):
                 cmd = u'/usr/bin/pkill -9 -P %s 2> /dev/null' % pid
                 
             self.logger.debug(u'Kill command: %s' % cmd)
-            subprocess.Popen(cmd, shell=True)
+            subprocess.Popen(cmd, shell=True) 
         except:
             pass
 
-        #process is over
+        # process is over
         self.running = False
 
-        #stop callback
+        # stop callback
         if self.callback_end:
             self.callback_end()
         
@@ -470,7 +468,7 @@ class Console():
         """
         Constructor
         """
-        #members
+        # members
         self.timer = None
         self.__callback = None
         self.encoding = sys.getfilesystemencoding()
@@ -676,7 +674,7 @@ class AdvancedConsole(Console):
         results = []
         matches = re.finditer(pattern, string, options)
 
-        for matchNum, match in enumerate(matches):
+        for _, match in enumerate(matches):
             group = match.group().strip()
             if len(group)>0 and len(match.groups())>0:
                 results.append((group, match.groups()))

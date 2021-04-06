@@ -45,37 +45,41 @@ class Diskutil():
             'totalsize': None
         }
 
-        res = self.console.command(u'/usr/sbin/diskutil info "%s"' % device)
-        if not res[u'error'] and not res[u'killed']:
-            #parse data
-            matches = re.finditer(r'^\s+(Device / Media Name:\s+(.*?))$|^\s+(Volume Name:\s+(.*?))$|^\s+(Removable Media:\s+(.*?))$|^\s+(Read-Only Media:\s+(.*?))$|^\s+(Device Location:\s+(.*?))$|^\s+(Total Size:\s+.*?\s.*?\s\((\d+)\sBytes\).*?)$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
-            for matchNum, match in enumerate(matches):
+        res = self.console.command('/usr/sbin/diskutil info "%s"' % device)
+        if not res['error'] and not res['killed']:
+            # parse data
+            matches = re.finditer(
+                r'^\s+(Device / Media Name:\s+(.*?))$|^\s+(Volume Name:\s+(.*?))$|^\s+(Removable Media:\s+(.*?))$|^\s+(Read-Only Media:\s+(.*?))$|^\s+(Device Location:\s+(.*?))$|^\s+(Total Size:\s+.*?\s.*?\s\((\d+)\sBytes\).*?)$',
+                '\n'.join(res['stdout']),
+                re.UNICODE | re.MULTILINE
+            )
+            for _, match in enumerate(matches):
                 groups = match.groups()
                 groups = list(filter(None, groups))
                 if len(groups)==2:
-                    if groups[0].startswith(u'Device / Media Name:'):
-                        infos[u'description'] = groups[1].strip()
-                    elif groups[0].startswith(u'Volume Name:'):
-                        infos[u'volumename'] = groups[1].strip()
-                    elif groups[0].startswith(u'Removable Media:'):
+                    if groups[0].startswith('Device / Media Name:'):
+                        infos['description'] = groups[1].strip()
+                    elif groups[0].startswith('Volume Name:'):
+                        infos['volumename'] = groups[1].strip()
+                    elif groups[0].startswith('Removable Media:'):
                         removable = groups[1].strip().lower()
                         if removable=='yes' or removable=='removable':
-                            infos[u'removable'] = True
+                            infos['removable'] = True
                         else:
-                            infos[u'removable'] = False
-                    elif groups[0].startswith(u'Read-Only Media:'):
+                            infos['removable'] = False
+                    elif groups[0].startswith('Read-Only Media:'):
                         protected = groups[1].strip().lower()
                         if protected=='yes':
-                            infos[u'protected'] = True
+                            infos['protected'] = True
                         else:
-                            infos[u'protected'] = False
-                    elif groups[0].startswith(u'Device Location:'):
-                        infos[u'location'] = groups[1].strip()
-                    elif groups[0].startswith(u'Total Size:'):
+                            infos['protected'] = False
+                    elif groups[0].startswith('Device Location:'):
+                        infos['location'] = groups[1].strip()
+                    elif groups[0].startswith('Total Size:'):
                         try:
-                            infos[u'totalsize'] = int(groups[1])
+                            infos['totalsize'] = int(groups[1])
                         except:
-                            infos[u'totalsize'] = 0
+                            infos['totalsize'] = 0
 
         return infos
 
@@ -83,56 +87,56 @@ class Diskutil():
         """
         Refresh all data
         """
-        #check if refresh is needed
+        # check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
-            self.logger.debug(u'Don\'t refresh')
+            self.logger.debug('Don\'t refresh')
             return
 
-        res = self.console.command(u'/usr/sbin/diskutil list | /usr/bin/grep \'^\\/\' | /usr/bin/awk \'match($0, "\\\\(|$"){ print substr($0, 0, RSTART - 1) }\'')
+        res = self.console.command('/usr/sbin/diskutil list | /usr/bin/grep \'^\\/\' | /usr/bin/awk \'match($0, "\\\\(|$"){ print substr($0, 0, RSTART - 1) }\'')
         devices = {}
-        if not res[u'error'] and not res[u'killed']:
-            #parse data
-            matches = re.finditer(r'^(/dev/.*?)$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
-            for matchNum, match in enumerate(matches):
+        if not res['error'] and not res['killed']:
+            # parse data
+            matches = re.finditer(r'^(/dev/.*?)$', '\n'.join(res['stdout']), re.UNICODE | re.MULTILINE)
+            for _, match in enumerate(matches):
                 groups = match.groups()
                 if len(groups)==1:
                     drive = groups[0]
                     infos = self.__device_infos(drive)
 
-                    #drop dmg image
-                    if infos[u'description'].find(u'Disk Image')!=-1:
+                    # drop dmg image
+                    if infos['description'].find('Disk Image')!=-1:
                         continue
 
-                    #fix device name
-                    name = infos[u'description']
-                    if infos[u'volumename'].lower().find(u'not applicable')==-1:
-                        name = '%s - %s' % (infos[u'volumename'], name)
+                    # fix device name
+                    name = infos['description']
+                    if infos['volumename'].lower().find('not applicable')==-1:
+                        name = '%s - %s' % (infos['volumename'], name)
 
-                    #is drive system one?
+                    # is drive system one?
                     system = False
-                    if drive==u'/dev/disk0' or (infos[u'location'].lower().find(u'internal')!=-1 and not infos[u'removable']):
+                    if drive=='/dev/disk0' or (infos['location'].lower().find('internal')!=-1 and not infos['removable']):
                         system = True
 
-                    #TODO add mountpoints parsing result of command "mount"
+                    # TODO add mountpoints parsing result of command "mount"
                     
-                    #fill device
+                    # fill device
                     device = {
-                        u'device': drive,
-                        u'raw': drive.replace(u'/disk', u'/rdisk'),
-                        u'name': name,
-                        u'totalsize': infos[u'totalsize'],
-                        u'protected': infos[u'protected'],
-                        u'removable': infos[u'removable'],
-                        u'system': system
+                        'device': drive,
+                        'raw': drive.replace('/disk', '/rdisk'),
+                        'name': name,
+                        'totalsize': infos['totalsize'],
+                        'protected': infos['protected'],
+                        'removable': infos['removable'],
+                        'system': system
                     }
 
-                    #save drive
+                    # save drive
                     devices[drive] = device
 
-        #save devices
+        # save devices
         self.devices = devices
 
-        #update timestamp
+        # update timestamp
         self.timestamp = time.time()
 
     def get_devices_infos(self):

@@ -29,15 +29,15 @@ class WindowsWirelessNetworks():
         """
         Refresh all data (fill self.networks)
         """
-        #check if refresh is needed
+        # check if refresh is needed
         if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
             self.logger.debug('Don\'t refresh')
             return
 
-        #get networks (list of WirelessNetwork https://github.com/kedos/win32wifi/blob/master/win32wifi/Win32Wifi.py#L65)
+        # get networks (list of WirelessNetwork https://github.com/kedos/win32wifi/blob/master/win32wifi/Win32Wifi.py#L65)
         scanned_networks = Win32Wifi.getWirelessAvailableNetworkList(interface)
 
-        #format output to useful format
+        # format output to useful format
         networks = {}
         for network in scanned_networks:
             #handle signal level
@@ -47,22 +47,22 @@ class WindowsWirelessNetworks():
             except:
                 self.logger.debug('Invalid signal level %s' % network.signal_quality)
 
-            #handle encryption
+            # handle encryption
             encryption = WpaSupplicantConf.ENCRYPTION_TYPE_UNKNOWN
             if network.auth=='DOT11_AUTH_ALGO_80211_OPEN':
-                #security disabled
+                # security disabled
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_UNSECURED
             elif network.auth=='DOT11_AUTH_ALGO_80211_SHARED_KEY':
-                #wep
+                # wep
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WEP
             elif network.auth in ('DOT11_AUTH_ALGO_WPA', 'DOT11_AUTH_ALGO_WPA_PSK'):
-                #wpa
+                # wpa
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WPA
             elif network.auth in ('DOT11_AUTH_ALGO_RSNA', 'DOT11_AUTH_ALGO_RSNA_PSK'):
-                #wpa2
+                # wpa2
                 encryption = WpaSupplicantConf.ENCRYPTION_TYPE_WPA2
 
-            #network ssid
+            # network ssid
             ssid = network.ssid.decode('utf-8')
             if not ssid or len(ssid)==0:
                 ssid = 'Masked name'
@@ -74,10 +74,10 @@ class WindowsWirelessNetworks():
                 'signallevel': signal_level
             }
        
-        #save networks
+        # save networks
         self.networks = networks
 
-        #update timestamp
+        # update timestamp
         self.timestamp = time.time()
 
     def get_networks(self, interface):
@@ -103,7 +103,7 @@ class WindowsWirelessNetworks():
         if interface is None:
             raise Exception('Parameter interface is missing')
 
-        #refresh list of networks
+        # refresh list of networks
         self.__refresh(interface)
 
         return self.networks

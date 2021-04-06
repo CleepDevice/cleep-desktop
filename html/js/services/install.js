@@ -29,8 +29,8 @@ var installService = function($rootScope, $state, logger, cleepService, tasksPan
     self.isos = {
         isos: [],
         cleepisos: 0,
-        raspbianisos: 0,
-        withraspbianisos: false,
+        raspiosisos: 0,
+        withraspiosisos: false,
         withlocalisos: false
     };
     self.drives = [];
@@ -102,8 +102,8 @@ var installService = function($rootScope, $state, logger, cleepService, tasksPan
             .then(function(resp) {
                 self.isos.isos = resp.data.isos;
                 self.isos.cleepisos = resp.data.cleepisos;
-                self.isos.raspbianisos = resp.data.raspbianisos;
-                self.isos.withraspbianisos = resp.data.withraspbianisos;
+                self.isos.raspiosisos = resp.data.raspiosisos;
+                self.isos.withraspiosisos = resp.data.withraspiosisos;
                 self.isos.withlocalisos = resp.data.withlocalisos;
             });
     };

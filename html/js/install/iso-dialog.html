@@ -39,17 +39,17 @@
                 <p>{{iso.label}} ({{iso.timestamp | hrDate}})</p>
             </md-list-item>
 
-            <!-- raspbian -->
-            <md-subheader class="md-no-sticky" ng-if="ctl.config.withraspbianisos">
-                Latest Raspbian
+            <!-- raspios -->
+            <md-subheader class="md-no-sticky" ng-if="ctl.config.withraspiosisos">
+                Latest Raspios
             </md-subheader>
-            <md-list-item ng-if="ctl.config.withraspbianisos && ctl.cleepisos===0" class="md-2-line">
+            <md-list-item ng-if="ctl.config.withraspiosisos && ctl.cleepisos===0" class="md-2-line">
                 <div class="md-list-item-text">
-                    <h3>No Raspbian version found</h3>
+                    <h3>No Raspios version found</h3>
                     <p>Is internet connection available?</p>
                 </div>
             </md-list-item>
-            <md-list-item ng-repeat="iso in ctl.isos | filter: {category:'raspbian'}" ng-if="ctl.config.withraspbianisos" ng-click="ctl.selectRemoteIso(iso)">
+            <md-list-item ng-repeat="iso in ctl.isos | filter: {category:'raspios'}" ng-if="ctl.config.withraspiosisos" ng-click="ctl.selectRemoteIso(iso)">
                 <md-icon md-svg-icon="circle-small"></md-icon>
                 <p>{{iso.label}} ({{iso.timestamp | hrDate}})</p>
             </md-list-item>

@@ -3,7 +3,7 @@
  * This service handles properly update taskpanel
  * It can returns Cleepdesktop update status and last error
  */
-var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $q, cleepService, cleepdesktopInfos) {
+var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $q, cleepService, appContext) {
     var self = this;
 
     //status from updates.py
@@ -252,11 +252,11 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
         var cleepdesktopUpdateAvailable = false;
         cleepService.sendCommand('check_updates', 'updates')
             .then(function(resp) {
-                //save resp
+                // save resp
                 lastCheck = resp.data.lastcheck;
                 etcherUpdateAvailable = resp.data.updateavailable;
 
-                //then check CleepDesktop updates
+                // then check CleepDesktop updates
                 return appUpdater.checkForUpdates();
             }, function(error) {
                 logger.error('Error checking etcher updates:' + error);
@@ -264,8 +264,7 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
             })
             .then(function(update) {
                 logger.debug('app-updater result: ' + JSON.stringify(update));
-                if( update && update.versionInfo && update.versionInfo.version && update.versionInfo.version>cleepdesktopInfos.version )
-                {
+                if( update && update.versionInfo && update.versionInfo.version && update.versionInfo.version > appContext.version ) {
                     cleepdesktopUpdateAvailable = true;
                 }
                 defer.resolve(etcherUpdateAvailable || cleepdesktopUpdateAvailable);
@@ -319,4 +318,4 @@ var updateService = function($rootScope, logger, appUpdater, $timeout, tasksPane
     
 var Cleep = angular.module('Cleep');
 Cleep.service('updateService', ['$rootScope', 'logger', 'appUpdater', '$timeout', 'tasksPanelService', 'cleepUi', 
-            '$q', 'cleepService', 'cleepdesktopInfos', updateService]);
+            '$q', 'cleepService', 'appContext', updateService]);

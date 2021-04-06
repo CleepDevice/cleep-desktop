@@ -3,39 +3,35 @@ var Cleep = angular.module('Cleep')
 /**
  * Iso controller
  */
-var isoController = function(closeModal, installService)
-{
+var isoController = function(closeModal, installService) {
     var self = this;
     self.closeModal = closeModal;
     self.isos = [];
     self.config = installService.isos;
     self.loading = true;
 
-    //controller init
+    // controller init
     self.$onInit = function () {
         self.refreshIsos();
     };
 
-    //refresh isos list
+    // refresh isos list
     self.__refreshIsos = function() {
-        //copy locally iso from installService
+        // copy locally iso from installService
         self.isos = [];
-        for( var i=0; i<self.config.isos.length; i++ )
-        {
+        for( var i=0; i<self.config.isos.length; i++ ) {
             self.isos.push(self.config.isos[i]);
         }
 
-        //append item id to allow easier selection
+        // append item id to allow easier selection
         var id = 0;
-        for( id=0; id<self.isos.length; id++ )
-        {
+        for( id=0; id<self.isos.length; id++ ) {
             self.isos[id].id = id;
         }
     };
 
-    //refresh isos
-    self.refreshIsos = function()
-    {
+    // refresh isos
+    self.refreshIsos = function() {
         self.loading = true;
 
         installService.refreshIsos()
@@ -45,14 +41,13 @@ var isoController = function(closeModal, installService)
             });
     };
 
-    //select raspbian iso
+    // select raspios iso
     self.selectRemoteIso = function(item) {
         self.closeModal(item);
     };
 
-    //select local iso
-    self.selectLocalIso = function(item)
-    {
+    // select local iso
+    self.selectLocalIso = function(item) {
         var options = {
             title: 'Select local iso',
             filters: [
