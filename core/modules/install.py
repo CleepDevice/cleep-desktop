@@ -153,48 +153,48 @@ class Install(CleepDesktopModule):
         self.get_wifi_networks()
 
         while self.running:
-            #check if process requested
+            # check if process requested
             if self.url and self.drive:
                 self.logger.info('Install process started')
 
                 if self.__download_file():
-                    #update ui
+                    # update ui
                     self.status = self.STATUS_REQUEST_WRITE_PERMISSIONS
                     self.logger.debug('Status after download: %s' % self.get_status())
                     self.__update_ui()
 
-                    #file downloaded successfully, launch flash+validation
+                    # file downloaded successfully, launch flash+validation
                     self.__flash_drive()
-                    #wait until end of flash (or if user cancel it)
+                    # wait until end of flash (or if user cancel it)
                     while self.console is not None:
                         if self.cancel:
                             break
                         time.sleep(0.25)
                         
-                    #end of process
+                    # end of process
                     if self.cancel:
-                        #process canceled
+                        # process canceled
                         self.console.kill()
                         self.status = self.STATUS_CANCELED
                     if self.__flash_output_error:
-                        #error occured during flash
+                        # error occured during flash
                         self.status = self.STATUS_ERROR_FLASH
                     else:
-                        #installation succeed
+                        # installation succeed
                         self.status = self.STATUS_DONE
                         
-                    #update ui
+                    # update ui
                     self.__update_ui()
                     
                 elif self.cancel:
-                    #handle cancelation
+                    # handle cancelation
                     self.status = self.STATUS_CANCELED
 
                 else:
-                    #download failed. Status should already be setted by __download_file function
+                    # download failed. Status should already be setted by __download_file function
                     pass
 
-                #reset everything
+                # reset everything
                 self.logger.debug('Reset install variables')
                 self.total_percent = 100
                 if self.iso and os.path.exists(self.iso):
@@ -207,7 +207,7 @@ class Install(CleepDesktopModule):
                 self.cancel = False
                 self.console = None
                 try:
-                    #remove temp wifi config file
+                    # remove temp wifi config file
                     if self.wifi_config and os.path.exists(self.wifi_config):
                         try:
                             self.logger.debug('Remove wifi config file')
@@ -218,11 +218,11 @@ class Install(CleepDesktopModule):
                     pass
                 self.logger.info('Install process terminated')
                 
-                #update ui
+                # update ui
                 self.__update_ui()
 
             else:
-                #no process, release cpu
+                # no process, release cpu
                 time.sleep(0.25)
 
         self.logger.debug('Flashdrive thread stopped')
@@ -249,11 +249,11 @@ class Install(CleepDesktopModule):
         raspios_infos = None
         raspios_lite_infos = None
 
-        #get releases
+        # get releases
         releases = self.raspios.get_latest_raspios_releases()
         self.logger.debug('Raspios releases: %s' % releases)
 
-        #get releases infos
+        # get releases infos
         if releases['raspios']:
             infos = self.raspios.get_raspios_release_infos(releases['raspios'])
             if infos['url'] is not None:
@@ -287,25 +287,25 @@ class Install(CleepDesktopModule):
                     string: release name (usually version)
                 )
         """
-        #get releases infos from github
+        # get releases infos from github
         release = self.github.get_latest_release()
         self.logger.debug('Cleep release: %s' % release)
 
-        #check if release exists
+        # check if release exists
         if not release:
-            #no release found, surely rate limit reached on github api
-            #fallback to cached releases
+            # no release found, surely rate limit reached on github api
+            # fallback to cached releases
             download = Download(self.context.paths.cache)
             cached_releases = download.get_cached_files()
             self.logger.debug('Cached releases: %s' % cached_releases)
 
             if len(cached_releases)>0:
-                #sort to keep recent one
+                # sort to keep recent one
                 cached_releases_sorted = sorted(cached_releases, key=itemgetter('timestamp'))
                 cached_releases_sorted.reverse()
                 for cached_release in cached_releases_sorted:
                     if cached_release['filename'].startswith('cleep_'):
-                        #and return it
+                        # and return it
                         return [{
                             'name': cached_release['filename'],
                             'url': 'file://%s' % cached_release['filepath'],
@@ -313,11 +313,11 @@ class Install(CleepDesktopModule):
                             'timestamp': cached_release['timestamp']
                         }], cached_release['filename'].replace('cleep_', '').replace('.zip', '')
 
-                #no cleep cached
+                # no cleep cached
                 return None, None
 
             else:
-                #no file cached
+                # no file cached
                 return None, None
         else:
             return self.github.get_release_assets_infos(release), release['name']
@@ -348,24 +348,24 @@ class Install(CleepDesktopModule):
         if wifi and 'network' in wifi and (not 'password' in wifi or not 'encryption' in wifi):
             raise Exception('Missing wifi password or encryption value')
 
-        #get checksum
+        # get checksum
         for iso in self.isos_cached['isos']:
             if iso['url']==url:
                 self.logger.debug('Found sha256 "%s" for iso "%s"' % (iso['sha256'], url))
                 self.iso_sha256 = iso['sha256']
                 break
 
-        #generate wifi config file is needed
+        # generate wifi config file is needed
         wifi_config = None
         if wifi and wifi['network']:
             self.logger.debug('Start install: wifi infos available')
             try:
-                #prepare content
+                # prepare content
                 cleepwificonf = CleepWifiConf()
                 conf = cleepwificonf.create_content(wifi['network'], wifi['password'], wifi['encryption'], wifi['hidden'])
                 self.logger.debug('Generated wifi config file: %s' % conf)
 
-                #write content
+                # write content
                 wifi_config_file = tempfile.NamedTemporaryFile(mode='w+', delete=False)
                 wifi_config = wifi_config_file.name
                 wifi_config_file.write(conf)
@@ -377,7 +377,7 @@ class Install(CleepDesktopModule):
         else:
             self.logger.debug('Start install: no wifi info specified')
 
-        #store data (setting self.url and self.drive will trigger install in run method)
+        # store data (setting self.url and self.drive will trigger install in run method)
         self.url = url
         self.drive = drive
         self.wifi_config = wifi_config
@@ -446,11 +446,11 @@ class Install(CleepDesktopModule):
         """
         flashables = []
 
-        #get drives
+        # get drives
         drives = self.diskutil.get_devices_infos()
         self.logger.debug('drives=%s' % drives)
 
-        #fill flashable drives list
+        # fill flashable drives list
         for drive in drives:
             if drives[drive]['removable']:
                 #save entry
@@ -481,14 +481,14 @@ class Install(CleepDesktopModule):
         """
         flashables = []
 
-        #get system drives
+        # get system drives
         drives = self.windowsdrives.get_drives()
         self.logger.debug('drives=%s' % drives)
         
-        #fill flashable drives list
+        # fill flashable drives list
         for drive in drives:
             if drive['deviceType']==WindowsDrives.DEVICE_TYPE_REMOVABLE:
-                #save entry
+                # save entry
                 flashables.append({
                     'desc': '%s (%s)' % (drive['description'], drive['displayName']),
                     'path': '%s' % drive['device'],
@@ -516,15 +516,15 @@ class Install(CleepDesktopModule):
         """
         flashables = []
 
-        #get system drives
+        # get system drives
         drives = self.lsblk.get_drives()
         self.logger.debug('drives=%s' % drives)
 
-        #get drives types
+        # get drives types
         for drive in drives:
             device_type = self.udevadm.get_device_type('/dev/%s' % drive)
             if device_type in (self.udevadm.TYPE_USB, self.udevadm.TYPE_SDCARD):
-                #get human readble name for drive
+                # get human readble name for drive
                 model = drives[drive]['drivemodel']
                 if model is None or len(model)==0:
                     if device_type==self.udevadm.TYPE_USB:
@@ -534,7 +534,7 @@ class Install(CleepDesktopModule):
                 else:
                     desc = '%s (/dev/%s)' % (model, drive)
 
-                #save entry
+                # save entry
                 flashables.append({
                     'desc': desc,
                     'path': '/dev/%s' % drive,
@@ -575,37 +575,37 @@ class Install(CleepDesktopModule):
         with_local_isos = self.context.config.get_config_value('cleep.isolocal')
 
         self.logger.debug('===> getisos %s' % self.isos_cached)
-        #return isos from cache
+        # return isos from cache
         refresh_isos = False
         if force_refresh is True:
-            #refresh forced
+            # refresh forced
             self.logger.debug('Force refresh isos enabled')
             refresh_isos = True
         elif self.isos_cached['lastupdate']==0 or len(self.isos)==0:
-            #force refresh first time
+            # force refresh first time
             self.logger.debug('First isos checking, refresh isos list')
             refresh_isos = True
         elif time.time()-self.isos_cached['lastupdate']>self.CACHE_DURATION:
-            #cache duration expired, refresh needed
+            # cache duration expired, refresh needed
             self.logger.debug('Cache expired, refresh isos list')
             refresh_isos = True
         elif self.isos_cached['withraspiosisos']!=with_raspios_isos:
-            #preferences changed, refresh needed
+            # preferences changed, refresh needed
             self.logger.debug('Preferences changes, refresh isos list')
             refresh_isos = True
 
         if not refresh_isos:
-            #no refresh needed, return cache (with updated local isos value)
+            # no refresh needed, return cache (with updated local isos value)
             self.logger.debug('Return isos list from cache')
             self.isos_cached['withlocalisos'] = with_local_isos
             return self.isos_cached
 
-        #get cleep latest release
+        # get cleep latest release
         isos = []
         (cleep_release_file, cleep_release_name) = self.get_latest_cleep()
         self.logger.debug('Cleep %s: %s' % (cleep_release_name, cleep_release_file))
         if cleep_release_file:
-            #search for .img and .sha256 files
+            # search for .zip and .sha256 files
             latest_cleep = {
                 'label': None,
                 'url': None,
@@ -613,24 +613,24 @@ class Install(CleepDesktopModule):
                 'category': 'cleep',
                 'sha256': None
             }
-            #look for cleep iso files (img and sha256)
+            # look for cleep iso files (img and sha256)
             for file in cleep_release_file:
-                if file['name'].startswith('cleep_%s' % cleep_release_name) and file['name'].endswith('.zip'):
-                    #image file found
+                if file['name'].startswith('cleepos_%s' % cleep_release_name) and file['name'].endswith('.zip'):
+                    # image file found
                     latest_cleep['label'] = 'Cleep %s' % (cleep_release_name)
                     latest_cleep['timestamp'] = file['timestamp']
                     latest_cleep['url'] = file['url']
-                elif file['name'].startswith('cleep_%s' % cleep_release_name) and file['name'].endswith('.sha256'):
-                    #checksum file, open it to get its content
+                elif file['name'].startswith('cleepos_%s' % cleep_release_name) and file['name'].endswith('.sha256'):
+                    # checksum file, open it to get its content
                     sha256 = self.github.get_file_content(file['url'])
                     if sha256 and len(sha256.split())>0:
                         latest_cleep['sha256'] = sha256.split()[0]
 
-            #save cleep iso
+            # save cleep iso
             if latest_cleep['label'] and latest_cleep['timestamp']!=0:
                 isos.append(latest_cleep)
 
-        #get raspios isos
+        # get raspios isos
         if with_raspios_isos:
             raspios = self.get_latest_raspios()
             self.logger.debug('Raspios: %s' % raspios)
@@ -662,7 +662,7 @@ class Install(CleepDesktopModule):
             elif iso['category']=='raspios':
                 raspios_isos += 1
 
-        #save new cache
+        # save new cache
         self.isos_cached = {
             'lastupdate': time.time(),
             'isos': self.isos,
@@ -683,7 +683,7 @@ class Install(CleepDesktopModule):
             filesize (int): downloaded filesize
             percent (int): percent of download
         """
-        #adjust internal status according to download status
+        # adjust internal status according to download status
         if status==Download.STATUS_IDLE:
             self.status = self.STATUS_DOWNLOADING
         elif status==Download.STATUS_DOWNLOADING:
@@ -703,33 +703,33 @@ class Install(CleepDesktopModule):
         elif status==Download.STATUS_DONE:
             self.status = self.STATUS_DOWNLOADING
 
-        #save current progress percentage 
+        # save current progress percentage 
         self.percent = percent
         self.total_percent = int(self.percent / 3)
 
-        #save eta
+        # save eta
         self.eta = '%.1fMo' % (float(filesize)/1000000.0)
 
         if self.cancel:
-            #cancel download
+            # cancel download
             if self.dl:
                 self.dl.cancel()
 
-        #update ui
+        # update ui
         self.__update_ui()
 
     def __download_file(self):
         """
         Download file task
         """
-        #check values
+        # check values
         if self.url is None or self.drive is None:
             self.logger.debug('No drive or url specified, install process stopped')
             return False
 
-        #check if it is local file
+        # check if it is local file
         if self.url.startswith('file://'):
-            #local file, nothing to download but fake download values
+            # local file, nothing to download but fake download values
             self.iso = self.url.replace('file://', '')
             self.status = self.STATUS_DOWNLOADING
             self.percent = 100
@@ -737,10 +737,10 @@ class Install(CleepDesktopModule):
 
             return True
 
-        #init download helper
+        # init download helper
         self.dl = Download(self.context.paths.cache, self.__download_callback)
 
-        #start download
+        # start download
         self.iso = self.dl.download_from_url(self.url, check_sha256=self.iso_sha256, cache=True)
         self.dl = None
 
@@ -756,22 +756,22 @@ class Install(CleepDesktopModule):
             stdout (string): stdout message
             stderr (string): stderr message
         """
-        #handle current flasing/validating status
+        # handle current flasing/validating status
         try:
-            #self.logger.debug('Install stdout=%s' % stdout)
+            # self.logger.debug('Install stdout=%s' % stdout)
             matches = re.finditer(self.__etcher_output_pattern, stdout, re.UNICODE | re.DOTALL)
             for _, match in enumerate(matches):
                 group = match.group().strip()
                 if len(group)>0 and len(match.groups())>0:
                     items = match.groups()
 
-                    #current operation percent
+                    # current operation percent
                     try:
                         self.percent = int(items[1])
                     except:
                         self.percent = 0
 
-                    #status
+                    # status
                     if items[0]=='Flashing':
                         self.status = self.STATUS_FLASHING
                     elif items[0]=='Validating':
@@ -779,16 +779,16 @@ class Install(CleepDesktopModule):
                     else:
                         self.status = self.STATUS_VALIDATING
 
-                    #total percent
+                    # total percent
                     if self.status==self.STATUS_FLASHING:
                         self.total_percent = 33 + int(self.percent/3)
                     else:
                         self.total_percent = 66 + int(self.percent/3)
 
-                    #eta
+                    # eta
                     self.eta = items[2]
 
-                    #update ui
+                    # update ui
                     self.__update_ui()
         except:
             if not self.__flash_output_error:
@@ -801,26 +801,26 @@ class Install(CleepDesktopModule):
         Install process ended callback
         """
         if self.console is None:
-            #process surely canceled
+            # process surely canceled
             return
 
-        #get console return code
+        # get console return code
         return_code = self.console.get_return_code()
         self.logger.info('Install process terminated with return code %s' % return_code)
                 
-        #check return code
+        # check return code
         if return_code!=0:
-            #install failed
+            # install failed
             self.logger.error('Install failed. Return code awaited is 0, received %s' % return_code)
             self.__flash_output_error = True
         else:
             #reset console and set status
             self.__flash_output_error = False
 
-        #update ui
+        # update ui
         self.__update_ui()
         
-        #reset console
+        # reset console
         self.console = None
 
     def __flash_drive(self):
@@ -832,24 +832,24 @@ class Install(CleepDesktopModule):
 
         self.status = self.STATUS_FLASHING
         try:
-            #fix wifi config value, must be string
+            # fix wifi config value, must be string
             wifi_config = self.wifi_config
             if wifi_config is None:
                 wifi_config = ''
 
-            #prepare command line
+            # prepare command line
             cmd = [self.flash_cmd, self.context.paths.config, self.drive, self.iso, wifi_config]
             self.logger.debug('Flash command to execute: %s' % cmd)
 
-            #start command in admin endless console
+            # start command in admin endless console
             self.console = AdminEndlessConsole(cmd, self.__install_callback, self.__install_end_callback)
             if self.env=='windows':
                 self.console.set_cmdlogger(os.path.join(self.context.paths.app, self.CMDLOGGER_WINDOWS))
             elif self.env=='darwin':
                 self.console.set_cmdlogger(os.path.join(self.context.paths.app, self.CMDLOGGER_MAC))
             else:
-                #workaround for AppImage issue https://github.com/AppImage/AppImageKit/issues/146
-                #cmdlogger is copied under config directory like etcher
+                # workaround for AppImage issue https://github.com/AppImage/AppImageKit/issues/146
+                # cmdlogger is copied under config directory like etcher
                 self.console.set_cmdlogger(os.path.join(self.context.paths.config, self.CMDLOGGER_LINUX))
             self.console.start()
 
@@ -902,7 +902,7 @@ class Install(CleepDesktopModule):
         Returns:
             bool: True if adapter exists
         """
-        #handle supported windows version
+        # handle supported windows version
         supported = False
         try:
             release = int(platform.release())
@@ -913,7 +913,7 @@ class Install(CleepDesktopModule):
         if not supported:
             return False
 
-        #get wifi interfaces
+        # get wifi interfaces
         wifi_interfaces = self.windowswirelessinterfaces.get_interfaces()
 
         return len(wifi_interfaces)>0
@@ -925,11 +925,11 @@ class Install(CleepDesktopModule):
         Returns:
             bool: True if adapter exists
         """
-        #system check
+        # system check
         if not self.macwirelessinterfaces.is_installed():
             return False
 
-        #get wifi interfaces
+        # get wifi interfaces
         wifi_interfaces = self.macwirelessinterfaces.get_interfaces()
 
         return len(wifi_interfaces)>0
@@ -951,7 +951,7 @@ class Install(CleepDesktopModule):
         else:
             networks = self.__get_wifi_networks_linux()
 
-        #sort wifi networks by name
+        # sort wifi networks by name
         networks['networks'] = sorted(networks['networks'], key=lambda x: x['network'])
 
         self.logger.debug('wifi networks: %s' % networks)
@@ -969,42 +969,42 @@ class Install(CleepDesktopModule):
         """
         wifi_networks = []
         if self.nmcli.is_installed():
-            #priority to nmcli if installed
+            # priority to nmcli if installed
             self.logger.debug('Use nmcli to find wifi networks')
 
             interfaces = self.nmcli.get_wifi_interfaces()
             self.logger.debug('nmcli wifi interfaces: %s' % interfaces)
             if len(interfaces)>0:
-                #keep only first interface
+                # keep only first interface
                 interface = interfaces[0]
 
                 networks = self.nmcli.get_wifi_networks(interface)
                 self.logger.debug('nmcli wifi networks: %s' % networks)
 
-                #flatten dict
+                # flatten dict
                 wifi_networks = [v for k,v in networks.items()]
 
         elif self.iw.is_installed() and self.iwlist.is_installed():
-            #otherwise fallback to iw/iwlist commands
+            # otherwise fallback to iw/iwlist commands
             self.logger.debug('Use iw to find wifi networks')
 
-            #get wifi interfaces
+            # get wifi interfaces
             wifi_connections = self.iw.get_connections()
             self.logger.debug('wifi_connections: %s' % wifi_connections)
 
-            #get wifi networks
+            # get wifi networks
             if len(wifi_connections.keys())>0:
-                #keep only first wifi interface
+                # keep only first wifi interface
                 interface = list(wifi_connections.keys())[0]
                 networks = self.iwlist.get_networks(interface)
 
-                #flatten dict
+                # flatten dict
                 wifi_networks = [v for k,v in networks.items()]
 
         else:
             self.logger.info('No system command available to get list of wifi networks. Consider wifi is not available on this computer')
        
-        #build output
+        # build output
         return {
             'networks': wifi_networks
         }
@@ -1024,7 +1024,7 @@ class Install(CleepDesktopModule):
             'networks': []
         }
 
-        #handle supported windows version
+        # handle supported windows version
         supported = False
         try:
             release = int(platform.release())
@@ -1037,21 +1037,21 @@ class Install(CleepDesktopModule):
         if not supported:
             return default
 
-        #get wifi interfaces
+        # get wifi interfaces
         wifi_interfaces = self.windowswirelessinterfaces.get_interfaces()
         self.logger.debug('wifi_interfaces: %s' % wifi_interfaces)
 
-        #get wifi networks
+        # get wifi networks
         wifi_networks = []
         if len(wifi_interfaces)>0:
             interface = wifi_interfaces[0]
             networks = self.windowswirelessnetworks.get_networks(interface)
             self.logger.debug('networks: %s' % networks)
 
-            #flatten dict
+            # flatten dict
             wifi_networks = [v for k,v in networks.items()]
         
-        #build output
+        # build output
         return {
             'networks': wifi_networks,
             'adapter': len(wifi_interfaces)>0
@@ -1073,7 +1073,7 @@ class Install(CleepDesktopModule):
             'adapter': False
         }
 
-        #system check
+        # system check
         if not self.macwirelessinterfaces.is_installed():
             self.logger.warning('MacWirelessInterfaces associated command not found on your system, unable to get list of wifi networks')
             return default
@@ -1082,21 +1082,21 @@ class Install(CleepDesktopModule):
             self.logger.warning('MacWirelessNetworks associated command not found on your system, unable to get list of wifi networks')
             return default
 
-        #get wifi interfaces
+        # get wifi interfaces
         wifi_interfaces = self.macwirelessinterfaces.get_interfaces()
         self.logger.debug('wifi_interfaces: %s' % wifi_interfaces)
 
-        #get wifi networks
+        # get wifi networks
         wifi_networks = []
         if len(wifi_interfaces)>0:
-            #keep only first wifi interface
+            # keep only first wifi interface
             interface = wifi_interfaces[0]
             networks = self.macwirelessnetworks.get_networks(interface)
 
-            #flatten dict
+            # flatten dict
             wifi_networks = [v for k,v in networks.items()]
         
-        #build output
+        # build output
         return {
             'networks': wifi_networks,
             'adapter': len(wifi_interfaces)>0
