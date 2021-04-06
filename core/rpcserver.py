@@ -183,6 +183,7 @@ def configure_app(app_path, cache_path, config_path, config_filename, debug, is_
         'CleepDesktop',
         config['cleep']['version'],
         libs_version,
+        config['cleep']['debug'],
         config['cleep']['isdev']
     )
     if config['cleep']['crashreport']:
