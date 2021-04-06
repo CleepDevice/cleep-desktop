@@ -46,6 +46,7 @@ class CrashReport():
 
         # disable crash report if necessary
         if self.__disabled_by_core or not token:
+            self.logger.debug('Crash report forced to be disabled')
             self.disable()
 
         # create and configure raven client

@@ -187,10 +187,6 @@ def configure_app(app_path, cache_path, config_path, config_filename, debug, is_
     )
     if config['cleep']['crashreport']:
         context.crash_report.enable()
-    if config['cleep']['isdev']:
-        # disable crash report during developments
-        context.main_logger.debug('Crash report disabled during developments')
-        context.crash_report.disable()
 
     # launch config module
     context.modules['config'] = Config(context, app_config, debug)

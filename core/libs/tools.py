@@ -9,6 +9,7 @@ import os
 import logging
 import sys
 import subprocess
+import platform
 
 # from https://elinux.org/RPi_HardwareHistory
 RASPBERRY_PI_REVISIONS = {
@@ -75,6 +76,8 @@ def raspberry_pi_infos():
             }
 
     """
+    if not platform.machine().startwith('arm'):
+        raise Exception('Not arm platform')
     cmd = u'/usr/bin/awk \'/^Revision/ {sub("^1000", "", $3); print $3}\' /proc/cpuinfo'
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     revision = p.communicate()[0].decode('utf-8').replace(u'\n', u'')
