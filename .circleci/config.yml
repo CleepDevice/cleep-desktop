@@ -11,8 +11,11 @@ jobs:
       - checkout
       - run: npm run publish-win64
       - slack/notify:
-          success_message: "Build windows succeeded"
-          failure_message: "Build windows failed"
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: basic_success_1
   publish-linux64:
     docker:
       - image: circleci/buildpack-deps:bionic
@@ -30,8 +33,11 @@ jobs:
       - checkout
       - run: npm run build-linux64-circleci
       - slack/notify:
-          success_message: "Build linux succeeded"
-          failure_message: "Build linux failed"
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: basic_success_1
 workflows:
   version: 2
   windows64:
