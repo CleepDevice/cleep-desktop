@@ -79,8 +79,6 @@ var devicesService = function($rootScope, cleepService)
         self.unconfigured = responseData.unconfigured;
         self.configured = self.devices.length - self.unconfigured;
         self.loading = false;
-
-        console.log('DEV', self.devices);
     };
 
     //select device in devices panel
@@ -98,7 +96,6 @@ var devicesService = function($rootScope, cleepService)
     self.getDevices = function() {
         return cleepService.sendCommand('get_devices', 'devices')
             .then((resp) => {
-                console.log('====>', resp.data);
                 self.__updateDevices(resp.data);
             });
     };

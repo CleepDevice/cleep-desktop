@@ -58,7 +58,6 @@ class Raspios():
             self.logger.debug('Requesting %s' % release['url'])
             resp = requests.get(release['url'])
             if resp.status_code==200:
-                # self.logger.debug('Resp content: %s' % resp.text)
                 # parse response content
                 matches = re.finditer(r'href=\"(%s.*?)\"' % release['prefix'], resp.text, re.UNICODE)
                 for _, match in enumerate(matches):
@@ -160,7 +159,6 @@ class Raspios():
             resp = requests.get(self.RASPIOS_LITE_URL)
             if resp.status_code==200:
                 # parse response content
-                self.logger.debug('====> %s' % resp.text)
                 matches = re.finditer(r'href=\"((raspios_lite_armhf)-(\d*)-(\d*)-(\d*)/)\"', resp.text, re.UNICODE)
                 results = list(matches)
                 if len(results)>0:
