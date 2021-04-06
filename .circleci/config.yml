@@ -10,6 +10,9 @@ jobs:
     steps:
       - checkout
       - run: npm run publish-win64
+      - slack/notify:
+          success_message: "Build windows succeeded"
+          failure_message: "Build windows failed"
   publish-linux64:
     docker:
       - image: circleci/buildpack-deps:bionic
@@ -26,9 +29,9 @@ jobs:
       - run: sudo apt-get install -y nodejs
       - checkout
       - run: npm run build-linux64-circleci
-      - slack/status:
-          success_message: "Build Succeeded!"
-          failure_message: "Build failed!"
+      - slack/notify:
+          success_message: "Build linux succeeded"
+          failure_message: "Build linux failed"
 workflows:
   version: 2
   windows64:
