@@ -12,7 +12,7 @@ from core.libs.cleepwificonf import CleepWifiConf
 from core.libs.download import Download
 from core.utils import CleepDesktopModule
 from core.libs.github import Github
-from core.libs.raspbians import Raspbians
+from core.libs.raspios import Raspios
 if platform.system()=='Windows':
     from core.libs.console import AdminEndlessConsole
     from core.libs.windowsdrives import WindowsDrives
@@ -98,13 +98,13 @@ class Install(CleepDesktopModule):
         self.wifi_config = None
         self.flashable_drives = []
         self.github = Github(self.RASPIOT_REPO['owner'], self.RASPIOT_REPO['repository'])
-        self.raspbians = Raspbians(self.context.crash_report)
+        self.raspios = Raspios(self.context.crash_report)
         self.isos_cached = {
             'lastupdate': 0,
             'isos': [],
             'cleepisos': 0,
-            'raspbianisos': 0,
-            'withraspbianisos': False,
+            'raspiosisos': 0,
+            'withraspiosisos': False,
             'withlocalisos': False
         }
        
@@ -227,48 +227,48 @@ class Install(CleepDesktopModule):
 
         self.logger.debug('Flashdrive thread stopped')
 
-    def get_latest_raspbians(self):
+    def get_latest_raspios(self):
         """
-        Return latest raspbians releases
+        Return latest raspios releases
 
         Returns:
-            dict: raspbian and raspbian lite infos::
+            dict: raspios and raspios lite infos::
                 {
-                    raspbian: {
+                    raspios: {
                         fileurl (string): file url
                         sha256 (string): sha256 checksum,
                         timestamp (int): timestamp of release
                     },
-                    raspbian_lite: {
+                    raspios_lite: {
                         fileurl (string): file url
                         sha256 (string): sha256 checksum,
                         timestamp (int): timestamp of release
                     }
                 }
         """
-        raspbian_infos = None
-        raspbian_lite_infos = None
+        raspios_infos = None
+        raspios_lite_infos = None
 
         #get releases
-        releases = self.raspbians.get_latest_raspbian_releases()
-        self.logger.debug('Raspbian releases: %s' % releases)
+        releases = self.raspios.get_latest_raspios_releases()
+        self.logger.debug('Raspios releases: %s' % releases)
 
         #get releases infos
-        if releases['raspbian']:
-            infos = self.raspbians.get_raspbian_release_infos(releases['raspbian'])
+        if releases['raspios']:
+            infos = self.raspios.get_raspios_release_infos(releases['raspios'])
             if infos['url'] is not None:
-                raspbian_infos = infos
-            self.logger.debug('Raspbian release infos: %s' % raspbian_infos)
+                raspios_infos = infos
+            self.logger.debug('Raspios release infos: %s' % raspios_infos)
 
-        if releases['raspbian_lite']:
-            infos = self.raspbians.get_raspbian_release_infos(releases['raspbian_lite'])
+        if releases['raspios_lite']:
+            infos = self.raspios.get_raspios_release_infos(releases['raspios_lite'])
             if infos['url'] is not None:
-                raspbian_lite_infos = infos
-            self.logger.debug('Raspbian lite release infos: %s' % raspbian_lite_infos)
+                raspios_lite_infos = infos
+            self.logger.debug('Raspios lite release infos: %s' % raspios_lite_infos)
 
         return {
-            'raspbian': raspbian_infos,
-            'raspbian_lite': raspbian_lite_infos
+            'raspios': raspios_infos,
+            'raspios_lite': raspios_lite_infos
         }
 
     def get_latest_cleep(self):
@@ -554,24 +554,24 @@ class Install(CleepDesktopModule):
         Returns:
             dict:
                 lastupdate (float): last update
-                raspbian (bool): with raspbian iso,
+                raspios (bool): with raspios iso,
                 cleepisos (int): number of returned Cleep isos
-                raspbianisos (int): number of returned Raspbian isos
+                raspiosisos (int): number of returned raspios isos
                 isos (list): list of isos available ordered by date
                     [
                         {
                             label (string): iso label,
                             url (string): file url,
                             timestamp (int): timestamp of isos,
-                            category (string): entry category ('cleep' or 'raspbian')
+                            category (string): entry category ('cleep' or 'raspios')
                             sha256 (string): sha256 checksum
                         },
                         ...
                     ],
-                withraspbianisos (bool): raspbian iso flag
+                withraspiosisos (bool): raspios iso flag
                 withlocalisos (bool): local iso flag
         """
-        with_raspbian_isos = self.context.config.get_config_value('cleep.isoraspbian')
+        with_raspios_isos = self.context.config.get_config_value('cleep.isoraspios')
         with_local_isos = self.context.config.get_config_value('cleep.isolocal')
 
         self.logger.debug('===> getisos %s' % self.isos_cached)
@@ -589,7 +589,7 @@ class Install(CleepDesktopModule):
             #cache duration expired, refresh needed
             self.logger.debug('Cache expired, refresh isos list')
             refresh_isos = True
-        elif self.isos_cached['withraspbianisos']!=with_raspbian_isos:
+        elif self.isos_cached['withraspiosisos']!=with_raspios_isos:
             #preferences changed, refresh needed
             self.logger.debug('Preferences changes, refresh isos list')
             refresh_isos = True
@@ -630,45 +630,45 @@ class Install(CleepDesktopModule):
             if latest_cleep['label'] and latest_cleep['timestamp']!=0:
                 isos.append(latest_cleep)
 
-        #get raspbian isos
-        if with_raspbian_isos:
-            raspbians = self.get_latest_raspbians()
-            self.logger.debug('Raspbians: %s' % raspbians)
-            if raspbians['raspbian_lite'] is not None:
+        #get raspios isos
+        if with_raspios_isos:
+            raspios = self.get_latest_raspios()
+            self.logger.debug('Raspios: %s' % raspios)
+            if raspios['raspios_lite'] is not None:
                 isos.append({
-                    'label': 'Raspbian Lite',
-                    'url': raspbians['raspbian_lite']['url'],
-                    'timestamp': raspbians['raspbian_lite']['timestamp'],
-                    'category': 'raspbian',
-                    'sha256': raspbians['raspbian_lite']['sha256']
+                    'label': 'Raspios Lite',
+                    'url': raspios['raspios_lite']['url'],
+                    'timestamp': raspios['raspios_lite']['timestamp'],
+                    'category': 'raspios',
+                    'sha256': raspios['raspios_lite']['sha256']
                 })
-            if raspbians['raspbian'] is not None:
+            if raspios['raspios'] is not None:
                 isos.append({
-                    'label': 'Raspbian desktop',
-                    'url': raspbians['raspbian']['url'],
-                    'timestamp': raspbians['raspbian']['timestamp'],
-                    'category': 'raspbian',
-                    'sha256': raspbians['raspbian']['sha256']
+                    'label': 'Raspios desktop',
+                    'url': raspios['raspios']['url'],
+                    'timestamp': raspios['raspios']['timestamp'],
+                    'category': 'raspios',
+                    'sha256': raspios['raspios']['sha256']
                 })
 
         self.logger.debug('Isos: %s' % isos)
         self.isos = sorted(isos, key=lambda i:i['timestamp'])
 
         cleep_isos = 0
-        raspbian_isos = 0
+        raspios_isos = 0
         for iso in self.isos:
             if iso['category']=='cleep':
                 cleep_isos += 1
-            elif iso['category']=='raspbian':
-                raspbian_isos += 1
+            elif iso['category']=='raspios':
+                raspios_isos += 1
 
         #save new cache
         self.isos_cached = {
             'lastupdate': time.time(),
             'isos': self.isos,
             'cleepisos': cleep_isos,
-            'raspbianisos': raspbian_isos,
-            'withraspbianisos': with_raspbian_isos,
+            'raspiosisos': raspios_isos,
+            'withraspiosisos': with_raspios_isos,
             'withlocalisos': with_local_isos
         }
 

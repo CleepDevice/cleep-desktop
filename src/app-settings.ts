@@ -6,7 +6,7 @@ import settings from 'electron-settings';
 const DEFAULT_SETTINGS: {[k: string]: string | number | boolean| {[k: string]: string}} = {
     rpcPort: 5610,
     debug: false,
-    isoRaspbian: false,
+    isoRaspios: false,
     isoLocal: false,
     locale: 'en',
     proxyMode: 'noproxy',
@@ -53,8 +53,8 @@ export class AppSettings {
         } else {
             settings.setSync('cleep.version', app.getVersion());
         }
-        if( !settings.hasSync('cleep.isoraspbian') ) {
-            settings.setSync('cleep.isoraspbian', DEFAULT_SETTINGS.isoRaspbian);
+        if( !settings.hasSync('cleep.isoraspios') ) {
+            settings.setSync('cleep.isoraspios', DEFAULT_SETTINGS.isoRaspios);
         }
         if( !settings.hasSync('cleep.isolocal') ) {
             settings.setSync('cleep.isolocal', DEFAULT_SETTINGS.isoLocal);
