@@ -17,16 +17,17 @@ echo -----------------------------
 py -3 -m pip install -r ./requirements.txt
 py -3 -m pip freeze
 xcopy /q /y config\cleepdesktopcore-windows64.spec .
-pyinstaller --workpath packaging --clean --noconfirm --noupx --windowed --debug all --log-level INFO cleepdesktopcore-windows64.spec
+py -3 -m PyInstaller --workpath packaging --clean --noconfirm --noupx --windowed --debug all --log-level INFO cleepdesktopcore-windows64.spec
 del /q cleepdesktopcore-windows64.spec
 move dist\cleepdesktopcore %CLEEPDESKTOPPATH%
 :: 2021-04-01 WORKAROUND: fix with pyzmq that moves libs from different place. Wait for new pyinstaller release (>2021.1)
 echo Workaround with pyzmq dlls that are missing...
 py -3 -c "import site; print(site.getsitepackages()[1])" > pysite.txt
-set /P pysite=<pysite.txt
+set /P PYSITE=<pysite.txt
 del pysite.txt
 mkdir %CLEEPDESKTOPPATH%\cleepdesktopcore\pyzmq.libs
-xcopy /S %pysite%\pyzmq.libs %CLEEPDESKTOPPATH%\cleepdesktopcore\pyzmq.libs
+echo PYSITE=%PYSITE%
+xcopy /S %PYSITE%\pyzmq.libs %CLEEPDESKTOPPATH%\cleepdesktopcore\pyzmq.libs
 
 :: electron
 echo.
