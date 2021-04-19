@@ -21,7 +21,6 @@ jobs:
       name: win/default
       shell: powershell.exe
     steps:
-      steps:
       - checkout
       - run: npm run build-win64
       - slack/notify:
