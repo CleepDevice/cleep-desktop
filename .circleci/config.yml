@@ -16,6 +16,20 @@ jobs:
       - slack/notify:
           event: pass
           template: basic_success_1
+  build-windows64:
+    executor:
+      name: win/default
+      shell: powershell.exe
+    steps:
+      steps:
+      - checkout
+      - run: npm run build-win64
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: basic_success_1
   publish-linux64:
     docker:
       - image: circleci/buildpack-deps:bionic
@@ -48,6 +62,10 @@ workflows:
               only: /^v.*/
             branches:
               ignore: /.*/
+      - build-windows64:
+          filters:
+            branches:
+              only: master
   linux64:
     jobs:
       - publish-linux64:
@@ -59,4 +77,4 @@ workflows:
       - build-linux64:
           filters:
             branches:
-              only: /build.*/
+              only: master
