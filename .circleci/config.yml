@@ -1,7 +1,7 @@
 version: 2.1
 orbs:
   win: circleci/windows@2.4.0
-  slack: circleci/slack@4.3.3
+  slack: circleci/slack@4.4.0
 jobs:
   publish-windows64:
     executor:
