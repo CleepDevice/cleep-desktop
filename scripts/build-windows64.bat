@@ -27,7 +27,9 @@ set /P PYSITE=<pysite.txt
 del pysite.txt
 mkdir %CLEEPDESKTOPPATH%\cleepdesktopcore\pyzmq.libs
 echo PYSITE=%PYSITE%
-xcopy /S %PYSITE%\pyzmq.libs %CLEEPDESKTOPPATH%\cleepdesktopcore\pyzmq.libs
+dir %PYSITE%
+echo xcopy /s "%PYSITE%\pyzmq.libs" "%CLEEPDESKTOPPATH%\cleepdesktopcore\pyzmq.libs"
+xcopy /s "%PYSITE%\pyzmq.libs" "%CLEEPDESKTOPPATH%\cleepdesktopcore\pyzmq.libs"
 
 :: electron
 echo.
