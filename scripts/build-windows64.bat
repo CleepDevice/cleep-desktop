@@ -19,6 +19,7 @@ py -3 -m pip freeze
 xcopy /q /y config\cleepdesktopcore-windows64.spec .
 py -3 -m PyInstaller --workpath packaging --clean --noconfirm --noupx --windowed --debug all --log-level INFO cleepdesktopcore-windows64.spec
 del /q cleepdesktopcore-windows64.spec
+echo Generated files:
 dir dist\cleepdesktopcore
 move dist\cleepdesktopcore %CLEEPDESKTOPPATH%
 :: 2021-04-01 WORKAROUND: fix with pyzmq that moves libs from different place. Wait for new pyinstaller release (>2021.1)
