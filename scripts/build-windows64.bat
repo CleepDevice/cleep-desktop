@@ -14,7 +14,8 @@ echo.
 echo.
 echo Packaging cleepdesktopcore...
 echo -----------------------------
-pip install -r ./requirements.txt
+py -3 -m pip install -r ./requirements.txt
+py -3 -m pip freeze
 xcopy /q /y config\cleepdesktopcore-windows64.spec .
 pyinstaller --workpath packaging --clean --noconfirm --noupx --windowed --debug all --log-level INFO cleepdesktopcore-windows64.spec
 del /q cleepdesktopcore-windows64.spec
@@ -75,7 +76,9 @@ echo -------------
 ping 127.0.0.1 -n 2 > nul
 mkdir dist
 xcopy /Q /S %CLEEPDESKTOPPATH%\dist dist
-rmdir /Q /S packaging
+if "%1" == "publish" (
+    rmdir /Q /S packaging
+)
 rmdir /Q /S __pycache__
 rmdir /Q /S core\__pycache__
 rmdir /Q /S core\libs\__pycache__

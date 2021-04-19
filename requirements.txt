@@ -2,7 +2,7 @@ gevent==21.1.2
 bottle==0.12.19
 gevent-websocket==0.10.1
 requests==2.24.0
-PyInstaller==4.2
+pyinstaller==4.3
 passlib==1.7.4
 pyre-gevent==0.2.3
 sentry-sdk==1.0.0
