@@ -21,12 +21,15 @@ class WindowsWirelessInterfaces():
         Return wireless interfaces
 
         Return:
-            WirelessInterface: WirelessInterface instance (https://github.com/kedos/win32wifi/blob/master/win32wifi/Win32Wifi.py#L35)::
-                {
-                    Description (string)
-                    GUID (string)
-                    State (string)
-                }
-        """
-        return Win32Wifi.getWirelessInterfaces()
+            list of interfaces::
 
+                [
+                    WirelessInterface: WirelessInterface instance (https://github.com/kedos/win32wifi/blob/master/win32wifi/Win32Wifi.py#L35),
+                    ...
+                ]
+
+        """
+        try:
+            return Win32Wifi.getWirelessInterfaces()
+        except Exception:
+            return []

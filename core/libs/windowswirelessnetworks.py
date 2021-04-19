@@ -35,7 +35,10 @@ class WindowsWirelessNetworks():
             return
 
         # get networks (list of WirelessNetwork https://github.com/kedos/win32wifi/blob/master/win32wifi/Win32Wifi.py#L65)
-        scanned_networks = Win32Wifi.getWirelessAvailableNetworkList(interface)
+        try:
+            scanned_networks = Win32Wifi.getWirelessAvailableNetworkList(interface)
+        except Exception:
+            scanned_networks = []
 
         # format output to useful format
         networks = {}
