@@ -10,12 +10,6 @@ jobs:
     steps:
       - checkout
       - run: npm run publish-win64
-      - slack/notify:
-          event: fail
-          template: basic_fail_1
-      - slack/notify:
-          event: pass
-          template: basic_success_1
   build-windows64:
     executor:
       name: win/default
@@ -23,12 +17,6 @@ jobs:
     steps:
       - checkout
       - run: npm run build-win64
-      - slack/notify:
-          event: fail
-          template: basic_fail_1
-      - slack/notify:
-          event: pass
-          template: basic_success_1
   publish-linux64:
     docker:
       - image: cimg/base:edge
