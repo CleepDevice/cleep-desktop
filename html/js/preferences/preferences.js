@@ -1,9 +1,10 @@
-var Cleep = angular.module('Cleep');
-
 /**
  * Preferences controller
  */
-var preferencesController = function($rootScope, $scope, cleepService, debounce, closeModal) {
+angular
+.module('Cleep')
+.controller('preferencesController', ['$rootScope', '$scope', 'cleepService', 'debounceService', 'closeModal', 'logger',
+function($rootScope, $scope, cleepService, debounce, closeModal, logger) {
     var self = this;
 
     self.shell = require('electron').shell;
@@ -94,14 +95,18 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
 
     // Open logs
     self.openLogs = function() {
-        self.shell.openItem(self.logs);
+        self.shell.openPath(self.logs).catch(
+            error => logger.error('Unable to open logs ' + error)
+        );
     };
 
     // Open logs archive (zip format)
     self.zipLogs = function() {
-        cleepService.sendCommand('get_zipped_logs', 'cache')
+        cleepService.sendCommand('get_zipped_logs', 'core')
             .then(function(resp) {
-                self.shell.openItem(resp.data);
+                self.shell.openPath(resp.data).catch(
+                    error => logger.error('Unable to open logs ' + error)
+                );
             });
     };
 
@@ -123,5 +128,4 @@ var preferencesController = function($rootScope, $scope, cleepService, debounce,
 
     //init controller
     self.getConfig();
-};
-Cleep.controller('preferencesController', ['$rootScope', '$scope', 'cleepService', 'debounceService', 'closeModal', preferencesController]);
+}]);

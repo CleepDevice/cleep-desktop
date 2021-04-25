@@ -46,9 +46,9 @@ from core.modules.devices import Devices
 from core.modules.updates import Updates
 from core.modules.config import Config
 from core.modules.cache import Cache
+from core.modules.core import Core
 from core.libs.crashreport import CrashReport
 from core.libs.download import Download
-from core.libs.cleepdesktoplogs import CleepDesktopLogs
 from core.exception import CommandError
 
 __all__ = ['app']
@@ -193,6 +193,10 @@ def configure_app(app_path, cache_path, config_path, config_filename, debug, is_
     context.modules['config'] = Config(context, app_config, debug)
     context.config = context.modules['config']
     context.modules['config'].start()
+
+    # launch core module
+    context.modules['core'] = Core(context, debug)
+    context.modules['core'].start()
 
     # launch cache module
     context.modules['cache'] = Cache(context, debug)

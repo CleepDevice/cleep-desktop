@@ -103,7 +103,7 @@ var devicesService = function($rootScope, cleepService)
     //delete device
     self.deleteDevice = function(device) {
         return cleepService.sendCommand('delete_device', 'devices', {
-            'device_uuid': device.uuid,
+            'peer_uuid': device.uuid,
         })
             .then((resp) => {
                 self.__updateDevices(resp.data, device);
