@@ -60,7 +60,7 @@ class CleepDesktopLogs():
             string: zipped archive path
         """
         # generate filename in tmp dir
-        filename = os.path.join(self.temp_dir, str(uuid.uuid4()))
+        filename = os.path.join(self.temp_dir, str(uuid.uuid4()) + '.zip')
 
         # build archive
         try:
