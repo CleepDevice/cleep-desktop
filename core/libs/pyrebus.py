@@ -85,16 +85,19 @@ class PyreBus(ExternalBus):
             # Loop over the interfaces and their settings to try to find the broadcast address.
             # ipv4 only currently and needs a valid broadcast address
             for name, data in iface.items():
-                self.logger.debug('Checking out interface "%s".' % name)
+                self.logger.debug('Checking out interface "%s": %s' % (name, data))
                 data_2 = data.get(netifaces.AF_INET, None)
                 data_10 = data.get(netifaces.AF_INET6, None)
                 data_17 = data.get(netifaces.AF_LINK, None)
+                # workaround: fallback to netifaces module to find mac addr
+                if not data_17 and data_2:
+                    data_17 = self.__get_mac_addresses_from_netifaces(data_2)
 
                 if not data_2 and not data_10:
-                    self.logger.debug('Data_2 and data_10 not found for interface "%s".' % name)
+                    self.logger.debug('AF_INET(6) not found for interface "%s".' % name)
                     continue
                 if not data_17:
-                    self.logger.debug('No data_17 found for interface "%s".' % name)
+                    self.logger.debug('AF_LINK not found for interface "%s".' % name)
                     continue
 
                 address_str = (data_2 and data_2.get('addr', None)) or (data_10 and data_10.get('addr', None))
@@ -135,6 +138,31 @@ class PyreBus(ExternalBus):
                 macs.append(mac_str)
 
         return macs
+
+    def __get_mac_addresses_from_netifaces(self, data_2):
+        """
+        Workaround to find mac addresses when not found using zhelper
+
+        Returns:
+            dict: fake data_17 objects::
+
+            {
+                addr (string): mac address
+            }
+
+        """
+        adapter = data_2.get('adapter', None)
+        if not adapter:
+            return None
+
+        addresses = netifaces.ifaddresses(adapter)
+        mac_addr = addresses.get(-1000, None) # mac addr field under windows :S
+
+        if mac_addr and len(mac_addr)>0 and mac_addr[0].get('addr', None):
+            return {
+                'addr': mac_addr[0].get('addr')
+            }
+        return None
 
     def stop(self):
         """
