@@ -7,11 +7,14 @@
  * It implements command sending with response (send() function)
  * Some commands shortcuts are also available (getConfig, setConfig...)
  */
-var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, settings) {
+angular
+.module('Cleep')
+.service('cleepService', ['$http', '$q', '$rootScope', 'toastService', '$websocket', 'logger', 'settings',
+function($http, $q, $rootScope, toast, $websocket, logger, settings) {
 
     var self = this;
 
-    //set members
+    // set members
     self.__ws = null;
     self.port = settings.getSync('remote.rpcport');
     self.urlCommand = 'http://localhost:' + self.port + '/command';
@@ -35,7 +38,7 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
                 defer.resolve('connected');
             });
         } else {
-            //websocket is already created
+            // websocket is already created
             defer.resolve('already created');
         }
 
@@ -46,8 +49,9 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
      * Callback when message is received on websocket
      */
     self.__websocketReceive = function(event) {
+        logger.debug('Received from WS', event)
         if( event && event.data && typeof(event.data)==='string' ) {
-            //broadcast received data
+            // broadcast received data
             var data = JSON.parse(event.data);
             $rootScope.$broadcast(data.event, data.data);
         }
@@ -60,12 +64,12 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
     {
         var d = $q.defer();
 
-        //prepare method
+        // prepare method
         if( !method ) {
             method = 'POST';
         }
 
-        //prepare data
+        // prepare data
         if( params===undefined || params===null ) {
             params = {};
         }
@@ -90,7 +94,7 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
                 d.resolve(resp.data);
             }
         }, function(err) {
-            //console.error('Request failed: '+err);
+            // console.error('Request failed: '+err);
             d.reject(err.statusText);
         });
 
@@ -118,8 +122,4 @@ var cleepService = function($http, $q, $rootScope, toast, $websocket, logger, se
         return self.send(self.urlCommand, 'set_config', 'config', {config:config});
     };
 
-};
-
-var Cleep = angular.module('Cleep');
-Cleep.service('cleepService', ['$http', '$q', '$rootScope', 'toastService', '$websocket', 'logger', 'settings', cleepService]);
-
+}]);

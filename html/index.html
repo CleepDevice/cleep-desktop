@@ -12,7 +12,12 @@
     <md-content ng-controller="cleepController as cleep" layout-fill layout="row">
 
         <!-- tools panel -->
-        <md-content style="background-color:#607d8b; overflow-x:hidden;" ng-style="{'width':(cleep.toolbarCollapsed ? '60px' : '250px')}" class="panel-separator" layout="column">
+        <md-content
+            style="background-color:#607d8b; overflow-x:hidden;"
+            ng-style="{'width':(cleep.toolbarCollapsed ? '60px' : '250px')}"
+            class="panel-separator"
+            layout="column"
+        >
             <md-list class="toolbar" style="padding-top:0px;">
 
                 <md-list-item ng-click="cleep.toggleToolbar()" aria-label="Toggle toolbar">
@@ -77,7 +82,12 @@
                 </div>
 
                 <!-- no device -->
-                <div layout="column" layout-padding layout-align="center center" ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length==0">
+                <div
+                    layout="column"
+                    layout-padding
+                    layout-align="center center"
+                    ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length==0"
+                >
                     <div style="padding-top:20px;">
                         No device found...
                     </div>
@@ -90,14 +100,25 @@
                 </div>
 
                 <!-- unconfigured devices -->
-                <div ng-if="!ctl.devicesService.loading && ctl.devicesService.unconfigured>0" md-colors="::{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
+                <div
+                    ng-if="!ctl.devicesService.loading && ctl.devicesService.unconfigured>0"
+                    md-colors="::{background: 'primary-300'}"
+                    class="toolbar-content"
+                    layout="row"
+                    layout-align="start center"
+                >
                     <div class="toolbar-spacer"></div>
                     <div layout="row" layout-align="left center">
                         <h1 style="padding-left:5px;" class="md-title">Unconfigured devices</h1>
                     </div>
                 </div>
                 <md-list ng-if="!ctl.devicesService.loading && ctl.devicesService.unconfigured>0" style="padding:0px;">
-                    <md-list-item ng-repeat="device in ctl.devicesService.devices | filter: {configured:false}" ng-if="ctl.devicesService.unconfigured>0" ng-click="ctl.openDevicePage(device)" md-colors="device.selected ? {background: 'accent-400'} : {background: 'background'}">
+                    <md-list-item
+                        ng-repeat="device in ctl.devicesService.devices | filter: { extra: { configured: false } }"
+                        ng-if="ctl.devicesService.unconfigured>0"
+                        ng-click="ctl.openDevicePage(device)"
+                        md-colors="device.selected ? {background: 'accent-400'} : {background: 'background'}"
+                    >
                         <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
                         <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin md-accent"></md-icon>
                         <p>{{device.hostname}}</p>
@@ -107,7 +128,10 @@
                             </md-button>
                             <md-menu-content>
                                 <md-menu-item>
-                                    <md-button aria-label="Device infos" ng-click="cleep.openModal('deviceDetailsController', 'js/device/details-dialog.html', device)">
+                                    <md-button
+                                        aria-label="Device infos"
+                                        ng-click="cleep.openModal('deviceDetailsController', 'js/device/details-dialog.html', device)"
+                                    >
                                         <md-icon md-svg-icon="information-outline"></md-icon>
                                         Device infos
                                     </md-button>
@@ -125,14 +149,24 @@
                 </md-list>
 
                 <!-- configured devices -->
-                <div ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length>0" md-colors="::{background: 'primary-300'}" class="toolbar-content" layout="row" layout-align="start center">
+                <div
+                    ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length>0"
+                    md-colors="::{background: 'primary-300'}"
+                    class="toolbar-content"
+                    layout="row"
+                    layout-align="start center"
+                >
                     <div class="toolbar-spacer"></div>
                     <div layout="row" layout-align="left center">
                         <h1 style="padding-left:5px;" class="md-title">Configured devices</h1>
                     </div>
                 </div>
                 <md-list ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length>0" style="padding:0px;">
-                    <md-list-item ng-repeat="device in ctl.devicesService.devices | filter: {configured:true}" ng-click="ctl.openDevicePage(device)" md-colors="device.selected ? {background: 'accent-400'} : {background: 'background'}">
+                    <md-list-item
+                        ng-repeat="device in ctl.devicesService.devices | filter: { extra: { configured: true } }"
+                        ng-click="ctl.openDevicePage(device)"
+                        md-colors="device.selected ? {background: 'accent-400'} : {background: 'background'}"
+                    >
                         <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
                         <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin md-accent"></md-icon>
                         <p>{{device.hostname}}</p>
@@ -142,7 +176,10 @@
                             </md-button>
                             <md-menu-content>
                                 <md-menu-item>
-                                    <md-button aria-label="Device infos" ng-click="cleep.openModal('deviceDetailsController', 'js/device/details-dialog.html', device)">
+                                    <md-button
+                                        aria-label="Device infos"
+                                        ng-click="cleep.openModal('deviceDetailsController', 'js/device/details-dialog.html', device)"
+                                    >
                                         <md-icon md-svg-icon="information-outline"></md-icon>
                                         Device infos
                                     </md-button>

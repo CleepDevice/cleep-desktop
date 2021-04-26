@@ -91,6 +91,7 @@ def update_ui(event, data):
         data (any): event data
     """
     global  ws_updates
+    context.main_logger.debug('Push to websocket event "%s" with data: %s' % (event, data))
 
     # push data to queue
     ws_updates.put_nowait({

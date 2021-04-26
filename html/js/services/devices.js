@@ -22,7 +22,6 @@ var devicesService = function($rootScope, cleepService)
                         found = true;
 
                         // update device infos
-                        self.devices[j].configured = devices[i].extra.configured;
                         self.devices[j].hostname = devices[i].hostname;
                         self.devices[j].ip = devices[i].ip;
                         self.devices[j].online = devices[i].online;

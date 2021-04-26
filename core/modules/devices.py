@@ -18,6 +18,7 @@ class Devices(CleepDesktopModule):
 
     CLEEPDESKTOP_HOSTNAME = 'CLEEPDESKTOP'
     CLEEPDESKTOP_PORT = '0'
+    UNCONFIGURED_DEVICE_HOSTNAME = 'cleepdevice'
 
     def __init__(self, context, debug_enabled):
         """
@@ -222,7 +223,7 @@ class Devices(CleepDesktopModule):
         peer_infos.online = True
         peer_infos.extra['connectedat'] = int(time.time())
         peer_infos.extra['configured'] = False
-        if len(peer_infos.hostname.strip()) > 0 and peer_infos.hostname != 'cleepdevice':
+        if len(peer_infos.hostname.strip()) > 0 and peer_infos.hostname != self.UNCONFIGURED_DEVICE_HOSTNAME:
             peer_infos.extra['configured'] = True
         self.peers[peer_infos.uuid] = peer_infos
         self.logger.debug('Peer %s connected: %s' % (peer_id, peer_infos))
@@ -237,13 +238,14 @@ class Devices(CleepDesktopModule):
         """
         self.logger.debug('Peer %s disconnected' % peer_id)
         peer_infos = self._get_peer_infos_from_peer_id(peer_id)
-        self.logger.warning('Peer "%s" is unknown' % peer_id)
-        if peer_infos:
-            peer_infos.online = False
+        if not peer_infos:
+            self.logger.warning('Peer "%s" is unknown' % peer_id)
+            return
 
-            # save changes and refresh ui
-            self.__save_devices()
-            self.context.update_ui('devices', self.get_devices())
+        # save changes and refresh ui
+        peer_infos.online = False
+        self.__save_devices()
+        self.context.update_ui('devices', self.get_devices())
 
     def get_devices(self):
         """

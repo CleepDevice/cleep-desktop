@@ -143,6 +143,9 @@ class PyreBus(ExternalBus):
         """
         Workaround to find mac addresses when not found using zhelper
 
+        Args:
+            data_2 (dict): AF_INET data
+
         Returns:
             dict: fake data_17 objects::
 
