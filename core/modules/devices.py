@@ -204,6 +204,12 @@ class Devices(CleepDesktopModule):
             peer_infos (PeerInfos): peer informations (ip, port, ssl...)
         """
         self.logger.debug('====> peer connected with %s' % peer_infos.to_dict())
+
+        # drop other cleep-desktop connection
+        if peer_infos.hostname == self.CLEEPDESKTOP_HOSTNAME:
+            self.logger.debug('Drop other cleep-desktop connection')
+            return
+
         # find existing peer
         existing_peer_uuid = self._find_existing_peer(peer_infos)
 
