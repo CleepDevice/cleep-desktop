@@ -6,7 +6,7 @@ import os
 import json
 import time
 from distutils.util import strtobool
-from core.version import version as VERSION
+from core.version import VERSION
 from core.utils import CleepDesktopModule
 from core.libs.pyrebus import PyreBus
 from core.common import MessageRequest, PeerInfos

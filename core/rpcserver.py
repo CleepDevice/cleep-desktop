@@ -50,6 +50,7 @@ from core.modules.core import Core
 from core.libs.crashreport import CrashReport
 from core.libs.download import Download
 from core.exception import CommandError
+from core.version import VERSION
 
 __all__ = ['app']
 
@@ -148,7 +149,7 @@ def configure_app(app_path, cache_path, config_path, config_filename, debug, is_
 
     # set rpclogger
     context.main_logger = logging.getLogger('RpcServer')
-    context.main_logger.info('===== CleepDesktopCore started =====')
+    context.main_logger.info('===== CleepDesktopCore v%s started =====' % VERSION)
     context.main_logger.info('Python version: %s' % platform.python_version())
     context.main_logger.info('Application path: %s' % app_path)
     context.main_logger.info('Configuration path: %s' % config_path)
@@ -181,7 +182,7 @@ def configure_app(app_path, cache_path, config_path, config_filename, debug, is_
     context.crash_report = CrashReport(
         'https://8e703f88899c42c18b8466c44b612472@o97410.ingest.sentry.io/213385',
         'CleepDesktop',
-        config['cleep']['version'],
+        VERSION,
         libs_version,
         config['cleep']['debug'],
         config['cleep']['isdev']
