@@ -49,6 +49,17 @@ export function launchCore(rpcPort: number): void {
         } else {
             commandline = path.join(commandline, 'cleepdesktopcore');
         }
+        // check binary exists (antiviral can delete pyinstaller generated binary)
+        if( !fs.existsSync(commandline) ) {
+            logger.error('Cleepdesktop core binary not found on path "' + commandline + '"');
+            dialog.showErrorBox(
+                'Fatal error',
+                'Unable to properly start application.\n' +
+                'cleepdesktopcore binary not found. Please check your antiviral.\n' +
+                'CleepDesktop will stop now.'
+            );
+            app.exit(1);
+        }
 
         // launch command line
         const debug = appContext.settings.has('cleep.debug') && appContext.settings.get('cleep.debug') ? 'debug' : 'release';
