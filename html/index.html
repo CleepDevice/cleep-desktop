@@ -81,12 +81,27 @@
                     </div>
                 </div>
 
+                <!-- no network -->
+                <div layout="column"
+                    layout-padding
+                    layout-align="center center"
+                    ng-if="!ctl.devicesService.isConnected"
+                >
+                    <div style="padding-top:20px;">
+                        <md-icon md-svg-icon="close-network-outline"></md-icon>
+                        Can't connect to Cleep network.<br>
+                    </div>
+                    <div>
+                        You won't see your devices.
+                    </div>
+                </div>
+
                 <!-- no device -->
                 <div
                     layout="column"
                     layout-padding
                     layout-align="center center"
-                    ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length==0"
+                    ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length==0 && ctl.devicesService.isConnected"
                 >
                     <div style="padding-top:20px;">
                         No device found...
@@ -101,7 +116,7 @@
 
                 <!-- unconfigured devices -->
                 <div
-                    ng-if="!ctl.devicesService.loading && ctl.devicesService.unconfigured>0"
+                    ng-if="!ctl.devicesService.loading && ctl.devicesService.unconfigured>0 && ctl.devicesService.isConnected"
                     md-colors="::{background: 'primary-300'}"
                     class="toolbar-content"
                     layout="row"
@@ -112,7 +127,10 @@
                         <h1 style="padding-left:5px;" class="md-title">Unconfigured devices</h1>
                     </div>
                 </div>
-                <md-list ng-if="!ctl.devicesService.loading && ctl.devicesService.unconfigured>0" style="padding:0px;">
+                <md-list
+                    ng-if="!ctl.devicesService.loading && ctl.devicesService.unconfigured>0 && ctl.devicesService.isConnected"
+                    style="padding:0px;"
+                >
                     <md-list-item
                         ng-repeat="device in ctl.devicesService.devices | filter: { extra: { configured: false } }"
                         ng-if="ctl.devicesService.unconfigured>0"
@@ -150,7 +168,7 @@
 
                 <!-- configured devices -->
                 <div
-                    ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length>0"
+                    ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length>0 && ctl.devicesService.isConnected"
                     md-colors="::{background: 'primary-300'}"
                     class="toolbar-content"
                     layout="row"
@@ -161,7 +179,10 @@
                         <h1 style="padding-left:5px;" class="md-title">Configured devices</h1>
                     </div>
                 </div>
-                <md-list ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length>0" style="padding:0px;">
+                <md-list
+                    ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length>0 && ctl.devicesService.isConnected"
+                    style="padding:0px;"
+                >
                     <md-list-item
                         ng-repeat="device in ctl.devicesService.devices | filter: { extra: { configured: true } }"
                         ng-click="ctl.openDevicePage(device)"

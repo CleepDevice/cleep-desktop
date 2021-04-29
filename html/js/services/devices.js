@@ -1,13 +1,17 @@
 /**
  * Devices service handles all devices
  */
-var devicesService = function($rootScope, cleepService)
-{
+angular
+.module('Cleep')
+.service('devicesService', ['$rootScope', 'cleepService', 'logger',
+function($rootScope, cleepService, logger) {
     var self = this;
     self.loading = true;
     self.devices = [];
     self.unconfigured = 0;
     self.configured = 0;
+    // connected by default to not display network problem
+    self.isConnected = true;
 
     // smart devices sync, it updates existing devices, adds new ones and removes deleted ones
     self.__syncDevices = function(devices, removedDevice) {
@@ -40,21 +44,27 @@ var devicesService = function($rootScope, cleepService)
                 }
             }
         }
-
-        // remove device
-        if (removedDevice) {
-            var indexToDelete = -1;
-            for (var i=0; i < self.devices.length; i++) {
-                if (self.devices[i].uuid === removedDevice.uuid) {
-                    indexToDelete = i;
-                    break;
-                }
-            }
-            if (indexToDelete >= 0) {
-                self.devices.splice(i, 1);
-            }
-        }
     };
+
+    // Search existing device in current devices list following this criteria:
+    //  * in case of device connection, uuid will be the same 
+    //  * in case of new device installation, uuid is different but mac address will be the same if cleep reinstalled
+    //  * in case of different network adapter (wired->wifi, new wifi adapter), device may have one of existing mac address
+    self.__searchDevice = function(search) {
+        self.devices.forEach((current) => {
+            // check uuid
+            if (current.uuid === search.uuid) {
+                logger.debug('Found device by its uuid');
+                return current;
+            }
+
+            // check mac addresses
+            if (search.macs.some((mac) => current.macs.includes(mac))) {
+                logger.debug('Found device by its mac address');
+                return current;
+            }
+        })
+    }
 
     // update devices list
     self.__updateDevices = function(responseData, removedDevice) {
@@ -80,7 +90,7 @@ var devicesService = function($rootScope, cleepService)
         self.loading = false;
     };
 
-    //select device in devices panel
+    // select device in devices panel
     self.selectDevice = function(selectedDevice) {
         for( var i=0; i<self.devices.length; i++ ) {
             if( selectedDevice && self.devices[i].ip===selectedDevice.ip ) {
@@ -91,7 +101,7 @@ var devicesService = function($rootScope, cleepService)
         }
     };
 
-    //get devices
+    // get devices
     self.getDevices = function() {
         return cleepService.sendCommand('get_devices', 'devices')
             .then((resp) => {
@@ -99,21 +109,24 @@ var devicesService = function($rootScope, cleepService)
             });
     };
 
-    //delete device
+    // delete device
     self.deleteDevice = function(device) {
         return cleepService.sendCommand('delete_device', 'devices', {
-            'peer_uuid': device.uuid,
-        })
+                'peer_uuid': device.uuid,
+            })
             .then((resp) => {
                 self.__updateDevices(resp.data, device);
             });
     };
 
-    //watch for devices event to refresh devices list
+    // watch for devices event to refresh devices list
     $rootScope.$on('devices', function(_event, data) {
         self.__updateDevices(data);
     });
-}
 
-var Cleep = angular.module('Cleep');
-Cleep.service('devicesService', ['$rootScope', 'cleepService', devicesService]);
+    // watch for network event
+    $rootScope.$on('network', function(_event, data) {
+        self.isConnected = data.connected;
+    });
+
+}]);

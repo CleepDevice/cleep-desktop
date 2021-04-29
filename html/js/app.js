@@ -114,7 +114,8 @@ Cleep.config(['$mdIconProvider', function($mdIconProvider) {
 /**
  * Routes configuration
  */
-Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
+Cleep
+.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
     $stateProvider
         .state('default', {
             url: '/',
@@ -181,30 +182,29 @@ Cleep.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $
 /**
  * Empty controller
  */
-var emptyController = function($rootScope, $scope, $state)
-{
+Cleep.controller('emptyController', [function() {
     var self = this;
-};
-Cleep.controller('emptyController', ['$rootScope', '$scope', '$state', emptyController]);
+}]);
 
 /**
  * Empty dialog controller
  * Add minimal stuff to handle properly dialog
  */
-var emptyDialogController = function($rootScope, $scope, $state, closeModal)
-{
+Cleep.controller('emptyDialogController', ['$rootScope', '$scope', '$state', 'closeModal',
+function(closeModal) {
     var self = this;
-
     self.closeModal = closeModal;
-};
-Cleep.controller('emptyDialogController', ['$rootScope', '$scope', '$state', 'closeModal', emptyDialogController]);
+}]);
 
 /**
  * Cleep controller
  */
-var cleepController = function($rootScope, $state, cleepService, tasksPanelService, modalService, updateService, 
-                                cleepUi, settings, $timeout, installService, $transitions, toast, devicesService)
-{
+Cleep
+.controller('cleepController', ['$rootScope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 
+'updateService', 'cleepUi', 'settings', '$timeout', 'installService', '$transitions', 'toastService', 'devicesService',
+function($rootScope, $state, cleepService, tasksPanelService, modalService, updateService, cleepUi, settings, $timeout,
+    installService, $transitions, toast, devicesService) {
+
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
     self.taskFlashPanel = null;
@@ -220,10 +220,10 @@ var cleepController = function($rootScope, $state, cleepService, tasksPanelServi
 
     // open page in content area (right side) handling 'openPage' event
     self.openPage = function(page) {
-        //unselect all devices
+        // unselect all devices
         devicesService.selectDevice(null);
 
-        //open specified page
+        // open specified page
         $state.go(page);
     };
     cleepUi.openPage = self.openPage;
@@ -246,13 +246,13 @@ var cleepController = function($rootScope, $state, cleepService, tasksPanelServi
 
     // on close restart required task panel
     self.onCloseRestartRequiredTaskPanel = function() {
-        //reset variable
+        // reset variable
         self.taskRestartRequiredPanel = null;
     };
 
     // restart application
     self.restartApplication = function() {
-        //introduce small pause before closing application
+        // introduce small pause before closing application
         $timeout(function() {
             appUpdater.quitAndInstall();
         }, 1000);
@@ -269,11 +269,11 @@ var cleepController = function($rootScope, $state, cleepService, tasksPanelServi
     };
     self.ipcRenderer.on('download-file-status', function(event, status) {
         if( status.status=='alreadyrunning' ) {
-            //download already running. this feature is limited to one at once
+            // download already running. this feature is limited to one at once
             toast.warning('File download is limited to 1 at once');
         }
         else if( status.status=='downloading' ) {
-            //download is running, update percentage
+            // download is running, update percentage
             if( !self.taskDownloadPanel ) {
                 self.taskDownloadPanel = tasksPanelService.addItem(
                     `Downloading ${status.filename}...`,
@@ -291,7 +291,7 @@ var cleepController = function($rootScope, $state, cleepService, tasksPanelServi
             }
         }
         else if( status.status=='canceled' || status.status=='success' || status.status=='failed' ) {
-            //user message
+            // user message
             if( status.status=='canceled' ) {
                 toast.info('Download canceled');
             }
@@ -302,7 +302,7 @@ var cleepController = function($rootScope, $state, cleepService, tasksPanelServi
                 toast.error('Download failed');
             }
 
-            //reset task panel
+            // reset task panel
             if( self.taskDownloadPanel ) {
                 tasksPanelService.removeItem(self.taskDownloadPanel);
                 self.taskDownloadPanel = null;
@@ -362,7 +362,7 @@ var cleepController = function($rootScope, $state, cleepService, tasksPanelServi
             // and check for updates (defer it to make almost sure core is launched)
             updateService.checkForUpdates();
 
-            //init devices service
+            // init devices service
             devicesService.getDevices();
 
             // init install service
@@ -382,8 +382,4 @@ var cleepController = function($rootScope, $state, cleepService, tasksPanelServi
 
     self.init();
 
-};
-Cleep.controller('cleepController', ['$rootScope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 
-                                    'updateService', 'cleepUi', 'settings', '$timeout', 'installService', 
-                                    '$transitions', 'toastService', 'devicesService', cleepController]);
-
+}]);

@@ -117,8 +117,8 @@ class CrashReport():
         Args:
             extra (dict): extra metadata to post with the report
         """
+        self.logger.debug('Send crash report')
         if self.__enabled:
-            self.logger.debug('Send crash report')
             with SentryPushScope() as scope:
                 self.__set_extra(scope, extra)
                 SentryCaptureException()
@@ -131,8 +131,8 @@ class CrashReport():
             message (string): message to attach to crash report
             extra (dict): extra metadata to post with the report
         """
+        self.logger.debug('Send manual report "%s": %s' % (message, extra))
         if self.__enabled:
-            self.logger.debug('Send manual report')
             with SentryPushScope() as scope:
                 self.__set_extra(scope, extra)
                 SentryCaptureMessage(message)

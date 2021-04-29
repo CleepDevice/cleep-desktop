@@ -70,6 +70,22 @@ class PyreBus(ExternalBus):
         self.pipe_out = None
         self.__bus_name = None
         self.__bus_channel = None
+        self.endpoint = None
+    
+    def get_network_interfaces_names(self):
+        """
+        Return network interfaces names
+
+        Returns:
+            list: list of network interface names
+        """
+        out = []
+        netinf = zhelper_get_ifaddrs()
+        for iface in netinf:
+            for name, data in iface.items():
+                out.append(name)
+        
+        return out
 
     def get_mac_addresses(self):
         """
@@ -205,6 +221,9 @@ class PyreBus(ExternalBus):
             infos (dict): peer infos
             bus_name (string): bus name to create. Default CLEEP
             bus_channel (string): bus channel to join. Default CLEEP
+
+        Returns:
+            bool: True if successfully connected to pyrebus, False otherwise (connected to localhost)
         """
         # check params
         if not infos or not isinstance(infos, dict):
@@ -247,7 +266,6 @@ class PyreBus(ExternalBus):
             self.node.set_header(key, value)
         self.node.join(self.__bus_channel)
         self.node.start()
-        self.logger.debug('Pyre node own to groups: %s' % self.node.own_groups())
 
         # communication socket
         self.node_socket = self.node.socket()
@@ -258,6 +276,11 @@ class PyreBus(ExternalBus):
         self.poller.register(self.node_socket, zmq.POLLIN)
 
         self.__externalbus_configured = True
+
+        # check endpoint
+        self.endpoint = self.node.endpoint()
+        self.logger.info('Connected to cleepbus endpoint "%s"' % self.endpoint)
+        return self.endpoint.find('127.0.0.1') == -1
 
     def is_running(self):
         """

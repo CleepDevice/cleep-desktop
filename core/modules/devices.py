@@ -64,7 +64,16 @@ class Devices(CleepDesktopModule):
         Bus process
         """
         # configure bus
-        self.external_bus.start(self.get_bus_headers())
+        if not self.external_bus.start(self.get_bus_headers()):
+            self.logger.warning('Cleep-desktop is not connected to Cleep network. It can\'t find any device.')
+            self.context.crash_report.manual_report('Unable to connect to pyre network', {
+                'endpoint': self.external_bus.endpoint,
+                'macs': self.external_bus.get_mac_addresses(),
+                'interfaces': self.external_bus.get_network_interfaces_names(),
+            })
+            self.context.update_ui('network', {
+                'connected': False
+            })
 
     def _custom_process(self):
         """
@@ -135,7 +144,7 @@ class Devices(CleepDesktopModule):
         Returns:
             PeerInfos: peer informations
         """
-        self.logger.debug('+++++++ Raw value to decode: %s' % infos)
+        self.logger.debug('Raw value to decode: %s' % infos)
         peer_infos = PeerInfos()
         peer_infos.uuid = infos.get('uuid', None)
         peer_infos.hostname = infos.get('hostname', None)
@@ -204,7 +213,7 @@ class Devices(CleepDesktopModule):
             peer_id (string): peer identifier
             peer_infos (PeerInfos): peer informations (ip, port, ssl...)
         """
-        self.logger.debug('====> peer connected with %s' % peer_infos.to_dict())
+        self.logger.debug('Peer connected with %s' % peer_infos.to_dict())
 
         # drop other cleep-desktop connection
         if peer_infos.hostname == self.CLEEPDESKTOP_HOSTNAME:
