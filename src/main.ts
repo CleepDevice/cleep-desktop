@@ -97,7 +97,7 @@ app.on('ready', function() {
     // fill changelog
     fillChangelog();
 
-    //launch application
+    // launch application
     if( appContext.isDev ) {
         mainWindow = createAppWindow(splashScreenWindow);
         createAppMenu(mainWindow);

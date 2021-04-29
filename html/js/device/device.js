@@ -1,17 +1,18 @@
-var Cleep = angular.module('Cleep')
 
 /**
  * Device controller
  */
-var deviceController = function($rootScope, $stateParams, logger, $document, $timeout, deviceService)
-{
+angular
+.module('Cleep')
+.controller('deviceController', ['$rootScope', '$stateParams', 'logger', '$document', '$timeout', 'deviceService',
+function($rootScope, $stateParams, logger, $document, $timeout, deviceService) {
     var self = this;
     self.shell = require('electron').shell;
     self.deviceUrl = $stateParams.url;
     self.wv = document.getElementById('deviceWv');
     self.deviceService = deviceService;
 
-    //handle external link
+    // handle external link
     self.wv.addEventListener('new-window', (event) => {
         event.preventDefault();
 
@@ -29,24 +30,23 @@ var deviceController = function($rootScope, $stateParams, logger, $document, $ti
         }
     });
 
-    //device loading
+    // device loading
     self.wv.addEventListener('did-start-loading', () => {
         deviceService.loading = true;
     });
 
-    //device loaded
+    // device loaded
     self.wv.addEventListener('did-stop-loading', () => {
         $timeout(function() {
             deviceService.loading = false;
         }, 1000);
     }, true);
 
-    //configure webview src as soon as document is ready
+    // configure webview src as soon as document is ready
     $document.ready(function() {
         logger.debug('Opening "'+$stateParams.hostname+'" device url: '+$stateParams.url);
         self.wvAngular = angular.element(self.wv);
         self.wvAngular.attr('src', $stateParams.url);
     });
 
-};
-Cleep.controller('deviceController', ['$rootScope', '$stateParams', 'logger', '$document', '$timeout', 'deviceService', deviceController]);
+}]);

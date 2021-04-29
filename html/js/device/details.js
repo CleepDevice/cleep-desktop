@@ -1,10 +1,11 @@
-var Cleep = angular.module('Cleep')
 
 /**
  * Device details controller
  */
-var deviceDetailsController = function(modalData, closeModal)
-{
+angular
+.module('Cleep')
+.controller('deviceDetailsController', ['modalData', 'closeModal', 'confirmService', 'toastService', 'devicesService',
+function(modalData, closeModal) {
     var self = this;
     self.device = modalData;
     self.closeModal = closeModal;
@@ -63,5 +64,5 @@ var deviceDetailsController = function(modalData, closeModal)
         'a020a0': 'images/raspberry-pi-compute-module-3.jpg',
     }
     self.boardImg = self.boardImages[self.device.extra['hwrevision']];
-};
-Cleep.controller('deviceDetailsController', ['modalData', 'closeModal', 'confirmService', 'toastService', 'devicesService', deviceDetailsController]);
+
+}]);
