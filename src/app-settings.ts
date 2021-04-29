@@ -69,6 +69,9 @@ export class AppSettings {
         if( !settings.hasSync('cleep.crashreport') ) {
             settings.setSync('cleep.crashreport', DEFAULT_SETTINGS.crashReport);
         }
+        if( isDev ) {
+            settings.setSync('cleep.crashreport', false);
+        }
     
         // balena
         if( !settings.hasSync('etcher.version') ) {
