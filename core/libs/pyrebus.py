@@ -161,11 +161,7 @@ class PyreBus(ExternalBus):
         addresses = netifaces.ifaddresses(adapter)
         mac_addr = addresses.get(-1000, None) # mac addr field under windows :S
 
-        if mac_addr and len(mac_addr)>0 and mac_addr[0].get('addr', None):
-            return {
-                'addr': mac_addr[0].get('addr')
-            }
-        return None
+        return mac_addr[0] if mac_addr and len(mac_addr)>0 and mac_addr[0].get('addr', None) else None
 
     def stop(self):
         """
@@ -188,6 +184,10 @@ class PyreBus(ExternalBus):
                 self.node and self.node.stop()
             except zmq.ZMQError: # pragma: no cover
                 pass
+            except AssertionError as e:
+                # this assertion occurs when cleep-desktop is stopping when pyrebus is not connected
+                if str(e) != 'Only one greenlet can be waiting on this event':
+                    self.logger.exception('Exception stopping pyre node')
             except Exception:
                 self.logger.exception('Exception stopping pyre node')
             time.sleep(0.15)
@@ -247,6 +247,7 @@ class PyreBus(ExternalBus):
             self.node.set_header(key, value)
         self.node.join(self.__bus_channel)
         self.node.start()
+        self.logger.debug('Pyre node own to groups: %s' % self.node.own_groups())
 
         # communication socket
         self.node_socket = self.node.socket()
