@@ -17,41 +17,47 @@ function($rootScope, cleepService, logger) {
     self.__syncDevices = function(devices, removedDevice) {
         if (devices) {
             // add and update devices
-            var found = false;
             for (var i=0; i < devices.length; i++) {
-                found = false;
-                for (var j=0; j < self.devices.length; j++) {
-                    if (self.devices[j].uuid === devices[i].uuid) {
-                        // device found
-                        found = true;
-
-                        // update device infos
-                        self.devices[j].hostname = devices[i].hostname;
-                        self.devices[j].ip = devices[i].ip;
-                        self.devices[j].online = devices[i].online;
-                        self.devices[j].port = devices[i].port;
-                        self.devices[j].ssl = devices[i].ssl;
-                        self.devices[j].version = devices[i].version;
-
-                        break;
-                    }
-                }
-
-                // add new device
-                if (!found) {
-                    // save entry
+                found = self.__searchDevice(devices[i]);
+                if (found) {
+                    // update existing device
+                    found.uuid = devices[i].uuid;
+                    found.ident = devices[i].ident;
+                    found.hostname = devices[i].hostname;
+                    found.ip = devices[i].ip;
+                    found.online = devices[i].online;
+                    found.port = devices[i].port;
+                    found.ssl = devices[i].ssl;
+                    found.version = devices[i].version;
+                    Object.assign(found.extra, devices[i].extra);
+                } else {
+                    // add new device
                     self.devices.push(devices[i]);
                 }
             }
         }
+
+        // remove device
+        if (removedDevice) {
+            var indexToDelete = -1;
+            for (var i=0; i < self.devices.length; i++) {
+                if (self.devices[i].uuid === removedDevice.uuid) {
+                    indexToDelete = i;
+                    break;
+                }
+            }
+            if (indexToDelete >= 0) {
+                self.devices.splice(i, 1);
+            }
+        }
     };
 
-    // Search existing device in current devices list following this criteria:
+    // Search for existing device in current devices list following those criteria:
     //  * in case of device connection, uuid will be the same 
-    //  * in case of new device installation, uuid is different but mac address will be the same if cleep reinstalled
+    //  * in case of new device installation, uuid is different but at once ont mac address should be the same
     //  * in case of different network adapter (wired->wifi, new wifi adapter), device may have one of existing mac address
     self.__searchDevice = function(search) {
-        self.devices.forEach((current) => {
+        for (var current of self.devices) {
             // check uuid
             if (current.uuid === search.uuid) {
                 logger.debug('Found device by its uuid');
@@ -63,7 +69,9 @@ function($rootScope, cleepService, logger) {
                 logger.debug('Found device by its mac address');
                 return current;
             }
-        })
+        }
+
+        return null;
     }
 
     // update devices list
