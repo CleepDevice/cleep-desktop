@@ -15,7 +15,7 @@ echo
 echo
 echo "Packaging cleepdesktopcore..."
 echo "-----------------------------"
-pip3 install -r requirements.txt
+python3 -m pip install -r requirements.txt
 /bin/cp config/cleepdesktopcore-mac64.spec cleepdesktopcore-mac64.spec
 /usr/local/bin/pyinstaller --workpath packaging --clean --noconfirm --noupx --debug all --log-level INFO cleepdesktopcore-mac64.spec
 /bin/rm cleepdesktopcore-mac64.spec
