@@ -1,10 +1,10 @@
-var Cleep = angular.module('Cleep')
-
 /**
  * Drive controller
  */
-var driveController = function(closeModal, installService, toast)
-{
+angular
+.module('Cleep')
+.controller('driveController', ['closeModal', 'installService', 'toastService',
+function(closeModal, installService, toast) {
     var self = this;
     self.closeModal = closeModal;
     self.drives = installService.drives;
@@ -38,5 +38,4 @@ var driveController = function(closeModal, installService, toast)
         self.closeModal(drive);
     };
 
-};
-Cleep.controller('driveController', ['closeModal', 'installService', 'toastService', driveController]);
+}]);

@@ -4,7 +4,7 @@
  */
 angular
 .module('Cleep')
-.controller('deviceDetailsController', ['modalData', 'closeModal', 'confirmService', 'toastService', 'devicesService',
+.controller('deviceDetailsController', ['modalData', 'closeModal',
 function(modalData, closeModal) {
     var self = this;
     self.device = modalData;
