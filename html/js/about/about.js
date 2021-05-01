@@ -3,8 +3,8 @@
  */
 angular
 .module('Cleep')
-.controller('aboutController', ['cleepdesktopInfos',
-function(cleepdesktopInfos) {
+.controller('aboutController', ['appContext',
+function(appContext) {
     var self = this;
-    self.cleepdesktopInfos = cleepdesktopInfos;
+    self.appContext = appContext;
 }]);

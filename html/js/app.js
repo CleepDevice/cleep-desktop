@@ -1,5 +1,4 @@
 const { remote, ipcRenderer } = require('electron');
-const cleepdesktopInfos = remote.getGlobal('cleepdesktopInfos');
 const logger = remote.getGlobal('logger');
 const appUpdater = remote.getGlobal('appUpdater');
 const settings = remote.getGlobal('settings');
