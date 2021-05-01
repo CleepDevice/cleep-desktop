@@ -190,7 +190,7 @@ Cleep.controller('emptyController', [function() {
  * Empty dialog controller
  * Add minimal stuff to handle properly dialog
  */
-Cleep.controller('emptyDialogController', ['$rootScope', '$scope', '$state', 'closeModal',
+Cleep.controller('emptyDialogController', ['closeModal',
 function(closeModal) {
     var self = this;
     self.closeModal = closeModal;
