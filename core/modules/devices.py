@@ -99,6 +99,9 @@ class Devices(CleepDesktopModule):
             # force device to offline at startup. If devices are discovered
             # connected event will be triggered and will update device connected status
             peer_infos.online = False
+            # drop cleepdesktop if any in list of devices
+            if peer_infos.hostname == self.CLEEPDESKTOP_HOSTNAME:
+                continue
             self.peers[peer_infos.uuid] = peer_infos
         self.logger.debug('Loaded peers: %s' % {peer_uuid: str(infos) for peer_uuid, infos in self.peers.items()})
 
