@@ -100,7 +100,7 @@ class Devices(CleepDesktopModule):
             # connected event will be triggered and will update device connected status
             peer_infos.online = False
             # drop cleepdesktop if any in list of devices
-            if peer_infos.hostname == self.CLEEPDESKTOP_HOSTNAME:
+            if peer_infos.cleepdesktop:
                 continue
             self.peers[peer_infos.uuid] = peer_infos
         self.logger.debug('Loaded peers: %s' % {peer_uuid: str(infos) for peer_uuid, infos in self.peers.items()})
@@ -219,7 +219,7 @@ class Devices(CleepDesktopModule):
         self.logger.debug('Peer connected with %s' % peer_infos.to_dict())
 
         # drop other cleep-desktop connection
-        if peer_infos.hostname == self.CLEEPDESKTOP_HOSTNAME:
+        if peer_infos.cleepdesktop:
             self.logger.debug('Drop other cleep-desktop connection')
             return
 
