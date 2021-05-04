@@ -4,8 +4,8 @@
  */
 angular
 .module('Cleep')
-.controller('deviceController', ['$rootScope', '$stateParams', 'logger', '$document', '$timeout', 'deviceService',
-function($rootScope, $stateParams, logger, $document, $timeout, deviceService) {
+.controller('deviceController', ['$rootScope', '$stateParams', 'logger', '$document', '$timeout', 'deviceService', 'toastService',
+function($rootScope, $stateParams, logger, $document, $timeout, deviceService, toastService) {
     var self = this;
     self.shell = require('electron').shell;
     self.deviceUrl = $stateParams.url;
@@ -46,7 +46,11 @@ function($rootScope, $stateParams, logger, $document, $timeout, deviceService) {
     $document.ready(function() {
         logger.debug('Opening "'+$stateParams.hostname+'" device url: '+$stateParams.url);
         self.wvAngular = angular.element(self.wv);
-        self.wvAngular.attr('src', $stateParams.url);
+        self.wvAngular.attr('src', $stateParams.url + '?'+Date.now());
+    });
+
+    $rootScope.$on('reloaddevicepage', function(data) {
+        self.wv.reloadIgnoringCache();
     });
 
 }]);

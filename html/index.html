@@ -154,6 +154,15 @@
                                         Device infos
                                     </md-button>
                                 </md-menu-item>
+                                <md-menu-item ng-show="device.selected">
+                                    <md-button
+                                        aria-label="Reload device page"
+                                        ng-click="ctl.reloadDevicePage(device)"
+                                    >
+                                        <md-icon md-svg-icon="information-outline"></md-icon>
+                                        Reload device page
+                                    </md-button>
+                                </md-menu-item>
                                 <md-menu-divider></md-menu-divider>
                                 <md-menu-item>
                                     <md-button aria-label="Delete device" ng-click="ctl.deleteDevice(device)">
@@ -203,6 +212,15 @@
                                     >
                                         <md-icon md-svg-icon="information-outline"></md-icon>
                                         Device infos
+                                    </md-button>
+                                </md-menu-item>
+                                <md-menu-item ng-show="device.selected">
+                                    <md-button
+                                        aria-label="Reload device page"
+                                        ng-click="ctl.reloadDevicePage(device)"
+                                    >
+                                        <md-icon md-svg-icon="reload"></md-icon>
+                                        Reload device page
                                     </md-button>
                                 </md-menu-item>
                                 <md-menu-divider></md-menu-divider>

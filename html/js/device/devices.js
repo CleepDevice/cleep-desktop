@@ -3,8 +3,8 @@
  */
 angular
 .module('Cleep')
-.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService',
-function($state, devicesService, toastService, confirmService) {
+.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope',
+function($state, devicesService, toastService, confirmService, $rootScope) {
     var self = this;
     self.devicesService = devicesService;
 
@@ -51,6 +51,13 @@ function($state, devicesService, toastService, confirmService) {
             .then(() => {
                 toastService.success('Device deleted');
             });
+    }
+
+    // reload device page
+    self.reloadDevicePage = function(device) {
+        if( device.online ) {
+            $rootScope.$emit('reloaddevicepage', device.hostname);
+        }
     }
 
 }]);
