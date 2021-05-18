@@ -2,7 +2,9 @@
  * Confirm dialog service
  * Used to open a material confirm dialog
  */
-var confirmService = function($mdDialog) {
+angular
+.module('Cleep')
+.service('confirmService', ['$mdDialog', function($mdDialog) {
     var self = this;
 
     /**
@@ -41,8 +43,4 @@ var confirmService = function($mdDialog) {
 
         return $mdDialog.show(confirm_);
     };
-};
-    
-var Cleep = angular.module('Cleep');
-Cleep.service('confirmService', ['$mdDialog', confirmService]);
-
+}]);

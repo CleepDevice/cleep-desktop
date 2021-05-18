@@ -4,8 +4,8 @@
  */
 angular
 .module('Cleep')
-.controller('deviceController', ['$rootScope', '$stateParams', 'logger', '$document', '$timeout', 'deviceService', 'toastService',
-function($rootScope, $stateParams, logger, $document, $timeout, deviceService, toastService) {
+.controller('deviceController', ['$rootScope', '$stateParams', 'logger', '$document', '$timeout', 'deviceService',
+function($rootScope, $stateParams, logger, $document, $timeout, deviceService) {
     var self = this;
     self.shell = require('electron').shell;
     self.deviceUrl = $stateParams.url;

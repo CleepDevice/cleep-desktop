@@ -4,8 +4,9 @@
  * This panel can be closed by user if option enabled
  * This panel can display a progress linebar to display action in progress
  */
-
-var tasksPanelService = function($mdPanel) {
+angular
+.module('Cleep')
+.service('tasksPanelService', ['$mdPanel', function($mdPanel) {
     var self = this;
     self.mdPanelRef = null;
     self.items = [];
@@ -14,54 +15,54 @@ var tasksPanelService = function($mdPanel) {
     // panel controller
     // used to close item and hide panel when items list is empty
     self.PanelCtl = function(mdPanelRef) {
-        //set reference to current panel
+        // set reference to current panel
         self.mdPanelRef = mdPanelRef;
 
-        //click on item
+        // click on item
         this.click = function(callback) {
             if( callback ) {
                 callback();
             }
         };
 
-        //close action
+        // close action
         this.close = function(id) {
-            //remove specified item
+            // remove specified item
             if( self.items.length>1 ) {
-                //search for item to remove it
+                // search for item to remove it
                 for( i=0; i<self.items.length; i++ ) {
                     if( self.items[i].id===id ) {
-                        //close callback
+                        // close callback
                         if( self.items[i].close.onClose ) {
                             self.items[i].close.onClose(self.items[i].id);
                         }
 
-                        //remove item
+                        // remove item
                         self.items.splice(i, 1);
                         break;
                     }
                 }
 
             } else {
-                //close callback
+                // close callback
                 if( self.items[0].close.onClose ) {
                     self.items[0].close.onClose(self.items[0].id);
                 }
                 
-                //hide panel
+                // hide panel
                 self.__hidePanel();
             }
         };
     };
 
-    //clear all items properly 
+    // clear all items properly 
     self.__clearItems = function() {
         while( self.items.length ) {
             self.items.pop();
         }
     };
 
-    //hide panel
+    // hide panel
     self.__hidePanel = function() {
         if( self.mdPanelRef ) {
             self.mdPanelRef.close().then(function() {
@@ -74,9 +75,9 @@ var tasksPanelService = function($mdPanel) {
         }
     };
 
-    //show panel
+    // show panel
     self.__showPanel = function() {
-        //stop if panel already exists
+        // stop if panel already exists
         if( self.mdPanelRef ) {
             return;
         }
@@ -135,22 +136,24 @@ var tasksPanelService = function($mdPanel) {
         });
     };
 
-    //add item to panel
-    //panel will popup if it's the first item
-    //@param label (string): item label (can be html)
-    //@param action (obj): action object describes available user action (null if no action)::
-    //                      {
-    //                          onAction (function): callback on button click,
-    //                          tooltip (string): button tooltip,
-    //                          icon (string): button icon (use mdi icon pack string format)
-    //                      }
-    //@param close (function): close object describes action when user click on close button::
-    //                      {
-    //                          onClose (function): callback on button click
-    //                          disabled (bool): true to disable close button
-    //                      }
-    //@param loader (bool): display a circular progress
-    //@return item identifier to close it programmatically
+    /**
+     * add item to panel
+     * panel will popup if it's the first item
+     * @param label (string): item label (can be html)
+     * @param action (obj): action object describes available user action (null if no action)::
+     *                       {
+     *                           onAction (function): callback on button click,
+     *                           tooltip (string): button tooltip,
+     *                           icon (string): button icon (use mdi icon pack string format)
+     *                       }
+     * @param close (function): close object describes action when user click on close button::
+     *                       {
+     *                           onClose (function): callback on button click
+     *                           disabled (bool): true to disable close button
+     *                       }
+     * @param loader (bool): display a circular progress
+     * @return item identifier to close it programmatically
+     */
     self.addItem = function(label, action, close, loader) {
         var defaultClose = {
             onClose: null,
@@ -166,32 +169,29 @@ var tasksPanelService = function($mdPanel) {
         };
         self.items.push(item);
 
-        //show panel
+        // show panel
         self.__showPanel();
 
         return item.id;
     };
 
-    //remove item id
-    //@param itemId: item identifier returned by addItem
+    /**
+     * remove item id
+     * @param itemId: item identifier returned by addItem
+     */
     self.removeItem = function(itemId) {
         if( self.items.length>1 ) {
             for( i=0; i<self.items.length; i++ ) {
                 if( self.items[i].id===itemId ) {
-                    //remove item
+                    // remove item
                     self.items.splice(i, 1);
                     break;
                 }
             }
-
         } else {
-            //hide panel if necessary
+            // hide panel if necessary
             self.__hidePanel();
         }
     };
 
-};
-    
-var Cleep = angular.module('Cleep');
-Cleep.service('tasksPanelService', ['$mdPanel', tasksPanelService]);
-
+}]);

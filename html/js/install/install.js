@@ -1,12 +1,11 @@
-var Cleep = angular.module('Cleep');
-const { dialog } = require('electron').remote;
-var path = require('electron').remote.require('path');
-
 /**
  * Install controller
  */
-var installController = function($rootScope, toast, confirm, logger, updateService, installService, modalService, cleepService)
-{
+angular
+.module('Cleep')
+.controller('installController', ['$rootScope', 'toastService', 'confirmService', 'logger', 'updateService', 
+                                'installService', 'modalService', 'cleepService',
+function($rootScope, toast, confirm, logger, updateService, installService, modalService, cleepService) {
     var self = this;
     self.modal = modalService;
     self.prefs = null;
@@ -168,7 +167,4 @@ var installController = function($rootScope, toast, confirm, logger, updateServi
         $rootScope.$broadcast('download-file', {url: self.installService.installConfig.iso.url});
     };
 
-};
-
-Cleep.controller('installController', ['$rootScope', 'toastService', 'confirmService', 'logger', 'updateService', 
-                                        'installService', 'modalService', 'cleepService', installController]);
+}]);

@@ -11,12 +11,12 @@ function(closeModal, installService, toast) {
     self.loading = true;
     self.minSize = 3600000000;
 
-    //controller init
+    // controller init
     self.$onInit = function () {
         self.refreshDrives();
     };
 
-    //refresh drives list
+    // refresh drives list
     self.refreshDrives = function()
     {
         self.loading = true;
@@ -27,7 +27,7 @@ function(closeModal, installService, toast) {
             });
     };
 
-    //select drive
+    // select drive
     self.selectDrive = function(drive)
     {
         if( drive.readonly || drive.size<self.minSize ) {

@@ -1,8 +1,10 @@
 /**
  * Install service handles data useful to install module
  */
-var installService = function($rootScope, $state, logger, cleepService, tasksPanelService)
-{
+angular
+.module('Cleep')
+.service('installService', ['$rootScope', '$state', 'logger', 'cleepService', 'tasksPanelService',
+function($rootScope, $state, logger, cleepService, tasksPanelService) {
     var self = this;
     self.installing = false;
     self.STATUS = {
@@ -208,7 +210,4 @@ var installService = function($rootScope, $state, logger, cleepService, tasksPan
         }
     });
 
-};
-
-var Cleep = angular.module('Cleep');
-Cleep.service('installService', ['$rootScope', '$state', 'logger', 'cleepService', 'tasksPanelService', installService]);
+}]);

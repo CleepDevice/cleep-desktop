@@ -3,7 +3,9 @@
  * Used to execute callback after an amount of time. If debounce is called before callback is executed, the call is delayed.
  * Useful to save automatically user preferences
  */
-var debounceService = function($timeout, $q) {
+angular
+.module('Cleep')
+.service('debounceService', ['$timeout', '$q', function($timeout, $q) {
     var self = this;
     self.promise = null;
     self.timeoutPromise = null;
@@ -52,8 +54,4 @@ var debounceService = function($timeout, $q) {
         return self.debounces[id].promise.promise;
     };
 
-};
-    
-var Cleep = angular.module('Cleep');
-Cleep.service('debounceService', ['$timeout', '$q', debounceService]);
-
+}]);

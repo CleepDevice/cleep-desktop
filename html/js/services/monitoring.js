@@ -2,7 +2,9 @@
  * Monitoring service
  * Stores all received devices messages
  */
-var monitoringService = function($rootScope, logger) {
+angular
+.module('Cleep')
+.service('monitoringService', ['$rootScope', 'logger', function($rootScope, logger) {
     var self = this;
     self.messages = [];
 
@@ -15,7 +17,4 @@ var monitoringService = function($rootScope, logger) {
         logger.debug('Monitoring message recevied:', data);
         deviceMessages.unshift(data);
     });
-}
-
-var Cleep = angular.module('Cleep');
-Cleep.service('monitoringService', ['$rootScope', 'logger', monitoringService]);
+}]);

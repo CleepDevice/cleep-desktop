@@ -4,15 +4,18 @@
  * 
  * To close the modal from your controller, inject "closeModal" service function in your controller
  */
-
-var modalService = function($mdDialog, $routerTransitions) {
+angular
+.module('Cleep')
+.service('modalService', ['$mdDialog', '$transitions', function($mdDialog, $routerTransitions) {
     var self = this;
 
-    //open modal
-    //@param controllerName: name of controller to inject into modal
-    //@param templateUrl: associated controller template
-    //@param data: data to pass to modal controller
-    //@service closeModal: inject this service in your controller to close modal
+    /**
+     * open modal
+     * @param controllerName: name of controller to inject into modal
+     * @param templateUrl: associated controller template
+     * @param data: data to pass to modal controller
+     * @service closeModal: inject this service in your controller to close modal
+     */
     self.open = function(controllerName, templateUrl, data) {
         return $mdDialog.show({
             controller: controllerName,
@@ -28,7 +31,7 @@ var modalService = function($mdDialog, $routerTransitions) {
         });
     };
 
-    //handle router transitions to close modal if user change main page
+    // handle router transitions to close modal if user change main page
     $routerTransitions.onStart({}, function() {
         $mdDialog.cancel();
     });
@@ -39,7 +42,4 @@ var modalService = function($mdDialog, $routerTransitions) {
         }
         $mdDialog.hide(result);
     };
-};
-    
-var Cleep = angular.module('Cleep');
-Cleep.service('modalService', ['$mdDialog', '$transitions', modalService]);
+}]);

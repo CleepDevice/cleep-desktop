@@ -372,7 +372,7 @@ function($rootScope, $state, cleepService, tasksPanelService, modalService, upda
             {
                 logger.debug('First run');
                 $timeout(function() {
-                    self.openModal('emptyDialogController', 'js/help/helpdialog.html');
+                    self.openModal('emptyDialogController', 'js/help/help-dialog.html');
                 }, 500);
                 settings.setSync('cleep.firstrun', false);
             }

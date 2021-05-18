@@ -1,9 +1,11 @@
-var rpcService = function($http, $q, $rootScope, $location, toast) {
+angular
+.module('Cleep')
+.service('rpcService', ['$http', '$q', '$location', 'toastService', function($http, $q, $location, toast) {
 
     var self = this;
     self.devicesWs = null;
 
-    //get port from url
+    // get port from url
     var urlValues = $location.search();
     self.port = 5610;
     if( urlValues && urlValues.port )
@@ -11,7 +13,7 @@ var rpcService = function($http, $q, $rootScope, $location, toast) {
         self.port = urlValues.port;
     }
     
-    //configure url
+    // configure url
     self.uriCommand = window.location.protocol + '//localhost:' + self.port + '/command';
     self.uriUi = window.location.protocol + '//localhost:' + self.port + '/ui';
     self.uriConfig = window.location.protocol + '//localhost:' + self.port + '/config';
@@ -25,14 +27,12 @@ var rpcService = function($http, $q, $rootScope, $location, toast) {
         var d = $q.defer();
 
         //prepare method
-        if( !method )
-        {
+        if( !method ) {
             method = 'POST';
         }
 
         //prepare data
-        if( params===undefined || params===null )
-        {
+        if( params===undefined || params===null ) {
             params = {};
         }
         var data = {
@@ -47,13 +47,10 @@ var rpcService = function($http, $q, $rootScope, $location, toast) {
             responseType:'json'
         })
         .then(function(resp) {
-            if( resp && resp.data && resp.data.error!==undefined && resp.data.error!==null && resp.data.error==true )
-            {
+            if( resp && resp.data && resp.data.error!==undefined && resp.data.error!==null && resp.data.error==true ) {
                 toast.error(resp.data.message);
                 d.reject(resp.data.message);
-            }
-            else
-            {
+            } else {
                 d.resolve(resp.data);
             }
         }, function(err) {
@@ -110,23 +107,16 @@ var rpcService = function($http, $q, $rootScope, $location, toast) {
      * Start devices websocket
      */
     self.devicesWebSocket = function(receive_callback) {
-        if( !self.devicesWs )
-        {
+        if( !self.devicesWs ) {
             self.devicesWs = new WebSocket('ws://localhost:'+self.port+'/devicesws');
-            //define receive callback
+            // define receive callback
             self.devicesWs.onmessage = function(event) {
-                if( event && typeof(event.data)==='string' )
-                {
+                if( event && typeof(event.data)==='string' ) {
                     var data = JSON.parse(event.data);
                     receive_callback(data);
                 }
             };
         }
-
     };
 
-};
-
-var Cleep = angular.module('Cleep');
-Cleep.service('rpcService', ['$http', '$q', '$rootScope', '$location', 'toastService', rpcService]);
-
+}]);

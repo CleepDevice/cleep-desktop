@@ -1,10 +1,10 @@
-var Cleep = angular.module('Cleep')
-
 /**
  * Updates controller
  */
-var updatesController = function($rootScope, toast, updateService, modalService)
-{
+angular
+.module('Cleep')
+.controller('updatesController', ['$rootScope', 'toastService', 'updateService', 'modalService',
+function($rootScope, toast, updateService, modalService) {
     var self = this;
     self.cleepdesktopStatus = updateService.cleepdesktopStatus;
     self.etcherStatus = updateService.etcherStatus;
@@ -12,37 +12,37 @@ var updatesController = function($rootScope, toast, updateService, modalService)
     self.updateService = updateService;
     self.closeModal = modalService.closeModal;
 
-    //Open changelog dialog
+    // open changelog dialog
     self.openChangelog = function() {
         modalService.open('updatesController', 'js/updates/changelog-dialog.html');
     };
 
-    //Is cleepdesktop updates disabled
+    // is cleepdesktop updates disabled
     self.isCleepdesktopUpdatesDisabled = function() {
         return updateService.isCleepdesktopUpdatesDisabled();
     };
     
-    //Is cleepdesktop updates disabled
+    // is cleepdesktop updates disabled
     self.isCleepdesktopUpdatesAvailable = function() {
         return updateService.isCleepdesktopUpdatesAvailable();
     };
 
-    //Get last check time
+    // get last check time
     self.getLastCheckTime = function() {
         return updateService.getLastCheckTime();
     };
 
-    //Return true if update is in progress
+    // return true if update is in progress
     self.isUpdating = function() {
         return updateService.updatingCleepdesktop || updateService.updatingEtcher;
     };
 
-    //Restart application
+    // restart application
     self.restart = function() {
         $rootScope.$broadcast('restart');
     };
 
-    //Check for updates
+    // check for updates
     self.checkUpdates = function() {
         self.loading = true;
         updateService.checkForUpdates()
@@ -59,5 +59,4 @@ var updatesController = function($rootScope, toast, updateService, modalService)
             });
     };
 
-};
-Cleep.controller('updatesController', ['$rootScope', 'toastService', 'updateService', 'modalService', updatesController]);
+}]);
