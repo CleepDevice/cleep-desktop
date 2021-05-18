@@ -5,7 +5,7 @@ import { appContext } from './app-context';
 import { app, dialog } from 'electron';
 import { spawn } from 'child_process';
 import os from 'os';
-import { Readable } from 'node:stream';
+import { Readable } from 'stream';
 
 export function launchCore(rpcPort: number): void {
     // save rpcport to config to be used in js app and python app

@@ -127,9 +127,7 @@ ipcMain.on('save-changelog', (event, arg) => {
     logger.debug('Saving changelog...');
     const changelogPath = path.join(app.getPath('userData'), 'changelog.txt');
     fs.writeFile(changelogPath, arg, (err) => {
-        if( err )
-        {
-            //error occured during changelog saving
+        if( err ) {
             logger.error('Unable to save changelog: ' + err);
         }
     });
@@ -138,12 +136,12 @@ ipcMain.on('save-changelog', (event, arg) => {
 // handle file download
 ipcMain.on('download-file-cancel', () => {
     if( appContext.download !== null ) {
-        //cancel running download
+        // cancel running download
         appContext.download.cancel();
     }
 });
 ipcMain.on('download-file', (_, args) => {
-    if( appContext.download !== null ) {
+    if( appContext.download ) {
         // download already running, do not launch this one
         mainWindow.webContents.send('download-file-status', {
             status: 'alreadyrunning',
@@ -160,12 +158,16 @@ ipcMain.on('download-file', (_, args) => {
         onStarted: function(item: DownloadItem) {
             appContext.download = item;
         },
-        onProgress: function(percent) {
-            if( typeof percent == 'number' ) {
+        onProgress: function(progress) {
+            if (!progress) {
+                return;
+            }
+
+            if( typeof progress.percent == 'number' ) {
                 mainWindow.webContents.send('download-file-status', {
                     filename: appContext.download.getFilename(),
                     status: 'downloading',
-                    percent: Math.round(percent*100)
+                    percent: Math.round(progress.percent*100)
                 });
             }
         },
