@@ -574,7 +574,6 @@ class Install(CleepDesktopModule):
         with_raspios_isos = self.context.config.get_config_value('cleep.isoraspios')
         with_local_isos = self.context.config.get_config_value('cleep.isolocal')
 
-        self.logger.debug('===> getisos %s' % self.isos_cached)
         # return isos from cache
         refresh_isos = False
         if force_refresh is True:
