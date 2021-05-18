@@ -10,6 +10,7 @@ import fs from 'fs'
 import { fillChangelog, parseArgs } from "./utils";
 import { download } from 'electron-dl';
 import { autoUpdater } from 'electron-updater';
+require('@electron/remote/main').initialize()
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
@@ -24,7 +25,7 @@ if( appContext.isDev ) {
     logger.transports.file.level = 'debug';
     logger.info('Dev mode enabled');
 } else if( fs.existsSync(appContext.settings.filepath()) && appContext.settings.has('cleep.debug') && appContext.settings.get('cleep.debug') ) {
-    //release mode with debug enabled
+    // release mode with debug enabled
     logger.transports.console.level = 'debug';
     logger.transports.file.level = 'debug';
     logger.info('Debug mode enabled according to user preferences');

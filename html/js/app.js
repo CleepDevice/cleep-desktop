@@ -1,4 +1,5 @@
-const { remote, ipcRenderer } = require('electron');
+const { ipcRenderer } = require('electron');
+const remote = require('@electron/remote');
 const logger = remote.getGlobal('logger');
 const appUpdater = remote.getGlobal('appUpdater');
 const settings = remote.getGlobal('settings');
@@ -8,10 +9,10 @@ let cleepUi = {
     openModal: null
 };
 
-//declare angular module
+// declare angular module
 var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router', 'ngSanitize', 'ngWebSocket']);
 
-//inject electron values
+// inject electron values
 Cleep.value('logger', logger)
     .value('appUpdater', appUpdater)
     .value('settings', settings)
@@ -27,7 +28,7 @@ Cleep.filter('hrDatetime', function($filter, settings) {
             return '-';
         else
         {
-            //date format https://en.wikipedia.org/wiki/Date_format_by_country
+            // date format https://en.wikipedia.org/wiki/Date_format_by_country
             var locale = settings.get('cleep.locale');
             if( angular.isUndefined(shortYear) )
             {
