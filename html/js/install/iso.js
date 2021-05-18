@@ -48,25 +48,40 @@ function(closeModal, installService) {
     };
 
     // select local iso
-    self.selectLocalIso = function(item) {
+    self.selectLocalIso = function() {
         var options = {
             title: 'Select local iso',
+            openFile: true,
+            openDirectory: false,
+            multiSelections: false,
+            showHiddenFiles: false,
             filters: [
-                {name: 'Iso file', extensions: ['zip', 'iso', 'img', 'dmg', 'raw']}
+                {
+                    name: 'Iso file',
+                    extensions: ['zip', 'iso', 'img', 'dmg', 'raw']
+                }
             ]
         };
-        dialog.showOpenDialog(options, function(filenames) {
-            if( !filenames || filenames.length===0 ) {
-                //no file selected
-                return;
-            }
+        dialog.showOpenDialog(options)
+            .then((result) => {
+                if (result.canceled) {
+                    // dialog canceled
+                    return;
+                }
+                if (!result.filePaths || result.filePaths.length === 0) {
+                    // no file selected
+                    return;
+                }
 
-            self.closeModal({
-                'url': 'file://' + filenames[0],
-                'label': path.parse(filenames[0]).base,
-                'category': 'local',
+                self.closeModal({
+                    'url': 'file://' + result.filePaths[0],
+                    'label': path.parse(result.filePaths[0]).base,
+                    'category': 'local',
+                });
+            })
+            .catch(err => {
+                console.log(err);
             });
-        });
     };
 
 }]);

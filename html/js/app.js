@@ -150,13 +150,13 @@ Cleep
             url: '/installAuto',
             controller: 'installController',
             controllerAs: 'ctl',
-            templateUrl: 'js/install/installAuto.html'
+            templateUrl: 'js/install/install-auto.html'
         })
         .state('installManually', {
             url: '/installManually',
             controller: 'installController',
             controllerAs: 'ctl',
-            templateUrl: 'js/install/installManually.html'
+            templateUrl: 'js/install/install-manually.html'
         })
         .state('device', {
             url: '/device',
@@ -267,11 +267,11 @@ function($rootScope, $state, cleepService, tasksPanelService, modalService, upda
         ipcRenderer.send('download-file-cancel');
     };
     self.ipcRenderer.on('download-file-status', function(event, status) {
-        if( status.status=='alreadyrunning' ) {
+        if( status.status==='alreadyrunning' ) {
             // download already running. this feature is limited to one at once
             toast.warning('File download is limited to 1 at once');
         }
-        else if( status.status=='downloading' ) {
+        else if( status.status==='downloading' ) {
             // download is running, update percentage
             if( !self.taskDownloadPanel ) {
                 self.taskDownloadPanel = tasksPanelService.addItem(
