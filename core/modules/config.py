@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*
 
-import logging
 from functools import reduce
 from core.utils import CleepDesktopModule
 
@@ -42,12 +41,12 @@ class Config(CleepDesktopModule):
                     node[key] = value
                     return True
                 else:
-                    # self.context.main_logger.debug('Key "%s" not found' % key)
+                    # self.context.main_logger.debug('+++++++++ Key "%s" not found' % key)
                     return False
             elif key in node.keys():
                 return walk(node[key], keys, value)
             else:
-                # self.context.main_logger.debug('Key "%s" not found' % key)
+                # self.context.main_logger.debug('----------Key "%s" not found' % key)
                 return False
 
         config = self.app_config.load_config()

@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS: {[k: string]: string | number | boolean| {[k: string]: s
     proxyPort: 8080,
     crashReport: true,
     firstRun: true,
+    externalUuid: null,
     devices: {},
 }
 
@@ -71,6 +72,9 @@ export class AppSettings {
         }
         if( isDev ) {
             settings.setSync('cleep.crashreport', false);
+        }
+        if( !settings.hasSync('cleep.externaluuid') ) {
+            settings.setSync('cleep.externaluuid', DEFAULT_SETTINGS.externalUuid);
         }
     
         // balena

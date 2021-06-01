@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*
 
-import logging
-import os
 import json
 import time
+import uuid
 from distutils.util import strtobool
 from core.version import VERSION
 from core.utils import CleepDesktopModule
@@ -29,6 +28,13 @@ class Devices(CleepDesktopModule):
             debug_enabled (bool): True if debug is enabled
         """
         CleepDesktopModule.__init__(self, context, debug_enabled)
+
+        # get or set unique external bus identifier
+        # cleepdesktop is also considered as a device on cleep network
+        self.cleepdesktop_uuid = self.context.config.get_config_value('cleep.externaluuid')
+        if not self.cleepdesktop_uuid:
+            self.cleepdesktop_uuid = str(uuid.uuid4())
+            self.context.config.set_config_value('cleep.externaluuid', self.cleepdesktop_uuid)
 
         # members
         self.external_bus = PyreBus(
@@ -123,6 +129,7 @@ class Devices(CleepDesktopModule):
         macs = self.external_bus.get_mac_addresses()
         # TODO handle port and ssl when security implemented
         headers = {
+            'uuid': self.cleepdesktop_uuid,
             'version': VERSION,
             'hostname': self.CLEEPDESKTOP_HOSTNAME,
             'port': self.CLEEPDESKTOP_PORT,
