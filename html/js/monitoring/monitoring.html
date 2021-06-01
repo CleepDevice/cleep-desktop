@@ -37,10 +37,10 @@
 
                 <!-- messages list -->
                 <md-list ng-if="ctl.monitoring.messages.length>0">
-                    <md-list-item ng-repeat="message in ctl.monitoring.messages" class="md-2-line" ng-click="null">
+                    <md-list-item ng-repeat="message in ctl.monitoring.messages" class="md-2-line" ng-click="ctl.toggleEventDetails(message)">
                         <md-icon md-svg-icon="message-text"></md-icon>
                         <div class="md-list-item-text">
-                            <h3>{{message.peer_hostname}}: {{message.event}}</h3>
+                            <h3>{{message.peer_infos.hostname}} [{{message.peer_infos.ip}}]: {{message.event}}</h3>
                             <p ng-if="message.params" ng-bind="message.params"></p>
                         </div>
                         <md-button class="md-secondary" ng-click="null">{{message.timestamp | hrDatetime}}</md-button>
@@ -51,6 +51,19 @@
         </md-card>
 
     </md-content>
+
+    <md-sidenav class="md-sidenav-right md-whiteframe-4dp" md-component-id="right">
+        <md-toolbar class="md-toolbar-tools">
+            <h3>Event details</h3>
+        </md-toolbar>
+        <md-content layout-padding>
+            <pre>{{ctl.selectedMessage | json}}</pre>
+            <md-button ng-click="ctl.closeEventDetails()" class="md-primary">
+                <md-icon md-svg-icon="close"></md-icon>
+                Close
+            </md-button>
+        </md-content>
+    </md-sidenav>
 
 </div>
 

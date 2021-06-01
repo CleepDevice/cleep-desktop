@@ -13,8 +13,8 @@ angular
             return;
         }
 
-        //append at beginning new message
-        logger.debug('Monitoring message recevied:', data);
-        deviceMessages.unshift(data);
+        // append at beginning new message
+        logger.debug('Monitoring message received:', data);
+        self.messages.unshift(data);
     });
 }]);

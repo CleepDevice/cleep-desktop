@@ -49,7 +49,7 @@ function($http, $q, $rootScope, toast, $websocket, logger, settings) {
      * Callback when message is received on websocket
      */
     self.__websocketReceive = function(event) {
-        logger.debug('Received from WS', event)
+        // logger.debug('Received from WS', event)
         if( event && event.data && typeof(event.data)==='string' ) {
             // broadcast received data
             var data = JSON.parse(event.data);
