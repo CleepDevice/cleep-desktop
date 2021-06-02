@@ -20,7 +20,7 @@
                 <md-card-title-text>
                     <span class="md-headline">
                         <md-icon class="rounded-icon" md-svg-icon="message"></md-icon>
-                        Messages
+                        Messages received from devices
                     </span>
                 </md-card-title-text>
             </md-card-title>
@@ -37,6 +37,13 @@
 
                 <!-- messages list -->
                 <md-list ng-if="ctl.monitoring.messages.length>0">
+                    <md-list-item>
+                        <p></p>
+                        <md-button class="md-secondary md-primary" ng-click="ctl.monitoring.clearMessages()">
+                            <md-icon md-svg-icon="delete-outline"></md-icon>
+                            Clear messages
+                        </md-button>
+                    </md-list-item>
                     <md-list-item ng-repeat="message in ctl.monitoring.messages" class="md-2-line" ng-click="ctl.toggleEventDetails(message)">
                         <md-icon md-svg-icon="message-text"></md-icon>
                         <div class="md-list-item-text">
@@ -52,16 +59,21 @@
 
     </md-content>
 
+    <!-- message content -->
     <md-sidenav class="md-sidenav-right md-whiteframe-4dp" md-component-id="right">
-        <md-toolbar class="md-toolbar-tools">
-            <h3>Event details</h3>
+        <md-toolbar flex="initial">
+            <div class="md-toolbar-tools">
+                <h2>
+                    Message content
+                </h2>
+                <span flex></span>
+                <md-button ng-click="ctl.closeEventDetails()" class="md-icon-button">
+                    <md-icon md-svg-icon="close"></md-icon>
+                </md-button>
+            </div>
         </md-toolbar>
         <md-content layout-padding>
             <pre>{{ctl.selectedMessage | json}}</pre>
-            <md-button ng-click="ctl.closeEventDetails()" class="md-primary">
-                <md-icon md-svg-icon="close"></md-icon>
-                Close
-            </md-button>
         </md-content>
     </md-sidenav>
 
