@@ -345,21 +345,24 @@ class PyreBus(ExternalBus):
 
         if data_type in ('SHOUT', 'WHISPER'):
             # message received, decode it and trigger callback
-            data_group = data.pop(0).decode('utf-8')
+            if data_type == 'SHOUT':
+                # only SHOUT message holds channel
+                data_group = data.pop(0).decode('utf-8')
 
-            # check message group
-            if data_group != self.__bus_channel:
-                # invalid group
-                self.logger.debug('Message received from another channel "%s" (current "%s")' % (data_group, self.__bus_channel))
-                return True
+                # check message group
+                if data_group != self.__bus_channel:
+                    # invalid group
+                    self.logger.debug('Message received from another channel "%s" (current "%s")' % (data_group, self.__bus_channel))
+                    return True
 
             # trigger message received callback
             try:
-                data_content = data.pop(0)
+                data_content = data.pop(0).decode('utf-8')
                 self.logger.debug('Raw data received on bus: %s' % data_content)
-                raw_message = json.loads(data_content.decode('utf-8'))
+                raw_message = json.loads(data_content)
                 message = MessageRequest()
                 message.fill_from_dict(raw_message)
+                self.logger.debug('Message request received: %s' % str(message))
                 self.on_message_received(str(data_peer), message)
             except Exception:
                 self.logger.exception('Error parsing peer message:')
@@ -376,7 +379,7 @@ class PyreBus(ExternalBus):
             try:
                 # decode peer infos
                 peer_infos = self.decode_peer_infos(infos)
-                self.logger.debug('Peer infos: %s' % peer_infos)
+                self.logger.debug('Peer infos: %s' % str(peer_infos))
                 # add extras to peer infos
                 peer_infos.ident = str(data_peer)
                 peer_infos.ip = peer_endpoint.hostname
