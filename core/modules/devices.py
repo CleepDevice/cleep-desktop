@@ -8,7 +8,7 @@ from distutils.util import strtobool
 from core.version import VERSION
 from core.utils import CleepDesktopModule
 from core.libs.pyrebus import PyreBus
-from core.common import MessageRequest, PeerInfos
+from core.common import PeerInfos
 
 class Devices(CleepDesktopModule):
     """
@@ -47,11 +47,7 @@ class Devices(CleepDesktopModule):
         )
         # peers list::
         #   {
-        #       peer uuid (string): {
-        #           peer_id (string): current peer identifier
-        #           peer_ip (string): current peer ip
-        #           ... peer infos from received infos
-        #       },
+        #       peer uuid (string): PeerInfos instance,
         #       ...
         #   }
         self.peers = {}
@@ -318,6 +314,19 @@ class Devices(CleepDesktopModule):
         filtered = [peer for peer in self.peers.values() if peer.ident == peer_id]
         return filtered[0] if len(filtered) > 0 else None
 
+    def _get_peer_infos_from_hostname(self, peer_hostname):
+        """
+        Search in peers dict for hostname and returns its informations
+
+        Args:
+            peer_hostname (string): peer hostname
+
+        Returns:
+            dict: peer informations or None
+        """
+        filtered = [peer for peer in self.peers.values() if peer.hostname == peer_hostname]
+        return filtered[0] if len(filtered) > 0 else None
+
     def _find_existing_peer(self, peer_infos):
         """
         Based on specified peer_infos content mac adresses) this function tries to find an exiting peer.
@@ -334,3 +343,35 @@ class Devices(CleepDesktopModule):
                 return peer_uuid
 
         return None
+
+    def __peer_message_response(self, message, peer_infos):
+        """
+        Message response from command sent to peer
+
+        Args:
+            message (MessageRequest): message sent
+            peer_infos (PeerInfos): message recipient
+        """
+        def handle_response(response):
+            # TODO implement response handler
+            self.logger.info('Response received from peer "%s" for command "%s": %s' % (
+                peer_infos.hostname,
+                message.command,
+                str(response)
+            ))
+        return handle_response
+
+    def send_message_to_peer(self, message, peer_infos):
+        """
+        Send message to specified peer
+
+        Args:
+            message (MessageRequest): message to send
+            peer_infos (PeerInfos): message recipient
+        """
+        message.peer_infos = peer_infos
+        self.external_bus.send_message(
+            message,
+            timeout=10,
+            manual_response=self.__peer_message_response(message, peer_infos)
+        )
