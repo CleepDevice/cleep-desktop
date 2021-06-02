@@ -202,8 +202,9 @@ function(closeModal) {
 Cleep
 .controller('cleepController', ['$rootScope', '$state', 'cleepService', 'tasksPanelService', 'modalService', 
 'updateService', 'cleepUi', 'settings', '$timeout', 'installService', '$transitions', 'toastService', 'devicesService',
+'monitoringService',
 function($rootScope, $state, cleepService, tasksPanelService, modalService, updateService, cleepUi, settings, $timeout,
-    installService, $transitions, toast, devicesService) {
+    installService, $transitions, toast, devicesService, monitoringService) {
 
     var self = this;
     self.ipcRenderer = require('electron').ipcRenderer;
@@ -212,6 +213,7 @@ function($rootScope, $state, cleepService, tasksPanelService, modalService, upda
     self.taskDownloadPanel = null;
     self.selectedToolbarItem = null;
     self.toolbarCollapsed = true;
+    monitoringService.init();
 
     // toggle toolbar
     self.toggleToolbar = function() {

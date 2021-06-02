@@ -17,4 +17,8 @@ angular
         logger.debug('Monitoring message received:', data);
         self.messages.unshift(data);
     });
+
+    self.init = function() {
+        // it does nothing. It is used to load this service at application startup
+    }
 }]);
