@@ -109,7 +109,7 @@ export function createSplashscreenWindow(mainWindow: BrowserWindow): BrowserWind
         frame: false,
         parent: mainWindow,
         resizable: false,
-        icon:__dirname+'/resources/256x256.png',
+        icon: __dirname  + '/resources/256x256.png',
         webPreferences: {
             webSecurity: false
         }
