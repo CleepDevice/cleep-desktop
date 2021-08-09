@@ -7,4 +7,4 @@ passlib==1.7.4
 pyre-gevent==0.2.3
 sentry-sdk==1.0.0
 win32wifi==0.1.0; sys_platform=='win32'
-pywin32==300; sys_platform=='win32'
+pywin32==301; sys_platform=='win32'
