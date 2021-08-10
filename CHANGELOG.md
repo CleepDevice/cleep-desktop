@@ -12,7 +12,7 @@
 * Add button to clear monitoring messages
 * Add unique network identifier to cleep-desktop like other devices
 * Implement basics for device command sending
-* Update electron
+* Update python libs
 
 ## [0.1.4] - 2021-05-18
 ### Fixed
