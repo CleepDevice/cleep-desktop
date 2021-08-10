@@ -1,13 +1,13 @@
-import { app, BrowserWindow, screen, ipcMain, DownloadItem } from "electron";
-import path from "path";
+import { app, BrowserWindow, screen, ipcMain, DownloadItem } from 'electron';
+import path from 'path';
 import logger from 'electron-log';
-import { appContext } from "./app-context";
-import { createAppMenu } from "./app-menu";
+import { appContext } from './app-context';
+import { createAppMenu } from './app-menu';
 import detectPort from 'detect-port';
-import { launchCore } from "./app-core";
-import { createAppWindow, createSplashscreenWindow } from "./app-window";
+import { launchCore } from './app-core';
+import { createAppWindow, createSplashscreenWindow } from './app-window';
 import fs from 'fs'
-import { fillChangelog, parseArgs } from "./utils";
+import { fillChangelog, parseArgs } from './utils';
 import { download } from 'electron-dl';
 import { autoUpdater } from 'electron-updater';
 require('@electron/remote/main').initialize()

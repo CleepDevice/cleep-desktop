@@ -5,6 +5,7 @@
 * Fix monitoring: messages were not displayed
 * Fix monitoring: messages were not catched at application startup
 * Fix device command sending
+* Fix local iso dialog that doesn't open
 
 ### Changed
 * Display monitoring message details
@@ -12,6 +13,7 @@
 * Add button to clear monitoring messages
 * Add unique network identifier to cleep-desktop like other devices
 * Implement basics for device command sending
+* Update js libs (electron v1.3.X)
 * Update python libs
 
 ## [0.1.4] - 2021-05-18

@@ -1,6 +1,9 @@
 /**
  * Iso controller
  */
+const { dialog } = require('electron').remote;
+const path = require('electron').remote.require('path');
+
 angular
 .module('Cleep')
 .controller('isoController', ['closeModal', 'installService',
@@ -62,26 +65,14 @@ function(closeModal, installService) {
                 }
             ]
         };
-        dialog.showOpenDialog(options)
-            .then((result) => {
-                if (result.canceled) {
-                    // dialog canceled
-                    return;
-                }
-                if (!result.filePaths || result.filePaths.length === 0) {
-                    // no file selected
-                    return;
-                }
-
-                self.closeModal({
-                    'url': 'file://' + result.filePaths[0],
-                    'label': path.parse(result.filePaths[0]).base,
-                    'category': 'local',
-                });
-            })
-            .catch(err => {
-                console.log(err);
+        const result = dialog.showOpenDialogSync(options);
+        if (result && result.length) {
+            self.closeModal({
+                'url': 'file://' + result[0],
+                'label': path.parse(result[0]).base,
+                'category': 'local',
             });
+        }
     };
 
 }]);
