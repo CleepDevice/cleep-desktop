@@ -15,9 +15,11 @@ echo.
 echo Packaging cleepdesktopcore...
 echo -----------------------------
 py -3 -m pip install -r ./requirements.txt
+if %ERRORLEVEL% NEQ 0 goto :error
 py -3 -m pip freeze
 xcopy /q /y config\cleepdesktopcore-windows64.spec .
 py -3 -m PyInstaller --workpath packaging --clean --noconfirm --noupx --windowed --debug all --log-level INFO cleepdesktopcore-windows64.spec
+if %ERRORLEVEL% NEQ 0 goto :error
 del /q cleepdesktopcore-windows64.spec
 echo Generated files:
 dir dist\cleepdesktopcore
@@ -40,7 +42,9 @@ echo.
 echo Building electron app...
 echo ------------------------
 call npm ci
+if %ERRORLEVEL% NEQ 0 goto :error
 cmd /C "node_modules\.bin\tsc --outDir %CLEEPDESKTOPPATH%"
+if %ERRORLEVEL% NEQ 0 goto :error
 echo Done
 
 :: copy files and dirs
@@ -68,10 +72,12 @@ if "%1" == "publish" (
     echo --------------------------
     set "GH_TOKEN=%GH_TOKEN_CLEEPDESKTOP%"
     cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH% --publish always"
+    if %ERRORLEVEL% NEQ 0 goto :error
 ) else (
     echo Packaging cleepdesktop...
     echo -------------------------
-    cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH%"
+    cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH% --publish never"
+    if %ERRORLEVEL% NEQ 0 goto :error
 )
 
 :: finalizing moving generated stuff to dist directory and removing temp stuff
@@ -93,3 +99,6 @@ echo Done
 
 echo.
 echo Build result in dist/ folder
+
+:error
+echo ===== Error occured see above =====

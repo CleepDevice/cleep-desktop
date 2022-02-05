@@ -64,7 +64,7 @@ echo "Done"
 
 # electron-builder
 echo
-echo "DEBUG cmd param \"$1\""
+echo
 if [ "$1" == "publish" ]
 then
     echo "Publishing cleepdesktop..."
@@ -74,7 +74,7 @@ then
 else
     echo "Packaging cleepdesktop..."
     echo "-------------------------"
-    node_modules/.bin/electron-builder --mac --x64 --projectDir "$CLEEPDESKTOPPATH"
+    node_modules/.bin/electron-builder --mac --x64 --projectDir "$CLEEPDESKTOPPATH" --publish never
     checkResult $? 0 "Failed to package cleepdesktop"
 fi
 
