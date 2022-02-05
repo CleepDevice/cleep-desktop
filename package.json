@@ -120,7 +120,7 @@
             "provider": "github",
             "owner": "tangb",
             "releaseType": "release",
-            "project": "cleep-desktop"
+            "repo": "cleep-desktop"
         }
     }
 }
