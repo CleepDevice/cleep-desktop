@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from core.libs.console import Console
+from console import Console
 import re
 import time
 import logging
 
+
 class Lsblk(Console):
     """
+    Lsblk helper
     """
 
     CACHE_DURATION = 2.0
@@ -32,7 +34,7 @@ class Lsblk(Console):
             dict: partitions infos::
 
                 {
-                    drive partition name (string): {
+                    disk name (string): {
                         partition name (string): {
                             name (string): partition name
                             major (string): major number,
@@ -52,87 +54,89 @@ class Lsblk(Console):
 
         """
         # check if refresh is needed
-        if self.timestamp is not None and time.time()-self.timestamp<=self.CACHE_DURATION:
-            self.logger.trace('Use cached data')
+        if (
+            self.timestamp is not None
+            and time.time() - self.timestamp <= self.CACHE_DURATION
+        ):
+            self.logger.trace("Use cached data")
             return
 
-        res = self.command(u'/bin/lsblk --list --bytes --output NAME,MAJ:MIN,TYPE,RM,SIZE,RO,MOUNTPOINT,RA,MODEL')
+        res = self.command(
+            "/bin/lsblk --list --bytes --output NAME,MAJ:MIN,TYPE,RM,SIZE,RO,MOUNTPOINT,RA,MODEL"
+        )
         devices = {}
-        if not res[u'error'] and not res[u'killed']:
+        if not res["error"] and not res["killed"]:
             self.partitions = []
 
             # parse data
-            matches = re.finditer(r'^(.*?)\s+(\d+):(\d+)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d)\s+(.*?)\s+(\d+)(\s|.*?)$', u'\n'.join(res[u'stdout']), re.UNICODE | re.MULTILINE)
+            stdout = "--\n".join(res["stdout"])
+            matches = re.finditer(
+                r"(.*?)\s+(\d+):(\d+)\s+(.*?)\s+(\d+)\s+(\d+)\s+(\d)\s(\s+|.*?)\s(\d+)\s*(.*?)--\n",
+                stdout,
+                re.UNICODE | re.MULTILINE,
+            )
+            total_size = 0
             for _, match in enumerate(matches):
                 groups = match.groups()
-                if len(groups)==10:
-                    # name
-                    name = groups[0]
-                    
-                    # drive properties
-                    partition = True
-                    model = None
-                    if groups[3].find('disk')!=-1:
-                        current_drive = name
-                        model = groups[9]
-                        partition = False
-                        total_size = groups[5]
-                        try:
-                            total_size = int(total_size)
-                        except: # pragma: no cover
-                            pass
+                if len(groups) == 10:
+                    if groups[3] in ("loop", "rom") or groups[0].startswith("loop"):
+                        continue
 
-                    # readonly flag
-                    readonly = True
-                    if groups[6]=='0':
-                        readonly = False
-
-                    # removable flag
-                    removable = True
-                    if groups[4]=='0':
-                        removable = False
-
-                    # mountpoint
-                    mountpoint = groups[7]
-
-                    # size and percent
-                    size = groups[5]
-                    percent = None
-                    try:
-                        size = int(size)
-                        percent = int(float(size)/float(total_size)*100.0)
-                    except: # pragma: no cover
-                        pass
-
-                    # fill device
                     device = {
-                        'name': name,
-                        'major': groups[1],
-                        'minor': groups[2],
-                        'size': size,
-                        'totalsize': total_size,
-                        'percent': percent,
-                        'readonly': readonly,
-                        'mountpoint': mountpoint,
-                        'partition': partition,
-                        'removable': removable,
-                        'drivemodel': model
+                        "name": groups[0],
+                        "major": groups[1],
+                        "minor": groups[2],
+                        "size": self.__parse_int(groups[5]),
+                        "totalsize": total_size,
+                        "percent": None,
+                        "readonly": groups[6] != "0",
+                        "mountpoint": groups[7].strip() or None,
+                        "partition": True,
+                        "removable": groups[4] != "0",
+                        "model": groups[9].strip() or None,
                     }
 
+                    # compute some values
+                    if groups[3] == "disk":
+                        current_disk = device["name"]
+                        device["partition"] = False
+                        total_size = self.__parse_int(groups[5])
+                        device["totalsize"] = total_size
+                    device["percent"] = (
+                        int(float(device["size"]) / float(device["totalsize"]) * 100.0)
+                        if device["totalsize"] != 0
+                        else 0
+                    )
+
                     # save device
-                    if current_drive not in devices:
-                        devices[current_drive] = {}
-                    devices[current_drive][name] = device
+                    if current_disk not in devices:
+                        devices[current_disk] = {}
+                    devices[current_disk][device["name"]] = device
 
                     # partition
-                    if partition:
-                        self.partitions.append(name)
+                    if device["partition"]:
+                        self.partitions.append(device["name"])
 
         # save devices
         self.devices = devices
 
         # update timestamp
         self.timestamp = time.time()
+
+    def __parse_int(self, string):
+        """
+        Parse string to int
+
+        Args:
+            string (str): string to parse
+
+        Returns:
+            int: parsed string or 0 if problem occured
+        """
+        try:
+            return int(string)
+        except:
+            return 0
 
     def get_devices_infos(self):
         """
@@ -145,9 +149,9 @@ class Lsblk(Console):
 
         return self.devices
 
-    def get_drives(self):
+    def get_disks(self):
         """
-        Returns drives infos only
+        Returns disks infos only
 
         Returns:
             dict: dict of drives
@@ -157,10 +161,9 @@ class Lsblk(Console):
         drives = {}
         for drive in self.devices:
             for device in self.devices[drive]:
-                if not self.devices[drive][device]['partition']:
-                    # it's a drive
+                if not self.devices[drive][device]["partition"]:
                     drives[drive] = self.devices[drive][device]
-                
+
         return drives
 
     def get_partitions(self):
@@ -175,10 +178,10 @@ class Lsblk(Console):
         partitions = {}
         for drive in self.devices:
             for device in self.devices[drive]:
-                if self.devices[drive][device]['partition']:
+                if self.devices[drive][device]["partition"]:
                     # it's a partition
                     partitions[device] = self.devices[drive][device]
-                
+
         return partitions
 
     def get_device_infos(self, device):
