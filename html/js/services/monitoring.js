@@ -4,10 +4,14 @@
  */
 angular
 .module('Cleep')
-.service('monitoringService', ['$rootScope', 'logger', function($rootScope, logger) {
+.service('monitoringService', ['$rootScope', 'loggerService', function($rootScope, logger) {
     var self = this;
     self.maxMessages = 100;
     self.messages = [];
+
+    self.init = function() {
+        // nothing to do, just call this to load service in angular application
+    }
 
     $rootScope.$on('monitoring', function(_event, data) {
         if( !data ) {
@@ -23,14 +27,7 @@ angular
         }
     });
 
-    /**
-     * Clear received messages
-     */
     self.clearMessages = function() {
         self.messages.splice(0, self.messages.length);
-    };
-
-    self.init = function() {
-        // it does nothing. It is used to load this service at application startup
     };
 }]);

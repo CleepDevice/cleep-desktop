@@ -3,7 +3,7 @@
  */
 angular
 .module('Cleep')
-.controller('aboutController', ['appContext', function(appContext) {
+.controller('aboutController', [function() {
     var self = this;
-    self.appContext = appContext;
+    // TODO handle appContext
 }]);

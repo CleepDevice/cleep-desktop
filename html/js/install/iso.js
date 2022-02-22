@@ -1,9 +1,6 @@
 /**
  * Iso controller
  */
-const { dialog } = require('electron').remote;
-const path = require('electron').remote.require('path');
-
 angular
 .module('Cleep')
 .controller('isoController', ['closeModal', 'installService',
@@ -14,27 +11,23 @@ function(closeModal, installService) {
     self.config = installService.isos;
     self.loading = true;
 
-    // controller init
     self.$onInit = function () {
         self.refreshIsos();
     };
 
-    // refresh isos list
     self.__refreshIsos = function() {
         // copy locally iso from installService
         self.isos = [];
-        for( var i=0; i<self.config.isos.length; i++ ) {
+        for (var i = 0; i < self.config.isos.length; i++) {
             self.isos.push(self.config.isos[i]);
         }
 
         // append item id to allow easier selection
-        var id = 0;
-        for( id=0; id<self.isos.length; id++ ) {
+        for (var id = 0; id < self.isos.length; id++) {
             self.isos[id].id = id;
         }
     };
 
-    // refresh isos
     self.refreshIsos = function() {
         self.loading = true;
 
@@ -45,7 +38,6 @@ function(closeModal, installService) {
             });
     };
 
-    // select raspios iso
     self.selectRemoteIso = function(item) {
         self.closeModal(item);
     };
@@ -65,14 +57,15 @@ function(closeModal, installService) {
                 }
             ]
         };
-        const result = dialog.showOpenDialogSync(options);
-        if (result && result.length) {
-            self.closeModal({
-                'url': 'file://' + result[0],
-                'label': path.parse(result[0]).base,
-                'category': 'local',
-            });
-        }
+        // TODO handle dialog in electron area
+        // const result = dialog.showOpenDialogSync(options);
+        // if (result && result.length) {
+        //     self.closeModal({
+        //         'url': 'file://' + result[0],
+        //         'label': path.parse(result[0]).base,
+        //         'category': 'local',
+        //     });
+        // }
     };
 
 }]);

@@ -1,11 +1,10 @@
-
 /**
  * Device controller
  */
 angular
 .module('Cleep')
-.controller('deviceController', ['$rootScope', '$stateParams', 'logger', '$document', '$timeout', 'deviceService',
-function($rootScope, $stateParams, logger, $document, $timeout, deviceService) {
+.controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'deviceService', 'downloadService',
+function($rootScope, $stateParams, logger, $document, $timeout, deviceService, downloadService) {
     var self = this;
     self.shell = require('electron').shell;
     self.deviceUrl = $stateParams.url;
@@ -16,16 +15,15 @@ function($rootScope, $stateParams, logger, $document, $timeout, deviceService) {
     self.wv.addEventListener('new-window', (event) => {
         event.preventDefault();
 
-        //detect download in url action
+        // detect download in url action
         logger.debug(event.url);
-        if( event.url.indexOf('/download?')!==-1 ) {
-            //trigger file download
-            logger.debug('Trigger file download: ' + event.url);
-            logger.debug(event);
-            $rootScope.$broadcast('download-file', {url: event.url});
+        if (event.url.indexOf('/download?') !== -1) {
+            // trigger file download
+            logger.debug('Trigger file download: ', event);
+            downloadService.downloadUrl(event.url);
         } else {
             //open external link
-            logger.debug('Opening external url: '+event.url);
+            logger.debug('Opening external url: ', event);
             self.shell.openExternal(event.url);
         }
     });

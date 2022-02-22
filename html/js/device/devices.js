@@ -3,8 +3,8 @@
  */
 angular
 .module('Cleep')
-.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope',
-function($state, devicesService, toastService, confirmService, $rootScope) {
+.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope', 'downloadService',
+function($state, devicesService, toastService, confirmService, $rootScope, downloadService) {
     var self = this;
     self.devicesService = devicesService;
 
@@ -41,6 +41,10 @@ function($state, devicesService, toastService, confirmService, $rootScope) {
     self.openInstallPage = function() {
         $state.go('installAuto');
     };
+
+    self.download = function() {
+        downloadService.downloadUrl('https://github.com/tangb/cleep-os/releases/download/v0.0.29/cleepos_0.0.29.zip');
+    }
 
     // delete device
     self.deleteDevice = function(device) {

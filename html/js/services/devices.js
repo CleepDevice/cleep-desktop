@@ -3,7 +3,7 @@
  */
 angular
 .module('Cleep')
-.service('devicesService', ['$rootScope', 'cleepService', 'logger',
+.service('devicesService', ['$rootScope', 'cleepService', 'loggerService',
 function($rootScope, cleepService, logger) {
     var self = this;
     self.loading = true;
@@ -18,7 +18,7 @@ function($rootScope, cleepService, logger) {
         if (devices) {
             // add and update devices
             for (var i=0; i < devices.length; i++) {
-                found = self.__searchDevice(devices[i]);
+                var found = self.__searchDevice(devices[i]);
                 if (found) {
                     // update existing device
                     found.uuid = devices[i].uuid;
@@ -74,7 +74,6 @@ function($rootScope, cleepService, logger) {
         return null;
     }
 
-    // update devices list
     self.__updateDevices = function(responseData, removedDevice) {
         // sync devices
         self.__syncDevices(responseData.devices, removedDevice);
@@ -98,7 +97,6 @@ function($rootScope, cleepService, logger) {
         self.loading = false;
     };
 
-    // select device in devices panel
     self.selectDevice = function(selectedDevice) {
         for( var i=0; i<self.devices.length; i++ ) {
             if( selectedDevice && self.devices[i].ip===selectedDevice.ip ) {
@@ -109,7 +107,6 @@ function($rootScope, cleepService, logger) {
         }
     };
 
-    // get devices
     self.getDevices = function() {
         return cleepService.sendCommand('get_devices', 'devices')
             .then((resp) => {
@@ -117,7 +114,6 @@ function($rootScope, cleepService, logger) {
             });
     };
 
-    // delete device
     self.deleteDevice = function(device) {
         return cleepService.sendCommand('delete_device', 'devices', {
                 'peer_uuid': device.uuid,
@@ -132,7 +128,6 @@ function($rootScope, cleepService, logger) {
         self.__updateDevices(data);
     });
 
-    // watch for network event
     $rootScope.$on('network', function(_event, data) {
         self.isConnected = data.connected;
     });

@@ -5,6 +5,7 @@ import logging
 from core.utils import CleepDesktopModule
 from core.libs.cleepdesktoplogs import CleepDesktopLogs
 
+
 class Core(CleepDesktopModule):
     """
     Core module. Holds core functions
@@ -22,8 +23,8 @@ class Core(CleepDesktopModule):
 
         self.logs = CleepDesktopLogs()
 
-    def get_zipped_logs(self):
+    def get_zipped_logs(self, electron_log_path):
         """
         Zip and return logs
         """
-        return self.logs.get_zipped_logs()
+        return self.logs.get_zipped_logs(electron_log_path)

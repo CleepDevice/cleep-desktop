@@ -5,9 +5,9 @@
  */
 angular
 .module('Cleep')
-.service('updateService', ['$rootScope', 'logger', 'appUpdater', '$timeout', 'tasksPanelService', 'cleepUi', 
-             '$q', 'cleepService', 'appContext',
-function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $q, cleepService, appContext) {
+.service('updateService', ['$rootScope', 'loggerService', '$timeout', 'tasksPanelService', 'cleepUi', '$q',
+                           'cleepService', 'electronService',
+function($rootScope, logger, $timeout, tasksPanelService, cleepUi, $q, cleepService, electron) {
     var self = this;
 
     // status from updates.py
@@ -35,7 +35,7 @@ function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $
     self.cleepdesktopUpdatesDisabled = false;
     self.cleepdesktopUpdateAvailable = false;
     self.cleepdesktopStatus = {
-        version: appUpdater.currentVersion,
+        version: electron.sendReturn('updater-get-current-version'),
         status: self.STATUS_IDLE,
         downloadpercent: null,
         lasterror: '',
@@ -48,53 +48,11 @@ function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $
         downloadstatus: null
     };
     self.changelog = null;
-    self.currentVersion = '0.0.0';
+    self.currentVersion = '0.0.0'; 
 
-    // go to updates page
-    self.__goToUpdates = function() {
-        cleepUi.openPage('updates');
-    };
-
-    // on close update task panel
-    self.__onCloseUpdateTaskPanel = function() {
-        //reset variable
-        self.taskUpdatePanel = null;
-        self.taskUpdatePanelClosedByUser = true;
-    };
-
-    // handle opening/closing of update task panel according to current cleepdesktop and etcher update status
-    self.__handleUpdateTaskPanel = function() {
-        if( (self.updatingCleepdesktop || self.updatingEtcher) && self.taskUpdatePanelClosedByUser ) {
-            // update task panel closed by user, do not open again
-        } else if( !self.updatingCleepdesktop && !self.updatingEtcher && self.taskUpdatePanelClosedByUser ) {
-            // update task panel closed by user but updates terminated, reset flag
-            self.taskUpdatePanelClosedByUser = false;
-        } else if( (self.updatingCleepdesktop || self.updatingEtcher) && !self.taskUpdatePanel ) {
-            // no update task panel opened yet while update is in progress, open it
-            self.taskUpdatePanel = tasksPanelService.addItem(
-                'Updating application...', 
-                {
-                    onAction: self.__goToUpdates,
-                    tooltip: 'Go to updates',
-                    icon: 'update'
-                },
-                {
-                    onClose: self.__onCloseUpdateTaskPanel,
-                    disabled: false
-                },
-                true
-            );
-
-        } else if( !self.updatingCleepdesktop && !self.updatingEtcher && self.taskUpdatePanel ) {
-            // no update is running and task panel is opened, close it
-            tasksPanelService.removeItem(self.taskUpdatePanel);
-            self.taskUpdatePanel = null;
-            self.taskUpdatePanelClosedByUser = false;
-        }
-    };
-
-    // init update service adding appUpdater and cleepdesktopcore events handlers
     self.init = function() {
+        self.__addIpcs();
+        
         /*if( process.platform==='darwin' )
         {
             //disable auto updates on macos due to missing certification key that is needed :(
@@ -126,110 +84,9 @@ function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $
                 self.updatingEtcher = true;
             }
 
-            // update task panel
             self.__handleUpdateTaskPanel();
         });
 
-        // handle cleepdesktop update here to add update task panel
-        appUpdater.addListener('update-available', function(info) {
-            // update available, open task panel if necessary
-            logger.debug('AppUpdater: update-available');
-
-            // keep track of changelog
-            if( info && info.releaseNotes ) {
-                self.changelog = info.releaseNotes;
-            }
-
-            // update cleepdesktop flags
-            self.cleepdesktopUpdateAvailable = true;
-            if( !self.cleepdesktopUpdatesDisabled ) {
-                // update downloading flag
-                self.updatingCleepdesktop = true;
-                self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
-                // set to null because download progress is not always available
-                self.cleepdesktopStatus.downloadpercent = null;
-
-                // update task panel
-                self.__handleUpdateTaskPanel();
-            } else {
-                // update is disabled, show message to user
-                self.taskUpdatePanel = tasksPanelService.addItem(
-                    'New CleepDesktop version available.', 
-                    {
-                        onAction: self.__goToUpdates,
-                        tooltip: 'Go to updates',
-                        icon: 'update'
-                    }
-                );
-            }
-        });
-
-        appUpdater.addListener('update-downloaded', function(info) {
-            // update downloaded, close task panel
-            logger.debug('AppUpdater: update-downloaded');
-            if( !self.cleepdesktopUpdatesDisabled ) {
-                // update flags
-                self.updatingCleepdesktop = false;
-                self.cleepdesktopUpdateAvailable = false;
-                self.cleepdesktopStatus.status = self.STATUS_DONE;
-                self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DONE;
-                self.cleepdesktopStatus.downloadpercent = 100;
-                self.cleepdesktopStatus.restartrequired = true;
-                
-                // emit restart required event
-                $rootScope.$broadcast('restartrequired');
-
-                // update task panel
-                self.__handleUpdateTaskPanel();
-
-                // save changelog
-                $rootScope.$broadcast('savechangelog', self.changelog);
-            }
-        });
-        appUpdater.addListener('error', function(error) {
-            // error during update, close task panel
-            if( !self.cleepdesktopUpdatesDisabled ) {
-                // update flags
-                logger.error('AppUpdater: error ' + error.message);
-                self.updatingCleepdesktop = false;
-                self.cleepdesktopStatus.status = self.STATUS_ERROR;
-                self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_ERROR;
-                self.cleepdesktopStatus.downloadpercent = 100;
-                self.cleepdesktopStatus.lasterror = error.message;
-                
-                // update task panel (delay it to make sure taskpanel is displayed)
-                $timeout(function() {
-                    self.__handleUpdateTaskPanel();
-                }, 1500);
-            }
-        });
-        appUpdater.addListener('download-progress', function(progress) {
-            percent = Math.round(progress.percent);
-            logger.debug('Update download progress: ' + percent);
-            
-            self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
-            self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
-            self.cleepdesktopStatus.downloadpercent = percent;
-        });
-        appUpdater.addListener('checking-for-update', function() {
-            logger.info('Checking for CleepDesktop updates...');
-        });
-        appUpdater.addListener('update-not-available', function(info) {
-            logger.info('No CleepDesktop update available');
-            logger.debug(info);
-
-            //keep track of current version infos
-            if( info ) {
-                if( info.releaseNotes ) {
-                    self.changelog = info.releaseNotes;
-                }
-                if( info.version ) {
-                    self.currentVersion = info.version;
-                }
-            }
-        });
-
-        // get initial status
         cleepService.sendCommand('get_status', 'updates')
             .then(function(resp) {
                 self.etcherStatus.version = resp.data.etcherstatus.version;
@@ -240,10 +97,148 @@ function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $
             });
     };
 
-    /**
-     * check for updates
-     * @return promise: resolve returns true if update available, false otherwise. Reject returns software that fails ('etcher'|'cleepdesktop')
-     */
+    self.__addIpcs = function() {
+        electron.on('updater-error', self.__onUpdateError.bind(self));
+        electron.on('updater-checking-for-update', self.__onUpdateAvailable.bind(self));
+        electron.on('updater-update-available', self.__onUpdateCheckingForUpdate.bind(self));
+        electron.on('updater-update-not-available', self.__onUpdateNotAvailable.bind(self));
+        electron.on('updater-download-progress', self.__onUpdateDownloadProgress.bind(self));
+        electron.on('updater-update-downloaded', self.__onUpdateDownloaded.bind(self));
+    };
+
+    // go to updates page
+    self.__goToUpdates = function() {
+        cleepUi.openPage('updates');
+    };
+
+    // on close update task panel
+    self.__onCloseUpdateTaskPanel = function() {
+        //reset variable
+        self.taskUpdatePanel = null;
+        self.taskUpdatePanelClosedByUser = true;
+    };
+
+    // handle opening/closing of update task panel according to current cleepdesktop and etcher update status
+    self.__handleUpdateTaskPanel = function() {
+        if ((self.updatingCleepdesktop || self.updatingEtcher) && self.taskUpdatePanelClosedByUser) {
+            // update task panel closed by user, do not open again
+        } else if (!self.updatingCleepdesktop && !self.updatingEtcher && self.taskUpdatePanelClosedByUser) {
+            // update task panel closed by user but updates terminated, reset flag
+            self.taskUpdatePanelClosedByUser = false;
+        } else if ((self.updatingCleepdesktop || self.updatingEtcher) && !self.taskUpdatePanel) {
+            // no update task panel opened yet while update is in progress, open it
+            self.taskUpdatePanel = tasksPanelService.addItem(
+                'Updating application...', 
+                {
+                    onAction: self.__goToUpdates,
+                    tooltip: 'Go to updates',
+                    icon: 'update'
+                },
+                {
+                    onClose: self.__onCloseUpdateTaskPanel,
+                    disabled: false
+                },
+                true
+            );
+        } else if (!self.updatingCleepdesktop && !self.updatingEtcher && self.taskUpdatePanel) {
+            // no update is running and task panel is opened, close it
+            tasksPanelService.removeItem(self.taskUpdatePanel);
+            self.taskUpdatePanel = null;
+            self.taskUpdatePanelClosedByUser = false;
+        }
+    };
+
+    self.__onUpdateError = function(error) {
+        // error during update, close task panel
+        if (!self.cleepdesktopUpdatesDisabled) {
+            // update flags
+            self.updatingCleepdesktop = false;
+            self.cleepdesktopStatus.status = self.STATUS_ERROR;
+            self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_ERROR;
+            self.cleepdesktopStatus.downloadpercent = 100;
+            self.cleepdesktopStatus.lasterror = error.message;
+            
+            // update task panel (delay it to make sure taskpanel is displayed)
+            $timeout(function() {
+                self.__handleUpdateTaskPanel();
+            }, 1500);
+        }
+    };
+    
+    self.__onUpdateAvailable = function(info) {
+        // update available, open task panel if necessary
+
+        // keep track of changelog
+        if (info && info.releaseNotes) {
+            self.changelog = info.releaseNotes;
+        }
+
+        // update cleepdesktop flags
+        self.cleepdesktopUpdateAvailable = true;
+        if (!self.cleepdesktopUpdatesDisabled) {
+            // update downloading flag
+            self.updatingCleepdesktop = true;
+            self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
+            // set to null because download progress is not always available
+            self.cleepdesktopStatus.downloadpercent = null;
+
+            // update task panel
+            self.__handleUpdateTaskPanel();
+        } else {
+            // update is disabled, show message to user
+            self.taskUpdatePanel = tasksPanelService.addItem(
+                'New CleepDesktop version available.', 
+                {
+                    onAction: self.__goToUpdates,
+                    tooltip: 'Go to updates',
+                    icon: 'update'
+                }
+            );
+        }
+    };
+    
+    self.__onUpdateCheckingForUpdate = function() {
+        // TODO add toast ?
+    };
+
+    self.__onUpdateNotAvailable = function(info) {
+        logger.info('No CleepDesktop update available');
+
+        // TODO check changelog usage
+        if (info) {
+            if (info.releaseNotes) {
+                self.changelog = info.releaseNotes;
+            }
+            if (info.version) {
+                self.currentVersion = info.version;
+            }
+        }
+    };
+
+    self.__onUpdateDownloadProgress =  function(progress) {
+        progress.percent = Math.round(progress.percent);
+        logger.debug('Update download progress: ' + progress.percent);
+        
+        self.cleepdesktopStatus.status = self.STATUS_DOWNLOADING;
+        self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DOWNLOADING;
+        self.cleepdesktopStatus.downloadpercent = progress.percent;
+    };
+    
+    self.__onUpdateDownloaded = function(_info) {
+        if (!self.cleepdesktopUpdatesDisabled) {
+            self.updatingCleepdesktop = false;
+            self.cleepdesktopUpdateAvailable = false;
+            self.cleepdesktopStatus.status = self.STATUS_DONE;
+            self.cleepdesktopStatus.downloadstatus = self.DOWNLOAD_DONE;
+            self.cleepdesktopStatus.downloadpercent = 100;
+            self.cleepdesktopStatus.restartrequired = true;
+            
+            $rootScope.$broadcast('restartrequired');
+
+            self.__handleUpdateTaskPanel();
+        }
+    };
+
     self.checkForUpdates = function() {
         logger.info('Check for software updates');
         var defer = $q.defer();
@@ -251,7 +246,7 @@ function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $
         // check etcher updates first
         var lastCheck = null;
         var etcherUpdateAvailable = true;
-        var cleepdesktopUpdateAvailable = false;
+        // var cleepdesktopUpdateAvailable = false;
         cleepService.sendCommand('check_updates', 'updates')
             .then(function(resp) {
                 // save resp
@@ -259,17 +254,18 @@ function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $
                 etcherUpdateAvailable = resp.data.updateavailable;
 
                 // then check CleepDesktop updates
-                return appUpdater.checkForUpdates();
+                return electron.sendReturn('updater-check-for-updates', null, true);
             }, function(error) {
                 logger.error('Error checking etcher updates:' + error);
                 defer.reject('etcher');
             })
             .then(function(update) {
-                logger.debug('app-updater result: ' + JSON.stringify(update));
-                if( update && update.versionInfo && update.versionInfo.version && update.versionInfo.version > appContext.version ) {
-                    cleepdesktopUpdateAvailable = true;
-                }
-                defer.resolve(etcherUpdateAvailable || cleepdesktopUpdateAvailable);
+                // TODO handle appcontext
+                // logger.debug('app-updater result: ' + JSON.stringify(update));
+                // if( update && update.versionInfo && update.versionInfo.version && update.versionInfo.version > appContext.version ) {
+                //     cleepdesktopUpdateAvailable = true;
+                // }
+                // defer.resolve(etcherUpdateAvailable || cleepdesktopUpdateAvailable);
             }, function(error) {
                 logger.error('Error checking cleepdesktop updates:' + error);
                 defer.reject('cleepdesktop')
@@ -283,36 +279,30 @@ function($rootScope, logger, appUpdater, $timeout, tasksPanelService, cleepUi, $
         return defer.promise;
     };
 
-    // return Cleepdesktop update status
     self.isUpdatingCleepdesktop = function() {
         return self.updatingCleepdesktop;
     };
 
-    // return Etcher update status
     self.isUpdatingEtcher = function() {
         return self.updatingEtcher;
     };
 
-    // is cleepdesktop updates disabled
     self.isCleepdesktopUpdatesDisabled = function() {
         return self.cleepdesktopUpdatesDisabled;
     };
 
-    // is cleepdesktop updates available
     self.isCleepdesktopUpdatesAvailable = function() {
         return self.cleepdesktopUpdateAvailable;
     };
 
-    // get last check time
     self.getLastCheckTime = function() {
         return self.lastCheck;
     };
 
-    // return true if etcher is available (installed and no update in progress)
     self.isEtcherAvailable = function() {
-        if( self.etcherStatus.version=='v0.0.0'
-            || self.etcherStatus.status==self.STATUS_DOWNLOADING
-            || self.etcherStatus.status==self.STATUS_INSTALLING
+        if (self.etcherStatus.version === 'v0.0.0' ||
+            self.etcherStatus.status === self.STATUS_DOWNLOADING ||
+            self.etcherStatus.status === self.STATUS_INSTALLING
         ) {
             return false;
         } else {

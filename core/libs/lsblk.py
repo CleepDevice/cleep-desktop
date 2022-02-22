@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from console import Console
+from core.libs.console import Console
 import re
 import time
 import logging

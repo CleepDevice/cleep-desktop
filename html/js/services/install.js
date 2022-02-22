@@ -3,8 +3,8 @@
  */
 angular
 .module('Cleep')
-.service('installService', ['$rootScope', '$state', 'logger', 'cleepService', 'tasksPanelService',
-function($rootScope, $state, logger, cleepService, tasksPanelService) {
+.service('installService', ['$rootScope', '$state', 'loggerService', 'cleepService', 'tasksPanelService', 'toastService', '$timeout',
+function($rootScope, $state, logger, cleepService, tasksPanelService, toast, $timeout) {
     var self = this;
     self.installing = false;
     self.STATUS = {
@@ -50,9 +50,11 @@ function($rootScope, $state, logger, cleepService, tasksPanelService) {
     self.taskInstallPanelClosed = false;
     self.taskInstallPanel = null;
 
-    /**
-     * Return current install status
-     */
+    self.init = function() {
+        // refresh only adapter at startup
+        $timeout(self.refreshWifiAdapter, 2000);
+    };
+
     self.getStatus = function() {
         return cleepService.sendCommand('get_status', 'install')
             .then(function(resp) {
@@ -60,9 +62,6 @@ function($rootScope, $state, logger, cleepService, tasksPanelService) {
             });
     };
 
-    /**
-     * Return wifi adapter infos
-     */
     self.refreshWifiAdapter = function() {
         return cleepService.sendCommand('get_wifi_adapter', 'install')
             .then(function(resp) {
@@ -70,9 +69,6 @@ function($rootScope, $state, logger, cleepService, tasksPanelService) {
             });
     };
 
-    /**
-     * Refresh available wifi networks
-     */
     self.refreshWifiNetworks = function() {
         return cleepService.sendCommand('get_wifi_networks', 'install')
             .then(function(resp) {
@@ -80,25 +76,19 @@ function($rootScope, $state, logger, cleepService, tasksPanelService) {
             });
     };
 
-    /**
-     * Refresh list of available drives
-     */
     self.refreshDrives = function() {
         return cleepService.sendCommand('get_flashable_drives', 'install')
             .then(function(resp) {
-                //clear existing drives
+                // clear existing drives
                 self.drives.splice(0, self.drives.length);
 
-                //fill with new values
+                // fill with new values
                 for( var i=0; i<resp.data.length; i++) {
                     self.drives.push(resp.data[i]);
                 }
             });
     };
 
-    /**
-     * Refresh isos list
-     */
     self.refreshIsos = function() {
         return cleepService.sendCommand('get_isos', 'install')
             .then(function(resp) {
@@ -119,9 +109,6 @@ function($rootScope, $state, logger, cleepService, tasksPanelService) {
         return cleepService.sendCommand('start_install', 'install', data);
     };
 
-    /**
-     * Cancel install
-     */
     self.cancelInstall = function() {
         return cleepService.sendCommand('cancel_install', 'install')
             .then(function() {
@@ -130,30 +117,16 @@ function($rootScope, $state, logger, cleepService, tasksPanelService) {
             });
     };
 
-    /**
-     * Init service values
-     */
-    self.init = function() {
-        //refresh only adapter at startup
-        self.refreshWifiAdapter();
-    };
-
-    /**
-     * Handle config changed to update internal values automatically
-     */
     $rootScope.$on('configchanged', function(_config) {
         logger.debug('Configuration changed, refresh install service values');
         self.init();
     });
 
-    // on close install task panel event
     self.onCloseInstallTaskPanel = function() {
-        //reset variable
         self.taskInstallPanel = null;
         self.taskInstallPanelClosed = true;
     };
 
-    // jump to auto install page
     self.jumpToInstallAuto = function() {
         $state.go('installAuto');
     };
@@ -164,17 +137,16 @@ function($rootScope, $state, logger, cleepService, tasksPanelService) {
             return;
         }
 
-        //save status
+        // save status
         self.status = data;
 
-        //detect install process
-        if( self.status.status===self.STATUS.IDLE || self.status.status>=self.STATUS.DONE ) {
+        // detect install process
+        if (self.status.status === self.STATUS.IDLE || self.status.status >= self.STATUS.DONE) {
             self.installing = false;
-
         } else {
             self.installing = true;
 
-            if(!self.taskInstallPanel && !self.taskInstallPanelClosed) {
+            if (!self.taskInstallPanel && !self.taskInstallPanelClosed) {
                 self.taskInstallPanel = tasksPanelService.addItem(
                     'Installing Cleep on drive...',
                     {
@@ -192,20 +164,18 @@ function($rootScope, $state, logger, cleepService, tasksPanelService) {
         }
         logger.debug('Status=' + self.status.status + ' installing=' + self.installing, self.status);
 
-        //end of install
-        if( self.installing===false ) {
+        // detect end of install
+        if (self.installing === false) {
             logger.info('Install is terminated. Restore ui');
 
-            //force percents to 100%
+            // force percent to 100%
             self.status.percent = 100;
             self.status.total_percent = 100;
 
-            //close taskpanel
             tasksPanelService.removeItem(self.taskInstallPanel);
             self.taskInstallPanel = null;
             self.taskInstallPanelClosed = false;
 
-            //suppress warning dialog
             $rootScope.$broadcast('enablequit');
         }
     });

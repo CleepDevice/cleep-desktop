@@ -9,14 +9,14 @@
  */
 angular
 .module('Cleep')
-.service('cleepService', ['$http', '$q', '$rootScope', 'toastService', '$websocket', 'logger', 'settings',
-function($http, $q, $rootScope, toast, $websocket, logger, settings) {
+.service('cleepService', ['$http', '$q', '$rootScope', 'toastService', '$websocket', 'settingsService',
+function($http, $q, $rootScope, toast, $websocket, settingsService) {
 
     var self = this;
 
     // set members
     self.__ws = null;
-    self.port = settings.getSync('remote.rpcport');
+    self.port = settingsService.get('remote.rpcport');
     self.urlCommand = 'http://localhost:' + self.port + '/command';
     self.urlWebsocket = 'ws://127.0.0.1:'+self.port+'/cleepws'
 
@@ -31,10 +31,10 @@ function($http, $q, $rootScope, toast, $websocket, logger, settings) {
             self.__ws = $websocket(self.urlWebsocket, null, {reconnectIfNotNormalClose: true});
             self.__ws.onMessage(self.__websocketReceive);
             self.__ws.onClose(function() {
-                logger.debug('Websocket closed');
+                console.log('Websocket closed');
             });
             self.__ws.onOpen(function() {
-                logger.debug('Websocket opened');
+                console.log('Websocket opened');
                 defer.resolve('connected');
             });
         } else {
@@ -49,7 +49,6 @@ function($http, $q, $rootScope, toast, $websocket, logger, settings) {
      * Callback when message is received on websocket
      */
     self.__websocketReceive = function(event) {
-        // logger.debug('Received from WS', event)
         if( event && event.data && typeof(event.data)==='string' ) {
             // broadcast received data
             var data = JSON.parse(event.data);
@@ -60,8 +59,7 @@ function($http, $q, $rootScope, toast, $websocket, logger, settings) {
     /**
      * Base function to send data to rpcserver
      */
-    self.send = function(url, command, to, params, method)
-    {
+    self.send = function(url, command, to, params, method) {
         var d = $q.defer();
 
         // prepare method
@@ -121,5 +119,4 @@ function($http, $q, $rootScope, toast, $websocket, logger, settings) {
     self.setConfig = function(config) {
         return self.send(self.urlCommand, 'set_config', 'config', {config:config});
     };
-
 }]);

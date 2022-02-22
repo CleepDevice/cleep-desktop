@@ -131,12 +131,17 @@
                             <md-list-item ng-click="ctl.openLogs()">
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
                                 <p>Open logs file</p>
-                                <md-button class="md-icon-button md-secondary" aria-label="Zip logs" ng-click="ctl.zipLogs()">
+                                <md-button class="md-icon-button md-secondary" aria-label="Zip logs" ng-click="ctl.downloadZippedLogs()">
                                     <md-icon md-svg-icon="archive">
                                         <md-tooltip>Get zipped log files</md-tooltip>
                                     </md-icon>
                                 </md-button>
-                                <md-button class="md-icon-button md-secondary" aria-label="Open logs" ng-click="ctl.openLogs()">
+                                <md-button class="md-icon-button md-secondary" aria-label="Open logs" ng-click="ctl.openElectronLogs()">
+                                    <md-icon md-svg-icon="file">
+                                        <md-tooltip>Open electron log file</md-tooltip>
+                                    </md-icon>
+                                </md-button>
+                                <md-button class="md-icon-button md-secondary" aria-label="Open logs" ng-click="ctl.openCoreLogs()">
                                     <md-icon md-svg-icon="file">
                                         <md-tooltip>Open core log file</md-tooltip>
                                     </md-icon>

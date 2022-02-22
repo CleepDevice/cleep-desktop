@@ -8,17 +8,14 @@ import tempfile
 import uuid
 import platform
 
-class CleepDesktopLogs():
+
+class CleepDesktopLogs:
     """
     Handle cleepdesktop logs files
     """
-    LOGS_CORE = 'cleepdesktopcore.log'
-    LOGS_UI = 'log.log'
 
-    # those paths are based on electron-log doc (https://github.com/megahertz/electron-log)
-    PATH_LINUX = '~/.config/CleepDesktop'
-    PATH_MAC = '~/Library/Logs/CleepDesktop'
-    PATH_WIN = '%USERPROFILE%\\AppData\\Roaming\\CleepDesktop'
+    LOGS_CORE = "cleepdesktopcore.log"
+    LOGS_UI = "log.log"
 
     def __init__(self):
         """
@@ -29,16 +26,16 @@ class CleepDesktopLogs():
         """
         # logger
         self.logger = logging.getLogger(self.__class__.__name__)
-        #self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
 
         # build logs path according to platform
-        if platform.system()=='Windows':
-            self.logs_path = os.path.expandvars(self.PATH_WIN)
-        elif platform.system()=='Darwin':
-            self.logs_path = os.path.expanduser(self.PATH_MAC)
-        else:
-            self.logs_path = os.path.expanduser(self.PATH_LINUX)
-        self.logger.debug('Log path: %s' % self.logs_path)
+        # if platform.system() == "Windows":
+        #     self.logs_path = os.path.expandvars(self.PATH_WIN)
+        # elif platform.system() == "Darwin":
+        #     self.logs_path = os.path.expanduser(self.PATH_MAC)
+        # else:
+        #     self.logs_path = os.path.expanduser(self.PATH_LINUX)
+        # self.logger.debug("Log path: %s" % self.logs_path)
 
         # members
         self.temp_dir = tempfile.gettempdir()
@@ -52,37 +49,31 @@ class CleepDesktopLogs():
         """
         return self.logs_path
 
-    def get_zipped_logs(self):
+    def get_zipped_logs(self, electron_log_path):
         """
         Return zipped archive that contains logs files
+
+        Args:
+            electron_log_path (str): electron logs path
 
         Return:
             string: zipped archive path
         """
         # generate filename in tmp dir
-        filename = os.path.join(self.temp_dir, str(uuid.uuid4()) + '.zip')
+        filename = os.path.join(self.temp_dir, str(uuid.uuid4()) + ".zip")
 
         # build archive
         try:
-            archive = zipfile.ZipFile(filename, 'w')
+            archive = zipfile.ZipFile(filename, "w")
             core_file = os.path.join(self.logs_path, self.LOGS_CORE)
             if os.path.exists(core_file):
                 archive.write(core_file, os.path.basename(core_file))
-            ui_file = os.path.join(self.logs_path, self.LOGS_UI)
-            if os.path.exists(ui_file):
-                archive.write(ui_file, os.path.basename(ui_file))
+            if os.path.exists(electron_log_path):
+                archive.write(electron_log_path, os.path.basename(electron_log_path))
             archive.close()
-        
-        except:
-            self.logger.exception('Unable to create logs archive:')
-            return None
+
+        except Exception as error:
+            self.logger.exception("Unable to create logs archive:")
+            raise Exception("Error generating log zip") from error
 
         return filename
-    
-if __name__=='__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    import pprint
-
-    pp = pprint.PrettyPrinter(indent=2)
-
-    #TODO

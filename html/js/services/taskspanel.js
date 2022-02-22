@@ -9,62 +9,49 @@ angular
 .service('tasksPanelService', ['$mdPanel', function($mdPanel) {
     var self = this;
     self.mdPanelRef = null;
-    self.items = [];
+    self.panels = {};
     self.panelSize = 500;
 
     // panel controller
     // used to close item and hide panel when items list is empty
-    self.PanelCtl = function(mdPanelRef) {
-        // set reference to current panel
+    self.PanelCtl = function(mdPanelRef, $scope) {
         self.mdPanelRef = mdPanelRef;
-
-        // click on item
+        this.panels = [];
+        $scope.$watchCollection(
+            () => self.panels,
+            (newValue) => {
+                if (!newValue) return;
+                this.panels = Object.values(newValue);
+            }
+        );
         this.click = function(callback) {
             if( callback ) {
                 callback();
             }
         };
 
-        // close action
-        this.close = function(id) {
-            // remove specified item
-            if( self.items.length>1 ) {
-                // search for item to remove it
-                for( i=0; i<self.items.length; i++ ) {
-                    if( self.items[i].id===id ) {
-                        // close callback
-                        if( self.items[i].close.onClose ) {
-                            self.items[i].close.onClose(self.items[i].id);
-                        }
-
-                        // remove item
-                        self.items.splice(i, 1);
-                        break;
-                    }
+        this.close = function(panelId) {
+            if (Object.keys(self.panels) > 1) {
+                var panel = self.panels[panelId];
+                if (panel && panel.close.onClose) {
+                    panel.close.onClose(panelId);
+                    delete self.panels[panelId];
                 }
-
-            } else {
-                // close callback
-                if( self.items[0].close.onClose ) {
-                    self.items[0].close.onClose(self.items[0].id);
-                }
-                
-                // hide panel
+            }
+            if (Object.keys(self.panels).length === 0) {
                 self.__hidePanel();
             }
         };
     };
 
-    // clear all items properly 
     self.__clearItems = function() {
-        while( self.items.length ) {
-            self.items.pop();
+        for (var panelId of Object.keys(self.panels)) {
+            delete self.panels[panelId];
         }
     };
 
-    // hide panel
     self.__hidePanel = function() {
-        if( self.mdPanelRef ) {
+        if (self.mdPanelRef) {
             self.mdPanelRef.close().then(function() {
                 self.__clearItems();
             }, function() {
@@ -75,10 +62,8 @@ angular
         }
     };
 
-    // show panel
     self.__showPanel = function() {
-        // stop if panel already exists
-        if( self.mdPanelRef ) {
+        if (self.mdPanelRef) {
             return;
         }
 
@@ -113,20 +98,18 @@ angular
             panelClass: 'update-panel',
             controller: self.PanelCtl,
             controllerAs: 'ctl',
-            locals: {
-                items: self.items
-            },
             template: '<md-content md-theme="alt">' +
                       '    <md-list>' +
-                      '        <md-list-item ng-repeat="item in ctl.items">' +
+                      '        <md-list-item ng-repeat="panel in ctl.panels">' +
                       '            <div style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">' +
-                      '                <md-progress-circular md-mode="indeterminate" md-diameter="20px" class="progress-circular-white" style="float:left; padding-right:10px;" ng-if="item.loader"></md-progress-circular>' +
-                      '                {{item.label}}' +
+                      '                <md-progress-circular md-mode="indeterminate" md-diameter="20px" class="progress-circular-white" style="float:left; padding-right:10px;" ng-if="panel.loader===true"></md-progress-circular>' +
+                      '                <md-progress-circular md-mode="determinate" md-diameter="20px" class="progress-circular-white" style="float:left; padding-right:10px;" ng-if="panel.loader===\'percent\'" value="{{panel.percent}}"></md-progress-circular>' +
+                      '                {{panel.label}}' +
                       '            </div>' +
-                      '            <md-icon md-svg-icon="{{item.action.icon}}" class="md-secondary" ng-if="item.action" ng-click="ctl.click(item.action.onAction)" aria-label="Action">' +
-                      '                <md-tooltip md-direction="top">{{item.action.tooltip}}</md-tooltip>' +
+                      '            <md-icon md-svg-icon="{{panel.action.icon}}" class="md-secondary" ng-if="panel.action" ng-click="ctl.click(panel.action.onAction)" aria-label="Action">' +
+                      '                <md-tooltip md-direction="top">{{panel.action.tooltip}}</md-tooltip>' +
                       '            </md-icon>' +
-                      '            <md-icon md-svg-icon="close" class="md-secondary" ng-if="!item.close.disabled" ng-click="ctl.close(item.id)" aria-label="Close">' +
+                      '            <md-icon md-svg-icon="close" class="md-secondary" ng-if="!panel.close.disabled" ng-click="ctl.close(panel.id)" aria-label="Close">' +
                       '                <md-tooltip md-direction="top">Close</md-tooltip>' +
                       '            </md-icon>' +
                       '            <md-divider ng-if="!$last"></md-divider>' +
@@ -137,7 +120,7 @@ angular
     };
 
     /**
-     * add item to panel
+     * Add new panel
      * panel will popup if it's the first item
      * @param label (string): item label (can be html)
      * @param action (obj): action object describes available user action (null if no action)::
@@ -151,7 +134,7 @@ angular
      *                           onClose (function): callback on button click
      *                           disabled (bool): true to disable close button
      *                       }
-     * @param loader (bool): display a circular progress
+     * @param loader (bool or 'percent'): display a circular progress with progress or infinite
      * @return item identifier to close it programmatically
      */
     self.addItem = function(label, action, close, loader) {
@@ -160,38 +143,33 @@ angular
             disabled: false
         };
 
-        var item = {
-            id: new Date().valueOf(),
+        var panelId = new Date().valueOf();
+        self.panels[panelId] = {
+            id: panelId,
             action: action,
             label: label,
             close: close || defaultClose,
-            loader: loader || false
+            loader: loader || false,
+            percent: 0,
         };
-        self.items.push(item);
-
-        // show panel
         self.__showPanel();
 
-        return item.id;
+        return panelId;
     };
 
-    /**
-     * remove item id
-     * @param itemId: item identifier returned by addItem
-     */
-    self.removeItem = function(itemId) {
-        if( self.items.length>1 ) {
-            for( i=0; i<self.items.length; i++ ) {
-                if( self.items[i].id===itemId ) {
-                    // remove item
-                    self.items.splice(i, 1);
-                    break;
-                }
-            }
-        } else {
-            // hide panel if necessary
+    self.removeItem = function(panelId) {
+        if (self.panels[panelId]) {
+            delete self.panels[panelId];
+        }
+        if (Object.keys(self.panels).length === 0) {
             self.__hidePanel();
         }
     };
+
+    self.setPercent = function(panelId, percent) {
+        if (self.panels[panelId]) {
+            self.panels[panelId].percent = percent;
+        }
+    }
 
 }]);

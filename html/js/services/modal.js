@@ -37,7 +37,7 @@ angular
     });
 
     self.closeModal = function(result) {
-        if( result===undefined || result===null ) {
+        if (result === undefined || result === null) {
             $mdDialog.cancel();
         }
         $mdDialog.hide(result);
