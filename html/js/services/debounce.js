@@ -21,7 +21,7 @@ angular
      */
     self.exec = function(id, callback, timeout, params) {
         // init internal structure
-        if( !self.debounces[id] ) {
+        if (!self.debounces[id]) {
             self.debounces[id] = {
                 promise: null,
                 promiseTimeout: null
@@ -29,7 +29,7 @@ angular
         }
 
         // check debounce for current callback
-        if( self.debounces[id].promise===null ) {
+        if (self.debounces[id].promise === null) {
             // init promise
             self.debounces[id].promise = $q.defer();
 
@@ -40,14 +40,14 @@ angular
         }
 
         // check if timeout is not already running
-        if( self.debounces[id].timeoutPromise ) {
+        if (self.debounces[id].timeoutPromise) {
             $timeout.cancel(self.debounces[id].timeoutPromise);
             self.debounces[id].timeoutPromise = null;
         }
 
         // launch timeout
         self.debounces[id].timeoutPromise = $timeout(function() {
-            var res = callback(params);
+            callback(params);
             self.debounces[id].promise.resolve();
         }, timeout, true, params);
 

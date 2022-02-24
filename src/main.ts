@@ -1,14 +1,13 @@
 import { app, BrowserWindow, screen, ipcMain, shell } from 'electron';
 import { appContext } from './app-context';
 import { createAppMenu } from './app-menu';
-import detectPort from 'detect-port';
-import { launchCore } from './app-core';
+import { appCore } from './app-core';
 import { createAppWindow, createSplashscreenWindow } from './app-window';
-import { parseArgs } from './utils';
+import { getRpcPort, parseArgs } from './utils';
 import { appLogger } from './app-logger';
-import { appSettings } from './app-settings';
 import { appUpdater } from './app-updater';
 import { appFileDownload } from './app-file-download';
+import isDev from 'electron-is-dev';
 require('@electron/remote/main').initialize();
 
 let mainWindow: BrowserWindow;
@@ -58,12 +57,17 @@ app.on('ready', async function () {
   appLogger.setLogLevel(args);
 
   try {
-    const rpcPort = appContext.isDev ? (appSettings.get('remote.rpcport') as number) : await detectPort(null);
     mainWindow = createAppWindow(splashScreenWindow);
     createAppMenu(mainWindow);
+
     appUpdater.configure(mainWindow);
     appFileDownload.configure(mainWindow);
-    launchCore(rpcPort);
+    const rpcPort = await getRpcPort();
+    if (isDev) {
+      appCore.startDev(rpcPort);
+    } else {
+      appCore.startProduction(rpcPort);
+    }
   } catch (error) {
     appLogger.error(`Unable to launch application: ${error?.message || 'unknown error'}`);
   }

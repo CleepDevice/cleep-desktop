@@ -4,7 +4,7 @@ angular
     var self = this;
 
     self.get = function(key) {
-        return electron.sendReturn('settings-get', key, true);
+        return electron.sendReturn('settings-get', key);
     };
 
     self.set = function(key, value) {
@@ -12,10 +12,10 @@ angular
     };
 
     self.getFilepath = function() {
-        return electron.sendReturn('settings-filepath', null, true);
+        return electron.sendReturn('settings-filepath');
     };
 
     self.has = function(key) {
-        return electron.sendReturn('settings.has', key, true);
+        return electron.sendReturn('settings.has', key);
     };
 }]);

@@ -1,4 +1,7 @@
 import { LoggerLevel, LoggerLevelEnum } from './app-logger';
+import detectPort from 'detect-port';
+import { appSettings } from './app-settings';
+import isDev from 'electron-is-dev';
 
 export interface CommandLineArgs {
   coreDisabled: boolean;
@@ -42,4 +45,16 @@ export function parseArgs(argv: string[]): CommandLineArgs {
   }
 
   return args;
+}
+
+export async function getRpcPort(): Promise<number> {
+  if (isDev) {
+    // use static port from config
+    return Number(appSettings.get('remote.rpcport'));
+  }
+
+  // detect available port for production
+  const rpcPort = await detectPort(null);
+  appSettings.set('remote.rpcport', rpcPort);
+  return rpcPort;
 }

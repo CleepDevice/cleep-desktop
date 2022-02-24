@@ -1,7 +1,6 @@
 import { app, ipcMain } from 'electron';
 import settings from 'electron-settings';
 import isDev from 'electron-is-dev';
-import { appLogger } from './app-logger';
 
 const DEFAULT_SETTINGS: {
   [k: string]: string | number | boolean | { [k: string]: string };
