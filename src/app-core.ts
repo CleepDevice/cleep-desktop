@@ -2,57 +2,54 @@ import fs from 'fs';
 import path from 'path';
 import { appContext } from './app-context';
 import { app, dialog } from 'electron';
-import { spawn } from 'child_process';
+import { ChildProcessByStdio, spawn, SpawnOptionsWithStdioTuple, StdioNull, StdioPipe } from 'child_process';
 import os from 'os';
 import { Readable } from 'stream';
 import { appLogger } from './app-logger';
 import { appSettings } from './app-settings';
+import isDev from 'electron-is-dev';
 
-export function launchCore(rpcPort: number): void {
-  // save rpcport to config to be used in js app and python app
-  appContext.rpcPort = rpcPort;
-  appSettings.set('remote.rpcport', rpcPort);
+export class AppCore {
+  private cacheDir: string;
+  private configFilePath: string;
+  private configFileDir: string;
+  private configFilename: string;
+  private startupTimestamp: number;
+  private coreProcess: ChildProcessByStdio<null, Readable, Readable>;
+  private coreStartupError: string;
 
-  if (appContext.coreDisabled) {
-    appLogger.debug('Core disabled');
-    return;
+  constructor() {
+    this.configFilePath = appSettings.filepath();
+    this.configFilename = path.basename(this.configFilePath);
+    this.configFileDir = path.dirname(this.configFilePath);
+    this.initCacheDir();
   }
 
-  // get config file path
-  const configFile = appSettings.filepath();
-  const cachePath = path.join(app.getPath('userData'), 'cache_cleepdesktop');
-  const configPath = path.dirname(configFile);
-  const configFilename = path.basename(configFile);
-  let startupError = '';
-  let coreStartupTime: number;
+  private initCacheDir() {
+    this.cacheDir = path.join(app.getPath('userData'), 'cache_cleepdesktop');
 
-  // check whether cache dir exists or not
-  if (!fs.existsSync(cachePath)) {
-    appLogger.debug('Create cache dir' + cachePath);
-    fs.mkdirSync(cachePath);
-  }
-
-  if (!appContext.isDev) {
-    // launch release mode
-    appLogger.debug('Launch release mode');
-
-    // prepare command line
-    let commandline = path.join(__dirname + '.unpacked/', 'cleepdesktopcore/');
-    appLogger.debug('cmdline with asar: ' + commandline);
-    if (!fs.existsSync(commandline)) {
-      commandline = path.join(__dirname, 'cleepdesktopcore/');
-      appLogger.info('cmdline without asar: ' + commandline);
+    if (!fs.existsSync(this.cacheDir)) {
+      appLogger.info('Create cache directory' + this.cacheDir);
+      fs.mkdirSync(this.cacheDir);
     }
+  }
 
-    // append bin name
+  public startProduction(rpcPort: number): void {
+    appLogger.debug('Start core in production mode');
+
+    let coreBin = path.join(__dirname + '.unpacked/', 'cleepdesktopcore/');
+    if (!fs.existsSync(coreBin)) {
+      coreBin = path.join(__dirname, 'cleepdesktopcore/');
+    }
     if (process.platform == 'win32') {
-      commandline = path.join(commandline, 'cleepdesktopcore.exe');
+      coreBin = path.join(coreBin, 'cleepdesktopcore.exe');
     } else {
-      commandline = path.join(commandline, 'cleepdesktopcore');
+      coreBin = path.join(coreBin, 'cleepdesktopcore');
     }
+
     // check binary exists (antiviral can delete pyinstaller generated binary)
-    if (!fs.existsSync(commandline)) {
-      appLogger.error('Cleepdesktop core binary not found on path "' + commandline + '"');
+    if (!fs.existsSync(coreBin)) {
+      appLogger.error('Cleepdesktop core binary not found on path "' + coreBin + '"');
       dialog.showErrorBox(
         'Fatal error',
         'Unable to properly start application.\n' +
@@ -62,75 +59,69 @@ export function launchCore(rpcPort: number): void {
       app.exit(1);
     }
 
-    // launch command line
-    const debug = appSettings.has('cleep.debug') && appSettings.get('cleep.debug') ? 'debug' : 'release';
-    appLogger.debug(
-      'Core commandline: ' +
-        commandline +
-        ' ' +
-        appContext.rpcPort +
-        ' ' +
-        cachePath +
-        ' ' +
-        configPath +
-        ' ' +
-        configFilename +
-        ' ' +
-        debug,
-    );
-    coreStartupTime = Math.round(Date.now() / 1000);
-    appContext.coreProcess = spawn(commandline, [
-      String(appContext.rpcPort),
-      cachePath,
-      configPath,
-      configFilename,
-      'release',
-      'false',
-    ]);
-  } else {
-    // launch dev
-    appLogger.debug('Launch development mode');
-    appLogger.debug(
-      'Core commandline: python3 cleepdesktopcore.py ' +
-        appContext.rpcPort +
-        ' ' +
-        cachePath +
-        ' ' +
-        configPath +
-        ' ' +
-        configFilename +
-        ' debug',
-    );
-    let python_bin = 'python3';
-    const python_args = [
+    const debug = appSettings.get('cleep.debug') ? 'debug' : 'release';
+    const coreArgs = [String(rpcPort), this.cacheDir, this.configFileDir, this.configFilename, debug, 'true'];
+
+    this.startCore(coreBin, coreArgs);
+  }
+
+  public startDev(rpcPort: number): void {
+    appLogger.debug('Start core in development mode');
+
+    const coreBin = process.platform === 'win32' ? 'py -3' : 'python3';
+    const coreArgs: string[] = [
       'cleepdesktopcore.py',
-      String(appContext.rpcPort),
-      cachePath,
-      configPath,
-      configFilename,
+      String(rpcPort),
+      this.cacheDir,
+      this.configFileDir,
+      this.configFilename,
       'debug',
       'true',
     ];
     if (process.platform === 'win32') {
-      python_bin = 'py';
-      python_args.unshift('-3');
+      coreArgs.unshift('-3');
     }
-    coreStartupTime = Math.round(Date.now() / 1000);
-    appContext.coreProcess = spawn(python_bin, python_args);
+
+    this.startCore(coreBin, coreArgs);
   }
 
-  // handle core stdout
-  appContext.coreProcess.stdout.on('data', (data: Readable) => {
-    if (appContext.isDev) {
-      // only log message in developer mode
-      const message = data.toString();
-      appLogger.debug(message);
-    }
-  });
+  private startCore(binary: string, args: string[]): void {
+    appLogger.debug(`Core commandline: ${binary} ${args.join(' ')}`);
+    this.startupTimestamp = Math.round(Date.now() / 1000);
+    const options: SpawnOptionsWithStdioTuple<StdioNull, StdioPipe, StdioPipe> = { stdio: ['ignore', 'pipe', 'pipe'] };
+    this.coreProcess = spawn(binary, args, options);
 
-  // handle core stderr
-  appContext.coreProcess.stderr.on('data', (data: Readable) => {
-    //do not send user warnings
+    // handle process events
+    this.coreProcess.on('close', this.handleCoreProcessClosed);
+    this.coreProcess.stdout.on('data', this.handleCoreStdoutData);
+    this.coreProcess.stderr.on('data', this.handleCoreStderrData);
+  }
+
+  private handleCoreProcessClosed(code: number) {
+    if (!appContext.closingApplication) {
+      appLogger.debug(`Cleepdesktopcore exited with code "${code}"`);
+      if (code !== 0) {
+        // error occured, display error to user before terminates application
+        const error = this.coreStartupError || 'unknown error';
+        dialog.showErrorBox(
+          'Fatal error',
+          `Unable to properly start application.\n${error}\nCleepDesktop will stop now.`,
+        );
+        app.quit();
+      }
+    }
+  }
+
+  private handleCoreStdoutData(data: Readable): void {
+    if (isDev) {
+      return;
+    }
+
+    appLogger.debug(data.toString());
+  }
+
+  private handleCoreStderrData(data: Readable): void {
+    // do not process user warning messages
     const message = data.toString();
     if (message.search('UserWarning:') != -1) {
       appLogger.debug('Drop UserWarning message');
@@ -139,7 +130,7 @@ export function launchCore(rpcPort: number): void {
 
     // handle ASCII error
     if (message.search('hostname seems to have unsupported characters') != -1) {
-      startupError =
+      this.coreStartupError =
         'Your computer hostname "' +
         os.hostname() +
         '" contains invalid characters. Please update it using only ASCII chars.';
@@ -147,26 +138,11 @@ export function launchCore(rpcPort: number): void {
 
     // only handle startup crash (5 first seconds), after core will handle it
     const now = Math.round(Date.now() / 1000);
-    if (now <= coreStartupTime + 5) {
+    if (now <= this.startupTimestamp + 5) {
       appLogger.error(message);
-      throw new Error(message);
+      // TODO useful ?? throw new Error(message);
     }
-  });
-
-  // handle end of process
-  appContext.coreProcess.on('close', (code: number) => {
-    if (!appContext.closingApplication) {
-      appLogger.error('Core process exited with code "' + code + '"');
-      if (code !== 0) {
-        // error occured, display error to user before terminates application
-        dialog.showErrorBox(
-          'Fatal error',
-          'Unable to properly start application.\n' + startupError + '\nCleepDesktop will stop now.',
-        );
-
-        // stop application
-        app.quit();
-      }
-    }
-  });
+  }
 }
+
+export const appCore = new AppCore();
