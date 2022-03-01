@@ -21,7 +21,7 @@
                 <md-card-title-text>
                     <span class="md-headline">
                         <md-icon class="rounded-icon" md-svg-icon="information-outline"></md-icon>
-                        CleepDesktop v{{ctl.appContext.version}}
+                        CleepDesktop
                     </span>
                 </md-card-title-text>
             </md-card-title>
@@ -32,20 +32,6 @@
                 This application is an open-source software under 
                 <a href="https://github.com/tangb/CleepDesktop/blob/master/LICENSE.txt" target="_blank">MIT License</a>.
                 <br/>
-            </md-card-content>
-        </md-card>
-
-        <!-- changelog -->
-        <md-card ng-if="ctl.appContext.changelog.length>0">
-            <md-card-title>
-                <md-card-title-text>
-                    <span class="md-headline">
-                        <md-icon class="rounded-icon" md-svg-icon="note-outline"></md-icon>
-                        Changelog v{{ctl.appContext.version}}
-                    </span>
-                </md-card-title-text>
-            </md-card-title>
-            <md-card-content ng-bind-html="ctl.appContext.changelog">
             </md-card-content>
         </md-card>
 

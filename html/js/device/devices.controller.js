@@ -5,12 +5,13 @@ angular
 .module('Cleep')
 .controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope', 'electronService',
 function($state, devicesService, toastService, confirmService, $rootScope, electron) {
+
     var self = this;
     self.devicesService = devicesService;
 
     // open device page
     self.openDevicePage = function(device) {
-        if( !device ) {
+        if (!device) {
             toastService.error('Invalid device');
         }
 
@@ -60,7 +61,7 @@ function($state, devicesService, toastService, confirmService, $rootScope, elect
     // reload device page
     self.reloadDevicePage = function(device) {
         if( device.online ) {
-            $rootScope.$emit('reloaddevicepage', device.hostname);
+            $rootScope.$emit('reload-device-page', device.hostname);
         }
     }
 

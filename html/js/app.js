@@ -1,25 +1,5 @@
 var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router', 'ngSanitize', 'ngWebSocket']);
 
-/**
- * Empty controller
- */
-Cleep.controller('emptyController', [function() {
-    var self = this;
-}]);
-
-/**
- * Empty dialog controller
- * Add minimal stuff to handle properly dialog
- */
-Cleep.controller('emptyDialogController', ['closeModal',
-function(closeModal) {
-    var self = this;
-    self.closeModal = closeModal;
-}]);
-
-/**
- * Cleep controller
- */
 Cleep
 .controller('cleepController', ['$rootScope', '$state', 'cleepService', 'tasksPanelService', 'modalService',
                                 '$timeout', '$transitions', 'settingsService', 'loggerService', 'devicesService',
@@ -55,7 +35,7 @@ function($rootScope, $state, cleepService, tasksPanelService, modalService, $tim
                     .then((firstRun) => {
                         if (!firstRun) return;
                         $timeout(() => {
-                            self.openModal('emptyDialogController', 'js/help/help-dialog.html');
+                            self.openModal('helpDialogController', 'js/help/help-dialog.html');
                         }, 500);
                         settings.set('cleep.firstrun', false);
                     });
