@@ -58,3 +58,10 @@ export async function getRpcPort(): Promise<number> {
   appSettings.set('remote.rpcport', rpcPort);
   return rpcPort;
 }
+
+export function getError(error: Error): string {
+  if (!error) {
+    return 'Unknown error';
+  }
+  return `${error?.name || 'Error'}: ${error?.message || 'no message'}`;
+}

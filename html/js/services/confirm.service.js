@@ -4,6 +4,7 @@
 angular
 .module('Cleep')
 .service('confirmService', ['$mdDialog', function($mdDialog) {
+
     var self = this;
 
     /**

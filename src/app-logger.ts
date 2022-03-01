@@ -47,55 +47,47 @@ export class AppLogger {
   }
 
   public debug(message: string, extra?: unknown): void {
-    if (extra) {
-      logger.debug(message, extra);
-    } else {
-      logger.debug(message);
-    }
+    this.log('debug', 'main', message, extra);
   }
 
   public info(message: string, extra?: unknown): void {
-    if (extra) {
-      logger.info(message, extra);
-    } else {
-      logger.info(message);
-    }
+    this.log('info', 'main', message, extra);
   }
 
   public warn(message: string, extra?: unknown): void {
-    if (extra) {
-      logger.warn(message, extra);
-    } else {
-      logger.warn(message);
-    }
+    this.log('warn', 'main', message, extra);
   }
 
   public error(message: string, extra?: unknown): void {
-    if (extra) {
-      logger.error(message, extra);
-    } else {
-      logger.error(message);
+    this.log('error', 'main', message, extra);
+  }
+
+  private log(level: LoggerLevel, from: 'main' | 'renderer', message: string, extra?: unknown): void {
+    let loggerCall = null;
+    switch (level) {
+      case 'debug':
+        loggerCall = logger.debug;
+        break;
+      case 'info':
+        loggerCall = logger.debug;
+        break;
+      case 'warn':
+        loggerCall = logger.debug;
+        break;
+      case 'error':
+        loggerCall = logger.debug;
+        break;
+      default:
+        loggerCall = logger.info;
     }
+
+    const messageStr = `[${from}] ${message}`;
+    extra ? loggerCall(messageStr, extra) : loggerCall(messageStr);
   }
 
   private addIpcs() {
     ipcMain.on('logger-log', (_event, arg: LoggerMessage) => {
-      switch (arg.level) {
-        case 'debug':
-          this.debug(arg.message, arg.extra);
-          break;
-        case 'info':
-          this.info(arg.message, arg.extra);
-          break;
-        case 'warn':
-          this.warn(arg.message, arg.extra);
-          break;
-        case 'error':
-          this.error(arg.message, arg.extra);
-          break;
-        default:
-          this.info(arg.message, arg.extra);
-      }
+      this.log(arg.level, 'renderer', arg.message, arg.extra);
     });
 
     ipcMain.on('open-electron-logs', async () => {
@@ -103,9 +95,9 @@ export class AppLogger {
       shell.openPath(logPath.path);
     });
 
-    ipcMain.on('get-electron-log-path', async (event) => {
+    ipcMain.handle('get-electron-log-path', async () => {
       const logPath = await logger.transports.file.getFile();
-      event.returnValue = logPath.path;
+      return logPath.path;
     });
   }
 

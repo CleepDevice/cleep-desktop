@@ -3,6 +3,10 @@ import { BrowserWindow, ipcMain } from 'electron';
 import { autoUpdater, ProgressInfo, UpdateCheckResult, UpdateInfo } from 'electron-updater';
 import { appLogger } from './app-logger';
 import { appContext } from './app-context';
+import { balena, Balena } from './flash-tool/balena';
+import { getError } from './utils';
+import { appSettings } from './app-settings';
+import fs from 'fs';
 
 export interface UpdateProgress {
   progress: ProgressInfo;
@@ -12,26 +16,33 @@ export interface UpdateProgress {
   transferred: number;
 }
 
-export interface UpdateInfoJson {
-  version: string;
-  releaseDate?: string;
-  releaseName?: string;
-  releaseNotes?: string;
+export interface UpdateData {
+  version?: string;
+  changelog?: string;
+  percent?: number;
+  error?: string;
+  installed?: boolean;
 }
 
-export interface ErrorJson {
-  name?: string;
-  message?: string;
+export interface UpdateStatus {
+  lastUpdateCheck: number;
+  cleepDesktop: boolean;
+  flashTool: boolean;
 }
+
+export type OnUpdateAvailableCallback = (updateData: UpdateData) => void;
+export type OnDownloadProgressCallback = (updateData: UpdateData) => void;
 
 export class AppUpdater {
   public window: BrowserWindow;
-  public changelog: string;
+  public flashTool: Balena;
 
   constructor() {
     // enable this flag to test pre release
     // autoUpdater.allowPrerelease = true;
     autoUpdater.logger = appLogger;
+    this.flashTool = balena;
+    balena.setUpdateCallbacks(this.onFlashToolUpdateAvailable.bind(this), this.onFlashToolDownloadProgress.bind(this));
     this.addListeners();
     this.addIpcs();
   }
@@ -44,13 +55,48 @@ export class AppUpdater {
     autoUpdater.quitAndInstall();
   }
 
-  public getCurrentVersion(): string {
+  public getLatestVersion(): string {
     const version = autoUpdater.currentVersion;
     return version.format();
   }
 
-  public checkForUpdates(): Promise<UpdateCheckResult> {
-    return autoUpdater.checkForUpdates();
+  public async checkForUpdates(): Promise<UpdateStatus> {
+    const cleepDesktopUpdate = await this.checkForCleepDesktopUpdates();
+    const flashToolUpdate = await this.flashTool.checkForUpdates();
+    const lastUpdateCheck = Math.round(new Date().getTime() / 1000);
+    appSettings.set('cleep.lastupdatecheck', lastUpdateCheck);
+
+    const changelogSize = appContext.getChangelogFilesize();
+    if (changelogSize === 0) {
+      const changelog = this.getChangelog(cleepDesktopUpdate.updateInfo.releaseNotes);
+      appLogger.info('changelog:', changelog);
+      appContext.saveChangelog(changelog);
+    }
+
+    return {
+      lastUpdateCheck,
+      cleepDesktop: cleepDesktopUpdate.updateInfo.version !== appContext.version,
+      flashTool: flashToolUpdate,
+    };
+  }
+
+  private async checkForCleepDesktopUpdates(): Promise<UpdateCheckResult> {
+    if (appSettings.get('cleep.autoupdate')) {
+      return await autoUpdater.checkForUpdates();
+    }
+
+    // dummy content
+    return {
+      updateInfo: {
+        version: appContext.version,
+        releaseNotes: '',
+        files: [],
+        path: '',
+        releaseDate: null,
+        sha512: '',
+      },
+      versionInfo: null,
+    };
   }
 
   private addIpcs(): void {
@@ -58,75 +104,81 @@ export class AppUpdater {
       this.quitAndInstall();
     });
 
-    ipcMain.on('updater-check-for-updates', async (event) => {
-      event.returnValue = await this.checkForUpdates();
+    ipcMain.handle('updater-check-for-updates', async () => {
+      const updates = await this.checkForUpdates();
+      return updates;
     });
 
-    ipcMain.on('updater-get-current-version', (event) => {
-      event.returnValue = this.getCurrentVersion();
+    ipcMain.handle('updater-get-software-versions', () => {
+      const flashToolVersion = this.flashTool.getInstalledVersion();
+      const lastUpdateCheck = appSettings.get('cleep.lastupdatecheck');
+
+      return {
+        lastUpdateCheck,
+        cleepDesktop: appContext.version,
+        flashTool: flashToolVersion,
+      };
     });
   }
 
   private addListeners() {
     autoUpdater.addListener('error', (error: Error) => {
-      this.window.webContents.send('updater-error', this.convertErrorToJson(error));
-    });
-
-    autoUpdater.addListener('checking-for-update', () => {
-      this.window.webContents.send('updater-checking-for-update');
+      const data: UpdateData = {
+        percent: 100,
+        error: getError(error),
+      };
+      this.window.webContents.send('updater-cleepdesktop-download-progress', data);
     });
 
     autoUpdater.addListener('update-available', (info: UpdateInfo) => {
-      appLogger.info(`Update available (v${info.version})`);
-      this.window.webContents.send('updater-update-available', this.convertUpdateInfoToJson(info));
-    });
+      appLogger.info(`CleepDesktop update available (v${info.version})`);
 
-    autoUpdater.addListener('update-not-available', (info: UpdateInfo) => {
-      this.window.webContents.send('updater-update-not-available', this.convertUpdateInfoToJson(info));
+      const changelog = this.getChangelog(info.releaseNotes);
+      const data: UpdateData = {
+        version: info.version,
+        changelog: changelog,
+        percent: 0,
+      };
+      this.window.webContents.send('updater-cleepdesktop-update-available', data);
     });
 
     autoUpdater.addListener('download-progress', (progress: UpdateProgress) => {
-      appLogger.debug(`Downloading ${progress.percent}`);
-      this.window.webContents.send('updater-download-progress', progress);
+      const data: UpdateData = {
+        percent: progress.percent,
+      };
+      this.window.webContents.send('updater-cleepdesktop-download-progress', data);
     });
 
     autoUpdater.addListener('update-downloaded', (info: UpdateInfo) => {
-      appLogger.info('Update downloaded');
-      if (this.changelog) {
-        appContext.saveChangelog(this.changelog);
-      }
-      this.window.webContents.send('updater-update-downloaded', this.convertUpdateInfoToJson(info));
+      const changelog = this.getChangelog(info.releaseNotes);
+      appContext.saveChangelog(changelog);
+
+      const data: UpdateData = {
+        percent: 100,
+        installed: true,
+      };
+      this.window.webContents.send('updater-cleepdesktop-download-progress', data);
     });
   }
 
-  private convertErrorToJson(error: Error): ErrorJson {
-    if (!error) {
-      return;
-    }
-    return {
-      name: error?.name,
-      message: error?.message,
-    };
+  private onFlashToolUpdateAvailable(updateData: UpdateData): void {
+    this.window.webContents.send('updater-flashtool-update-available', updateData);
   }
 
-  private convertUpdateInfoToJson(info: UpdateInfo): UpdateInfoJson {
-    this.setChangelog(info.releaseNotes);
-    return {
-      version: info.version,
-      releaseDate: info.releaseDate,
-      releaseName: info.releaseName,
-      releaseNotes: this.changelog,
-    };
+  private onFlashToolDownloadProgress(updateData: UpdateData): void {
+    this.window.webContents.send('updater-flashtool-download-progress', updateData);
   }
 
-  private setChangelog(changelog?: string | ReleaseNoteInfo[]): void {
+  private getChangelog(changelog?: string | ReleaseNoteInfo[]): string {
     if (!changelog) {
-      return;
+      return '';
     }
     if (typeof changelog !== 'string') {
-      changelog.forEach((note) => (this.changelog += `${note.version}: ${note.note}`));
+      let releaseNote = '';
+      changelog.forEach((note) => (releaseNote += `${note.version}: ${note.note}\n`));
+      return releaseNote;
     } else {
-      this.changelog = changelog;
+      return changelog;
     }
   }
 }

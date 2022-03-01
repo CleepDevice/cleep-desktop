@@ -143,6 +143,12 @@ export class AppCore {
       // TODO useful ?? throw new Error(message);
     }
   }
+
+  public kill(): void {
+    if (this.coreProcess) {
+      this.coreProcess.kill('SIGTERM');
+    }
+  }
 }
 
 export const appCore = new AppCore();

@@ -3,6 +3,7 @@ import url from 'url';
 import { appContext } from './app-context';
 import path from 'path';
 import { appLogger } from './app-logger';
+import isDev from 'electron-is-dev';
 
 // create application main window
 export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindow {
@@ -12,7 +13,6 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
       webviewTag: true,
       nodeIntegration: true,
       contextIsolation: false,
-      enableRemoteModule: true,
     },
     width: 1024,
     height: 600,
@@ -55,7 +55,7 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
   });
 
   // Open the DevTools in dev mode only
-  if (appContext.isDev || process.env.CLEEPDESKTOP_DEBUG) {
+  if (isDev || process.env.CLEEPDESKTOP_DEBUG) {
     // open devtool in dev mode
     mainWindow.webContents.openDevTools();
 

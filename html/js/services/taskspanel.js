@@ -101,15 +101,15 @@ angular
             template: '<md-content md-theme="alt">' +
                       '    <md-list>' +
                       '        <md-list-item ng-repeat="panel in ctl.panels">' +
-                      '            <div style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">' +
+                      '            <div style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: white;">' +
                       '                <md-progress-circular md-mode="indeterminate" md-diameter="20px" class="progress-circular-white" style="float:left; padding-right:10px;" ng-if="panel.loader===true"></md-progress-circular>' +
                       '                <md-progress-circular md-mode="determinate" md-diameter="20px" class="progress-circular-white" style="float:left; padding-right:10px;" ng-if="panel.loader===\'percent\'" value="{{panel.percent}}"></md-progress-circular>' +
                       '                {{panel.label}}' +
                       '            </div>' +
-                      '            <md-icon md-svg-icon="{{panel.action.icon}}" class="md-secondary" ng-if="panel.action" ng-click="ctl.click(panel.action.onAction)" aria-label="Action">' +
+                      '            <md-icon md-svg-icon="{{panel.action.icon}}" class="md-secondary white-icon" ng-if="panel.action" ng-click="ctl.click(panel.action.onAction)">' +
                       '                <md-tooltip md-direction="top">{{panel.action.tooltip}}</md-tooltip>' +
                       '            </md-icon>' +
-                      '            <md-icon md-svg-icon="close" class="md-secondary" ng-if="!panel.close.disabled" ng-click="ctl.close(panel.id)" aria-label="Close">' +
+                      '            <md-icon md-svg-icon="close" class="md-secondary white-icon" ng-if="!panel.close.disabled" ng-click="ctl.close(panel.id)">' +
                       '                <md-tooltip md-direction="top">Close</md-tooltip>' +
                       '            </md-icon>' +
                       '            <md-divider ng-if="!$last"></md-divider>' +
@@ -137,7 +137,7 @@ angular
      * @param loader (bool or 'percent'): display a circular progress with progress or infinite
      * @return item identifier to close it programmatically
      */
-    self.addItem = function(label, action, close, loader) {
+    self.addPanel = function(label, action, close, loader) {
         var defaultClose = {
             onClose: null,
             disabled: false
@@ -157,7 +157,7 @@ angular
         return panelId;
     };
 
-    self.removeItem = function(panelId) {
+    self.removePanel = function(panelId) {
         if (self.panels[panelId]) {
             delete self.panels[panelId];
         }

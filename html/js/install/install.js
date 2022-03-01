@@ -6,6 +6,7 @@ angular
 .controller('installController', ['$rootScope', 'toastService', 'confirmService', 'loggerService', 'updateService', 
                                 'installService', 'modalService', 'cleepService', 'downloadService',
 function($rootScope, toast, confirm, logger, updateService, installService, modalService, cleepService, downloadService) {
+
     var self = this;
     self.prefs = null;
     self.installService = installService;
@@ -20,7 +21,7 @@ function($rootScope, toast, confirm, logger, updateService, installService, moda
     };
 
     self.gotoManualInstall = function() {
-        cleepUi.openPage('installManually');
+        $rootScope.$broadcast('open-page', 'installManually');
     };
 
     self.openIsoDialog = function() {
@@ -58,8 +59,8 @@ function($rootScope, toast, confirm, logger, updateService, installService, moda
         self.installService.installConfig.wifi = null;
     };
 
-    self.isEtcherAvailable = function() {
-        return updateService.isEtcherAvailable();
+    self.isFlashtoolAvailable = function() {
+        return !!updateService.flashToolUpdate?.version;
     }
 
     self.startInstall = function() {

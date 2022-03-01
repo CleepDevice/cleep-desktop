@@ -1,4 +1,4 @@
-<md-dialog aria-label="Preferences" flex="80">
+<md-dialog flex="80">
 <form>
     <md-toolbar>
         <div class="md-toolbar-tools">
@@ -30,13 +30,35 @@
                             <md-list-item>
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
                                 <p>Prefered language</p>
-                                <md-select ng-model="ctl.config.cleep.locale" aria-label="Language">
+                                <md-select ng-model="ctl.config.cleep.locale">
                                     <md-option value="en">English</md-option>
                                 </md-select>
                             </md-list-item>
                         </md-list>
                     </md-card-content>
                 </md-card>
+
+                <!-- update -->
+                <md-card>
+                    <md-card-title>
+                        <md-card-title-text>
+                            <span class="md-headline">
+                                <md-icon class="rounded-icon" md-svg-icon="update"></md-icon>
+                                Updates
+                            </span>
+                        </md-card-title-text>
+                    </md-card-title>
+                    <md-card-content>
+                        <md-list>
+                            <md-list-item>
+                                <md-icon md-svg-icon="chevron-right"></md-icon>
+                                <p>Auto-update application</p>
+                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.autoupdate"></md-switch>
+                            </md-list-item>
+                        </md-list>
+                    </md-card-content>
+                </md-card>
+
             </md-tab>
             
             <!-- cache -->
@@ -58,7 +80,7 @@
                             <md-list-item ng-repeat="cached in ctl.cacheds">
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
                                 <p>{{cached.filename}} ({{cached.filesize | hrBytes}})</p>
-                                <md-icon class="md-secondary" ng-click="ctl.purgeCacheFile(cached.filename)" aria-label="Delete" md-svg-icon="delete"></md-icon>
+                                <md-icon class="md-secondary" ng-click="ctl.purgeCacheFile(cached.filename)" md-svg-icon="delete"></md-icon>
                             </md-list-item>
                         </md-list>
                         <md-card-actions layout="row" layout-align="end center">
@@ -74,13 +96,13 @@
             <!-- advanced -->
             <md-tab label="Advanced" layout-padding>
 
-                <!-- iso raspios -->
+                <!-- iso -->
                 <md-card>
                     <md-card-title>
                         <md-card-title-text>
                             <span class="md-headline">
                                 <md-icon class="rounded-icon" md-svg-icon="download"></md-icon>
-                                Installation files
+                                Installation images
                             </span>
                         </md-card-title-text>
                     </md-card-title>
@@ -89,12 +111,12 @@
                             <md-list-item>
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
                                 <p>Include latest Raspios versions in installer</p>
-                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.isoraspios" aria-label="Raspios"></md-switch>
+                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.isoraspios"></md-switch>
                             </md-list-item>
                             <md-list-item>
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
                                 <p>Allow local file iso flashing</p>
-                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.isolocal" aria-label="Local"></md-switch>
+                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.isolocal"></md-switch>
                             </md-list-item>
                         </md-list>
                     </md-card-content>
@@ -118,7 +140,7 @@
                                     <h3>Send CleepDesktop crash report (no personal information are sent to our server!).</h3>
                                     <p>This software is open-source and enabling crash report will help us improving the application.</p>
                                 </div>
-                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.crashreport" aria-label="Debug"></md-switch>
+                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.crashreport"></md-switch>
                             </md-list-item>
                             <md-list-item class="md-2-line">
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
@@ -126,22 +148,22 @@
                                     <h3>Enable debug mode</h3>
                                     <p>Enabling debug mode add more messages in application log file. This is useful to report a problem.</p>
                                 </div>
-                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.debug" aria-label="Debug"></md-switch>
+                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.debug"></md-switch>
                             </md-list-item>
                             <md-list-item ng-click="ctl.openLogs()">
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
                                 <p>Open logs file</p>
-                                <md-button class="md-icon-button md-secondary" aria-label="Zip logs" ng-click="ctl.downloadZippedLogs()">
+                                <md-button class="md-icon-button md-secondary" ng-click="ctl.downloadZippedLogs()">
                                     <md-icon md-svg-icon="archive">
                                         <md-tooltip>Get zipped log files</md-tooltip>
                                     </md-icon>
                                 </md-button>
-                                <md-button class="md-icon-button md-secondary" aria-label="Open logs" ng-click="ctl.openElectronLogs()">
+                                <md-button class="md-icon-button md-secondary" ng-click="ctl.openElectronLogs()">
                                     <md-icon md-svg-icon="file">
                                         <md-tooltip>Open electron log file</md-tooltip>
                                     </md-icon>
                                 </md-button>
-                                <md-button class="md-icon-button md-secondary" aria-label="Open logs" ng-click="ctl.openCoreLogs()">
+                                <md-button class="md-icon-button md-secondary" ng-click="ctl.openCoreLogs()">
                                     <md-icon md-svg-icon="file">
                                         <md-tooltip>Open core log file</md-tooltip>
                                     </md-icon>

@@ -14,9 +14,10 @@ angular
      * @param controllerName: name of controller to inject into modal
      * @param templateUrl: associated controller template
      * @param data: data to pass to modal controller
+     * @param resolve: async modal data (promise)
      * @service closeModal: inject this service in your controller to close modal
      */
-    self.open = function(controllerName, templateUrl, data) {
+    self.open = function(controllerName, templateUrl, data, resolve) {
         return $mdDialog.show({
             controller: controllerName,
             controllerAs: 'ctl',
@@ -24,8 +25,10 @@ angular
                 closeModal: self.closeModal,
                 modalData: data,
             },
+            resolve: resolve,
             templateUrl: templateUrl,
             parent: angular.element(document.body),
+            bindToController: true,
             clickOutsideToClose:false,
             fullscreen: true
         });

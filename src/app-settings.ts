@@ -1,6 +1,7 @@
 import { app, ipcMain } from 'electron';
 import settings from 'electron-settings';
 import isDev from 'electron-is-dev';
+import { appContext } from './app-context';
 
 const DEFAULT_SETTINGS: {
   [k: string]: string | number | boolean | { [k: string]: string };
@@ -57,20 +58,20 @@ export class AppSettings {
   }
 
   private addIpcs() {
-    ipcMain.on('settings-get', (event, arg: KeyPath) => {
-      event.returnValue = this.get(arg);
+    ipcMain.handle('settings-get', (_event, arg: KeyPath) => {
+      return this.get(arg);
     });
 
     ipcMain.on('settings-set', (_event, arg: KeyValue) => {
       this.set(arg.key, arg.value);
     });
 
-    ipcMain.on('settings-filepath', (event) => {
-      event.returnValue = this.filepath();
+    ipcMain.handle('settings-filepath', () => {
+      return this.filepath();
     });
 
-    ipcMain.on('settings.has', (event, arg: KeyPath) => {
-      event.returnValue = this.get(arg);
+    ipcMain.handle('settings.has', (_event, arg: KeyPath) => {
+      return this.has(arg);
     });
   }
 
@@ -79,7 +80,7 @@ export class AppSettings {
     if (isDev) {
       settings.setSync('cleep.version', require('./package.json').version);
     } else {
-      settings.setSync('cleep.version', app.getVersion());
+      settings.setSync('cleep.version', appContext.version);
     }
     if (!settings.hasSync('cleep.isoraspios')) {
       settings.setSync('cleep.isoraspios', DEFAULT_SETTINGS.isoRaspios);
@@ -103,10 +104,16 @@ export class AppSettings {
     if (!settings.hasSync('cleep.externaluuid')) {
       settings.setSync('cleep.externaluuid', DEFAULT_SETTINGS.externalUuid);
     }
+    if (!settings.hasSync('cleep.lastupdatecheck')) {
+      settings.setSync('cleep.lastupdatecheck', 0);
+    }
+    if (!settings.hasSync('cleep.autoupdate')) {
+      settings.setSync('cleep.autoupdate', true);
+    }
 
-    // etcher section
-    if (!settings.hasSync('etcher.version')) {
-      settings.setSync('etcher.version', 'v0.0.0');
+    // flashtool section
+    if (!settings.hasSync('flashtool.version')) {
+      settings.setSync('flashtool.version', '');
     }
 
     // remote section

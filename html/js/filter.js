@@ -1,57 +1,52 @@
 /**
  * Timestamp to human readable string
  **/
- Cleep.filter('hrDatetime', function($filter, settingsService) {
-    return function(ts, shortYear) {
-        if( angular.isUndefined(ts) || ts===null )
+ Cleep.filter('hrDatetime', function(settingsService) {
+    return function(timestamp, shortYear) {
+        if (!timestamp) {
             return '-';
-        else
-        {
-            // date format https://en.wikipedia.org/wiki/Date_format_by_country
-            // TODO var locale = settingsService.get('cleep.locale');
-            var locale = 'en';
-            if( angular.isUndefined(shortYear) )
-            {
-                if( locale=='en' )
-                    return moment.unix(ts).format('MM/DD/YYYY HH:mm:ss');
-                else
-                    return moment.unix(ts).format('DD/MM/YYYY HH:mm:ss');
-            }
+        }
+        
+        // date format https://en.wikipedia.org/wiki/Date_format_by_country
+        var locale = settingsService.locale;
+        if (!shortYear) {
+            if( locale=='en' )
+                return moment.unix(timestamp).format('MM/DD/YYYY HH:mm:ss');
             else
-            {
-                if( locale=='en' )
-                    return moment.unix(ts).format('MM/DD/YY HH:mm:ss');
-                else
-                    return moment.unix(ts).format('DD/MM/YY HH:mm:ss');
-            }
+                return moment.unix(timestamp).format('DD/MM/YYYY HH:mm:ss');
+        } else {
+            if( locale=='en' )
+                return moment.unix(timestamp).format('MM/DD/YY HH:mm:ss');
+            else
+                return moment.unix(timestamp).format('DD/MM/YY HH:mm:ss');
         }
     };
 });
 
-Cleep.filter('hrTime', function($filter) {
-    return function(ts, withSeconds) {
+Cleep.filter('hrTime', function() {
+    return function(timestamp, withSeconds) {
         if( angular.isUndefined(ts) || ts===null )
             return '-';
         else
         {
             if( angular.isUndefined(withSeconds) )
-                return moment.unix(ts).format('HH:mm:ss');
+                return moment.unix(timestamp).format('HH:mm:ss');
             else
-                return moment.unix(ts).format('HH:mm');
+                return moment.unix(timestamp).format('HH:mm');
         }
     };
 });
 
-Cleep.filter('hrDate', function($filter) {
-    return function(ts, shortYear) {
-        if( angular.isUndefined(ts) || ts===null )
+Cleep.filter('hrDate', function() {
+    return function(timestamp, shortYear) {
+        if( angular.isUndefined(timestamp) || ts===null )
             return '-';
         else
         {
             if( angular.isUndefined(shortYear) )
-                return moment.unix(ts).format('DD/MM/YYYY');
+                return moment.unix(timestamp).format('DD/MM/YYYY');
             else
-                return moment.unix(ts).format('DD/MM/YY');
+                return moment.unix(timestamp).format('DD/MM/YY');
         }
     };
 });
@@ -60,7 +55,7 @@ Cleep.filter('hrDate', function($filter) {
  * Bytes to human readable
  * Code copied from https://gist.github.com/thomseddon/3511330
  */
-Cleep.filter('hrBytes', function($filter) {
+Cleep.filter('hrBytes', function() {
     return function(bytes, precision) {
         if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
         if (typeof precision === 'undefined') precision = 1;

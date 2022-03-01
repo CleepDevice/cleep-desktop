@@ -8,17 +8,13 @@ import { appLogger } from './app-logger';
 import { appUpdater } from './app-updater';
 import { appFileDownload } from './app-file-download';
 import isDev from 'electron-is-dev';
-require('@electron/remote/main').initialize();
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
 
-// application will quit, kill python process
 app.on('will-quit', function () {
-  if (appContext.coreProcess) {
-    appLogger.debug('Kill core');
-    appContext.coreProcess.kill('SIGTERM');
-  }
+  appLogger.debug('Kill core');
+  appCore.kill();
 });
 
 // quit when all windows are closed.
@@ -43,10 +39,10 @@ app.on('ready', async function () {
   appLogger.info('Platform: ' + process.platform);
   const display = screen.getPrimaryDisplay();
   appLogger.info('Display: ' + display.size.width + 'x' + display.size.height);
-  if (appContext.isDev) {
+  if (isDev) {
     appLogger.info('Version: ' + require('./package.json').version);
   } else {
-    appLogger.info('Version: ' + app.getVersion());
+    appLogger.info('Version: ' + appContext.version);
   }
 
   // splashscreen asap
@@ -62,11 +58,13 @@ app.on('ready', async function () {
 
     appUpdater.configure(mainWindow);
     appFileDownload.configure(mainWindow);
-    const rpcPort = await getRpcPort();
-    if (isDev) {
-      appCore.startDev(rpcPort);
-    } else {
-      appCore.startProduction(rpcPort);
+    if (!args.coreDisabled) {
+      const rpcPort = await getRpcPort();
+      if (isDev) {
+        appCore.startDev(rpcPort);
+      } else {
+        appCore.startProduction(rpcPort);
+      }
     }
   } catch (error) {
     appLogger.error(`Unable to launch application: ${error?.message || 'unknown error'}`);
@@ -80,6 +78,10 @@ ipcMain.on('allow-quit', (_event, arg) => {
 });
 
 // open external path
-ipcMain.on('open-path', (_event, arg: string) => {
-  shell.openPath(arg);
+ipcMain.on('open-path', (_event, path: string) => {
+  shell.openPath(path);
+});
+
+ipcMain.on('open-url-in-browser', (_event, url: string) => {
+  shell.openExternal(url);
 });

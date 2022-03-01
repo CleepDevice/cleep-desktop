@@ -1,5 +1,5 @@
 import { app, BrowserWindow, Menu, MenuItemConstructorOptions } from 'electron';
-import { appContext } from './app-context';
+import isDev from 'electron-is-dev';
 
 export function createAppMenu(window: BrowserWindow): void {
   const subMenuFile: MenuItemConstructorOptions = {
@@ -8,17 +8,16 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'Updates',
         click: () => {
-          window.webContents.send('openpage', 'updates');
+          window.webContents.send('open-page', 'updates');
         },
       },
       {
         label: 'Preferences',
         click: () => {
-          window.webContents.send(
-            'openmodal',
-            'preferencesController',
-            'js/preferences/preferences-dialog.html'
-          );
+          window.webContents.send('open-modal', {
+            controller: 'preferencesController',
+            template: 'js/preferences/preferences-dialog.html',
+          });
         },
       },
       {
@@ -36,12 +35,7 @@ export function createAppMenu(window: BrowserWindow): void {
 
   const subMenuEdit: MenuItemConstructorOptions = {
     label: 'Edit',
-    submenu: [
-      { role: 'cut' },
-      { role: 'copy' },
-      { role: 'paste' },
-      { role: 'selectAll' },
-    ],
+    submenu: [{ role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }],
   };
 
   // const subMenuDevice: MenuItemConstructorOptions = {
@@ -50,14 +44,14 @@ export function createAppMenu(window: BrowserWindow): void {
   //         {
   //             label: 'Install',
   //             click: () => {
-  //                 window.webContents.send('openpage', 'installAuto');
+  //                 window.webContents.send('open-page', 'installAuto');
   //             }
   //         }, {
   //             type: 'separator'
   //         }, {
   //             label: 'Monitoring',
   //             click: () => {
-  //                 window.webContents.send('openpage', 'monitoring');
+  //                 window.webContents.send('open-page', 'monitoring');
   //             }
   //         }
   //     ])
@@ -69,7 +63,7 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'Application help',
         click: () => {
-          window.webContents.send('openpage', 'help');
+          window.webContents.send('open-page', 'help');
         },
       },
       {
@@ -78,7 +72,7 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'Get support',
         click: () => {
-          window.webContents.send('openpage', 'support');
+          window.webContents.send('open-page', 'support');
         },
       },
       {
@@ -87,7 +81,7 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'About',
         click: () => {
-          window.webContents.send('openpage', 'about');
+          window.webContents.send('open-page', 'about');
         },
       },
     ]),
@@ -113,7 +107,7 @@ export function createAppMenu(window: BrowserWindow): void {
     subMenuFile,
     ...(isMac ? [subMenuEdit] : []),
     subMenuHelp,
-    ...(appContext.isDev ? [subMenuView] : []),
+    ...(isDev ? [subMenuView] : []),
   ];
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);

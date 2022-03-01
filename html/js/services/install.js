@@ -147,7 +147,7 @@ function($rootScope, $state, logger, cleepService, tasksPanelService, toast, $ti
             self.installing = true;
 
             if (!self.taskInstallPanel && !self.taskInstallPanelClosed) {
-                self.taskInstallPanel = tasksPanelService.addItem(
+                self.taskInstallPanel = tasksPanelService.addPanel(
                     'Installing Cleep on drive...',
                     {
                         onAction: self.jumpToInstallAuto,
@@ -172,7 +172,7 @@ function($rootScope, $state, logger, cleepService, tasksPanelService, toast, $ti
             self.status.percent = 100;
             self.status.total_percent = 100;
 
-            tasksPanelService.removeItem(self.taskInstallPanel);
+            tasksPanelService.removePanel(self.taskInstallPanel);
             self.taskInstallPanel = null;
             self.taskInstallPanelClosed = false;
 

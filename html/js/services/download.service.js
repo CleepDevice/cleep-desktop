@@ -5,22 +5,23 @@ angular
 .module('Cleep')
 .service('downloadService', ['tasksPanelService', 'toastService', 'electronService',
 function(tasksPanelService, toast, electron) {
+
     var self = this;
     self.downloadPanels = {};
 
     self.init = function() {
-        self.__addIpcs();
+        self.addIpcs();
     };
 
     self.downloadUrl = function(url) {
-        if (this.__isDownloadWithUrl(url)) {
+        if (this.isDownloadWithUrl(url)) {
             toast.warning('File is already downloading');
             return;
         }
         electron.send('download-file', url);
     }
 
-    self.__isDownloadWithUrl = function(url) {
+    self.isDownloadWithUrl = function(url) {
         for (var panel of Object.values(self.downloadPanels)) {
             if (panel.url === url) {
                 return true;
@@ -32,32 +33,24 @@ function(tasksPanelService, toast, electron) {
     self.cancelDownload = function(downloadId) {
         var panel = self.downloadPanels[downloadId];
         if (panel) {
-            tasksPanelService.removeItem(panel.panelId);
+            tasksPanelService.removePanel(panel.panelId);
             delete self.downloadPanels[downloadId];
         }
         electron.send('download-file-cancel', downloadId);
     };
 
-    self.__getDownloadPanel = function(url) {
-        for (var i=0; i<self.downloadPanels.length; i++) {
-            if (self.downloadPanels[i].url === url) {
-                return self.downloadPanels[i];
-            }
-        }
+    self.addIpcs = function() {
+        electron.on('download-file-status', self.onHandleDownloadStatus.bind(self));
+        electron.on('download-file-started', self.onHandleDownloadStarted.bind(self));
     }
 
-    self.__addIpcs = function() {
-        electron.on('download-file-status', self.__handleDownloadStatus.bind(self));
-        electron.on('download-file-started', self.__handleDownloadStarted.bind(self));
-    }
-
-    self.__handleDownloadStarted = function(_event, downloadData) {
+    self.onHandleDownloadStarted = function(_event, downloadData) {
         if (self.downloadPanels[downloadData.downloadId]) {
             // handle issue in electron-dl that trigger another download started when new one launched
             return;
         }
 
-        var panelId = tasksPanelService.addItem(
+        var panelId = tasksPanelService.addPanel(
             'Downloading ' + downloadData.filename + '...',
             {
                 onAction: () => { self.cancelDownload(downloadData.downloadId); },
@@ -78,22 +71,22 @@ function(tasksPanelService, toast, electron) {
         };
     };
 
-    self.__handleDownloadStatus = function(_event, status) {
+    self.onHandleDownloadStatus = function(_event, status) {
         if (status.status === 'downloading') {
-            self.__handleDownloadingStatus(status);
+            self.handleDownloadingStatus(status);
         } else if (status.status === 'canceled' || status.status === 'success' || status.status === 'failed') {
-            self.__handleEndOfDownload(status);
+            self.handleEndOfDownload(status);
         }
     };
 
-    self.__handleDownloadingStatus = function(status) {
+    self.handleDownloadingStatus = function(status) {
         var panel = self.downloadPanels[status.downloadId];
         if (panel) {
             tasksPanelService.setPercent(panel.panelId, status.percent);
         }       
     };
 
-    self.__handleEndOfDownload = function(status) {
+    self.handleEndOfDownload = function(status) {
         if (status.status === 'canceled') {
             toast.info('Download canceled');
         } else if (status.status === 'success') {
@@ -104,7 +97,7 @@ function(tasksPanelService, toast, electron) {
 
         var panel = self.downloadPanels[status.downloadId];
         if (panel) {
-            tasksPanelService.removeItem(panel.panelId);
+            tasksPanelService.removePanel(panel.panelId);
             delete self.downloadPanels[status.downloadId];
         }
     };

@@ -1,30 +1,31 @@
-import { app } from 'electron';
+import { app, ipcMain } from 'electron';
 import isDev from 'electron-is-dev';
 import { appLogger } from './app-logger';
 import path from 'path';
 import fs from 'fs';
+import * as Sentry from '@sentry/electron';
 
 class AppContext {
   public allowQuit = true;
   public closingApplication = false;
-  public rpcPort = 0;
-  public coreDisabled = false;
-  public isDev: boolean;
-  /* eslint-disable  @typescript-eslint/no-explicit-any */
-  public coreProcess: any;
   public version: string;
   public changelog: string;
 
   constructor() {
-    this.isDev = isDev;
-    if (this.isDev) {
+    if (isDev) {
       this.version = require('./package.json').version;
     } else {
       this.version = app.getVersion();
     }
-
     this.loadChangelog();
     this.configureCrashReport();
+    this.addIpcs();
+  }
+
+  private addIpcs(): void {
+    ipcMain.handle('get-changelog', async () => {
+      return this.changelog;
+    });
   }
 
   public saveChangelog(changelog: string): void {
@@ -35,6 +36,11 @@ class AppContext {
       const msg = error?.message || 'unknown error';
       appLogger.error(`Unable to save changelog: ${msg}`);
     }
+  }
+
+  public getChangelogFilesize(): number {
+    const changelogPath = this.getChangelogPath();
+    return fs.statSync(changelogPath).size;
   }
 
   public loadChangelog(): void {
@@ -55,13 +61,18 @@ class AppContext {
     return path.join(app.getPath('userData'), 'changelog.txt');
   }
 
+  public getChangelog(): string {
+    return this.changelog;
+  }
+
   private configureCrashReport(): void {
-    if (!this.isDev) {
-      appLogger.info('Enable crash report');
-      const { init } = require('@sentry/electron');
-      init({
+    if (!isDev) {
+      appLogger.info('Crash report is enabled');
+      Sentry.init({
         dsn: 'https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385',
       });
+    } else {
+      appLogger.info('Crash report is disabled');
     }
   }
 }

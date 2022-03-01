@@ -9,32 +9,32 @@
  */
 angular
 .module('Cleep')
-.service('cleepService', ['$http', '$q', '$rootScope', 'toastService', '$websocket', 'settingsService',
-function($http, $q, $rootScope, toast, $websocket, settingsService) {
+.service('cleepService', ['$http', '$q', '$rootScope', 'toastService', '$websocket', 'loggerService',
+function($http, $q, $rootScope, toast, $websocket, logger) {
 
     var self = this;
-
-    // set members
     self.__ws = null;
-    self.port = settingsService.get('remote.rpcport');
-    self.urlCommand = 'http://localhost:' + self.port + '/command';
-    self.urlWebsocket = 'ws://127.0.0.1:'+self.port+'/cleepws'
+    // self.port = settings.getSync('remote.rpcport');
+    self.urlCommand = null; //'http://localhost:' + self.port + '/command';
+    self.urlWebsocket = null; //'ws://127.0.0.1:'+self.port+'/cleepws'
 
     /**
      * Connect websocket to python server
      */
-    self.connectWebSocket = function()
-    {
+    self.connectWebSocket = function(port) {
+        self.urlWebsocket = 'ws://127.0.0.1:' + port + '/cleepws';
+        self.urlCommand = 'http://localhost:' + port + '/command';
+
         var defer = $q.defer();
 
         if( !self.__ws ) {
             self.__ws = $websocket(self.urlWebsocket, null, {reconnectIfNotNormalClose: true});
             self.__ws.onMessage(self.__websocketReceive);
             self.__ws.onClose(function() {
-                console.log('Websocket closed');
+                logger.debug('Websocket closed');
             });
             self.__ws.onOpen(function() {
-                console.log('Websocket opened');
+                logger.debug('Websocket opened');
                 defer.resolve('connected');
             });
         } else {

@@ -3,10 +3,9 @@
  */
 angular
 .module('Cleep')
-.controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'deviceService', 'downloadService',
-function($rootScope, $stateParams, logger, $document, $timeout, deviceService, downloadService) {
+.controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'deviceService', 'downloadService', 'electronService',
+function($rootScope, $stateParams, logger, $document, $timeout, deviceService, downloadService, electron) {
     var self = this;
-    self.shell = require('electron').shell;
     self.deviceUrl = $stateParams.url;
     self.wv = document.getElementById('deviceWv');
     self.deviceService = deviceService;
@@ -24,7 +23,7 @@ function($rootScope, $stateParams, logger, $document, $timeout, deviceService, d
         } else {
             //open external link
             logger.debug('Opening external url: ', event);
-            self.shell.openExternal(event.url);
+            electron.send('open-url-in-browser', event.url);
         }
     });
 

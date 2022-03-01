@@ -90,8 +90,10 @@ function($rootScope, $scope, cleepService, debounce, closeModal, electron) {
     };
 
     self.downloadZippedLogs = function() {
-        var electronLogPath = electron.sendReturn('get-electron-log-path');
-        cleepService.sendCommand('get_zipped_logs', 'core', {'electron_log_path': electronLogPath})
+        electron.sendReturn('get-electron-log-path')
+            .then((electronLogPath) => {
+                return cleepService.sendCommand('get_zipped_logs', 'core', {'electron_log_path': electronLogPath});
+            })
             .then(function(resp) {
                 electron.send('open-path', resp.data);
             });

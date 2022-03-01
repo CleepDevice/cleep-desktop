@@ -4,22 +4,22 @@ angular
     var self = this;
 
     self.error = function(message, duration) {
-        self.__toast(message, duration || 3000, 'error');
+        self.toast(message, duration || 3000, 'error');
     };
 
     self.warning = function(message, duration) {
-        self.__toast(message, duration || 2000, 'warning');
+        self.toast(message, duration || 2000, 'warning');
     };
 
     self.success = function(message, duration) {
-        self.__toast(message, duration || 1500, 'success');
+        self.toast(message, duration || 1500, 'success');
     };
 
     self.info = function(message, duration) {
-        self.__toast(message, duration || 1500, 'info');
+        self.toast(message, duration || 1500, 'info');
     };
 
-    self.__toast = function(message, duration, class_) {
+    self.toast = function(message, duration, class_) {
         $mdToast.show(
             $mdToast.simple()
                 .textContent(message)
