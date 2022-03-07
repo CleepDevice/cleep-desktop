@@ -4,9 +4,8 @@ import { autoUpdater, ProgressInfo, UpdateCheckResult, UpdateInfo } from 'electr
 import { appLogger } from './app-logger';
 import { appContext } from './app-context';
 import { balena, Balena } from './flash-tool/balena';
-import { getError } from './utils';
+import { getError, UpdateData } from './utils';
 import { appSettings } from './app-settings';
-import fs from 'fs';
 
 export interface UpdateProgress {
   progress: ProgressInfo;
@@ -16,14 +15,6 @@ export interface UpdateProgress {
   transferred: number;
 }
 
-export interface UpdateData {
-  version?: string;
-  changelog?: string;
-  percent?: number;
-  error?: string;
-  installed?: boolean;
-}
-
 export interface UpdateStatus {
   lastUpdateCheck: number;
   cleepDesktop: boolean;
@@ -31,11 +22,10 @@ export interface UpdateStatus {
 }
 
 export type OnUpdateAvailableCallback = (updateData: UpdateData) => void;
-export type OnDownloadProgressCallback = (updateData: UpdateData) => void;
 
 export class AppUpdater {
-  public window: BrowserWindow;
-  public flashTool: Balena;
+  private window: BrowserWindow;
+  private flashTool: Balena;
 
   constructor() {
     // enable this flag to test pre release

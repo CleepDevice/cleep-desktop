@@ -1,3 +1,4 @@
+import { appLogger } from '../app-logger';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const NodeWifi = require('node-wifi');
 
@@ -13,17 +14,34 @@ export interface WifiNetwork {
   security: WifiNetworkSecurity;
 }
 
+interface NodeWifiNetwork {
+  ssid: string;
+  bssid: string;
+  mac: string;
+  channel: number;
+  frequency: number;
+  signal_level: number;
+  quality: number;
+  security: string;
+  security_flags: string;
+  mode: string;
+}
+
+interface NodeWifiConnection extends NodeWifiNetwork {
+  iface: string;
+}
+
 export class Wifi {
-  private wifi: any;
   private networks: WifiNetwork[];
 
   constructor() {
-    this.wifi = NodeWifi.init({});
+    NodeWifi.init({});
   }
 
   public refreshNetworks(): Promise<WifiNetwork[]> {
     return new Promise((resolve, reject) => {
-      this.wifi.scan((error: any, networks: any[]) => {
+      NodeWifi.scan((error: unknown, networks: NodeWifiNetwork[]) => {
+        appLogger.debug('node-wifi.scan result', { error, networks });
         if (error) {
           reject(error);
         }
@@ -33,7 +51,19 @@ export class Wifi {
     });
   }
 
-  private parseNetworks(networks: any[]): void {
+  public hasWifi(): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      NodeWifi.getCurrentConnections((error: unknown, connections: NodeWifiConnection[]) => {
+        appLogger.debug('node-wifi.getCurrentConnections result', { error, connections });
+        if (error) {
+          reject(error);
+        }
+        resolve(connections.length > 0);
+      });
+    });
+  }
+
+  private parseNetworks(networks: NodeWifiNetwork[]): void {
     for (const network of networks) {
       this.networks.push({
         ssid: network?.ssid || 'unknown',
@@ -61,5 +91,3 @@ export class Wifi {
     return 'UNKNOWN';
   }
 }
-
-export const wifi = new Wifi();

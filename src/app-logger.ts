@@ -62,20 +62,20 @@ export class AppLogger {
     this.log('error', 'main', message, extra);
   }
 
-  private log(level: LoggerLevel, from: 'main' | 'renderer', message: string, extra?: unknown): void {
+  public log(level: LoggerLevel, from: 'main' | 'renderer' | 'core', message: string, extra?: unknown): void {
     let loggerCall = null;
     switch (level) {
       case 'debug':
         loggerCall = logger.debug;
         break;
       case 'info':
-        loggerCall = logger.debug;
+        loggerCall = logger.info;
         break;
       case 'warn':
-        loggerCall = logger.debug;
+        loggerCall = logger.warn;
         break;
       case 'error':
-        loggerCall = logger.debug;
+        loggerCall = logger.error;
         break;
       default:
         loggerCall = logger.info;

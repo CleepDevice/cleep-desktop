@@ -24,21 +24,21 @@
 
         <!-- list -->
         <md-list ng-show="!ctl.loading" style="padding: 0px;">
-            <md-list-item ng-if="ctl.drives.length===0" class="md-2-line">
+            <md-list-item ng-if="ctl.installService.drives.length === 0" class="md-2-line">
                 <md-icon md-svg-icon="alert"></md-icon>
                 <div class="md-list-item-text">
                     <h3>No drive found</h3>
                     <p>Please plug SD card or SD card reader then click on refresh button.</p>
                 </div>
             </md-list-item>
-            <md-list-item ng-repeat="drive in ctl.drives" ng-click="ctl.selectDrive(drive)" class="md-2-line">
+            <md-list-item ng-repeat="drive in ctl.installService.drives" ng-click="ctl.selectDrive(drive)" class="md-2-line">
                 <md-icon md-svg-icon="circle-small"></md-icon>
                 <div class="md-list-item-text">
-                    <h3>{{drive.desc}}</h3>
-                    <p>Size {{::drive.size | hrBytes}}</p>
+                    <h3>{{ drive.description | limitTo: 40 }}</h3>
+                    <p>Size {{ drive.size | hrBytes }}</p>
                 </div>
                 <span class="md-secondary">
-                    {{drive.readonly ? 'Readonly' : ''}} {{drive.size<3600000000 ? '&gt;4Go drive required' : ''}}
+                    {{ drive.size < ctl.minSize ? '&gt;4Go drive required' : '' }}
                 </span>
             </md-list-item>
         </md-list>

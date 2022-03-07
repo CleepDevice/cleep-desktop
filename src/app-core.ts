@@ -113,10 +113,7 @@ export class AppCore {
   }
 
   private handleCoreStdoutData(data: Readable): void {
-    if (isDev) {
-      return;
-    }
-
+    if (isDev) return;
     appLogger.debug(data.toString());
   }
 
@@ -139,7 +136,7 @@ export class AppCore {
     // only handle startup crash (5 first seconds), after core will handle it
     const now = Math.round(Date.now() / 1000);
     if (now <= this.startupTimestamp + 5) {
-      appLogger.error(message);
+      appLogger.log('error', 'core', message);
       // TODO useful ?? throw new Error(message);
     }
   }

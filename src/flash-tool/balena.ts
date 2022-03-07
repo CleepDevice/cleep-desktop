@@ -1,15 +1,13 @@
 import { Octokit } from '@octokit/rest';
-import axios from 'axios';
 import { appSettings } from '../app-settings';
 import { appLogger } from '../app-logger';
-import { GithubRelease } from './balena.types';
 import fs from 'fs';
 import path from 'path';
-import uuid4 from 'uuid4';
 import { app } from 'electron';
 import extract from 'extract-zip';
-import { OnUpdateAvailableCallback, OnDownloadProgressCallback } from '../app-updater';
-import { getError } from '../utils';
+import { downloadFile, DriveUnit, findMatches, getError, OnDownloadProgressCallback } from '../utils';
+import { exec } from 'child_process';
+import { OnUpdateAvailableCallback } from '../app-updater';
 
 const FILENAME_DARWIN = '-darwin-';
 const FILENAME_LINUX = '-linux-';
@@ -17,9 +15,33 @@ const FILENAME_WINDOWS = '-windows-';
 const BALENA_DARWIN_BIN = 'balena';
 const BALENA_LINUX_BIN = 'balena';
 const BALENA_WINDOWS_BIN = 'balena.exe';
+// eslint-disable-next-line no-useless-escape
+const DRIVELIST_WINDOWS = /^(\\.*?)\s+([\d\.]+)\s+(.*?)\s+(.*?)$/gmu;
+// eslint-disable-next-line no-useless-escape
+const DRIVELIST_LINUX = /^(\/.*?)\s+([\d\.]+)\s+(.*?)\s+(.*?)$/gmu;
+const UNITS: DriveUnit[] = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'];
+
+export interface ReleaseInfos {
+  downloadUrl: string;
+  size: number;
+  filename: string;
+}
+
+export interface GithubRelease {
+  version: string;
+  darwin: ReleaseInfos;
+  linux: ReleaseInfos;
+  win32: ReleaseInfos;
+}
+
+export interface Drive {
+  size: number;
+  description: string;
+  device: string;
+}
 
 export class Balena {
-  private BALENA_REPO = { owner: 'tangb', repo: 'cleep-desktop-flash-tool' };
+  private readonly BALENA_REPO = { owner: 'tangb', repo: 'cleep-desktop-flash-tool' };
   private github: Octokit;
   private updateAvailableCallback: OnUpdateAvailableCallback;
   private downloadProgressCallback: OnDownloadProgressCallback;
@@ -30,7 +52,7 @@ export class Balena {
 
   public async checkForUpdates(force = false): Promise<boolean> {
     const latestBalenaRelease = await this.getLatestRelease();
-    appLogger.debug('Release', { release: latestBalenaRelease });
+    appLogger.debug('Latest flash tool release', { release: latestBalenaRelease });
     const currentBalenaVersion = this.getInstalledVersion();
     const balenaBinPath = this.getBalenaBinPath();
 
@@ -65,50 +87,15 @@ export class Balena {
 
     try {
       const downloadUrl = release[platform as keyof typeof release as 'darwin' | 'linux' | 'win32'].downloadUrl;
-      const archivePath = await this.downloadFile(downloadUrl);
+      const archivePath = await downloadFile(downloadUrl, this.downloadProgressCallback);
       await this.unzipArchive(archivePath);
 
       appSettings.set('flashtool.version', release.version);
       this.downloadProgressCallback({ installed: true });
     } catch (error) {
-      appLogger.error(`Error install flash-tool: ${error}`);
+      appLogger.error(`Error installing flash-tool: ${error}`);
       this.downloadProgressCallback({ percent: 100, error: getError(error) });
     }
-  }
-
-  private async downloadFile(url: string): Promise<string> {
-    const headers = { 'user-agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0' };
-    const tmpFilename = path.join(app.getPath('temp'), uuid4() + '.zip');
-    appLogger.debug(`Download flash-tool to ${tmpFilename}`);
-    const writer = fs.createWriteStream(tmpFilename);
-
-    appLogger.debug(`Download flash-tool from ${url}`);
-    const download = await axios({ url, method: 'GET', headers, responseType: 'stream' });
-    download.data.pipe(writer);
-
-    const totalSize = Number(download.headers['content-length']) || 0;
-    let downloadedSize = 0;
-    return new Promise((resolve, reject) => {
-      writer.on('finish', () => {
-        appLogger.info('Flash-tool download completed');
-        this.downloadProgressCallback({
-          percent: 100,
-        });
-        resolve(tmpFilename);
-      });
-      writer.on('error', (error) => {
-        reject(error);
-      });
-      writer.on('data', (chunk) => {
-        if (totalSize === 0) {
-          return;
-        }
-        downloadedSize += chunk.length;
-        this.downloadProgressCallback({
-          percent: totalSize === 0 ? 0 : Math.round(downloadedSize / totalSize),
-        });
-      });
-    });
   }
 
   private async unzipArchive(sourcePath: string) {
@@ -169,6 +156,66 @@ export class Balena {
 
   private getBalenaInstallDir(): string {
     return path.join(app.getPath('userData'), 'flash-tool');
+  }
+
+  public async getDriveList(): Promise<Drive[]> {
+    return new Promise((resolve, reject) => {
+      const drives: Drive[] = [];
+
+      const path = this.getBalenaBinPath();
+      exec(`"${path}" util available-drives`, (error, stdout, stderr) => {
+        if (error) {
+          appLogger.error('Unable to get drives', { error });
+          reject(error);
+          return;
+        }
+        appLogger.debug('List drive command output', { stdout, stderr });
+
+        const matches: string[][] = [];
+        findMatches(this.getDrivePattern(), stdout, matches);
+        // appLogger.debug('matches:', matches);
+        for (const match of matches) {
+          drives.push({
+            size: this.computeSizeInBytes(match[2], match[3]),
+            description: match[4],
+            device: match[1],
+          });
+        }
+        resolve(drives);
+      });
+    });
+  }
+
+  private computeSizeInBytes(sizeStr: string, unit: string): number {
+    if (!this.isDriveUnit(unit)) {
+      throw new Error(`Unit ${unit} is not supported`);
+    }
+    const size = parseFloat(sizeStr);
+    const unitIndex = UNITS.findIndex((item) => unit === item);
+
+    return size * Math.pow(1000, unitIndex);
+  }
+
+  private isDriveUnit(unit: string): unit is DriveUnit {
+    return !!UNITS.find((item) => unit === item);
+  }
+
+  private getDrivePattern(): RegExp {
+    const platform = String(process.platform);
+    switch (platform) {
+      case 'darwin':
+        return DRIVELIST_LINUX;
+      case 'linux':
+        return DRIVELIST_LINUX;
+      case 'win32':
+        return DRIVELIST_WINDOWS;
+      default:
+        throw new Error(`Platform ${platform} not supported`);
+    }
+  }
+
+  public flash() {
+    // TODO
   }
 }
 

@@ -1,138 +1,141 @@
 /* infos panel */
 .update-panel {
-    border-radius: 4px;
-    box-shadow: 0 7px 8px -4px rgba(0, 0, 0, 0.2),
-        0 13px 19px 2px rgba(0, 0, 0, 0.14),
-        0 5px 24px 4px rgba(0, 0, 0, 0.12);
-    width: 500px;
-    min-height: 50px;
+  border-radius: 4px;
+  box-shadow: 0 7px 8px -4px rgba(0, 0, 0, 0.2), 0 13px 19px 2px rgba(0, 0, 0, 0.14), 0 5px 24px 4px rgba(0, 0, 0, 0.12);
+  width: 500px;
+  min-height: 50px;
 }
 
 /* default href */
 a {
-    color: rgb(244, 67, 54);
-    text-decoration: none;
+  color: rgb(244, 67, 54);
+  text-decoration: none;
 }
 
 /* devices panel */
 .panel-separator {
-    border-right: 1px solid #DCDCDC;
-    /*box-sizing: border-box;*/
+  border-right: 1px solid #dcdcdc;
+  /*box-sizing: border-box;*/
 }
 
 .fix-toolbar {
-    height: 64px;
+  height: 64px;
 }
 
 .fix-toolbar > .md-toolbar-tools {
-    padding-top: 6px;
+  padding-top: 6px;
 }
 
 .no-device {
-    color: rgba(189,189,189,0.87);
+  color: rgba(189, 189, 189, 0.87);
 }
 
 .icon-margin {
-    margin-right: 20px !important;
+  margin-right: 20px !important;
 }
 
 /* bullet */
 md-icon.bullet {
-    font-size:14px;
-    margin-left:10px;
-    margin-top:8px;
+  font-size: 14px;
+  margin-left: 10px;
+  margin-top: 8px;
 }
 
 /* default source code */
 code {
-    padding: 3px;
-    background-color: rgba(205, 205, 205, 0.45);
-    border-radius: 3px;
+  padding: 3px;
+  background-color: rgba(205, 205, 205, 0.45);
+  border-radius: 3px;
 }
 
 /* note */
 span.note code {
-    font-size: 0.85em;
+  font-size: 0.85em;
 }
 
 div.note {
-    line-height: 25px;
-    font-size: 0.95em;
-    margin: 10px 5px 10px 5px;
-    padding: 15px;
-    background-color: rgba(205, 205, 205, 0.45);
-    border-radius: 5px;
+  line-height: 25px;
+  font-size: 0.95em;
+  margin: 10px 5px 10px 5px;
+  padding: 15px;
+  background-color: rgba(205, 205, 205, 0.45);
+  border-radius: 5px;
 }
 
 div.note-info {
-    background-color: rgb(231, 242, 250);
-    color: black;
+  background-color: rgb(231, 242, 250);
+  color: black;
 }
 
 div.note-success {
-    background-color: rgb(76, 175, 80);
-    color: white;
+  background-color: rgb(76, 175, 80);
+  color: white;
 }
 
 div.note-warning {
-    background-color: rgb(255, 152, 0);
+  background-color: rgb(255, 152, 0);
 }
 
 div.note-important {
-    background-color: rgb(244, 67, 54);
-    color: white;
+  background-color: rgb(244, 67, 54);
+  color: white;
 }
 
 /* toast */
 md-toast.error .md-toast-content {
-    background: #E53935;
-    color: #FFFFFF;
+  background: #e53935;
+  color: #ffffff;
 }
 
 md-toast.warning .md-toast-content {
-    background: #EF6C00;
-    color: #FFFFFF;
+  background: #ef6c00;
+  color: #ffffff;
 }
 
 md-toast.success .md-toast-content {
-    background: #43A047;
-    color: #FFFFFF;
+  background: #43a047;
+  color: #ffffff;
 }
 
 md-toast.info .md-toast-content {
-    background: #2196F3;
-    color: #FFFFFF;
+  background: #2196f3;
+  color: #ffffff;
 }
 
 /* remove input text error spacer */
 .no-error-spacer .md-errors-spacer {
-    min-height: 0px !important;
+  min-height: 0px !important;
 }
 
 /* white circular progress */
 .progress-circular-white svg path {
-    stroke: white;
+  stroke: white;
 }
 
 /* white icon */
 .white-icon svg path {
-    fill: white;
+  fill: white;
 }
 
 /* rounded icons */
 .rounded-icon {
-    color: white;
-    background-color: #607D8B;
-    border-radius: 20px;
-    padding: 5px;
+  color: white;
+  background-color: #607d8b;
+  border-radius: 20px;
+  padding: 5px;
 }
 
 /* toolbar */
 .toolbar-content {
-    height: 64px;
-    overflow-y: hidden;
+  height: 64px;
+  overflow-y: hidden;
 }
 
 .toolbar-spacer {
-    width: 15px;
+  width: 15px;
+}
+
+/* button */
+.md-button.md-no-text {
+  min-width: 1%;
 }

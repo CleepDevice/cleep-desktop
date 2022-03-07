@@ -8,6 +8,10 @@ angular
     self.get = function(key) {
         return electron.sendReturn('settings-get', key);
     };
+
+    self.getAll = function(keys) {
+        return electron.sendReturn('settings-get-multiple', keys);
+    }
     
     self.set = function(key, value) {
         electron.send('settings-set', {key, value});

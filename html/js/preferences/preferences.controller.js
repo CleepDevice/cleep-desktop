@@ -3,8 +3,9 @@
  */
 angular
 .module('Cleep')
-.controller('preferencesController', ['$rootScope', '$scope', 'cleepService', 'debounceService', 'closeModal', 'electronService',
-function($rootScope, $scope, cleepService, debounce, closeModal, electron) {
+.controller('preferencesController', ['$rootScope', '$scope', 'cleepService', 'debounceService', 'closeModal', 'electronService', 'toastService',
+function($rootScope, $scope, cleepService, debounce, closeModal, electron, toast) {
+    
     var self = this;
     self.pref = 'general';
     self.config = {};
@@ -22,20 +23,24 @@ function($rootScope, $scope, cleepService, debounce, closeModal, electron) {
     $scope.$watch(function() {
         return self.config;
     }, function(newValue, oldValue) {
-        if( Object.keys(newValue).length>0 && Object.keys(oldValue).length>0 ) {
-            if( self.checkConfig() ) {
-                debounce.exec('config', self.setConfig, 500).then(() => {}).catch(() => {})
+        if (Object.keys(newValue).length > 0 && Object.keys(oldValue).length > 0) {
+            if( !self.checkConfig() ) {
+                toast.warning('Invalid configuration. Please check it');
             }
+
+            debounce.exec('config', self.setConfig, 500)
+                .then(() => { /* handle rejection */ })
+                .catch(() => { /* handle rejection */ });
         }
     }, true);
 
     self.checkConfig = function() {
-        if( self.config ) {
-            if( self.config.remote && !self.config.remote.rpcport )
+        if (self.config) {
+            if (self.config.remote && !self.config.remote.rpcport)
                 return false;
-            if( self.config.proxy && !self.config.proxy.host )
+            if (self.config.proxy && !self.config.proxy.host)
                 return false;
-            if( self.config.proxy && !self.config.proxy.port )
+            if (self.config.proxy && !self.config.proxy.port)
                 return false;
 
             return true;
@@ -63,7 +68,7 @@ function($rootScope, $scope, cleepService, debounce, closeModal, electron) {
     self.setConfig = function() {
         cleepService.setConfig(self.config)
             .then(function(resp) {
-                if( resp && resp.data && resp.data.config ) {
+                if (resp?.data?.config) {
                     self.config = resp.data.config;
                 }
                 $rootScope.$broadcast('configchanged', self.config);

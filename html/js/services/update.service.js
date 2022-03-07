@@ -19,9 +19,10 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
         self.addIpcs();
         self.updateSofwareVersions();
 
-        $timeout(() => {
-            self.checkForUpdates();
-        }, 10 * 1000);
+        // TODO remove after dev
+        // $timeout(() => {
+        //     self.checkForUpdates();
+        // }, 10 * 1000);
     };
  
     self.addIpcs = function() {
@@ -39,7 +40,7 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
                 Object.assign(self.softwareVersions, softwareVersions);
             });
     }
- 
+
     self.goToUpdates = function() {
         $rootScope.$broadcast('open-page', 'updates');
     };

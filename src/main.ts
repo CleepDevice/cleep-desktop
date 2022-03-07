@@ -8,6 +8,7 @@ import { appLogger } from './app-logger';
 import { appUpdater } from './app-updater';
 import { appFileDownload } from './app-file-download';
 import isDev from 'electron-is-dev';
+import { appIso } from './app-iso';
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
@@ -56,8 +57,12 @@ app.on('ready', async function () {
     mainWindow = createAppWindow(splashScreenWindow);
     createAppMenu(mainWindow);
 
+    // configure modules
     appUpdater.configure(mainWindow);
     appFileDownload.configure(mainWindow);
+    appIso.configure();
+
+    // start core
     if (!args.coreDisabled) {
       const rpcPort = await getRpcPort();
       if (isDev) {

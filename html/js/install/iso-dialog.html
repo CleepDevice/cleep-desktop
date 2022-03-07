@@ -34,31 +34,41 @@
                     <p>You surely reach free Github api requests amount. Please retry next hour.</p>
                 </div>
             </md-list-item>
-            <md-list-item ng-repeat="iso in ctl.isos | filter: {category:'cleep'}" ng-click="ctl.selectRemoteIso(iso)">
+            <md-list-item ng-if="ctl.installService.isosInfo.cleepos" ng-click="ctl.selectRemoteIso(ctl.installService.isosInfo.cleepos)">
                 <md-icon md-svg-icon="circle-small"></md-icon>
-                <p>{{iso.label}} ({{iso.timestamp | hrDate}})</p>
+                <p>
+                    {{ctl.installService.isosInfo.cleepos.filename}} - 
+                    {{ctl.installService.isosInfo.cleepos.date | date:'yyyy/MM/dd'}} - 
+                    {{ctl.installService.isosInfo.cleepos.size | hrBytes}}
+                </p>
             </md-list-item>
 
             <!-- raspios -->
-            <md-subheader class="md-no-sticky" ng-if="ctl.config.withraspiosisos">
+            <md-subheader ng-if="ctl.installService.settings.isoraspios" class="md-no-sticky">
                 Latest Raspios
             </md-subheader>
-            <md-list-item ng-if="ctl.config.withraspiosisos && ctl.cleepisos===0" class="md-2-line">
-                <div class="md-list-item-text">
-                    <h3>No Raspios version found</h3>
-                    <p>Is internet connection available?</p>
-                </div>
-            </md-list-item>
-            <md-list-item ng-repeat="iso in ctl.isos | filter: {category:'raspios'}" ng-if="ctl.config.withraspiosisos" ng-click="ctl.selectRemoteIso(iso)">
+            <md-list-item ng-if="ctl.installService.settings.isoraspios && ctl.installService.isosInfo.raspios.full" ng-click="ctl.selectRemoteIso(ctl.installService.isosInfo.raspios.full)">
                 <md-icon md-svg-icon="circle-small"></md-icon>
-                <p>{{iso.label}} ({{iso.timestamp | hrDate}})</p>
+                <p>
+                    {{ctl.installService.isosInfo.raspios.full.filename}} - 
+                    {{ctl.installService.isosInfo.raspios.full.date | date:'yyyy/MM/dd'}} 
+                </p>
+            </md-list-item>
+            <md-list-item ng-if="ctl.installService.settings.isoraspios && ctl.installService.isosInfo.raspios.lite" ng-click="ctl.selectRemoteIso(ctl.installService.isosInfo.raspios.lite)">
+                <md-icon md-svg-icon="circle-small"></md-icon>
+                <p>
+                    {{ctl.installService.isosInfo.raspios.lite.filename}} - 
+                    {{ctl.installService.isosInfo.raspios.lite.date | date:'yyyy/MM/dd'}}
+                </p>
             </md-list-item>
 
             <!-- local iso -->
-            <md-subheader ng-if="ctl.config.withlocalisos" class="md-no-sticky">Local iso</md-subheader>
-            <md-list-item ng-if="ctl.config.withlocalisos" ng-click="ctl.selectLocalIso()">
+            <md-subheader ng-if="ctl.installService.settings.isolocal" class="md-no-sticky">
+                Local iso
+            </md-subheader>
+            <md-list-item ng-if="ctl.installService.settings.isolocal" ng-click="ctl.selectLocalIso()">
                 <md-icon md-svg-icon="circle-small"></md-icon>
-                <p>Click to select local iso file</p>
+                <p>Click to select iso file from your computer</p>
             </md-list-item>
 
         </md-list>

@@ -5,7 +5,7 @@ const { ipcRenderer } = require('electron');
  */
 angular
 .module('Cleep')
-.service('electronService', ['$rootScope', function($rootScope) {
+.service('electronService', ['$rootScope', '$timeout', function($rootScope, $timeout) {
 
     var self = this;
 
@@ -15,7 +15,9 @@ angular
     self.on = function(event, callback) {
         ipcRenderer.on(event, (event, parameters) => {
             callback(event, parameters);
-            $rootScope.$digest();
+            $timeout(() => {
+                $rootScope.$digest();
+            }, 500);
         });
     };
     
@@ -30,6 +32,12 @@ angular
      * Send event to electron and return promise
      */
     self.sendReturn = function(event, data) {
-        return ipcRenderer.invoke(event, data);
+        return ipcRenderer.invoke(event, data)
+            .then((response) => {
+                $timeout(() => {
+                    $rootScope.$digest();
+                }, 500);
+                return response;
+            });
     }
 }]);

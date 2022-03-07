@@ -12,7 +12,7 @@ function($rootScope, toast, updateService, modalService, electron) {
     self.closeModal = modalService.closeModal;
 
     self.openChangelog = function() {
-        modalService.open('updatesController', 'js/updates/changelog-dialog.html', {coucou: 'hello'}, {changelog: self.loadChangelog});
+        modalService.open('updatesController', 'js/updates/changelog-dialog.html', {}, {changelog: self.loadChangelog});
     };
 
     self.loadChangelog = function() {

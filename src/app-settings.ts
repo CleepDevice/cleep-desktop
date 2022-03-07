@@ -27,7 +27,7 @@ export type SettingsObject = {
 
 export type SettingsValue = null | boolean | string | number | SettingsObject | SettingsValue[];
 
-export type KeyPath = string | Array<string | number>;
+export type KeyPath = string;
 
 export interface KeyValue {
   key: KeyPath;
@@ -60,6 +60,14 @@ export class AppSettings {
   private addIpcs() {
     ipcMain.handle('settings-get', (_event, arg: KeyPath) => {
       return this.get(arg);
+    });
+
+    ipcMain.handle('settings-get-multiple', (_event, arg: KeyPath[]) => {
+      const result: Record<string, unknown> = {};
+      for (const keyPath of arg) {
+        result[keyPath] = this.get(keyPath);
+      }
+      return result;
     });
 
     ipcMain.on('settings-set', (_event, arg: KeyValue) => {
