@@ -214,7 +214,7 @@ export class Balena {
     }
   }
 
-  public flash() {
+  public async flashDrive(device: string, isoPath: string) {
     // TODO
   }
 }

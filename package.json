@@ -54,6 +54,7 @@
         "typescript": "^4.5.5"
     },
     "dependencies": {
+        "@nathanielks/electron-sudo": "^4.0.15",
         "@octokit/rest": "^18.12.0",
         "@sentry/electron": "^3.0.2",
         "axios": "^0.26.0",

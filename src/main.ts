@@ -9,6 +9,7 @@ import { appUpdater } from './app-updater';
 import { appFileDownload } from './app-file-download';
 import isDev from 'electron-is-dev';
 import { appIso } from './app-iso';
+import { Sudo } from './sudo/sudo';
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
@@ -60,7 +61,7 @@ app.on('ready', async function () {
     // configure modules
     appUpdater.configure(mainWindow);
     appFileDownload.configure(mainWindow);
-    appIso.configure();
+    appIso.configure(mainWindow);
 
     // start core
     if (!args.coreDisabled) {
@@ -90,3 +91,29 @@ ipcMain.on('open-path', (_event, path: string) => {
 ipcMain.on('open-url-in-browser', (_event, url: string) => {
   shell.openExternal(url);
 });
+
+ipcMain.on('test', () => {
+  try {
+    const sudo = new Sudo({
+      appName: app.name,
+      stdoutCallback: stdoutCb,
+      stderrCallback: stderrCb,
+      terminatedCallback: terminatedCb,
+    });
+    sudo.run('/home/tang/testpkexec.sh');
+  } catch (error) {
+    appLogger.error('Error occured', error);
+  }
+});
+
+function stderrCb(str: string): void {
+  appLogger.error('----------', str);
+}
+
+function stdoutCb(str: string): void {
+  appLogger.info('++++++++++', str);
+}
+
+function terminatedCb(exitCode: number): void {
+  appLogger.info('==========', { exitCode });
+}
