@@ -76,7 +76,7 @@ def raspberry_pi_infos():
             }
 
     """
-    if not platform.machine().startwith('arm'):
+    if not platform.machine().startswith('arm'):
         raise Exception('Not arm platform')
     cmd = u'/usr/bin/awk \'/^Revision/ {sub("^1000", "", $3); print $3}\' /proc/cpuinfo'
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)

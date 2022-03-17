@@ -121,7 +121,7 @@ class Updates(CleepDesktopModule):
         config = self.context.config.get_config()
         return {
             "etcherstatus": {
-                "version": config["config"]["etcher"]["version"],
+                "version": config["config"]["flashtool"]["version"],
                 "status": self.etcher_status,
                 "downloadstatus": self.etcher_download_status,
                 "downloadpercent": self.etcher_download_percent,
