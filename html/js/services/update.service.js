@@ -19,10 +19,9 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
         self.addIpcs();
         self.updateSofwareVersions();
 
-        // TODO remove after dev
-        // $timeout(() => {
-        //     self.checkForUpdates();
-        // }, 10 * 1000);
+        $timeout(() => {
+            self.checkForUpdates('auto');
+        }, 10 * 1000);
     };
  
     self.addIpcs = function() {
@@ -61,7 +60,7 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
             {
                 onAction: self.goToUpdates,
                 tooltip: 'Open updates page',
-                icon: 'update'
+                icon: 'open-in-app'
             },
             {
                 onClose: self.closeUpdateTaskPanel,
@@ -92,8 +91,8 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
         }
     }
 
-    self.checkForUpdates = function() {
-        return electron.sendReturn('updater-check-for-updates')
+    self.checkForUpdates = function(mode = 'manual') {
+        return electron.sendReturn('updater-check-for-updates', mode)
             .then((updateStatus) => {
                 // logger.info('Check for software updates', updateStatus);
                 self.lastUpdateCheck = updateStatus.lastUpdateCheck;

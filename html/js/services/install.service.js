@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.service('installService', ['$rootScope', '$state', 'loggerService', 'cleepService', 'tasksPanelService', '$timeout', 'settingsService', 'electronService',
-function($rootScope, $state, logger, cleepService, tasksPanelService, $timeout, settingsService, electron) {
+.service('installService', ['$rootScope', '$state', 'loggerService', 'tasksPanelService', 'settingsService', 'electronService',
+function($rootScope, $state, logger, tasksPanelService, settingsService, electron) {
 
     var self = this;
     self.settings = {
@@ -9,6 +9,13 @@ function($rootScope, $state, logger, cleepService, tasksPanelService, $timeout, 
         isoraspios: false,
     };
     self.installing = false;
+    self.installProgress = {
+        percent: 0,
+        eta: 0,
+        step: 'idle',
+        terminated: false,
+        error: '',
+    };
     self.installConfig = {
         iso: null,
         drive: null,
@@ -26,12 +33,25 @@ function($rootScope, $state, logger, cleepService, tasksPanelService, $timeout, 
         cleepos: {},
     }
     self.drives = [];
-    // self.taskInstallPanelClosed = false;
-    // self.taskInstallPanel = null;
+    self.taskInstallPanelId = null;
 
     self.init = function() {
+        self.addIpcs();
         self.getIsoSettings();
         $rootScope.$on('configchanged', self.getIsoSettings);
+    };
+
+    self.addIpcs = function() {
+        electron.on('iso-install-progress', self.onHandleInstallProgress.bind(self));
+    };
+
+    self.onHandleInstallProgress = function(_event, installProgress) {
+        Object.assign(self.installProgress, installProgress);
+        self.installing = !self.installProgress.terminated;
+
+        if (!self.installing) {
+            self.onCloseInstallTaskPanel();
+        }
     };
 
     self.getIsoSettings = function() {
@@ -86,17 +106,41 @@ function($rootScope, $state, logger, cleepService, tasksPanelService, $timeout, 
     };
 
     self.startInstall = function() {
+        self.installing = true;
+        if (!self.taskInstallPanelId) {
+            self.taskInstallPanelId = tasksPanelService.addPanel(
+                'Installing device...', 
+                {
+                    onAction: self.goToInstallAuto,
+                    tooltip: 'Open install page',
+                    icon: 'open-in-app'
+                },
+                {
+                    onClose: self.onCloseInstallTaskPanel,
+                    disabled: false
+                },
+                true
+            );
+        }
+
         var installData = {
-            url: self.installService.installConfig.iso.url,
-            drive: self.installService.installConfig.drive.device,
-            wifi: self.installService.installConfig.wifi
+            isoUrl: self.installConfig.iso.url,
+            drivePath: self.installConfig.drive.device,
+            wifiData: self.installConfig.wifi,
         };
+        logger.debug('Install data', installData);
         electron.send('iso-start-install', installData);
     };
 
+    self.cancelInstall = function() {
+        if (!self.installing) return;
+        electron.send('iso-cancel-install');
+    };
+
     self.onCloseInstallTaskPanel = function() {
-        self.taskInstallPanel = null;
-        self.taskInstallPanelClosed = true;
+        if (!self.taskInstallPanelId) return;
+        tasksPanelService.removePanel(self.taskInstallPanelId);
+        self.taskInstallPanelId = null;
     };
 
     self.goToInstallAuto = function() {

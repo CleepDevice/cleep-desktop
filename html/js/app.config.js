@@ -1,7 +1,7 @@
 /**
  * Theme configuration
  */
- Cleep.config(['$mdThemingProvider', function($mdThemingProvider) {
+ angular.module('Cleep').config(['$mdThemingProvider', function($mdThemingProvider) {
     $mdThemingProvider
         .theme('default')
         .primaryPalette('blue-grey')
@@ -16,15 +16,14 @@
 /**
  * MDI font configuration
  */
-Cleep.config(['$mdIconProvider', function($mdIconProvider) {
+ angular.module('Cleep').config(['$mdIconProvider', function($mdIconProvider) {
     $mdIconProvider.defaultIconSet('fonts/mdi.svg')
 }]);
 
 /**
  * Routes configuration
  */
-Cleep
-.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
+ angular.module('Cleep').config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
     $stateProvider
         .state('default', {
             url: '/',
@@ -82,7 +81,7 @@ Cleep
     $urlRouterProvider.otherwise('/');
 }]);
 
-Cleep.config(function($mdAriaProvider) {
+angular.module('Cleep').config(function($mdAriaProvider) {
     // Globally disables all ARIA warnings.
     $mdAriaProvider.disableWarnings();
 });

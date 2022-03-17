@@ -10,7 +10,6 @@ function($rootScope, $state, cleepService, tasksPanelService, modalService, $tim
 
     var self = this;
     self.taskRestartRequiredPanelId = null;
-    self.taskFlashPanelClosed = false;
     self.selectedToolbarItem = null;
     self.toolbarCollapsed = true;
 
@@ -97,7 +96,7 @@ function($rootScope, $state, cleepService, tasksPanelService, modalService, $tim
         self.restartApplication();
     });
 
-    self.onCloseRestartRequiredPanel = function() {
+    self.onCloseRestartRequiredTaskPanel = function() {
         tasksPanelService.removePanel(self.taskRestartRequiredPanelId);
         self.taskRestartRequiredPanelId = null;
     };

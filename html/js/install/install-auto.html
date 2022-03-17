@@ -46,7 +46,7 @@
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Plug your SD card or your USB card reader on your computer and select it from drives list</p>
                             <span class="md-secondary md-caption">
-                                {{ctl.installService.installConfig.drive ? ctl.installService.installConfig.drive.desc : 'No drive selected'}}
+                                {{ctl.installService.installConfig.drive ? ctl.installService.installConfig.drive.description : 'No drive selected'}}
                             </span>
                             <md-button ng-click="ctl.openDriveDialog()" class="md-secondary md-raised md-primary md-no-text" ng-disabled="ctl.installService.installing">
                                 <md-icon md-svg-icon="feature-search-outline"></md-icon>
@@ -86,7 +86,8 @@
                             <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Click on button to install Cleep and follow install process below</p>
                             <md-button ng-click="ctl.startInstall()" ng-disabled="ctl.installService.installing || !ctl.updateService.softwareVersions.flashTool" class="md-secondary md-raised md-accent">
-                                Install on selected drive
+                                <md-icon md-svg-icon="sd"></md-icon>
+                                Install
                             </md-button>
                         </md-list-item>
 
@@ -106,36 +107,43 @@
                     </md-card-title-text>
                 </md-card-title>
                 <md-card-content>
-                    <!-- <div layout="row" layout-align="space-between center">
+                    <div ng-if="ctl.installService.installProgress.error.length === 0" layout="row" layout-align="space-between center">
                         <div>
-                            Status: 
-                            <span ng-if="ctl.installService.status.status==0">Idle</span>
-                            <span ng-if="ctl.installService.status.status==1">Downloading file {{ctl.installService.status.percent}}% ({{ctl.installService.status.eta}})</span>
-                            <span ng-if="ctl.installService.status.status==2">Downloading file ({{ctl.installService.status.eta}})</span>
-                            <span ng-if="ctl.installService.status.status==3">Installing on drive {{ctl.installService.status.percent}}% ({{ctl.installService.status.eta}})</span>
-                            <span ng-if="ctl.installService.status.status==4">Validating operation {{ctl.installService.status.percent}}% ({{ctl.installService.status.eta}})</span>
-                            <span ng-if="ctl.installService.status.status==5">Requesting write permissions to system...</span>
-                            <span ng-if="ctl.installService.status.status==6">Installation completed. You can unplug your SD card.</span>
-                            <span ng-if="ctl.installService.status.status==7">Installation canceled</span>
-                            <span ng-if="ctl.installService.status.status==8">Internal error occured</span>
-                            <span ng-if="ctl.installService.status.status==9">Downloaded file size is invalid</span>
-                            <span ng-if="ctl.installService.status.status==10">Downloaded file seems to be corrupted</span>
-                            <span ng-if="ctl.installService.status.status==11">Problem during data copy on drive</span>
-                            <span ng-if="ctl.installService.status.status==12">Network error occured during file download</span>
+                            <span ng-if="ctl.installService.installProgress.step === 'idle' && !ctl.installService.installing && !ctl.installService.installProgress.terminated">
+                                No installation running
+                            </span>
+                            <span ng-if="ctl.installService.installProgress.step === 'idle' && ctl.installService.installing">
+                                Preparing installation...
+                            </span>
+                            <span ng-if="ctl.installService.installProgress.step === 'idle' && !ctl.installService.installing && ctl.installService.installProgress.terminated">
+                                Installation terminated. If no error insert SDCard on your raspberry and power it up.
+                            </span>
+                            <span ng-if="ctl.installService.installProgress.step === 'downloading'">
+                                Step 1/3: downloading files (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
+                            </span>
+                            <span ng-if="ctl.installService.installProgress.step === 'privileges'">
+                                Step 2/3: requesting permissions to write on drive
+                            </span>
+                            <span ng-if="ctl.installService.installProgress.step === 'flashing'">
+                                Step 2/3: installing on drive (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
+                            </span>
+                            <span ng-if="ctl.installService.installProgress.step === 'validating'">
+                                Step 3/3: validating operation (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
+                            </span>
                         </div>
-                        <div>
-                            <md-button ng-click="ctl.cancelFlash()" class="md-raised md-primary" ng-disabled="!ctl.installService.installing">Cancel</md-button>
-                        </div>
-                    </div> -->
-                    <div style="padding-top:15px;">
-                        Overall progress status:
+                        <!-- TODO axios cancelation does not work <div>
+                            <md-button ng-click="ctl.cancelInstall()" class="md-raised md-primary" ng-disabled="!ctl.installService.installing">Cancel</md-button>
+                        </div> -->
                     </div>
-                    <!-- <div>
-                        <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.installService.status.total_percent || 0}}" style="padding-top: 15px !important;"></md-progress-linear>
-                    </div> -->
-                    <!-- <div layout="row" layout-align="end center" style="padding-top:30px;">
+                    <div ng-if="ctl.installService.installProgress.error.length > 0">
+                        Installation failed: {{ ctl.installService.installProgress.error }}
+                    </div>
+                    <div>
+                        <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.installService.installProgress.percent || 0}}" style="padding-top: 15px !important;"></md-progress-linear>
+                    </div>
+                    <div layout="row" layout-align="end center" style="padding-top:30px;">
                         Powered by&nbsp;<a href="https://www.balena.io/etcher" target="_blank"><img style="height:25px;" src="images/balena-etcher.png"/></a>
-                    </div> -->
+                    </div>
                 </md-card-content>
             </md-card>
 
@@ -151,7 +159,7 @@
                 </md-card-title>
                 <md-card-content>
                     <p>
-                        If an error occured, you can try to install Cleep manually following <a href="#" ng-click="$event.preventDefault(); ctl.gotoManualInstall()">this tutorial</a>.
+                        If an error occured, you can try to install CleepOs manually following <a href="#" ng-click="$event.preventDefault(); ctl.gotoManualInstall()">this tutorial</a>.
                     </p>
                 </md-card-content>
             </md-card>    

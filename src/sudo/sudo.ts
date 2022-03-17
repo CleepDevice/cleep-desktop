@@ -3,13 +3,12 @@ import {
   spawn,
   SpawnOptionsWithStdioTuple,
   spawnSync,
-  SpawnSyncOptionsWithBufferEncoding,
   SpawnSyncOptionsWithStringEncoding,
   StdioNull,
   StdioPipe,
 } from 'child_process';
 import { app } from 'electron';
-import fs from 'fs';
+import fs, { createReadStream, unlinkSync, unwatchFile, watchFile } from 'fs';
 import path from 'path';
 import { appLogger } from '../app-logger';
 import { Readable } from 'stream';
@@ -37,11 +36,23 @@ const BINARIES_WIN32 = {
 };
 type BinaryWin32 = keyof typeof BINARIES_WIN32;
 
+class LogFileOutput {
+  public readIndex: number;
+  constructor(public script: string, public log: string) {
+    this.readIndex = 0;
+  }
+}
+
 interface SudoCommand {
   command: string;
   args: string[];
+  logFileOutput?: LogFileOutput;
 }
 
+/**
+ * Admin elevation.
+ * Inspired from https://github.com/solarlabsteam/electron-sudo/blob/master/src/lib/sudoer.js
+ */
 export class Sudo {
   private process: ChildProcessByStdio<null, Readable, Readable>;
 
@@ -57,7 +68,7 @@ export class Sudo {
     };
     this.process = spawn(sudoCommand.command, sudoCommand.args, options);
 
-    this.process.on('close', this.onProcessTerminated.bind(this));
+    this.process.on('close', this.onProcessTerminated.bind(this, sudoCommand.logFileOutput));
     this.process.stdout.on('data', this.onProcessStdout.bind(this));
     this.process.stderr.on('data', this.onProcessStderr.bind(this));
   }
@@ -98,15 +109,22 @@ export class Sudo {
 
     // create batch to execute user command
     const batchId = Math.random();
-    const batchPath = path.join(app.getPath('temp'), `sudo-command-${batchId}.batch`);
+    const batchPath = path.join(app.getPath('temp'), `sudo-command-${batchId}.bat`);
     const batchOutputPath = path.join(app.getPath('temp'), `sudo-output-${batchId}.log`);
-    const batchContent = `${command} ${args.join(' ')} > ${batchOutputPath} 2>&1 `;
+    appLogger.debug('Windows batch paths', { batchPath, batchOutputPath });
+    const batchContent = `${command} ${(args || []).join(' ')} > ${batchOutputPath} 2>&1 `;
+    appLogger.debug('Windows batch content', {batchContent});
     fs.writeFileSync(batchPath, batchContent);
+    fs.writeFileSync(batchOutputPath, '');
+
+    // add watcher to detect file changes
+    const logFileOutput = new LogFileOutput(batchPath, batchOutputPath);
+    watchFile(batchOutputPath, { persistent: true, interval: 250 }, this.onWatcherChanged.bind(this, logFileOutput));
 
     const binaryArgs = BINARIES_WIN32[binaryCommand];
     binaryArgs.push(batchPath);
 
-    return { command: binaryPath, args: binaryArgs };
+    return { command: binaryPath, args: binaryArgs, logFileOutput };
   }
 
   private getSudoCommandForDarwin(command: string, args?: readonly string[]): SudoCommand {
@@ -161,9 +179,19 @@ export class Sudo {
     return { binary, path: elevateDst };
   }
 
-  private onProcessTerminated(exitCode: number): void {
+  private onProcessTerminated(logFileOutput: LogFileOutput, exitCode: number): void {
     if (this.options.terminatedCallback) {
       this.options.terminatedCallback(exitCode);
+    }
+
+    if (logFileOutput) {
+      // delay cleanup to let watcher reads everything
+      setTimeout(() => {
+        appLogger.debug('Clean log file output');
+        unwatchFile(logFileOutput.log);
+        unlinkSync(logFileOutput.script);
+        unlinkSync(logFileOutput.log);
+      }, 500);     
     }
   }
 
@@ -179,11 +207,23 @@ export class Sudo {
     }
   }
 
-  private escapeDoubleQuotes(str: string): string {
-    return str.replace(/"/g, '\\"');
+  private onWatcherChanged(logFileOutput: LogFileOutput): void {
+    const stream = createReadStream(logFileOutput.log, {encoding: 'utf8', start: logFileOutput.readIndex});
+    stream.on('data', (chunk: Buffer) => {
+      logFileOutput.readIndex += chunk.length;
+      if (this.process) {
+        this.process.stdout.emit('data', chunk);
+      }
+    });
+    stream.on('error', (error) => {
+      appLogger.error('Error occured during file reading', {error});
+      if (this.process) {
+        this.process.stderr.emit('data', error);
+      }
+    });
   }
 
-  private encloseDoubleQuotes(str: string): string {
-    return str.replace(/(.+)/g, '"$1"');
+  private escapeDoubleQuotes(str: string): string {
+    return str.replace(/"/g, '\\"');
   }
 }

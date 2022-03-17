@@ -4,8 +4,9 @@ import { autoUpdater, ProgressInfo, UpdateCheckResult, UpdateInfo } from 'electr
 import { appLogger } from './app-logger';
 import { appContext } from './app-context';
 import { balena, Balena } from './flash-tool/balena';
-import { getError, UpdateData } from './utils';
+import { getError } from './utils';
 import { appSettings } from './app-settings';
+import isDev from 'electron-is-dev';
 
 export interface UpdateProgress {
   progress: ProgressInfo;
@@ -22,6 +23,16 @@ export interface UpdateStatus {
 }
 
 export type OnUpdateAvailableCallback = (updateData: UpdateData) => void;
+
+export interface UpdateData {
+  version?: string;
+  changelog?: string;
+  percent?: number;
+  error?: string;
+  installed?: boolean;
+}
+
+type CheckForUpdateMode = 'auto' | 'manual';
 
 export class AppUpdater {
   private window: BrowserWindow;
@@ -50,10 +61,16 @@ export class AppUpdater {
     return version.format();
   }
 
-  public async checkForUpdates(): Promise<UpdateStatus> {
+  public async checkForUpdates(updateMode: CheckForUpdateMode): Promise<UpdateStatus> {
+    const lastUpdateCheck = Math.round(new Date().getTime() / 1000);
+    if (isDev && updateMode === 'auto') {
+      appLogger.debug('Auto update is disabled during dev');
+      return { lastUpdateCheck, cleepDesktop: false, flashTool: false };
+    }
+
     const cleepDesktopUpdate = await this.checkForCleepDesktopUpdates();
     const flashToolUpdate = await this.flashTool.checkForUpdates();
-    const lastUpdateCheck = Math.round(new Date().getTime() / 1000);
+    
     appSettings.set('cleep.lastupdatecheck', lastUpdateCheck);
 
     const changelogSize = appContext.getChangelogFilesize();
@@ -72,7 +89,7 @@ export class AppUpdater {
 
   private async checkForCleepDesktopUpdates(): Promise<UpdateCheckResult> {
     if (appSettings.get('cleep.autoupdate')) {
-      return await autoUpdater.checkForUpdates();
+      return autoUpdater.checkForUpdates();
     }
 
     // dummy content
@@ -94,8 +111,8 @@ export class AppUpdater {
       this.quitAndInstall();
     });
 
-    ipcMain.handle('updater-check-for-updates', async () => {
-      const updates = await this.checkForUpdates();
+    ipcMain.handle('updater-check-for-updates', async (_event, updateMode: CheckForUpdateMode) => {
+      const updates = await this.checkForUpdates(updateMode);
       return updates;
     });
 

@@ -1,12 +1,7 @@
-import { appLogger, LoggerLevel, LoggerLevelEnum } from './app-logger';
+import { LoggerLevel, LoggerLevelEnum } from './app-logger';
 import detectPort from 'detect-port';
 import { appSettings } from './app-settings';
 import isDev from 'electron-is-dev';
-import axios from 'axios';
-import fs from 'fs';
-import path from 'path';
-import uuid4 from 'uuid4';
-import { app } from 'electron';
 
 export interface CommandLineArgs {
   coreDisabled: boolean;
@@ -77,49 +72,4 @@ export function findMatches(pattern: RegExp, search: string, matches: string[][]
   const res = pattern.exec(search);
   res && matches.push(res) && findMatches(pattern, search, matches);
   return matches;
-}
-
-export interface UpdateData {
-  version?: string;
-  changelog?: string;
-  percent?: number;
-  error?: string;
-  installed?: boolean;
-}
-
-export type OnDownloadProgressCallback = (updateData: UpdateData) => void;
-
-export async function downloadFile(url: string, downloadProgressCallback: OnDownloadProgressCallback): Promise<string> {
-  const headers = { 'user-agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0' };
-  const tmpFilename = path.join(app.getPath('temp'), uuid4() + '.zip');
-  appLogger.debug(`Download flash-tool to ${tmpFilename}`);
-  const writer = fs.createWriteStream(tmpFilename);
-
-  appLogger.debug(`Download flash-tool from ${url}`);
-  const download = await axios({ url, method: 'GET', headers, responseType: 'stream' });
-  download.data.pipe(writer);
-
-  const totalSize = Number(download.headers['content-length']) || 0;
-  let downloadedSize = 0;
-  return new Promise((resolve, reject) => {
-    writer.on('finish', () => {
-      appLogger.info('Flash-tool download completed');
-      downloadProgressCallback({
-        percent: 100,
-      });
-      resolve(tmpFilename);
-    });
-    writer.on('error', (error) => {
-      reject(error);
-    });
-    writer.on('data', (chunk) => {
-      if (totalSize === 0) {
-        return;
-      }
-      downloadedSize += chunk.length;
-      downloadProgressCallback({
-        percent: totalSize === 0 ? 0 : Math.round(downloadedSize / totalSize),
-      });
-    });
-  });
 }

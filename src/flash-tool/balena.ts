@@ -3,11 +3,12 @@ import { appSettings } from '../app-settings';
 import { appLogger } from '../app-logger';
 import fs from 'fs';
 import path from 'path';
-import { app } from 'electron';
 import extract from 'extract-zip';
-import { downloadFile, DriveUnit, findMatches, getError, OnDownloadProgressCallback } from '../utils';
+import { DriveUnit, findMatches, getError } from '../utils';
 import { exec } from 'child_process';
 import { OnUpdateAvailableCallback } from '../app-updater';
+import { FlashOutput, FLASHTOOL_DIR } from '../app-iso';
+import { downloadFile, OnDownloadProgressCallback } from '../download';
 
 const FILENAME_DARWIN = '-darwin-';
 const FILENAME_LINUX = '-linux-';
@@ -20,6 +21,9 @@ const DRIVELIST_WINDOWS = /^(\\.*?)\s+([\d\.]+)\s+(.*?)\s+(.*?)$/gmu;
 // eslint-disable-next-line no-useless-escape
 const DRIVELIST_LINUX = /^(\/.*?)\s+([\d\.]+)\s+(.*?)\s+(.*?)$/gmu;
 const UNITS: DriveUnit[] = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'];
+
+const BALENA_FLASH_PATTERN = /.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)/gum;
+const BALENA_ETA_PATTERN = /(\d+)([hms])/gum;
 
 export interface ReleaseInfos {
   downloadUrl: string;
@@ -91,7 +95,7 @@ export class Balena {
       await this.unzipArchive(archivePath);
 
       appSettings.set('flashtool.version', release.version);
-      this.downloadProgressCallback({ installed: true });
+      this.downloadProgressCallback({ terminated: true });
     } catch (error) {
       appLogger.error(`Error installing flash-tool: ${error}`);
       this.downloadProgressCallback({ percent: 100, error: getError(error) });
@@ -99,7 +103,7 @@ export class Balena {
   }
 
   private async unzipArchive(sourcePath: string) {
-    const destinationPath = this.getBalenaInstallDir();
+    const destinationPath = FLASHTOOL_DIR;
     fs.rmSync(destinationPath, { recursive: true, force: true });
     fs.mkdirSync(destinationPath, { recursive: true });
     appLogger.debug(`Unzipping flash-tool archive "${sourcePath}" to "${destinationPath}"`);
@@ -144,18 +148,14 @@ export class Balena {
     const platform = String(process.platform);
     switch (platform) {
       case 'darwin':
-        return path.join(this.getBalenaInstallDir(), BALENA_DARWIN_BIN);
+        return path.join(FLASHTOOL_DIR, BALENA_DARWIN_BIN);
       case 'linux':
-        return path.join(this.getBalenaInstallDir(), BALENA_LINUX_BIN);
+        return path.join(FLASHTOOL_DIR, BALENA_LINUX_BIN);
       case 'win32':
-        return path.join(this.getBalenaInstallDir(), BALENA_WINDOWS_BIN);
+        return path.join(FLASHTOOL_DIR, BALENA_WINDOWS_BIN);
       default:
         throw new Error(`Platform ${platform} not supported`);
     }
-  }
-
-  private getBalenaInstallDir(): string {
-    return path.join(app.getPath('userData'), 'flash-tool');
   }
 
   public async getDriveList(): Promise<Drive[]> {
@@ -186,6 +186,38 @@ export class Balena {
     });
   }
 
+  public parseFlashOutput(line: string): FlashOutput {
+    const matches: string[][] = [];
+    findMatches(BALENA_FLASH_PATTERN, line, matches);
+
+    if (matches.length !== 1 || matches[0].length !== 4) {
+      return;
+    }
+
+    return {
+      mode: matches[0][1] === 'Flashing' ? 'flashing' : 'validating',
+      percent: parseInt(matches[0][2]),
+      eta: this.parseEta(matches[0][3]),
+    }
+  }
+
+  private parseEta(eta: string): number {
+    // format 1m01s, 20s
+    if (!eta?.length) return 0;
+
+    const matches: string[][] = [];
+    findMatches(BALENA_ETA_PATTERN, eta, matches);
+    const unitConversion: Record<string, number> = { s: 1, m: 60, h: 3600 };
+    let seconds = 0;
+    for (const match of matches) {
+      const factor = unitConversion[match[2]];
+      const value = parseInt(match[1]);
+      seconds += !factor ? 0 : value * factor;
+    }
+
+    return seconds;
+  }
+
   private computeSizeInBytes(sizeStr: string, unit: string): number {
     if (!this.isDriveUnit(unit)) {
       throw new Error(`Unit ${unit} is not supported`);
@@ -212,10 +244,6 @@ export class Balena {
       default:
         throw new Error(`Platform ${platform} not supported`);
     }
-  }
-
-  public async flashDrive(device: string, isoPath: string) {
-    // TODO
   }
 }
 

@@ -108,7 +108,7 @@ export class AppLogger {
   private initFileLogging(debugEnabled: boolean): void {
     logger.transports.file.level = isDev || debugEnabled ? 'debug' : 'info';
     logger.transports.file.maxSize = 1 * 1024 * 1024;
-    logger.transports.file.resolvePath = () => path.join(app.getPath('appData'), app.getName(), 'electron.log');
+    logger.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'cleepdesktop.log');
   }
 }
 

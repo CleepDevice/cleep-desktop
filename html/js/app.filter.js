@@ -1,7 +1,7 @@
 /**
  * Timestamp to human readable string
  **/
- Cleep.filter('hrDatetime', function(settingsService) {
+angular.module('Cleep').filter('hrDatetime', function(settingsService) {
     return function(timestamp, shortYear) {
         if (!timestamp) {
             return '-';
@@ -23,9 +23,25 @@
     };
 });
 
-Cleep.filter('hrTime', function() {
+angular.module('Cleep').filter('hrSeconds', function() {
+    return function(secs) {
+        const hours = Math.floor( ( secs %= 86400 ) / 3600 );
+        const minutes = Math.floor( ( secs %= 3600 ) / 60 );
+        const seconds = secs % 60;
+    
+        if ( hours || seconds || minutes ) {
+            return ( hours ? hours + "h" : ""  ) +
+                ( minutes ? minutes + "m" : "" ) +
+                Number.parseFloat( seconds ).toFixed(0) + "s";
+        }
+    
+        return "< 1s";
+    };
+});
+
+angular.module('Cleep').filter('hrTimestamp', function() {
     return function(timestamp, withSeconds) {
-        if( angular.isUndefined(ts) || ts===null )
+        if( angular.isUndefined(timestamp) || timestamp===null )
             return '-';
         else
         {
@@ -37,7 +53,7 @@ Cleep.filter('hrTime', function() {
     };
 });
 
-Cleep.filter('hrDate', function() {
+angular.module('Cleep').filter('hrDate', function() {
     return function(timestamp, shortYear) {
         if( angular.isUndefined(timestamp) || ts===null )
             return '-';
@@ -55,7 +71,7 @@ Cleep.filter('hrDate', function() {
  * Bytes to human readable
  * Code copied from https://gist.github.com/thomseddon/3511330
  */
-Cleep.filter('hrBytes', function() {
+ angular.module('Cleep').filter('hrBytes', function() {
     return function(bytes, precision) {
         if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
         if (typeof precision === 'undefined') precision = 1;

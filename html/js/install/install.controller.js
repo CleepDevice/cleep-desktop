@@ -72,51 +72,13 @@ function($rootScope, toast, confirm, logger, updateService, installService, moda
         
         confirm.open('Confirm installation?', 'Installation will erase all drive content. This operation cannot be reversed!<br/> \
                       Please note that admin permissions will be requested after file download.', 'Yes, install', 'No')
-            .then(function() {
+            .then(() => {
                 installService.startInstall();
-                toast.info('Installation started');
             })
-            .catch(() => { /* handle rejection */ });
+            .catch((error) => { logger.debug('CANCELED', {error}); /* handle rejection */ });
     };
 
-    // self.cancelInstall = function() {
-    //     if( !self.installService.status ) {
-    //         return;
-    //     }
-
-    //     // check if process is running
-    //     if (self.installService.status.status>=self.installService.STATUS.DONE) {
-    //         self.logger.debug('CancelFlash: invalid status [' + self.installService.status.status + '] do nothing');
-    //         return;
-    //     }
-
-    //     if (self.installService.status.status===self.installService.STATUS.DOWNLOADING ||
-    //         self.installService.status.status===self.installService.STATUS.DOWNLOADING_NOSIZE) {
-    //         confirm.open('Cancel installation?', null, 'Yes', 'No')
-    //             .then(function() {
-    //                 installService.cancelInstall();
-    //             });
-    //     } else if (self.installService.status.status===self.installService.STATUS.FLASHING ||
-    //         self.installService.status.status===self.installService.STATUS.VALIDATING) {
-    //         confirm.open('Cancel installation?', 'Canceling installation during this step of process will put your removable media in inconsistant state.', 'Yes, cancel', 'No, continue')
-    //             .then(function() {
-    //                 installService.cancelInstall();
-    //             })
-    //             .catch(() => { /* handle rejection */ });
-    //     } else if (self.installService.status.status===self.installService.STATUS.REQUEST_WRITE_PERMISSIONS) {
-    //         //can cancel if permissions is blocked. Can happen if user take too much time filling password
-    //         confirm.open('Cancel installation?', null, 'Yes', 'No')
-    //             .then(function() {
-    //                 installService.cancelInstall();
-    //             })
-    //             .catch(() => { /* handle rejection */ });
-    //     } else {
-    //         logger.debug('Nothing to do with current status [' + self.installService.status.status + ']'); 
-    //     }
-    // };
-
-    // self.downloadIso = function() {
-    //     downloadService.downloadUrl(self.installService.installConfig.iso.url);
-    // };
-
+    self.cancelInstall = function() {
+        installService.cancelInstall();
+    };
 }]);

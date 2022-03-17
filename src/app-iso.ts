@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import { appLogger } from './app-logger';
 import { appSettings } from './app-settings';
 import { CleepOs } from './iso/cleepos';
@@ -6,12 +6,43 @@ import { RaspiOs, RaspiosLatestRelease } from './iso/raspios';
 import { Wifi, WifiNetwork } from './iso/wifi';
 import { ReleaseInfo } from './iso/utils';
 import { balena, Drive } from './flash-tool/balena';
-import { downloadFile, getError, UpdateData } from './utils';
+import { getError } from './utils';
+import path from 'path';
+import { Sudo, SudoOptions } from './sudo/sudo';
+import { writeFile } from 'fs';
+import { cancelDownload, downloadFile, DownloadProgress } from './download';
+
+export interface WifiData {
+  network: string;
+  security: string;
+  password: string;
+  hidden: boolean;
+}
 
 export interface InstallData {
-  url: string;
-  drive: string;
-  wifi: WifiNetwork;
+  isoUrl: string;
+  isoPath?: string;
+  drivePath: string;
+  wifiData: WifiData;
+  wifiFilePath?: string;
+}
+
+export interface FlashOutput {
+  mode: 'flashing' | 'validating';
+  percent: number;
+  eta: number;
+}
+
+export const FLASHTOOL_DIR = path.join(app.getPath('userData'), 'flash-tool');
+
+type InstallStep = 'idle' | 'downloading' | 'privileges' | 'flashing' | 'validating' | 'canceled';
+
+interface InstallProgress {
+  percent?: number;
+  eta?:  number;
+  step?: InstallStep;
+  error?: string;
+  terminated?: boolean;
 }
 
 class AppIso {
@@ -26,6 +57,7 @@ class AppIso {
     raspios: RaspiosLatestRelease;
   } = { cleepos: null, raspios: null };
   private window: BrowserWindow;
+  private currentInstall: { isoUrl: string, sudo: Sudo } = { isoUrl: '', sudo: null };
 
   constructor() {
     this.raspios = new RaspiOs();
@@ -87,18 +119,135 @@ class AppIso {
     return drives;
   }
 
-  public async downloadIso(url: string) {
+  public async downloadIso(installData: InstallData) {
     try {
-      const iso = await downloadFile(url, this.downloadProgressCallback);
-      this.downloadProgressCallback({ installed: true });
+      this.currentInstall.isoUrl = installData.isoUrl;
+      installData.isoPath = await downloadFile(installData.isoUrl, this.downloadProgressCallback.bind(this));
+      appLogger.info(`Iso downloaded to ${installData.isoPath}`);
+      this.downloadProgressCallback({ percent: 100, terminated: true, eta: 0 });
     } catch (error) {
       appLogger.error(`Error downloading iso: ${error}`);
-      this.downloadProgressCallback({ percent: 100, error: getError(error) });
+      this.downloadProgressCallback({ percent: 100, terminated: true, error: getError(error) });
+    } finally {
+      this.currentInstall.isoUrl = '';
     }
   }
 
-  private downloadProgressCallback(updateData: UpdateData) {
-    this.window.webContents.send('updater-cleepdesktop-download-progress', updateData);
+  private downloadProgressCallback(downloadProgress: DownloadProgress) {
+    const installProgress: InstallProgress = {
+      percent: downloadProgress.percent,
+      eta: downloadProgress.eta,
+      step: 'downloading',
+      ...(downloadProgress?.error && { error: downloadProgress.error }),
+    }
+    // appLogger.debug('Download progress', installProgress);
+    this.window.webContents.send('iso-install-progress', installProgress);
+  }
+
+  public async startInstall(installData: InstallData): Promise<void> {
+    await this.downloadIso(installData);
+    await this.writeWifiFile(installData);
+    this.flashDrive(installData);
+  }
+
+  public cancelInstall(): void {
+    // TODO Does not work :S
+    appLogger.debug('cancel request', this.currentInstall);
+    if (this.currentInstall.isoUrl) {
+      appLogger.info('Download canceled by user');
+      cancelDownload(this.currentInstall.isoUrl);
+    } else if(this.currentInstall.sudo) {
+      appLogger.info('SDCard flash canceled by user');
+      this.currentInstall.sudo.kill();
+    }
+  }
+
+  private writeWifiFile(installData: InstallData): Promise<void> {
+    if (!installData.wifiData) {
+      return;
+    }
+     
+    installData.wifiFilePath = path.join(app.getPath('temp'), 'cleep-network.conf');
+      
+    return new Promise((resolve, reject) => {
+      const config = {
+        network: installData.wifiData.network,
+        password: installData.wifiData.password,
+        encryption: installData.wifiData.security,
+        hidden: installData.wifiData.hidden,
+      };
+      writeFile(installData.wifiFilePath, JSON.stringify(config), (error: Error) => {
+        if (error) {
+          reject(`Error writing wifi file ${error?.message || 'unknown error'}`);
+          return;
+        }
+
+        appLogger.debug(`Wifi config written to ${installData.wifiFilePath}`);
+        resolve();
+      });
+    });
+  }
+
+  private flashDrive(installData: InstallData): void {
+    const extension = process.platform === 'win32' ? '.bat' : '.sh';
+    const command = path.join(FLASHTOOL_DIR, 'flash' + extension);
+    const args = [
+      FLASHTOOL_DIR,
+      installData.drivePath,
+      installData.isoPath,
+      installData.wifiFilePath,
+    ];
+
+    const installProgress: InstallProgress = {
+      percent: 0,
+      eta: 0,
+      step: 'privileges',
+    }
+    this.window.webContents.send('iso-install-progress', installProgress);
+
+    const options: SudoOptions = {
+      appName: app.name,
+      terminatedCallback: this.flashTerminatedCallback.bind(this),
+      stdoutCallback: this.flashStdoutCallback.bind(this),
+      stderrCallback: this.flashStderrCallback.bind(this),
+    }
+    const sudo = new Sudo(options);
+    this.currentInstall.sudo = sudo;
+    sudo.run(command, args);
+  }
+
+  private flashTerminatedCallback(exitCode: number): void {
+    appLogger.info(`Flash drive terminated (exit code: ${exitCode})`);
+    this.currentInstall.sudo = null;
+    
+    const installProgress: InstallProgress = {
+      percent: 100,
+      eta: 0,
+      step: 'idle',
+      terminated: true,
+    }
+    this.window.webContents.send('iso-install-progress', installProgress);
+  }
+
+  private flashStdoutCallback(stdout: string) {
+    const flashOutput = balena.parseFlashOutput(stdout);
+    if (!flashOutput) return;
+    
+    const installProgress: InstallProgress = {
+      percent: flashOutput.percent,
+      eta: flashOutput.eta,
+      step: flashOutput.mode,
+    }
+    this.window.webContents.send('iso-install-progress', installProgress);
+  }
+
+  private flashStderrCallback(stderr: string) {
+    appLogger.error('Drive flash failed', { error: stderr });
+
+    const installProgress: InstallProgress = {
+      error: stderr
+    }
+    this.window.webContents.send('iso-install-progress', installProgress);
   }
 
   private addIpcs(): void {
@@ -128,6 +277,12 @@ class AppIso {
 
     ipcMain.on('iso-start-install', (_event, installData: InstallData) => {
       appLogger.debug('Start iso install', installData);
+      this.startInstall(installData);
+    });
+
+    ipcMain.on('iso-cancel-install', () => {
+      appLogger.debug('Cancel iso install');
+      this.cancelInstall();
     });
   }
 }

@@ -41,7 +41,7 @@ export class AppCore {
     if (!fs.existsSync(coreBin)) {
       coreBin = path.join(__dirname, 'cleepdesktopcore/');
     }
-    if (process.platform == 'win32') {
+    if (process.platform === 'win32') {
       coreBin = path.join(coreBin, 'cleepdesktopcore.exe');
     } else {
       coreBin = path.join(coreBin, 'cleepdesktopcore');
@@ -68,7 +68,7 @@ export class AppCore {
   public startDev(rpcPort: number): void {
     appLogger.debug('Start core in development mode');
 
-    const coreBin = process.platform === 'win32' ? 'py -3' : 'python3';
+    const coreBin = process.platform === 'win32' ? 'py' : 'python3';
     const coreArgs: string[] = [
       'cleepdesktopcore.py',
       String(rpcPort),
