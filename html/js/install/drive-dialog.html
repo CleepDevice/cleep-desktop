@@ -24,7 +24,18 @@
 
         <!-- list -->
         <md-list ng-show="!ctl.loading" style="padding: 0px;">
-            <md-list-item ng-if="ctl.installService.drives.length === 0" class="md-2-line">
+            <md-list-item ng-if="ctl.installService.drives.length === 0 && !ctl.installService.noFlashTool" class="md-2-line">
+                <md-icon md-svg-icon="alert"></md-icon>
+                <div class="md-list-item-text">
+                    <h3>Flash tool is not installed</h3>
+                    <p>Please go to updates page to install it</p>
+                </div>
+                <md-button ng-click="ctl.gotoUpdates()">
+                    <md-icon md-svg-icon="open-in-app"></md-icon>
+                    Open updates page
+                </md-button>
+            </md-list-item>
+            <md-list-item ng-if="ctl.installService.drives.length === 0 && ctl.installService.noFlashTool" class="md-2-line">
                 <md-icon md-svg-icon="alert"></md-icon>
                 <div class="md-list-item-text">
                     <h3>No drive found</h3>
@@ -32,7 +43,7 @@
                 </div>
             </md-list-item>
             <md-list-item ng-repeat="drive in ctl.installService.drives" ng-click="ctl.selectDrive(drive)" class="md-2-line">
-                <md-icon md-svg-icon="circle-small"></md-icon>
+                <md-icon md-svg-icon="usb-flash-drive"></md-icon>
                 <div class="md-list-item-text">
                     <h3>{{ drive.description | limitTo: 40 }}</h3>
                     <p>Size {{ drive.size | hrBytes }}</p>

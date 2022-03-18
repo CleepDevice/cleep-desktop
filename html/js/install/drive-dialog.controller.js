@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.controller('driveController', ['closeModal', 'installService', 'toastService', '$timeout',
-function(closeModal, installService, toast, $timeout) {
+.controller('driveController', ['closeModal', 'installService', 'toastService', '$rootScope',
+function(closeModal, installService, toast, $rootScope) {
 
     var self = this;
     self.installService = installService;
@@ -27,6 +27,10 @@ function(closeModal, installService, toast, $timeout) {
             return;
         }
         self.closeModal(drive);
+    };
+
+    self.gotoUpdates = function() {
+        $rootScope.$broadcast('open-page', 'updates');
     };
 
 }]);
