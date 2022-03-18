@@ -11,6 +11,8 @@ import path from 'path';
 import { Sudo, SudoOptions } from './sudo/sudo';
 import { writeFile } from 'fs';
 import { cancelDownload, downloadFile, DownloadProgress } from './download';
+import { appUpdater } from './app-updater';
+import { NotInstalledException } from './exceptions/not-installed.exception';
 
 export interface WifiData {
   network: string;
@@ -39,7 +41,7 @@ type InstallStep = 'idle' | 'downloading' | 'privileges' | 'flashing' | 'validat
 
 interface InstallProgress {
   percent?: number;
-  eta?:  number;
+  eta?: number;
   step?: InstallStep;
   error?: string;
   terminated?: boolean;
@@ -57,7 +59,7 @@ class AppIso {
     raspios: RaspiosLatestRelease;
   } = { cleepos: null, raspios: null };
   private window: BrowserWindow;
-  private currentInstall: { isoUrl: string, sudo: Sudo } = { isoUrl: '', sudo: null };
+  private currentInstall: { isoUrl: string; sudo: Sudo } = { isoUrl: '', sudo: null };
 
   constructor() {
     this.raspios = new RaspiOs();
@@ -113,6 +115,9 @@ class AppIso {
   }
 
   public async getDriveList(): Promise<Drive[]> {
+    if (!appUpdater.isFlashToolInstalled()) {
+      throw new NotInstalledException('flash-tool');
+    }
     const drives = await balena.getDriveList();
     appLogger.info('Found drives', drives);
 
@@ -139,7 +144,7 @@ class AppIso {
       eta: downloadProgress.eta,
       step: 'downloading',
       ...(downloadProgress?.error && { error: downloadProgress.error }),
-    }
+    };
     // appLogger.debug('Download progress', installProgress);
     this.window.webContents.send('iso-install-progress', installProgress);
   }
@@ -156,7 +161,7 @@ class AppIso {
     if (this.currentInstall.isoUrl) {
       appLogger.info('Download canceled by user');
       cancelDownload(this.currentInstall.isoUrl);
-    } else if(this.currentInstall.sudo) {
+    } else if (this.currentInstall.sudo) {
       appLogger.info('SDCard flash canceled by user');
       this.currentInstall.sudo.kill();
     }
@@ -166,9 +171,9 @@ class AppIso {
     if (!installData.wifiData) {
       return;
     }
-     
+
     installData.wifiFilePath = path.join(app.getPath('temp'), 'cleep-network.conf');
-      
+
     return new Promise((resolve, reject) => {
       const config = {
         network: installData.wifiData.network,
@@ -191,18 +196,13 @@ class AppIso {
   private flashDrive(installData: InstallData): void {
     const extension = process.platform === 'win32' ? '.bat' : '.sh';
     const command = path.join(FLASHTOOL_DIR, 'flash' + extension);
-    const args = [
-      FLASHTOOL_DIR,
-      installData.drivePath,
-      installData.isoPath,
-      installData.wifiFilePath,
-    ];
+    const args = [FLASHTOOL_DIR, installData.drivePath, installData.isoPath, installData.wifiFilePath];
 
     const installProgress: InstallProgress = {
       percent: 0,
       eta: 0,
       step: 'privileges',
-    }
+    };
     this.window.webContents.send('iso-install-progress', installProgress);
 
     const options: SudoOptions = {
@@ -210,7 +210,7 @@ class AppIso {
       terminatedCallback: this.flashTerminatedCallback.bind(this),
       stdoutCallback: this.flashStdoutCallback.bind(this),
       stderrCallback: this.flashStderrCallback.bind(this),
-    }
+    };
     const sudo = new Sudo(options);
     this.currentInstall.sudo = sudo;
     sudo.run(command, args);
@@ -219,25 +219,25 @@ class AppIso {
   private flashTerminatedCallback(exitCode: number): void {
     appLogger.info(`Flash drive terminated (exit code: ${exitCode})`);
     this.currentInstall.sudo = null;
-    
+
     const installProgress: InstallProgress = {
       percent: 100,
       eta: 0,
       step: 'idle',
       terminated: true,
-    }
+    };
     this.window.webContents.send('iso-install-progress', installProgress);
   }
 
   private flashStdoutCallback(stdout: string) {
     const flashOutput = balena.parseFlashOutput(stdout);
     if (!flashOutput) return;
-    
+
     const installProgress: InstallProgress = {
       percent: flashOutput.percent,
       eta: flashOutput.eta,
       step: flashOutput.mode,
-    }
+    };
     this.window.webContents.send('iso-install-progress', installProgress);
   }
 
@@ -245,34 +245,65 @@ class AppIso {
     appLogger.error('Drive flash failed', { error: stderr });
 
     const installProgress: InstallProgress = {
-      error: stderr
-    }
+      error: stderr,
+    };
     this.window.webContents.send('iso-install-progress', installProgress);
   }
 
   private addIpcs(): void {
     ipcMain.handle('iso-get-isos', async () => {
-      const releases = await Promise.all([this.getLatestRaspios(), this.getLatestCleepos()]);
-      const [raspios, cleepos] = releases;
-
-      return { raspios, cleepos };
+      try {
+        const releases = await Promise.all([this.getLatestRaspios(), this.getLatestCleepos()]);
+        const [raspios, cleepos] = releases;
+        return { data: { raspios, cleepos }, error: false };
+      } catch (error) {
+        appLogger.error('Unable to get isos', { error });
+        return { data: {}, error: true };
+      }
     });
 
     ipcMain.handle('iso-refresh-wifi-networks', async () => {
-      await this.refreshWifiNetworks();
-      return this.getWifiNetworks();
+      try {
+        await this.refreshWifiNetworks();
+        const networks = this.getWifiNetworks();
+        return { data: networks, error: false };
+      } catch (error) {
+        appLogger.error('Unable to refresh wifi networks', { error });
+        return { data: [], error: true };
+      }
     });
 
     ipcMain.handle('iso-get-wifi-networks', () => {
-      return this.getWifiNetworks();
+      try {
+        const networks = this.getWifiNetworks();
+        return { data: networks, error: false };
+      } catch (error) {
+        appLogger.error('Unable to get wifi networks', { error });
+        return { data: [], error: true };
+      }
     });
 
     ipcMain.handle('iso-get-drives', async () => {
-      return await this.getDriveList();
+      try {
+        const drives = await this.getDriveList();
+        return { data: drives, error: false };
+      } catch (error) {
+        if (error instanceof NotInstalledException) {
+          return { data: [], error: true, noFlashTool: true };
+        }
+        appLogger.error('Unable to get drives', { error });
+        return { data: [], error: true, noFlashTool: false };
+      }
     });
 
     ipcMain.handle('iso-has-wifi', async () => {
-      return await this.wifi.hasWifi();
+      try {
+        const hasWifi = await this.wifi.hasWifi();
+        return { data: hasWifi, error: false };
+      } catch (error) {
+        appLogger.error('Unable to know if wifi adapter exists');
+        return { data: false, error: true };
+      }
     });
 
     ipcMain.on('iso-start-install', (_event, installData: InstallData) => {

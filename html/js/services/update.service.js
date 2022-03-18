@@ -73,7 +73,7 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     self.onCleepDesktopUpdateCallback =  function(_event, updateData) {
         Object.assign(self.cleepDesktopUpdate, updateData);
 
-        if (self.flashToolUpdate.installed) {
+        if (self.flashToolUpdate.terminated) {
             self.restartRequired = true;
             self.clearObject(self.flashToolUpdate);
             self.closeUpdateTaskPanel();
@@ -84,7 +84,7 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     self.onFlashToolUpdateCallback = function(_event, updateData) {
         Object.assign(self.flashToolUpdate, updateData);
 
-        if (self.flashToolUpdate.installed) {
+        if (self.flashToolUpdate.terminated) {
             self.clearObject(self.flashToolUpdate);
             self.closeUpdateTaskPanel();
             self.updateSofwareVersions();

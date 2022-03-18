@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.service('installService', ['$rootScope', '$state', 'loggerService', 'tasksPanelService', 'settingsService', 'electronService',
-function($rootScope, $state, logger, tasksPanelService, settingsService, electron) {
+.service('installService', ['$rootScope', '$state', 'loggerService', 'tasksPanelService', 'settingsService', 'electronService', 'toastService',
+function($rootScope, $state, logger, tasksPanelService, settingsService, electron, toast) {
 
     var self = this;
     self.settings = {
@@ -34,6 +34,7 @@ function($rootScope, $state, logger, tasksPanelService, settingsService, electro
     }
     self.drives = [];
     self.taskInstallPanelId = null;
+    self.noFlashTool = false;
 
     self.init = function() {
         self.addIpcs();
@@ -67,9 +68,9 @@ function($rootScope, $state, logger, tasksPanelService, settingsService, electro
 
     self.hasWifi = function() {
         return electron.sendReturn('iso-has-wifi')
-            .then((hasWifi) => {
-                self.wifiInfo.hasWifi = hasWifi;
-                return hasWifi;
+            .then((response) => {
+                self.wifiInfo.hasWifi = response.data;
+                return self.wifiInfo.hasWifi;
             });
     }
 
@@ -79,9 +80,13 @@ function($rootScope, $state, logger, tasksPanelService, settingsService, electro
         }
 
         return electron.sendReturn('iso-refresh-wifi-networks')
-            .then((networks) => {
+            .then((response) => {
+                if (response.error) {
+                    toast.error('Unable to refresh wifi networks');
+                    return;
+                }
                 self.wifiInfo.retrieved = true;
-                self.fillArray(self.wifiInfo.networks, networks);
+                self.fillArray(self.wifiInfo.networks, response.data);
             });
     };
 
@@ -91,17 +96,29 @@ function($rootScope, $state, logger, tasksPanelService, settingsService, electro
         }
 
         return electron.sendReturn('iso-get-isos')
-            .then((isos) => {
+            .then((response) => {
+                if (response.error) {
+                    toast.error('Unable to get files');
+                    return;
+                }
                 self.isosInfo.retrieved = true;
-                Object.assign(self.isosInfo.raspios, isos.raspios);
-                Object.assign(self.isosInfo.cleepos, isos.cleepos);
+                Object.assign(self.isosInfo.raspios, response.data.raspios);
+                Object.assign(self.isosInfo.cleepos, response.data.cleepos);
             });
     };
 
     self.refreshDriveList = function() {
         return electron.sendReturn('iso-get-drives')
-            .then((drives) => {
-                self.fillArray(self.drives, drives);
+            .then((response) => {
+                if (response.error && !response.noFlashTool) {
+                    self.noFlashTool = true;
+                } else if (response.error && response.noFlashTool) {
+                    self.noFlashTool = false;
+                    toast.error('Unable to get drives');
+                    return;
+                }
+                self.noFlashTool = false;
+                self.fillArray(self.drives, response.data);
             });
     };
 

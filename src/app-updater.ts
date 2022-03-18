@@ -61,6 +61,10 @@ export class AppUpdater {
     return version.format();
   }
 
+  public isFlashToolInstalled(): boolean {
+    return this.flashTool.getInstalledVersion() !== null;
+  }
+
   public async checkForUpdates(updateMode: CheckForUpdateMode): Promise<UpdateStatus> {
     const lastUpdateCheck = Math.round(new Date().getTime() / 1000);
     if (isDev && updateMode === 'auto') {
@@ -70,7 +74,7 @@ export class AppUpdater {
 
     const cleepDesktopUpdate = await this.checkForCleepDesktopUpdates();
     const flashToolUpdate = await this.flashTool.checkForUpdates();
-    
+
     appSettings.set('cleep.lastupdatecheck', lastUpdateCheck);
 
     const changelogSize = appContext.getChangelogFilesize();
