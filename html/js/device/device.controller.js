@@ -25,20 +25,18 @@ function($rootScope, $stateParams, logger, $document, $timeout, deviceService, d
         }
     });
 
-    // device loading
-    self.wv.addEventListener('did-start-loading', () => {
-        deviceService.loading = true;
-    });
-
-    // device loaded
-    self.wv.addEventListener('did-stop-loading', () => {
+    // disable pre-loading to avoid blank page
+    self.wv.addEventListener('dom-ready', () => {
         $timeout(function() {
             deviceService.loading = false;
-        }, 1000);
-    }, true);
+        }, 0);
+    });
 
     // configure webview src as soon as document is ready
     $document.ready(function() {
+        $timeout(function() {
+            deviceService.loading = true;
+        }, 0);
         logger.debug('Opening "'+$stateParams.hostname+'" device url: '+$stateParams.url);
         self.wvAngular = angular.element(self.wv);
         self.wvAngular.attr('src', $stateParams.url + '?'+Date.now());
