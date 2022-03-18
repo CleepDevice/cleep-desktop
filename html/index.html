@@ -29,7 +29,7 @@
                 <md-divider></md-divider>
 
                 <md-list-item ng-click="cleep.openPage('default')" aria-label="Homepage" title="Homepage" title="Homepage">
-                    <md-icon md-svg-icon="home-outline" ng-class="cleep.selectedToolbarItem=='default' ? 'md-accent' : 'white-icon'"></md-icon>
+                    <md-icon md-svg-icon="home" ng-class="cleep.selectedToolbarItem=='default' ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Homepage</p>
                 </md-list-item>
 
@@ -43,14 +43,14 @@
                 <md-divider></md-divider>
                 
                 <md-list-item ng-click="cleep.openPage('monitoring')" aria-label="Monitoring" title="Monitoring">
-                    <md-icon md-svg-icon="message-text-outline" ng-class="cleep.selectedToolbarItem=='monitoring' ? 'md-accent' : 'white-icon'"></md-icon>
+                    <md-icon md-svg-icon="message-text" ng-class="cleep.selectedToolbarItem=='monitoring' ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Monitoring</p>
                 </md-list-item>
 
                 <md-divider></md-divider>
 
                 <md-list-item ng-click="cleep.openModal('preferencesController', 'js/preferences/preferences-dialog.html')" aria-label="Preferences" title="Preferences">
-                    <md-icon class="white-icon" md-svg-icon="settings"></md-icon>
+                    <md-icon class="white-icon" md-svg-icon="cog"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Preferences</p>
                 </md-list-item>
 
