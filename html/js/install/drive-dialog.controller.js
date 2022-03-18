@@ -1,6 +1,3 @@
-/**
- * Drive controller
- */
 angular
 .module('Cleep')
 .controller('driveController', ['closeModal', 'installService', 'toastService', '$timeout',

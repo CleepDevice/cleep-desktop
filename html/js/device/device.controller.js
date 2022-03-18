@@ -1,6 +1,3 @@
-/**
- * Device controller
- */
 angular
 .module('Cleep')
 .controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'deviceService', 'downloadService', 'electronService',

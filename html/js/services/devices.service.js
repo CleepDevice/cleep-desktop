@@ -1,6 +1,3 @@
-/**
- * Devices service handles all devices
- */
 angular
 .module('Cleep')
 .service('devicesService', ['$rootScope', 'cleepService', 'loggerService',
