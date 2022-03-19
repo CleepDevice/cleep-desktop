@@ -51,9 +51,18 @@ function($rootScope, $state, logger, tasksPanelService, settingsService, electro
         self.installing = !self.installProgress.terminated;
 
         if (!self.installing) {
-            self.onCloseInstallTaskPanel();
+            self.terminateInstall();
         }
     };
+
+    self.terminateInstall = function() {
+        if (self.installProgress.error.length === 0) {
+            // install terminated without error, reset only drive field that
+            // must be scanned again if user installs another device
+            self.installConfig.drive = null;
+        }
+        self.onCloseInstallTaskPanel();
+    }
 
     self.getIsoSettings = function() {
         settingsService.getAll(['cleep.isolocal', 'cleep.isoraspios'])

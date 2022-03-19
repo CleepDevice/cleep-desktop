@@ -50,14 +50,6 @@ function($rootScope, toast, confirm, logger, updateService, installService, moda
             .catch(() => { /* handle rejection */ });
     };
 
-    // self.resetFields = function() {
-    //     logger.debug('Reset fields');
-    //     self.installService.installConfig.drive = null;
-    //     self.installService.installConfig.iso = null;
-    //     self.installService.installConfig.network = 0;
-    //     self.installService.installConfig.wifi = null;
-    // };
-
     self.startInstall = function() {
         if (!self.installService.installConfig.iso || !self.installService.installConfig.drive) {
             toast.error('Please select a Cleep version and a drive');
