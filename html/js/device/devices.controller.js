@@ -1,6 +1,3 @@
-/**
- * Devices controller
- */
 angular
 .module('Cleep')
 .controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope', 'electronService',
@@ -44,7 +41,10 @@ function($state, devicesService, toastService, confirmService, $rootScope, elect
     };
 
     self.test = function() {
-        electron.send('test');
+        electron.sendReturn('cache-get-files')
+        .then((resp) => {
+            console.log('======>', resp);
+        })
     }
 
     // delete device

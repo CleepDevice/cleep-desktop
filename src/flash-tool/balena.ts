@@ -22,8 +22,8 @@ const DRIVELIST_WINDOWS = /^(\\.*?)\s+([\d\.]+)\s+(.*?)\s+(.*?)$/gmu;
 const DRIVELIST_LINUX = /^(\/.*?)\s+([\d\.]+)\s+(.*?)\s+(.*?)$/gmu;
 const UNITS: DriveUnit[] = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'];
 
-const BALENA_FLASH_PATTERN = /.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)/gum;
-const BALENA_ETA_PATTERN = /(\d+)([hms])/gum;
+const BALENA_FLASH_PATTERN = /.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)/gmu;
+const BALENA_ETA_PATTERN = /(\d+)([hms])/gmu;
 
 export interface ReleaseInfos {
   downloadUrl: string;
@@ -198,7 +198,7 @@ export class Balena {
       mode: matches[0][1] === 'Flashing' ? 'flashing' : 'validating',
       percent: parseInt(matches[0][2]),
       eta: this.parseEta(matches[0][3]),
-    }
+    };
   }
 
   private parseEta(eta: string): number {

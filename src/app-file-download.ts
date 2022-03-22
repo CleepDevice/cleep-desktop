@@ -18,7 +18,6 @@ export interface DownloadComplete {
 
 export class AppFileDownload {
   private downloads: Record<string, Download> = {};
-  private downloadsUrls: Record<string, string> = {};
   public window: BrowserWindow;
 
   constructor() {
@@ -111,7 +110,7 @@ export class AppFileDownload {
     }
   }
 
-  private onDownloadCompleted(downloadId: string, item: DownloadComplete): void {
+  private onDownloadCompleted(downloadId: string, _item: DownloadComplete): void {
     appLogger.info(`Download ${downloadId} completed`);
 
     const download = this.getDownload(downloadId);
