@@ -37,7 +37,7 @@
             <md-list-item ng-if="ctl.installService.isosInfo.cleepos" ng-click="ctl.selectRemoteIso(ctl.installService.isosInfo.cleepos)">
                 <md-icon md-svg-icon="circle-small"></md-icon>
                 <p>
-                    {{ctl.installService.isosInfo.cleepos.filename}} - 
+                    {{ctl.installService.isosInfo.cleepos.label}} - 
                     {{ctl.installService.isosInfo.cleepos.date | date:'yyyy/MM/dd'}} - 
                     {{ctl.installService.isosInfo.cleepos.size | hrBytes}}
                 </p>
@@ -50,14 +50,14 @@
             <md-list-item ng-if="ctl.installService.settings.isoraspios && ctl.installService.isosInfo.raspios.full" ng-click="ctl.selectRemoteIso(ctl.installService.isosInfo.raspios.full)">
                 <md-icon md-svg-icon="circle-small"></md-icon>
                 <p>
-                    {{ctl.installService.isosInfo.raspios.full.filename}} - 
+                    {{ctl.installService.isosInfo.raspios.full.label}} - 
                     {{ctl.installService.isosInfo.raspios.full.date | date:'yyyy/MM/dd'}} 
                 </p>
             </md-list-item>
             <md-list-item ng-if="ctl.installService.settings.isoraspios && ctl.installService.isosInfo.raspios.lite" ng-click="ctl.selectRemoteIso(ctl.installService.isosInfo.raspios.lite)">
                 <md-icon md-svg-icon="circle-small"></md-icon>
                 <p>
-                    {{ctl.installService.isosInfo.raspios.lite.filename}} - 
+                    {{ctl.installService.isosInfo.raspios.lite.label}} - 
                     {{ctl.installService.isosInfo.raspios.lite.date | date:'yyyy/MM/dd'}}
                 </p>
             </md-list-item>

@@ -151,6 +151,8 @@ function($rootScope, $state, logger, tasksPanelService, settingsService, electro
 
         var installData = {
             isoUrl: self.installConfig.iso.url,
+            isoSha256: self.installConfig.iso.sha256,
+            isoFilename: self.installConfig.iso.filename,
             drivePath: self.installConfig.drive.device,
             wifiData: self.installConfig.wifi,
         };

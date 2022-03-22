@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { findMatches } from '../utils';
-import { getChecksumFromUrl, HEADERS, ReleaseInfo } from './utils';
+import { getChecksumFromUrl, getFilenameFromUrl, HEADERS, ReleaseInfo } from './utils';
 
 const RASPIOS_LITE_URL = 'https://downloads.raspberrypi.org/raspios_lite_armhf/images/';
 const RASPIOS_FULL_URL = 'https://downloads.raspberrypi.org/raspios_full_armhf/images/';
@@ -63,12 +63,14 @@ export class RaspiOs {
       sha256: null,
       url: null,
       date: release.date,
-      filename: this.getCleanFilename(release),
+      label: this.getCleanFilename(release),
+      filename: '',
       category: 'raspios',
     };
     for (const match of matches) {
       if (match[1].endsWith('.zip')) {
         info.url = `${release.url}${match[1]}`;
+        info.filename = getFilenameFromUrl(info.url);
       }
       if (match[1].endsWith('.sha256')) {
         const url = `${release.url}${match[1]}`;

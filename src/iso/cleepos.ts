@@ -1,6 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import { appLogger } from '../app-logger';
-import { getChecksumFromUrl, ReleaseInfo } from './utils';
+import { getChecksumFromUrl, getFilenameFromUrl, ReleaseInfo } from './utils';
 
 export class CleepOs {
   private readonly CLEEPOS_REPO = { owner: 'tangb', repo: 'cleep-os' };
@@ -21,7 +21,8 @@ export class CleepOs {
     return {
       url: isoAsset?.browser_download_url,
       size: isoAsset?.size,
-      filename: this.getCleanFilename(isoAsset?.name),
+      filename: getFilenameFromUrl(isoAsset?.browser_download_url),
+      label: this.getCleanFilename(isoAsset?.name),
       date: new Date(isoAsset?.updated_at),
       sha256,
       category: 'cleepos',

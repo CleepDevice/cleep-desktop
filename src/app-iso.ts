@@ -13,6 +13,7 @@ import { writeFile } from 'fs';
 import { cancelDownload, downloadFile, DownloadProgress } from './download';
 import { appUpdater } from './app-updater';
 import { NotInstalledException } from './exceptions/not-installed.exception';
+import { appCache } from './app-cache';
 
 export interface WifiData {
   network: string;
@@ -23,6 +24,8 @@ export interface WifiData {
 
 export interface InstallData {
   isoUrl: string;
+  isoSha256: string;
+  isoFilename: string;
   isoPath?: string;
   drivePath: string;
   wifiData: WifiData;
@@ -127,9 +130,16 @@ class AppIso {
   public async downloadIso(installData: InstallData) {
     try {
       this.currentInstall.isoUrl = installData.isoUrl;
-      installData.isoPath = await downloadFile(installData.isoUrl, this.downloadProgressCallback.bind(this));
-      appLogger.info(`Iso downloaded to ${installData.isoPath}`);
+      const isoPath = await downloadFile(
+        installData.isoUrl,
+        this.downloadProgressCallback.bind(this),
+        installData.isoSha256,
+      );
       this.downloadProgressCallback({ percent: 100, terminated: true, eta: 0 });
+
+      // cache file
+      installData.isoPath = appCache.cacheFile(isoPath, installData.isoSha256, installData.isoFilename);
+      appLogger.info(`Iso downloaded to ${installData.isoPath}`);
     } catch (error) {
       appLogger.error(`Error downloading iso: ${error}`);
       this.downloadProgressCallback({ percent: 100, terminated: true, error: getError(error) });
