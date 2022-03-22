@@ -1,14 +1,11 @@
-/**
- * Preferences controller
- */
 angular
 .module('Cleep')
-.controller('preferencesController', ['$rootScope', '$scope', 'cleepService', 'debounceService', 'closeModal', 'electronService', 'toastService',
-function($rootScope, $scope, cleepService, debounce, closeModal, electron, toast) {
+.controller('preferencesController', ['$rootScope', '$scope', 'cleepService', 'debounceService', 'closeModal', 'electronService', 'toastService', 'electronService'
+function($rootScope, $scope, cleepService, debounce, closeModal, electron, toast, electron) {
     
     var self = this;
     self.pref = 'general';
-    self.config = {};
+    self.settings = {};
     self.noproxy = false;
     self.manualproxy = false;
     self.coreLogs = '';
@@ -17,7 +14,10 @@ function($rootScope, $scope, cleepService, debounce, closeModal, electron, toast
     self.closeModal = closeModal;
 
     self.$onInit = function() {
-        self.getConfig();
+        electron.sendReturn('settings-get-all')
+            .then((settings) => {
+                Object.assign(this.settings, settings);
+            });
     };
 
     $scope.$watch(function() {
@@ -47,32 +47,6 @@ function($rootScope, $scope, cleepService, debounce, closeModal, electron, toast
         }
 
         return false;
-    };
-
-    self.getConfig = function() {
-        cleepService.getConfig()
-            .then(function(resp) {
-                self.config = resp.data.config;
-                self.coreLogs = resp.data.logs;
-                self.cacheDir = resp.data.cachedir;
-
-                self.updateProxyMode(self.config.proxy.mode);
-            });
-
-        cleepService.sendCommand('get_cached_files', 'cache')
-            .then(function(resp) {
-                self.cacheds = resp.data;
-            });
-    };
-
-    self.setConfig = function() {
-        cleepService.setConfig(self.config)
-            .then(function(resp) {
-                if (resp?.data?.config) {
-                    self.config = resp.data.config;
-                }
-                $rootScope.$broadcast('configchanged', self.config);
-            });
     };
 
     self.updateProxyMode = function(mode) {

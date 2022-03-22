@@ -41,6 +41,10 @@ export class AppSettings {
     this.addIpcs();
   }
 
+  public getAll(): SettingsObject {
+    return settings.getSync();
+  }
+
   public get(keyPath: KeyPath): SettingsValue {
     return settings.getSync(keyPath);
   }
@@ -58,6 +62,9 @@ export class AppSettings {
   }
 
   private addIpcs() {
+    ipcMain.handle('settings-get-all', () => {
+      return this.getAll();
+    })
     ipcMain.handle('settings-get', (_event, arg: KeyPath) => {
       return this.get(arg);
     });

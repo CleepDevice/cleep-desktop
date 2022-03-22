@@ -46,6 +46,11 @@ app.on('ready', async function () {
   } else {
     appLogger.info('Version: ' + appContext.version);
   }
+  if (isDev) {
+    appLogger.info('App dir: ' +app.getPath('userData'));
+    appLogger.info('Logs dir: ' +app.getPath('logs'));
+    appLogger.info('Temp dir: ' +app.getPath('temp'));
+  }
 
   // splashscreen asap
   splashScreenWindow = createSplashscreenWindow(mainWindow);
