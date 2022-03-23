@@ -12,7 +12,6 @@ a = Analysis(['cleepdesktopcore.py'],
              binaries=[],
              datas=[
                 ('core', 'core'),
-                ('tools/flash.mac.sh', 'tools/'),
                 ('tools/install-etcher.mac.sh', 'tools/'),
                 ('tools/cmdlogger-mac32', 'tools/cmdlogger-mac')
              ],
