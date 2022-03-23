@@ -1,94 +1,70 @@
 angular
 .module('Cleep')
-.controller('preferencesController', ['$rootScope', '$scope', 'cleepService', 'debounceService', 'closeModal', 'electronService', 'toastService', 'electronService'
-function($rootScope, $scope, cleepService, debounce, closeModal, electron, toast, electron) {
+.controller('preferencesController', ['$scope', 'debounceService', 'electronService', 'toastService',
+function($scope, debounce, electron, toast) {
     
     var self = this;
     self.pref = 'general';
     self.settings = {};
-    self.noproxy = false;
-    self.manualproxy = false;
-    self.coreLogs = '';
     self.cacheDir = '';
-    self.cacheds = [];
-    self.closeModal = closeModal;
+    self.cachedFiles = [];
 
     self.$onInit = function() {
         electron.sendReturn('settings-get-all')
             .then((settings) => {
                 Object.assign(this.settings, settings);
             });
+        self.getCacheInfos();
+    };
+
+    self.getCacheInfos = function() {
+        electron.sendReturn('cache-get-infos')
+        .then((resp) => {
+            if (!resp.error) {
+                self.fillArray(self.cachedFiles, resp.data.files);
+                self.cacheDir = resp.data.dir;
+            }
+        });
     };
 
     $scope.$watch(function() {
-        return self.config;
+        return self.settings;
     }, function(newValue, oldValue) {
         if (Object.keys(newValue).length > 0 && Object.keys(oldValue).length > 0) {
-            if( !self.checkConfig() ) {
-                toast.warning('Invalid configuration. Please check it');
-            }
-
-            debounce.exec('config', self.setConfig, 500)
-                .then(() => { /* handle rejection */ })
-                .catch(() => { /* handle rejection */ });
+            debounce.exec('config', self.saveSettings, 500);
         }
     }, true);
 
-    self.checkConfig = function() {
-        if (self.config) {
-            if (self.config.remote && !self.config.remote.rpcport)
-                return false;
-            if (self.config.proxy && !self.config.proxy.host)
-                return false;
-            if (self.config.proxy && !self.config.proxy.port)
-                return false;
-
-            return true;
-        }
-
-        return false;
-    };
-
-    self.updateProxyMode = function(mode) {
-        if (mode === 'noproxy') {
-            self.noproxy = true;
-            self.manualproxy = false;
-        } else if (mode === 'manualproxy') {
-            self.noproxy = false;
-            self.manualproxy = true;
-        }
-        self.config.proxy.mode = mode;
-    };
-
-    self.openCoreLogs = function() {
-        electron.send('open-path', self.coreLogs);
+    self.saveSettings = function() {
+        electron.sendReturn('settings-set-all', self.settings)
+            .then((success) => {
+                if (!success) {
+                    toast.warning('Invalid settings, please check it');
+                }
+            })
+            .catch(() => { /* handle rejection */ });
     };
 
     self.openElectronLogs = function() {
         electron.send('open-electron-logs');
     };
 
-    self.downloadZippedLogs = function() {
-        electron.sendReturn('get-electron-log-path')
-            .then((electronLogPath) => {
-                return cleepService.sendCommand('get_zipped_logs', 'core', {'electron_log_path': electronLogPath});
-            })
-            .then(function(resp) {
-                electron.send('open-path', resp.data);
-            });
-    };
-
-    self.purgeCacheFile = function(filename) {
-        cleepService.sendCommand('delete_cached_file', 'cache', {filename:filename})
-            .then(function(resp) {
-                self.cacheds = resp.data;
+    self.deleteCachedFile = function(filename) {
+        electron.sendReturn('cache-delete-file', filename)
+            .then(() => {
+                self.getCacheInfos();
             });
     };
 
     self.purgeCachedFiles = function() {
-        cleepService.sendCommand('purge_cached_files', 'cache')
-            .then(function(resp) {
-                self.cacheds = resp.data;
+        electron.sendReturn('cache-purge-files')
+            .then(() => {
+                self.getCacheInfos();
             });
+    };
+
+    self.fillArray = function(source, data) {
+        while (source.length) source.pop();
+        Object.assign(source, data);
     };
 }]);

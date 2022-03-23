@@ -1,6 +1,5 @@
 import axios from 'axios';
 import path from 'path';
-import { appLogger } from '../app-logger';
 
 export const HEADERS = { 'user-agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0' };
 

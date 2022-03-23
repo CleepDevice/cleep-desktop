@@ -148,20 +148,36 @@ class AppIso {
     }
   }
 
+  private getCachedFilepath(installData: InstallData): string {
+    appLogger.debug('install data', installData);
+    const cachedFileInfos = appCache.getCachedFileInfos(installData.isoFilename);
+    if (!cachedFileInfos) {
+      return;
+    }
+
+    return cachedFileInfos.checksum === installData.isoSha256 ? cachedFileInfos.filepath : null;
+  }
+
   private downloadProgressCallback(downloadProgress: DownloadProgress) {
     const installProgress: InstallProgress = {
       percent: downloadProgress.percent,
       eta: downloadProgress.eta,
       step: 'downloading',
-      ...(downloadProgress?.error && { error: downloadProgress.error }),
+      error: downloadProgress?.error || '',
     };
     // appLogger.debug('Download progress', installProgress);
     this.window.webContents.send('iso-install-progress', installProgress);
   }
 
   public async startInstall(installData: InstallData): Promise<void> {
-    await this.downloadIso(installData);
+    const cachedFile = this.getCachedFilepath(installData);
+    appLogger.debug('Cached file', cachedFile);
+    if (!cachedFile) {
+      await this.downloadIso(installData);
+    }
+
     await this.writeWifiFile(installData);
+
     this.flashDrive(installData);
   }
 

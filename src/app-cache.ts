@@ -7,6 +7,14 @@ export interface CachedFileInfos {
   filename: string;
   filesize: number;
   checksum: string;
+  filepath: string;
+}
+
+interface AppFilename {
+  filename: string;
+  checksum: string;
+  realFilename: string;
+  realFilepath: string;
 }
 
 class AppCache {
@@ -22,12 +30,37 @@ class AppCache {
   }
 
   private addIpcs(): void {
-    ipcMain.handle('cache-get-files', async () => {
+    ipcMain.handle('cache-get-infos', async () => {
       try {
-        return this.getCachedFiles();
+        return {
+          data: {
+            files: this.getCachedFiles(),
+            dir: this.cacheDir,
+          },
+        };
       } catch (error) {
         appLogger.error('Unable to get cached files', { error });
         return { data: {}, error: true };
+      }
+    });
+
+    ipcMain.handle('cache-delete-file', (_event, filename: string) => {
+      try {
+        const deleted = this.deleteCachedFile(filename);
+        return { data: deleted };
+      } catch (error) {
+        appLogger.error(`Unable to delete cached file ${filename}`, error);
+        return { data: false, error: true };
+      }
+    });
+
+    ipcMain.handle('cache-purge-files', () => {
+      try {
+        this.purgeCachedFiles();
+        return { data: true };
+      } catch (error) {
+        appLogger.error(`Unable to purge cached files`, error);
+        return { data: false, error: true };
       }
     });
   }
@@ -35,35 +68,64 @@ class AppCache {
   public getCachedFileInfos(filename: string): CachedFileInfos {
     const files = fs.readdirSync(this.cacheDir, { encoding: 'utf8' });
     for (const file of files) {
-      if (file === filename) {
+      const appFilename = this.filenameToAppFilename(filename);
+      if (appFilename) {
         return this.getFileInfos(path.join(this.cacheDir, file));
       }
     }
     return null;
   }
 
-  private getFileInfos(filepath: string): CachedFileInfos {
+  private getFileInfos(realFilepath: string): CachedFileInfos {
+    const appFilename = this.realFilepathToAppFilename(realFilepath);
+    const fileStats = fs.statSync(appFilename.realFilepath);
+
+    return {
+      filename: appFilename.filename,
+      checksum: appFilename.checksum,
+      filesize: fileStats?.size || 0,
+      filepath: appFilename.realFilepath,
+    };
+  }
+
+  private realFilepathToAppFilename(filepath: string): AppFilename {
     const realFilename = path.basename(filepath);
     const fileExtension = path.extname(filepath);
     const [filename, checksum] = realFilename.replace(fileExtension, '').split(this.SEPARATOR);
-    const fileStats = fs.statSync(filepath);
 
     return {
-      filename,
+      filename: `${filename}${fileExtension}`,
       checksum,
-      filesize: fileStats.size,
+      realFilename: realFilename,
+      realFilepath: filepath,
     };
+  }
+
+  private filenameToAppFilename(filename: string): AppFilename {
+    const fileExtension = path.extname(filename);
+    const filenameWithoutExt = filename.replace(fileExtension, '');
+
+    const filenames = fs.readdirSync(this.cacheDir, { encoding: 'utf8' });
+    for (const realFilename of filenames) {
+      if (realFilename.startsWith(filenameWithoutExt)) {
+        const filepath = path.join(this.cacheDir, realFilename);
+        return this.realFilepathToAppFilename(filepath);
+      }
+    }
+
+    return null;
   }
 
   public getCachedFiles(): CachedFileInfos[] {
     const cachedFiles: CachedFileInfos[] = [];
 
-    const files = fs.readdirSync(this.cacheDir, { encoding: 'utf8' });
-    for (const file of files) {
+    const filenames = fs.readdirSync(this.cacheDir, { encoding: 'utf8' });
+    for (const filename of filenames) {
       try {
-        cachedFiles.push(this.getFileInfos(path.join(this.cacheDir, file)));
+        const filepath = path.join(this.cacheDir, filename);
+        cachedFiles.push(this.getFileInfos(filepath));
       } catch (error) {
-        appLogger.warn(`Invalid file "${file}" in cache directory`);
+        appLogger.warn(`Invalid file "${filename}" in cache directory`);
       }
     }
 
@@ -82,10 +144,24 @@ class AppCache {
     return newFilepath;
   }
 
-  public deleteCachedFile(filename: string) {
-    const filepath = path.join(this.cacheDir, filename);
-    if (fs.existsSync(filepath)) {
-      fs.rmSync(filepath);
+  public deleteCachedFile(filename: string): boolean {
+    const appFilename = this.filenameToAppFilename(filename);
+    if (!appFilename) {
+      return false;
+    }
+
+    fs.rmSync(appFilename.realFilepath);
+    return !fs.existsSync(appFilename.realFilepath);
+  }
+
+  public purgeCachedFiles(): void {
+    const filenames = fs.readdirSync(this.cacheDir, { encoding: 'utf8' });
+    for (const filename of filenames) {
+      try {
+        this.deleteCachedFile(filename);
+      } catch (error) {
+        appLogger.warn(`Invalid file "${filename}" in cache directory`);
+      }
     }
   }
 }

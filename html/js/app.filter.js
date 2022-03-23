@@ -1,6 +1,6 @@
 /**
- * Timestamp to human readable string
- **/
+ * Datetime to human readable string
+ */
 angular.module('Cleep').filter('hrDatetime', function(settingsService) {
     return function(timestamp, shortYear) {
         if (!timestamp) {
@@ -23,6 +23,9 @@ angular.module('Cleep').filter('hrDatetime', function(settingsService) {
     };
 });
 
+/**
+ * Seconds to human readable string
+ */
 angular.module('Cleep').filter('hrSeconds', function() {
     return function(secs) {
         const hours = Math.floor( ( secs %= 86400 ) / 3600 );
@@ -39,6 +42,9 @@ angular.module('Cleep').filter('hrSeconds', function() {
     };
 });
 
+/**
+ * Timestamp to human readable string
+ */
 angular.module('Cleep').filter('hrTimestamp', function() {
     return function(timestamp, withSeconds) {
         if( angular.isUndefined(timestamp) || timestamp===null )
@@ -53,6 +59,9 @@ angular.module('Cleep').filter('hrTimestamp', function() {
     };
 });
 
+/**
+ * Date to human readable string
+ */
 angular.module('Cleep').filter('hrDate', function() {
     return function(timestamp, shortYear) {
         if( angular.isUndefined(timestamp) || ts===null )
@@ -75,6 +84,7 @@ angular.module('Cleep').filter('hrDate', function() {
     return function(bytes, precision) {
         if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
         if (typeof precision === 'undefined') precision = 1;
+        if (bytes === 0) return '0 bytes';
         var units = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'], number = Math.floor(Math.log(bytes) / Math.log(1024));
         return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) +  ' ' + units[number];
     }

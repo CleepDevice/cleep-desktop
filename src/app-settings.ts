@@ -1,7 +1,8 @@
-import { app, ipcMain } from 'electron';
+import { ipcMain } from 'electron';
 import settings from 'electron-settings';
 import isDev from 'electron-is-dev';
 import { appContext } from './app-context';
+import { appLogger } from './app-logger';
 
 const DEFAULT_SETTINGS: {
   [k: string]: string | number | boolean | { [k: string]: string };
@@ -49,6 +50,10 @@ export class AppSettings {
     return settings.getSync(keyPath);
   }
 
+  public setAll(obj: SettingsObject): void {
+    settings.setSync(obj);
+  }
+
   public set(keyPath: KeyPath, value: SettingsValue): void {
     settings.setSync(keyPath, value);
   }
@@ -64,7 +69,19 @@ export class AppSettings {
   private addIpcs() {
     ipcMain.handle('settings-get-all', () => {
       return this.getAll();
-    })
+    });
+
+    ipcMain.handle('settings-set-all', (_event, arg: SettingsObject) => {
+      if (typeof arg !== 'object' || Array.isArray(arg) || arg === null) {
+        appLogger.error('Specified settings have invalid format', arg);
+        return false;
+      }
+      // TODO check values
+
+      this.setAll(arg);
+      return true;
+    });
+
     ipcMain.handle('settings-get', (_event, arg: KeyPath) => {
       return this.get(arg);
     });

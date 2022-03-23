@@ -30,7 +30,7 @@
                             <md-list-item>
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
                                 <p>Prefered language</p>
-                                <md-select ng-model="ctl.config.cleep.locale">
+                                <md-select ng-model="ctl.settings.cleep.locale">
                                     <md-option value="en">English</md-option>
                                 </md-select>
                             </md-list-item>
@@ -53,7 +53,7 @@
                             <md-list-item>
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
                                 <p>Auto-update application</p>
-                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.autoupdate"></md-switch>
+                                <md-switch class="md-secondary" ng-model="ctl.settings.cleep.autoupdate"></md-switch>
                             </md-list-item>
                         </md-list>
                     </md-card-content>
@@ -73,18 +73,18 @@
                         </md-card-title-text>
                     </md-card-title>
                     <md-card-content>
-                        <div layout="row" layout-align="center center" ng-if="ctl.cacheds.length==0">
+                        <div layout="row" layout-align="center center" ng-if="ctl.cachedFiles.length==0">
                             <span>No file cached</span>
                         </div>
                         <md-list>
-                            <md-list-item ng-repeat="cached in ctl.cacheds">
+                            <md-list-item ng-repeat="cached in ctl.cachedFiles">
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
                                 <p>{{cached.filename}} ({{cached.filesize | hrBytes}})</p>
-                                <md-icon class="md-secondary" ng-click="ctl.purgeCacheFile(cached.filename)" md-svg-icon="delete"></md-icon>
+                                <md-icon class="md-secondary" ng-click="ctl.deleteCachedFile(cached.filename)" md-svg-icon="delete"></md-icon>
                             </md-list-item>
                         </md-list>
                         <md-card-actions layout="row" layout-align="end center">
-                            <md-button class="md-raised md-primary" ng-click="ctl.purgeCachedFiles()" ng-disabled="ctl.cacheds.length==0">Clear all cached files</md-button>
+                            <md-button class="md-raised md-primary" ng-click="ctl.purgeCachedFiles()" ng-disabled="ctl.cachedFiles.length===0">Clear all cached files</md-button>
                         </md-card-actions>
                         <div layout="row" layout-align="start center">
                             <span class="md-caption">Files are stored in {{ctl.cacheDir}}</span>
@@ -111,12 +111,12 @@
                             <md-list-item>
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
                                 <p>Include latest Raspios versions in installer</p>
-                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.isoraspios"></md-switch>
+                                <md-switch class="md-secondary" ng-model="ctl.settings.cleep.isoraspios"></md-switch>
                             </md-list-item>
                             <md-list-item>
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
                                 <p>Allow local file iso flashing</p>
-                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.isolocal"></md-switch>
+                                <md-switch class="md-secondary" ng-model="ctl.settings.cleep.isolocal"></md-switch>
                             </md-list-item>
                         </md-list>
                     </md-card-content>
@@ -140,7 +140,7 @@
                                     <h3>Send CleepDesktop crash report (no personal information are sent to our server!).</h3>
                                     <p>This software is open-source and enabling crash report will help us improving the application.</p>
                                 </div>
-                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.crashreport"></md-switch>
+                                <md-switch class="md-secondary" ng-model="ctl.settings.cleep.crashreport"></md-switch>
                             </md-list-item>
                             <md-list-item class="md-2-line">
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
@@ -148,24 +148,14 @@
                                     <h3>Enable debug mode</h3>
                                     <p>Enabling debug mode add more messages in application log file. This is useful to report a problem.</p>
                                 </div>
-                                <md-switch class="md-secondary" ng-model="ctl.config.cleep.debug"></md-switch>
+                                <md-switch class="md-secondary" ng-model="ctl.settings.cleep.debug"></md-switch>
                             </md-list-item>
                             <md-list-item ng-click="ctl.openLogs()">
                                 <md-icon md-svg-icon="chevron-right"></md-icon>
                                 <p>Open logs file</p>
-                                <md-button class="md-icon-button md-secondary" ng-click="ctl.downloadZippedLogs()">
-                                    <md-icon md-svg-icon="archive">
-                                        <md-tooltip>Get zipped log files</md-tooltip>
-                                    </md-icon>
-                                </md-button>
                                 <md-button class="md-icon-button md-secondary" ng-click="ctl.openElectronLogs()">
                                     <md-icon md-svg-icon="file">
-                                        <md-tooltip>Open electron log file</md-tooltip>
-                                    </md-icon>
-                                </md-button>
-                                <md-button class="md-icon-button md-secondary" ng-click="ctl.openCoreLogs()">
-                                    <md-icon md-svg-icon="file">
-                                        <md-tooltip>Open core log file</md-tooltip>
+                                        <md-tooltip>Open log file</md-tooltip>
                                     </md-icon>
                                 </md-button>
                             </md-list-item>
