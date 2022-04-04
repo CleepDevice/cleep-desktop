@@ -1,5 +1,7 @@
 ![256x256.png](https://github.com/tangb/CleepDesktop/blob/master/resources/256x256.png)
 
+![Known Vulnerabilities](https://snyk.io/test/github/tangb/cleep-desktop/badge.svg)
+
 # Welcome to CleepDesktop
 
 CleepDesktop is a cross-platform desktop application that helps user to easily detect, configure and monitor its Cleep devices.
