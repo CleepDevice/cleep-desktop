@@ -64,7 +64,7 @@
         "electron-is-dev": "^2.0.0",
         "electron-log": "^4.4.6",
         "electron-settings": "^4.0.2",
-        "electron-updater": "^4.6.1",
+        "electron-updater": "^4.6.5",
         "extract-zip": "^2.0.1",
         "node-wifi": "^2.0.16",
         "progress-stream": "^2.0.0",
