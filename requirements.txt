@@ -1,5 +1,5 @@
 gevent==21.8.0
-bottle==0.12.19
+bottle==0.12.20
 gevent-websocket==0.10.1
 requests==2.24.0
 pyinstaller==4.3
