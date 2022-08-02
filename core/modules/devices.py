@@ -10,14 +10,15 @@ from core.utils import CleepDesktopModule
 from core.libs.pyrebus import PyreBus
 from core.common import PeerInfos
 
+
 class Devices(CleepDesktopModule):
     """
     Devices module. Handles Cleep devices
     """
 
-    CLEEPDESKTOP_HOSTNAME = 'CLEEPDESKTOP'
-    CLEEPDESKTOP_PORT = '0'
-    UNCONFIGURED_DEVICE_HOSTNAME = 'cleepdevice'
+    CLEEPDESKTOP_HOSTNAME = "CLEEPDESKTOP"
+    CLEEPDESKTOP_PORT = "0"
+    UNCONFIGURED_DEVICE_HOSTNAME = "cleepdevice"
 
     def __init__(self, context, debug_enabled):
         """
@@ -31,10 +32,11 @@ class Devices(CleepDesktopModule):
 
         # get or set unique external bus identifier
         # cleepdesktop is also considered as a device on cleep network
-        self.cleepdesktop_uuid = self.context.config.get_config_value('cleep.externaluuid')
-        if not self.cleepdesktop_uuid:
-            self.cleepdesktop_uuid = str(uuid.uuid4())
-            self.context.config.set_config_value('cleep.externaluuid', self.cleepdesktop_uuid)
+        self.cleepdesktop_uuid = str(uuid.uuid4())
+        # self.cleepdesktop_uuid = self.context.config.get_config_value('cleep.externaluuid')
+        # if not self.cleepdesktop_uuid:
+        #     self.cleepdesktop_uuid = str(uuid.uuid4())
+        #     self.context.config.set_config_value('cleep.externaluuid', self.cleepdesktop_uuid)
 
         # members
         self.external_bus = PyreBus(
@@ -43,7 +45,7 @@ class Devices(CleepDesktopModule):
             self._on_peer_disconnected,
             self.__decode_peer_infos,
             debug_enabled,
-            self.context.crash_report
+            self.context.crash_report,
         )
         # peers list::
         #   {
@@ -53,7 +55,7 @@ class Devices(CleepDesktopModule):
         self.peers = {}
 
         # load devices
-        self.__load_devices()
+        # self.__load_devices()
 
         # debug bus (full log report!)
         # pyre_logger = logging.getLogger("pyre")
@@ -67,15 +69,18 @@ class Devices(CleepDesktopModule):
         """
         # configure bus
         if not self.external_bus.start(self.get_bus_headers()):
-            self.logger.warning('Cleep-desktop is not connected to Cleep network. It can\'t find any device.')
-            self.context.crash_report.manual_report('Unable to connect to pyre network', {
-                'endpoint': self.external_bus.endpoint,
-                'macs': self.external_bus.get_mac_addresses(),
-                'interfaces': self.external_bus.get_network_interfaces_names(),
-            })
-            self.context.update_ui('network', {
-                'connected': False
-            })
+            self.logger.warning(
+                "Cleep-desktop is not connected to Cleep network. It can't find any device."
+            )
+            self.context.crash_report.manual_report(
+                "Unable to connect to pyre network",
+                {
+                    "endpoint": self.external_bus.endpoint,
+                    "macs": self.external_bus.get_mac_addresses(),
+                    "interfaces": self.external_bus.get_network_interfaces_names(),
+                },
+            )
+            self.context.update_ui("network", {"connected": False})
 
     def _custom_process(self):
         """
@@ -90,30 +95,30 @@ class Devices(CleepDesktopModule):
         if self.external_bus:
             self.external_bus.stop()
 
-    def __load_devices(self):
-        """
-        Load devices from configuration
-        """
-        devices = self.context.config.get_config_value('devices')
-        for device in devices.values():
-            peer_infos = PeerInfos()
-            peer_infos.fill_from_dict(device)
-            # force device to offline at startup. If devices are discovered
-            # connected event will be triggered and will update device connected status
-            peer_infos.online = False
-            # drop cleepdesktop if any in list of devices
-            if peer_infos.cleepdesktop:
-                continue
-            self.peers[peer_infos.uuid] = peer_infos
-        self.logger.debug('Loaded peers: %s' % {peer_uuid: str(infos) for peer_uuid, infos in self.peers.items()})
+    # def __load_devices(self):
+    #     """
+    #     Load devices from configuration
+    #     """
+    #     devices = self.context.config.get_config_value('devices')
+    #     for device in devices.values():
+    #         peer_infos = PeerInfos()
+    #         peer_infos.fill_from_dict(device)
+    #         # force device to offline at startup. If devices are discovered
+    #         # connected event will be triggered and will update device connected status
+    #         peer_infos.online = False
+    #         # drop cleepdesktop if any in list of devices
+    #         if peer_infos.cleepdesktop:
+    #             continue
+    #         self.peers[peer_infos.uuid] = peer_infos
+    #     self.logger.debug('Loaded peers: %s' % {peer_uuid: str(infos) for peer_uuid, infos in self.peers.items()})
 
-    def __save_devices(self):
-        """
-        Save devices states
-        """
-        devices = {peer_uuid: peer_infos.to_dict() for peer_uuid, peer_infos in self.peers.items()}
-        if not self.context.config.set_config_value('devices', devices):
-            self.logger.error('Unable to save devices in configuration file')
+    # def __save_devices(self):
+    #     """
+    #     Save devices states
+    #     """
+    #     devices = {peer_uuid: peer_infos.to_dict() for peer_uuid, peer_infos in self.peers.items()}
+    #     if not self.context.config.set_config_value('devices', devices):
+    #         self.logger.error('Unable to save devices in configuration file')
 
     def get_bus_headers(self):
         """
@@ -125,16 +130,16 @@ class Devices(CleepDesktopModule):
         macs = self.external_bus.get_mac_addresses()
         # TODO handle port and ssl when security implemented
         headers = {
-            'uuid': self.cleepdesktop_uuid,
-            'version': VERSION,
-            'hostname': self.CLEEPDESKTOP_HOSTNAME,
-            'port': self.CLEEPDESKTOP_PORT,
-            'macs': json.dumps(macs),
-            'ssl': '0',
-            'cleepdesktop': '1',
-            'apps': json.dumps({}),
+            "uuid": self.cleepdesktop_uuid,
+            "version": VERSION,
+            "hostname": self.CLEEPDESKTOP_HOSTNAME,
+            "port": self.CLEEPDESKTOP_PORT,
+            "macs": json.dumps(macs),
+            "ssl": "0",
+            "cleepdesktop": "1",
+            "apps": json.dumps({}),
         }
-        self.logger.debug('headers: %s' % headers)
+        self.logger.debug("headers: %s", headers)
 
         return headers
 
@@ -150,18 +155,20 @@ class Devices(CleepDesktopModule):
         Returns:
             PeerInfos: peer informations
         """
-        self.logger.debug('Raw value to decode: %s' % infos)
+        self.logger.debug(f"Raw value to decode: {infos}")
         peer_infos = PeerInfos()
-        peer_infos.uuid = infos.get('uuid', None)
-        peer_infos.hostname = infos.get('hostname', None)
-        peer_infos.port = int(infos.get('port', peer_infos.port))
-        peer_infos.ssl = bool(strtobool(infos.get('ssl', '%s' % peer_infos.ssl)))
-        peer_infos.cleepdesktop = bool(strtobool(infos.get('cleepdesktop', '%s' % peer_infos.cleepdesktop)))
-        peer_infos.macs = json.loads(infos.get('macs', '[]'))
+        peer_infos.uuid = infos.get("uuid", None)
+        peer_infos.hostname = infos.get("hostname", None)
+        peer_infos.port = int(infos.get("port", peer_infos.port))
+        peer_infos.ssl = bool(strtobool(infos.get("ssl", f"{peer_infos.ssl}")))
+        peer_infos.cleepdesktop = bool(
+            strtobool(infos.get("cleepdesktop", f"{peer_infos.cleepdesktop}"))
+        )
+        peer_infos.macs = json.loads(infos.get("macs", "[]"))
         peer_infos.extra = {
             key: self.__decode_header_value(key, value)
             for key, value in infos.items()
-            if key not in ['uuid', 'hostname', 'port', 'ssl', 'cleepdesktop', 'macs']
+            if key not in ["uuid", "hostname", "port", "ssl", "cleepdesktop", "macs"]
         }
 
         return peer_infos
@@ -178,13 +185,13 @@ class Devices(CleepDesktopModule):
             decoded value
         """
         # handle legacy apps header value
-        if key == 'apps' and not value.startswith('['):
-            value = json.dumps(value.split(','))
+        if key == "apps" and not value.startswith("["):
+            value = json.dumps(value.split(","))
 
         # decode value
         try:
             return json.loads(value)
-        except:
+        except Exception:
             return value
 
     def _on_message_received(self, peer_id, message):
@@ -201,15 +208,17 @@ class Devices(CleepDesktopModule):
         # fill message with peer infos
         peer_infos = self._get_peer_infos_from_peer_id(peer_id)
         if not peer_infos:
-            self.logger.warning('Received message from unknown peer "%s", drop it: %s' % (peer_id, message))
+            self.logger.warning(
+                f'Received message from unknown peer "{peer_id}", drop it: {message}'
+            )
         message.peer_infos = peer_infos
-        self.logger.debug('Message received on external bus: %s' % message)
+        self.logger.debug(f"Message received on external bus: {message}")
 
         # convert message to dict and inject current timestamp
         msg = message.to_dict()
-        msg['timestamp'] = int(time.time())
+        msg["timestamp"] = int(time.time())
 
-        self.context.update_ui('monitoring', msg)
+        self.context.update_ui("monitoring", msg)
 
     def _on_peer_connected(self, peer_id, peer_infos):
         """
@@ -219,11 +228,11 @@ class Devices(CleepDesktopModule):
             peer_id (string): peer identifier
             peer_infos (PeerInfos): peer informations (ip, port, ssl...)
         """
-        self.logger.debug('Peer connected with %s' % peer_infos.to_dict())
+        self.logger.debug("Peer connected with %s", peer_infos.to_dict())
 
         # drop other cleep-desktop connection
         if peer_infos.cleepdesktop:
-            self.logger.debug('Drop other cleep-desktop connection')
+            self.logger.debug("Drop other cleep-desktop connection")
             return
 
         # find existing peer
@@ -231,36 +240,39 @@ class Devices(CleepDesktopModule):
 
         if existing_peer_uuid:
             # remove existing one
-            self.logger.debug('Remove existing peer %s' % existing_peer_uuid)
+            self.logger.debug("Remove existing peer %s", existing_peer_uuid)
             del self.peers[existing_peer_uuid]
 
         # save new peer
         peer_infos.online = True
-        peer_infos.extra['connectedat'] = int(time.time())
-        peer_infos.extra['configured'] = False
-        if len(peer_infos.hostname.strip()) > 0 and peer_infos.hostname != self.UNCONFIGURED_DEVICE_HOSTNAME:
-            peer_infos.extra['configured'] = True
+        peer_infos.extra["connectedat"] = int(time.time())
+        peer_infos.extra["configured"] = False
+        if (
+            len(peer_infos.hostname.strip()) > 0
+            and peer_infos.hostname != self.UNCONFIGURED_DEVICE_HOSTNAME
+        ):
+            peer_infos.extra["configured"] = True
         self.peers[peer_infos.uuid] = peer_infos
-        self.logger.debug('Peer %s connected: %s' % (peer_id, peer_infos))
-        self.__save_devices()
+        self.logger.debug("Peer %s connected: %s", peer_id, peer_infos)
+        # self.__save_devices()
 
         # update ui
-        self.context.update_ui('devices', self.get_devices())
+        self.context.update_ui("devices", self.get_devices())
 
     def _on_peer_disconnected(self, peer_id):
         """
         Device is disconnected
         """
-        self.logger.debug('Peer %s disconnected' % peer_id)
+        self.logger.debug("Peer %s disconnected", peer_id)
         peer_infos = self._get_peer_infos_from_peer_id(peer_id)
         if not peer_infos:
-            self.logger.warning('Peer "%s" is unknown' % peer_id)
+            self.logger.warning('Peer "%s" is unknown', peer_id)
             return
 
         # save changes and refresh ui
         peer_infos.online = False
-        self.__save_devices()
-        self.context.update_ui('devices', self.get_devices())
+        # self.__save_devices()
+        # self.context.update_ui('devices', self.get_devices())
 
     def get_devices(self):
         """
@@ -270,14 +282,20 @@ class Devices(CleepDesktopModule):
             dict of devices
         """
         # compute unconfigured devices
-        unconfigured = len([device for device in list(self.peers.values()) if not device.extra.get('configured', False)])
+        unconfigured = len(
+            [
+                device
+                for device in list(self.peers.values())
+                if not device.extra.get("configured", False)
+            ]
+        )
 
         # prepare output
         out = {
-            'unconfigured': unconfigured,
-            'devices': [peer_infos.to_dict() for peer_infos in self.peers.values()]
+            "unconfigured": unconfigured,
+            "devices": [peer_infos.to_dict() for peer_infos in self.peers.values()],
         }
-        self.logger.debug('devices: %s' % out)
+        self.logger.debug("devices: %s", out)
 
         return out
 
@@ -292,8 +310,10 @@ class Devices(CleepDesktopModule):
             dict of devices like returned in get_devices()
         """
         if peer_uuid not in self.peers:
-            self.logger.error('Device "%s" does not exist in internal devices' % peer_uuid)
-            raise Exception('Device not found')
+            self.logger.error(
+                'Device "%s" does not exist in internal devices', peer_uuid
+            )
+            raise Exception("Device not found")
 
         # delete device
         del self.peers[peer_uuid]
@@ -324,7 +344,9 @@ class Devices(CleepDesktopModule):
         Returns:
             dict: peer informations or None
         """
-        filtered = [peer for peer in self.peers.values() if peer.hostname == peer_hostname]
+        filtered = [
+            peer for peer in self.peers.values() if peer.hostname == peer_hostname
+        ]
         return filtered[0] if len(filtered) > 0 else None
 
     def _find_existing_peer(self, peer_infos):
@@ -352,13 +374,16 @@ class Devices(CleepDesktopModule):
             message (MessageRequest): message sent
             peer_infos (PeerInfos): message recipient
         """
+
         def handle_response(response):
             # TODO implement response handler
-            self.logger.info('Response received from peer "%s" for command "%s": %s' % (
+            self.logger.info(
+                'Response received from peer "%s" for command "%s": %s',
                 peer_infos.hostname,
                 message.command,
-                str(response)
-            ))
+                str(response),
+            )
+
         return handle_response
 
     def send_message_to_peer(self, message, peer_infos):
@@ -373,5 +398,5 @@ class Devices(CleepDesktopModule):
         self.external_bus.send_message(
             message,
             timeout=10,
-            manual_response=self.__peer_message_response(message, peer_infos)
+            manual_response=self.__peer_message_response(message, peer_infos),
         )

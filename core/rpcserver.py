@@ -41,16 +41,8 @@ from passlib import __version__ as passlib_version
 from passlib.hash import sha256_crypt
 from requests import __version__ as requests_version
 from queue import Queue, Empty
-from core.libs.appconfig import AppConfig
 from core.utils import MessageResponse, AppContext
-from core.modules.install import Install
 from core.modules.devices import Devices
-from core.modules.updates import Updates
-from core.modules.config import Config
-from core.modules.cache import Cache
-from core.modules.core import Core
-from core.libs.crashreport import CrashReport
-from core.libs.download import Download
 from core.exception import CommandError
 from core.version import VERSION
 
@@ -168,66 +160,31 @@ def configure_app(app_path, cache_path, config_path, config_filename, debug, is_
     context.main_logger.info("Application path: %s" % app_path)
     context.main_logger.info("Configuration path: %s" % config_path)
 
-    # load config
-    app_config = AppConfig(os.path.join(config_path, config_filename))
-    config = app_config.load_config()
-
-    # handle debug
-    debug = False
-    if config["cleep"]["isdev"]:
-        # force debug in dev mode (update config file to sync ui and core)
-        config["cleep"]["debug"] = True
-    # update logger level
-    if config["cleep"]["debug"]:
-        debug = True
-        context.main_logger.setLevel(logging.DEBUG)
-    else:
-        context.main_logger.setLevel(logging.WARN)
-    context.main_logger.debug("Config: %s" % config)
+    # TODO handle debug
+    # context.main_logger.debug("Config: %s" % config)
 
     # init crash report (disabled by default)
-    libs_version = {
-        "gevent": gevent_version,
-        "bottle": bottle.__version__,
-        "passlib": passlib_version,
-        "requests": requests_version,
-        "geventwebsocket": geventwebsocket_version(),
-    }
-    context.crash_report = CrashReport(
-        "https://8e703f88899c42c18b8466c44b612472@o97410.ingest.sentry.io/213385",
-        "CleepDesktop",
-        VERSION,
-        libs_version,
-        config["cleep"]["debug"],
-        config["cleep"]["isdev"],
-    )
-    if config["cleep"]["crashreport"]:
-        context.crash_report.enable()
-
-    # launch config module
-    context.modules["config"] = Config(context, app_config, debug)
-    context.config = context.modules["config"]
-    context.modules["config"].start()
-
-    # launch core module
-    context.modules["core"] = Core(context, debug)
-    context.modules["core"].start()
-
-    # launch cache module
-    context.modules["cache"] = Cache(context, debug)
-    context.modules["cache"].start()
-
-    # launch install module
-    context.modules["install"] = Install(context, debug)
-    context.modules["install"].start()
+    # libs_version = {
+    #     "gevent": gevent_version,
+    #     "bottle": bottle.__version__,
+    #     "passlib": passlib_version,
+    #     "requests": requests_version,
+    #     "geventwebsocket": geventwebsocket_version(),
+    # }
+    # context.crash_report = CrashReport(
+    #     "https://8e703f88899c42c18b8466c44b612472@o97410.ingest.sentry.io/213385",
+    #     "CleepDesktop",
+    #     VERSION,
+    #     libs_version,
+    #     config["cleep"]["debug"],
+    #     config["cleep"]["isdev"],
+    # )
+    # if config["cleep"]["crashreport"]:
+    #     context.crash_report.enable()
 
     # launch devices module
     context.modules["devices"] = Devices(context, debug)
     context.modules["devices"].start()
-
-    # launch updates module
-    context.modules["updates"] = Updates(context, debug)
-    context.modules["updates"].start()
 
     return context
 
