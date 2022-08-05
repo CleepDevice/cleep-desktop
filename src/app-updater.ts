@@ -7,6 +7,7 @@ import { balena, Balena } from './flash-tool/balena';
 import { getError } from './utils/helpers';
 import { appSettings } from './app-settings';
 import isDev from 'electron-is-dev';
+import { cleepbus, Cleepbus } from './cleepbus/cleepbus';
 
 export interface UpdateProgress {
   progress: ProgressInfo;
@@ -20,6 +21,7 @@ export interface UpdateStatus {
   lastUpdateCheck: number;
   cleepDesktop: boolean;
   flashTool: boolean;
+  cleepbus: boolean;
 }
 
 export type OnUpdateAvailableCallback = (updateData: UpdateData) => void;
@@ -37,13 +39,19 @@ type CheckForUpdateMode = 'auto' | 'manual';
 export class AppUpdater {
   private window: BrowserWindow;
   private flashTool: Balena;
+  private cleepbus: Cleepbus;
 
   constructor() {
     // enable this flag to test pre release
     // autoUpdater.allowPrerelease = true;
     autoUpdater.logger = appLogger;
+
     this.flashTool = balena;
     balena.setUpdateCallbacks(this.onFlashToolUpdateAvailable.bind(this), this.onFlashToolDownloadProgress.bind(this));
+
+    this.cleepbus = cleepbus;
+    cleepbus.setUpdateCallbacks(this.onCleepbusUpdateAvailable.bind(this), this.onCleepbusDownloadProgress.bind(this));
+
     this.addListeners();
     this.addIpcs();
   }
@@ -65,15 +73,25 @@ export class AppUpdater {
     return this.flashTool.getInstalledVersion() !== null;
   }
 
+  public isCleepbusInstalled(): boolean {
+    return this.cleepbus.getInstalledVersion() !== null;
+  }
+
   public async checkForUpdates(updateMode: CheckForUpdateMode): Promise<UpdateStatus> {
     const lastUpdateCheck = Math.round(new Date().getTime() / 1000);
     if (isDev && updateMode === 'auto') {
       appLogger.debug('Auto update is disabled during dev');
-      return { lastUpdateCheck, cleepDesktop: false, flashTool: false };
+      return {
+        lastUpdateCheck,
+        cleepDesktop: false,
+        flashTool: false,
+        cleepbus: false,
+      };
     }
 
     const cleepDesktopUpdate = await this.checkForCleepDesktopUpdates();
     const flashToolUpdate = await this.flashTool.checkForUpdates();
+    const cleepbusUpdate = await this.cleepbus.checkForUpdates();
 
     appSettings.set('cleep.lastupdatecheck', lastUpdateCheck);
 
@@ -88,6 +106,7 @@ export class AppUpdater {
       lastUpdateCheck,
       cleepDesktop: cleepDesktopUpdate.updateInfo.version !== appContext.version,
       flashTool: flashToolUpdate,
+      cleepbus: cleepbusUpdate,
     };
   }
 
@@ -96,7 +115,7 @@ export class AppUpdater {
       return autoUpdater.checkForUpdates();
     }
 
-    // dummy content
+    // dummy content when autoupdate disabled
     return {
       updateInfo: {
         version: appContext.version,
@@ -122,12 +141,14 @@ export class AppUpdater {
 
     ipcMain.handle('updater-get-software-versions', () => {
       const flashToolVersion = this.flashTool.getInstalledVersion();
+      const cleepbusVersion = this.cleepbus.getInstalledVersion();
       const lastUpdateCheck = appSettings.get('cleep.lastupdatecheck');
 
       return {
         lastUpdateCheck,
         cleepDesktop: appContext.version,
         flashTool: flashToolVersion,
+        cleepbus: cleepbusVersion,
       };
     });
   }
@@ -178,6 +199,14 @@ export class AppUpdater {
 
   private onFlashToolDownloadProgress(updateData: UpdateData): void {
     this.window.webContents.send('updater-flashtool-download-progress', updateData);
+  }
+
+  private onCleepbusUpdateAvailable(updateData: UpdateData): void {
+    this.window.webContents.send('updater-cleepbus-update-available', updateData);
+  }
+
+  private onCleepbusDownloadProgress(updateData: UpdateData): void {
+    this.window.webContents.send('updater-cleepbus-download-progress', updateData);
   }
 
   private getChangelog(changelog?: string | ReleaseNoteInfo[]): string {

@@ -6,6 +6,7 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     var self = this;
     self.taskUpdatePanelId = null;
     self.flashToolUpdate = {};
+    self.cleepbusUpdate = {};
     self.cleepDesktopUpdate = {};
     self.restartRequired = false;
     self.softwareVersions = {
@@ -29,6 +30,8 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
         electron.on('updater-cleepdesktop-download-progress', self.onCleepDesktopUpdateCallback.bind(self));
         electron.on('updater-flashtool-update-available', self.onFlashToolUpdateCallback.bind(self));
         electron.on('updater-flashtool-download-progress', self.onFlashToolUpdateCallback.bind(self));
+        electron.on('updater-cleepbus-update-available', self.onCleepbusUpdateCallback.bind(self));
+        electron.on('updater-cleepbus-download-progress', self.onCleepbusUpdateCallback.bind(self));
     };
 
     self.updateSofwareVersions = function() {
@@ -45,7 +48,11 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     };
  
     self.closeUpdateTaskPanel = function() {
-        if (Object.keys(self.cleepDesktopUpdate).length === 0 && Object.keys(self.flashToolUpdate).length === 0) {
+        var isCleepdesktopUpdating = Object.keys(self.cleepDesktopUpdate).length > 0;
+        var isFlashToolUpdating = Object.keys(self.flashToolUpdate).length > 0;
+        var isCleepbusUpdating = Object.keys(self.cleepbusUpdate).length > 0;
+
+        if (!isCleepdesktopUpdating && !isFlashToolUpdating && !isCleepbusUpdating) {
             tasksPanelService.removePanel(self.taskUpdatePanelId);
             self.taskUpdatePanelId = null;
         }
@@ -63,8 +70,8 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
                 icon: 'open-in-app'
             },
             {
-                onClose: self.closeUpdateTaskPanel,
-                disabled: false
+                onClose: null,
+                disabled: true
             },
             true
         );
@@ -73,9 +80,10 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     self.onCleepDesktopUpdateCallback =  function(_event, updateData) {
         Object.assign(self.cleepDesktopUpdate, updateData);
 
-        if (self.flashToolUpdate.terminated) {
+        if (self.flashToolUpdate.terminated && self.cleepbusUpdate.terminated) {
             self.restartRequired = true;
             self.clearObject(self.flashToolUpdate);
+            self.clearObject(self.cleepbusUpdate);
             self.closeUpdateTaskPanel();
             self.updateSofwareVersions();
         }
@@ -86,6 +94,16 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
 
         if (self.flashToolUpdate.terminated) {
             self.clearObject(self.flashToolUpdate);
+            self.closeUpdateTaskPanel();
+            self.updateSofwareVersions();
+        }
+    }
+
+    self.onCleepbusUpdateCallback = function(_event, updateData) {
+        Object.assign(self.cleepbusUpdate, updateData);
+
+        if (self.cleepbusUpdate.terminated) {
+            self.clearObject(self.cleepbusUpdate);
             self.closeUpdateTaskPanel();
             self.updateSofwareVersions();
         }

@@ -117,6 +117,35 @@
                         </div>
                     </md-list-item>
 
+                    <!-- cleepbus -->
+                    <md-list-item>
+                        <md-icon md-svg-icon="chevron-right"></md-icon>
+                        <p ng-if="ctl.updateService.softwareVersions.cleepbus">
+                            Cleepbus version v{{ ctl.updateService.softwareVersions.cleepbus }} is installed
+                        </p>
+                        <p ng-if="!ctl.updateService.softwareVersions.cleepbus">
+                            Cleepbus is not installed
+                        </p>
+                        <div
+                            class="md-secondary"
+                            ng-if="ctl.updateService.cleepbusUpdate.percent>=0"
+                        >
+                            <div ng-if="ctl.updateService.cleepbusUpdate.error.length<=0">
+                                Updating to v{{ctl.updateService.cleepbusUpdate.version}}...
+                            </div>
+                            <div ng-if="ctl.updateService.cleepbusUpdate.error.length>0">
+                                Update failed: {{ctl.updateService.cleepbusUpdate.error}}
+                            </div>
+                            <md-progress-linear ng-if="ctl.updateService.cleepbusUpdate.percent === 0"
+                                style="width: 250px;" md-mode="indeterminate" class="md-accent">
+                            </md-progress-linear>
+                            <md-progress-linear ng-if="ctl.updateService.cleepbusUpdate.percent !== 0"
+                                style="width: 250px;" md-mode="determinate" class="md-accent"
+                                value="{{ctl.updateService.cleepbusUpdate.percent}}">
+                            </md-progress-linear>
+                        </div>
+                    </md-list-item>
+
                 </md-list>
             </md-card-content>
         </md-card>
