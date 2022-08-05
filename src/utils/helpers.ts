@@ -1,6 +1,6 @@
-import { LoggerLevel, LoggerLevelEnum } from './app-logger';
+import { LoggerLevel, LoggerLevelEnum } from '../app-logger';
 import detectPort from 'detect-port';
-import { appSettings } from './app-settings';
+import { appSettings } from '../app-settings';
 import isDev from 'electron-is-dev';
 
 export interface CommandLineArgs {

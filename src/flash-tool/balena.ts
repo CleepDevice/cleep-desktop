@@ -4,11 +4,12 @@ import { appLogger } from '../app-logger';
 import fs from 'fs';
 import path from 'path';
 import extract from 'extract-zip';
-import { DriveUnit, findMatches, getError } from '../utils';
+import { DriveUnit, findMatches, getError } from '../utils/helpers';
 import { exec } from 'child_process';
 import { OnUpdateAvailableCallback } from '../app-updater';
 import { FlashOutput, FLASHTOOL_DIR } from '../app-iso';
-import { downloadFile, OnDownloadProgressCallback } from '../download';
+import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
+import { GithubRelease } from '../utils/github.types';
 
 const FILENAME_DARWIN = '-darwin-';
 const FILENAME_LINUX = '-linux-';
@@ -24,19 +25,6 @@ const UNITS: DriveUnit[] = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'];
 
 const BALENA_FLASH_PATTERN = /.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)/gmu;
 const BALENA_ETA_PATTERN = /(\d+)([hms])/gmu;
-
-export interface ReleaseInfos {
-  downloadUrl: string;
-  size: number;
-  filename: string;
-}
-
-export interface GithubRelease {
-  version: string;
-  darwin: ReleaseInfos;
-  linux: ReleaseInfos;
-  win32: ReleaseInfos;
-}
 
 export interface Drive {
   size: number;

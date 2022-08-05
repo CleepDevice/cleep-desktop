@@ -4,7 +4,7 @@ import { autoUpdater, ProgressInfo, UpdateCheckResult, UpdateInfo } from 'electr
 import { appLogger } from './app-logger';
 import { appContext } from './app-context';
 import { balena, Balena } from './flash-tool/balena';
-import { getError } from './utils';
+import { getError } from './utils/helpers';
 import { appSettings } from './app-settings';
 import isDev from 'electron-is-dev';
 

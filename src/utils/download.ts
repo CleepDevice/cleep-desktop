@@ -4,7 +4,7 @@ import path from 'path';
 import uuid4 from 'uuid4';
 import { app } from 'electron';
 import progress_stream, { Progress } from 'progress-stream';
-import { appLogger } from './app-logger';
+import { appLogger } from '../app-logger';
 import crypto from 'crypto';
 
 export interface DownloadProgress {

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { findMatches } from '../utils';
+import { findMatches } from '../utils/helpers';
 import { getChecksumFromUrl, getFilenameFromUrl, HEADERS, ReleaseInfo } from './utils';
 
 const RASPIOS_LITE_URL = 'https://downloads.raspberrypi.org/raspios_lite_armhf/images/';

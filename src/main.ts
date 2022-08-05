@@ -3,7 +3,7 @@ import { appContext } from './app-context';
 import { createAppMenu } from './app-menu';
 import { appCore } from './app-core';
 import { createAppWindow, createSplashscreenWindow } from './app-window';
-import { getRpcPort, parseArgs } from './utils';
+import { getRpcPort, parseArgs } from './utils/helpers';
 import { appLogger } from './app-logger';
 import { appUpdater } from './app-updater';
 import { appFileDownload } from './app-file-download';
@@ -47,9 +47,9 @@ app.on('ready', async function () {
     appLogger.info('Version: ' + appContext.version);
   }
   if (isDev) {
-    appLogger.info('App dir: ' +app.getPath('userData'));
-    appLogger.info('Logs dir: ' +app.getPath('logs'));
-    appLogger.info('Temp dir: ' +app.getPath('temp'));
+    appLogger.info('App dir: ' + app.getPath('userData'));
+    appLogger.info('Logs dir: ' + app.getPath('logs'));
+    appLogger.info('Temp dir: ' + app.getPath('temp'));
   }
 
   // splashscreen asap
