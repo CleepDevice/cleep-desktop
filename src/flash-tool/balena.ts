@@ -33,7 +33,7 @@ export interface Drive {
 }
 
 export class Balena {
-  private readonly BALENA_REPO = { owner: 'tangb', repo: 'cleep-desktop-flash-tool' };
+  private readonly BALENA_REPO = { owner: 'tangb', repo: 'cleep-desktop-flashtool' };
   private github: Octokit;
   private updateAvailableCallback: OnUpdateAvailableCallback;
   private downloadProgressCallback: OnDownloadProgressCallback;
@@ -44,12 +44,12 @@ export class Balena {
 
   public async checkForUpdates(force = false): Promise<boolean> {
     const latestBalenaRelease = await this.getLatestRelease();
-    appLogger.debug('Latest flash tool release', { release: latestBalenaRelease });
+    appLogger.debug('Latest Flash-tool release', { release: latestBalenaRelease });
     const currentBalenaVersion = this.getInstalledVersion();
     const balenaBinPath = this.getBalenaBinPath();
 
     if (latestBalenaRelease.version !== currentBalenaVersion || force || !fs.existsSync(balenaBinPath)) {
-      appLogger.info('Flash tool update available');
+      appLogger.info('Flash-tool update available');
       this.updateAvailableCallback({
         version: latestBalenaRelease.version,
         percent: 0,
@@ -57,7 +57,7 @@ export class Balena {
       this.install(latestBalenaRelease);
       return true;
     } else {
-      appLogger.info('No flash tool update available');
+      appLogger.info('No flash-tool update available');
       return false;
     }
   }
@@ -73,7 +73,7 @@ export class Balena {
   public async install(release: GithubRelease): Promise<boolean> {
     const platform = String(process.platform);
     if (Object.keys(release).findIndex((key) => key === platform) === -1) {
-      appLogger.error(`No flash tool for platform ${platform}`);
+      appLogger.error(`No flash-tool version for platform ${platform}`);
       return false;
     }
 

@@ -1,12 +1,12 @@
 var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router', 'ngSanitize', 'ngWebSocket']);
 
 Cleep
-.controller('cleepController', ['$rootScope', '$state', 'cleepService', 'tasksPanelService', 'modalService',
-                                '$timeout', '$transitions', 'settingsService', 'loggerService', 'devicesService',
+.controller('cleepController', ['$rootScope', '$state', 'tasksPanelService', 'modalService',
+                                '$timeout', '$transitions', 'settingsService', 'devicesService',
                                 'updateService', 'installService', 'monitoringService', 'downloadService',
                                 'electronService',
-function($rootScope, $state, cleepService, tasksPanelService, modalService, $timeout, $transitions, settings,
-         logger, devicesService, updateService, installService, monitoringService, downloadService, electron) {
+function($rootScope, $state, tasksPanelService, modalService, $timeout, $transitions, settings,
+        devicesService, updateService, installService, monitoringService, downloadService, electron) {
 
     var self = this;
     self.taskRestartRequiredPanelId = null;
@@ -14,31 +14,31 @@ function($rootScope, $state, cleepService, tasksPanelService, modalService, $tim
     self.toolbarCollapsed = true;
 
     self.$onInit = function() {
-        // init websocket asap
-        settings.get('remote.rpcport')
-            .then((port) => {
-                return cleepService.connectWebSocket(port);
-            })
-            .then(() => {
-                logger.info('Websocket connected, launch angular application');
-                
-                // init services
-                downloadService.init();
-                monitoringService.init();
-                devicesService.getDevices();
-                updateService.init();
-                installService.init();
+        // init services
+        downloadService.init();
+        monitoringService.init();
+        // TODO devicesService.getDevices();
+        updateService.init();
+        installService.init();
 
-                // first run? open application help
-                settings.get('cleep.firstrun')
-                    .then((firstRun) => {
-                        if (!firstRun) return;
-                        $timeout(() => {
-                            self.openModal('helpDialogController', 'js/help/help-dialog.html');
-                        }, 500);
-                        settings.set('cleep.firstrun', false);
-                    });
+        // first run? open application help
+        settings.get('cleep.firstrun')
+            .then((firstRun) => {
+                if (!firstRun) return;
+                $timeout(() => {
+                    self.openModal('helpDialogController', 'js/help/help-dialog.html');
+                }, 500);
+                settings.set('cleep.firstrun', false);
             });
+
+        // TODO init websocket asap
+        // settings.get('remote.rpcport')
+        //     .then((port) => {
+        //         return cleepService.connectWebSocket(port);
+        //     })
+        //     .then(() => {
+        //         logger.info('Websocket connected, launch angular application');
+        //     });
     };
 
     // open page

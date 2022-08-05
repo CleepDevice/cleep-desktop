@@ -86,15 +86,14 @@ export class AppCore {
   }
 
   private startCore(binary: string, args: string[]): void {
-    appLogger.debug(`Core commandline: ${binary} ${args.join(' ')}`);
-    this.startupTimestamp = Math.round(Date.now() / 1000);
-    const options: SpawnOptionsWithStdioTuple<StdioNull, StdioPipe, StdioPipe> = { stdio: ['ignore', 'pipe', 'pipe'] };
-    this.coreProcess = spawn(binary, args, options);
-
-    // handle process events
-    this.coreProcess.on('close', this.handleCoreProcessClosed);
-    this.coreProcess.stdout.on('data', this.handleCoreStdoutData);
-    this.coreProcess.stderr.on('data', this.handleCoreStderrData);
+    // appLogger.debug(`Core commandline: ${binary} ${args.join(' ')}`);
+    // this.startupTimestamp = Math.round(Date.now() / 1000);
+    // const options: SpawnOptionsWithStdioTuple<StdioNull, StdioPipe, StdioPipe> = { stdio: ['ignore', 'pipe', 'pipe'] };
+    // this.coreProcess = spawn(binary, args, options);
+    // // handle process events
+    // this.coreProcess.on('close', this.handleCoreProcessClosed);
+    // this.coreProcess.stdout.on('data', this.handleCoreStdoutData);
+    // this.coreProcess.stderr.on('data', this.handleCoreStderrData);
   }
 
   private handleCoreProcessClosed(code: number) {
