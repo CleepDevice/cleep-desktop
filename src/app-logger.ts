@@ -20,6 +20,8 @@ export interface LoggerMessage {
   extra?: unknown;
 }
 
+export type LoggerFrom = 'main' | 'renderer' | 'core' | 'cleepbus';
+
 export class AppLogger {
   constructor() {
     this.addIpcs();
@@ -46,23 +48,23 @@ export class AppLogger {
     }
   }
 
-  public debug(message: string, extra?: unknown): void {
-    this.log('debug', 'main', message, extra);
+  public debug(message: string, extra?: unknown, from?: LoggerFrom): void {
+    this.log('debug', from || 'main', message, extra);
   }
 
-  public info(message: string, extra?: unknown): void {
-    this.log('info', 'main', message, extra);
+  public info(message: string, extra?: unknown, from?: LoggerFrom): void {
+    this.log('info', from || 'main', message, extra);
   }
 
-  public warn(message: string, extra?: unknown): void {
-    this.log('warn', 'main', message, extra);
+  public warn(message: string, extra?: unknown, from?: LoggerFrom): void {
+    this.log('warn', from || 'main', message, extra);
   }
 
-  public error(message: string, extra?: unknown): void {
-    this.log('error', 'main', message, extra);
+  public error(message: string, extra?: unknown, from?: LoggerFrom): void {
+    this.log('error', from || 'main', message, extra);
   }
 
-  public log(level: LoggerLevel, from: 'main' | 'renderer' | 'core', message: string, extra?: unknown): void {
+  public log(level: LoggerLevel, from: LoggerFrom, message: string, extra?: unknown): void {
     let loggerCall = null;
     switch (level) {
       case 'debug':
