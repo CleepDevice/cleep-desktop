@@ -124,6 +124,10 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
                     hasUpdate = true;
                     Object.assign(self.flashToolUpdate, {percent: 0, error: ''});
                 }
+                if (updateStatus.cleepbus) {
+                    hasUpdate = true;
+                    Object.assign(self.cleepbusUpdate, {percent: 0, error: ''});
+                }
         
                 if (hasUpdate) {
                     self.openUpdateTaskPanel();
