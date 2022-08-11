@@ -49,16 +49,16 @@ export function parseArgs(argv: string[]): CommandLineArgs {
   return args;
 }
 
-export async function getRpcPort(): Promise<number> {
+export async function getWsPort(): Promise<number> {
   if (isDev) {
     // use static port from config
     return Number(appSettings.get('remote.rpcport'));
   }
 
   // detect available port for production
-  const rpcPort = await detectPort(null);
-  appSettings.set('remote.rpcport', rpcPort);
-  return rpcPort;
+  const wsPort = await detectPort(null);
+  appSettings.set('remote.wsport', wsPort);
+  return wsPort;
 }
 
 export function getError(error: Error): string {

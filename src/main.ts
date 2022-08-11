@@ -1,22 +1,22 @@
 import { app, BrowserWindow, screen, ipcMain, shell } from 'electron';
 import { appContext } from './app-context';
 import { createAppMenu } from './app-menu';
-import { appCore } from './app-core';
 import { createAppWindow, createSplashscreenWindow } from './app-window';
-import { getRpcPort, parseArgs } from './utils/helpers';
+import { parseArgs } from './utils/helpers';
 import { appLogger } from './app-logger';
 import { appUpdater } from './app-updater';
 import { appFileDownload } from './app-file-download';
 import isDev from 'electron-is-dev';
 import { appIso } from './app-iso';
 import { Sudo } from './sudo/sudo';
+import { cleepbus } from './cleepbus/cleepbus';
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
 
 app.on('will-quit', function () {
   appLogger.debug('Kill core');
-  appCore.kill();
+  cleepbus.kill();
 });
 
 // quit when all windows are closed.
@@ -67,16 +67,7 @@ app.on('ready', async function () {
     appUpdater.configure(mainWindow);
     appFileDownload.configure(mainWindow);
     appIso.configure(mainWindow);
-
-    // start core
-    if (!args.coreDisabled) {
-      const rpcPort = await getRpcPort();
-      if (isDev) {
-        appCore.startDev(rpcPort);
-      } else {
-        appCore.startProduction(rpcPort);
-      }
-    }
+    cleepbus.configure();
   } catch (error) {
     appLogger.error(`Unable to launch application: ${error?.message || 'unknown error'}`);
   }

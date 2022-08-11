@@ -3,11 +3,12 @@ import settings from 'electron-settings';
 import isDev from 'electron-is-dev';
 import { appContext } from './app-context';
 import { appLogger } from './app-logger';
+import uuid4 from 'uuid4';
 
 const DEFAULT_SETTINGS: {
   [k: string]: string | number | boolean | { [k: string]: string };
 } = {
-  rpcPort: 5610,
+  wsPort: 5610,
   debug: false,
   isoRaspios: false,
   isoLocal: false,
@@ -17,7 +18,7 @@ const DEFAULT_SETTINGS: {
   proxyPort: 8080,
   crashReport: true,
   firstRun: true,
-  externalUuid: null,
+  uuid: null,
   devices: {},
 };
 
@@ -133,8 +134,8 @@ export class AppSettings {
     if (isDev) {
       settings.setSync('cleep.crashreport', false);
     }
-    if (!settings.hasSync('cleep.externaluuid')) {
-      settings.setSync('cleep.externaluuid', DEFAULT_SETTINGS.externalUuid);
+    if (!settings.hasSync('cleep.uuid')) {
+      settings.setSync('cleep.uuid', uuid4());
     }
     if (!settings.hasSync('cleep.lastupdatecheck')) {
       settings.setSync('cleep.lastupdatecheck', 0);

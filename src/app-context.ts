@@ -7,7 +7,7 @@ import * as Sentry from '@sentry/electron';
 
 class AppContext {
   public allowQuit = true;
-  public closingApplication = false;
+  public closingApplication = false; // TODO
   public version: string;
   public changelog: string;
 

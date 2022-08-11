@@ -4,11 +4,16 @@ import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
 import { appLogger } from '../app-logger';
 import path from 'path';
 import { app } from 'electron';
+import { ChildProcessByStdio, spawn, SpawnOptionsWithStdioTuple, StdioNull, StdioPipe } from 'child_process';
+import { Readable } from 'stream';
 import fs from 'fs';
 import extract from 'extract-zip';
 import { GithubRelease } from '../utils/github.types';
 import { appSettings } from '../app-settings';
-import { getError } from '../utils/helpers';
+import { getError, getWsPort } from '../utils/helpers';
+import { WebSocketServer, WebSocket } from 'ws';
+import { appContext } from '../app-context';
+import os from 'os';
 
 export const CLEEPBUS_DIR = path.join(app.getPath('userData'), 'cleepbus');
 const FILENAME_DARWIN = '-macos-';
@@ -23,9 +28,20 @@ export class Cleepbus {
   private github: Octokit;
   private updateAvailableCallback: OnUpdateAvailableCallback;
   private downloadProgressCallback: OnDownloadProgressCallback;
+  private wsServer: WebSocketServer;
+  private cleepbusWs: WebSocket;
+  private cleepbusProcess: ChildProcessByStdio<null, Readable, Readable>;
+  private cleepbusStartupError: string;
 
   constructor() {
     this.github = new Octokit();
+  }
+
+  public async configure(): Promise<void> {
+    const wsPort = await getWsPort();
+
+    this.launchWebsocketServer(wsPort);
+    this.launchCleepbus(wsPort);
   }
 
   public async checkForUpdates(force = false): Promise<boolean> {
@@ -56,6 +72,137 @@ export class Cleepbus {
     this.downloadProgressCallback = downloadProgressCallback;
   }
 
+  private async launchCleepbus(wsPort: number): Promise<void> {
+    const cleepbusPath = this.getCleepbusPath();
+    if (!this.checkCleepbusInstallation(cleepbusPath)) {
+      return;
+    }
+
+    const uuid = appSettings.get('uuid');
+    const cleepbusArgs = [`--ws-port=${wsPort}`, `--uuid=${uuid}`];
+    appLogger.info(`Cleepbus commandline: ${cleepbusPath} ${cleepbusArgs.join(' ')}`);
+    const options: SpawnOptionsWithStdioTuple<StdioNull, StdioPipe, StdioPipe> = { stdio: ['ignore', 'pipe', 'pipe'] };
+    this.cleepbusProcess = spawn(cleepbusPath, cleepbusArgs, options);
+
+    // handle process events
+    this.cleepbusProcess.on('close', this.handleCleepbusProcessClosed);
+    this.cleepbusProcess.stdout.on('data', this.handleCleepbusStdoutData);
+    this.cleepbusProcess.stderr.on('data', this.handleCleepbusStderrData);
+  }
+
+  private checkCleepbusInstallation(cleepbusPath: string): boolean {
+    if (!this.getInstalledVersion()) {
+      appLogger.info("Can't launch Cleepbus because it is not installed");
+      return false;
+    }
+
+    // check binary exists (antiviral can delete pyinstaller generated binary)
+    if (!fs.existsSync(cleepbusPath)) {
+      appLogger.error('Cleepbus binary was not found on path "' + cleepbusPath + '"');
+      // TODO propagate error to ui in devices area
+      return false;
+    }
+
+    return true;
+  }
+
+  private getCleepbusPath(): string {
+    if (process.platform === 'win32') {
+      return path.join(CLEEPBUS_DIR, 'cleepbus.exe');
+    }
+    return path.join(CLEEPBUS_DIR, 'cleepbus');
+  }
+
+  private handleCleepbusProcessClosed(code: number) {
+    if (!appContext.closingApplication) {
+      appLogger.error(`Cleepbus exited with code "${code}"`, null, 'cleepbus');
+      if (code !== 0) {
+        // error occured, display error to user before terminates application
+        const error = this.cleepbusStartupError || 'unknown error';
+        // TODO propagate error to ui in devices area
+      }
+    }
+  }
+
+  private handleCleepbusStdoutData(data: Readable): void {
+    appLogger.info(data.toString().trim(), null, 'cleepbus');
+  }
+
+  private handleCleepbusStderrData(data: Readable): void {
+    // do not process user warning messages
+    const message = data.toString().trim();
+    if (message.search('UserWarning:') != -1) {
+      appLogger.debug('Drop UserWarning message', null, 'cleepbus');
+      return;
+    }
+
+    // handle ASCII error
+    if (message.search('hostname seems to have unsupported characters') != -1) {
+      this.cleepbusStartupError = `Your computer hostname "${os.hostname()}" contains invalid characters. Please update it using only ASCII chars.`;
+    }
+
+    // handle python debug messages
+    if (message.startsWith('DEBUG:')) {
+      return;
+    }
+
+    appLogger.error(message, null, 'cleepbus');
+  }
+
+  public kill(): void {
+    if (this.cleepbusProcess) {
+      this.cleepbusProcess.kill('SIGTERM');
+    }
+  }
+
+  private launchWebsocketServer(wsPort: number): void {
+    appLogger.info(`Launching websocket server on port ${wsPort}`);
+    this.wsServer = new WebSocketServer({ host: '127.0.0.1', port: wsPort });
+    this.wsServer.on('connection', (ws: WebSocket) => {
+      appLogger.debug('WebsocketServer received new connection');
+      this.initCleepbusWebsocket(ws);
+    });
+
+    this.wsServer.on('headers', (headers: string[]) => {
+      appLogger.debug('WebSocketServer received headers', { headers });
+    });
+
+    this.wsServer.on('close', () => {
+      appLogger.info('WebSocketServer disconnected');
+    });
+
+    this.wsServer.on('error', (error: Error) => {
+      appLogger.error('WebSocketServer error', { error });
+    });
+  }
+
+  private initCleepbusWebsocket(ws: WebSocket): void {
+    this.cleepbusWs = ws;
+
+    setTimeout(() => {
+      appLogger.info('######### send coucou');
+      this.cleepbusWs.send('Coucou client');
+    }, 1000);
+
+    this.cleepbusWs.on('close', () => {
+      appLogger.info('Cleepbus websocket disconnected');
+    });
+
+    this.cleepbusWs.on('error', (error: Error) => {
+      appLogger.error('Cleepbus websocket error', { error });
+    });
+
+    this.cleepbusWs.on('message', (message: Buffer) => {
+      appLogger.info('Message received from Cleepbus', message.toString('utf8'));
+    });
+  }
+
+  public sendMessage(message: string): void {
+    if (this.cleepbusWs) {
+      this.cleepbusWs.send(message);
+    }
+  }
+
   public async install(release: GithubRelease): Promise<boolean> {
     const platform = String(process.platform);
     if (Object.keys(release).findIndex((key) => key === platform) === -1) {
@@ -70,6 +217,9 @@ export class Cleepbus {
 
       appSettings.set('cleepbus.version', release.version);
       this.downloadProgressCallback({ terminated: true });
+
+      const wsPort = await getWsPort();
+      this.launchCleepbus(wsPort);
     } catch (error) {
       appLogger.error(`Error installing Cleepbus: ${error}`);
       this.downloadProgressCallback({ percent: 100, error: getError(error) });
