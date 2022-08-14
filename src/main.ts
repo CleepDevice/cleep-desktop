@@ -9,14 +9,14 @@ import { appFileDownload } from './app-file-download';
 import isDev from 'electron-is-dev';
 import { appIso } from './app-iso';
 import { Sudo } from './sudo/sudo';
-import { cleepbus } from './cleepbus/cleepbus';
+import { appDevices } from './app-devices';
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
 
 app.on('will-quit', function () {
   appLogger.debug('Kill core');
-  cleepbus.kill();
+  appDevices.stop();
 });
 
 // quit when all windows are closed.
@@ -67,7 +67,7 @@ app.on('ready', async function () {
     appUpdater.configure(mainWindow);
     appFileDownload.configure(mainWindow);
     appIso.configure(mainWindow);
-    cleepbus.configure();
+    appDevices.configure(mainWindow);
   } catch (error) {
     appLogger.error(`Unable to launch application: ${error?.message || 'unknown error'}`);
   }

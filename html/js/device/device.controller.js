@@ -1,12 +1,12 @@
 angular
 .module('Cleep')
-.controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'deviceService', 'downloadService', 'electronService',
-function($rootScope, $stateParams, logger, $document, $timeout, deviceService, downloadService, electron) {
+.controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'downloadService', 'electronService',
+function($rootScope, $stateParams, logger, $document, $timeout, downloadService, electron) {
 
     var self = this;
     self.deviceUrl = $stateParams.url;
     self.wv = document.getElementById('deviceWv');
-    self.deviceService = deviceService;
+    self.loading = true;
 
     // handle external link
     self.wv.addEventListener('new-window', (event) => {
@@ -28,14 +28,14 @@ function($rootScope, $stateParams, logger, $document, $timeout, deviceService, d
     // disable pre-loading to avoid blank page
     self.wv.addEventListener('dom-ready', () => {
         $timeout(function() {
-            deviceService.loading = false;
+            self.loading = false;
         }, 0);
     });
 
     // configure webview src as soon as document is ready
     $document.ready(function() {
         $timeout(function() {
-            deviceService.loading = true;
+            self.loading = true;
         }, 0);
         logger.debug('Opening "'+$stateParams.hostname+'" device url: '+$stateParams.url);
         self.wvAngular = angular.element(self.wv);

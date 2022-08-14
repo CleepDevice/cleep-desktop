@@ -12,22 +12,18 @@ function($state, devicesService, toastService, confirmService, $rootScope, elect
         }
 
         if (device.online) {
-            // prepare device url
-            var url = device.ip + ':' + device.port;
-            url = device.ssl ? 'https://' + url : 'http://' + url
-
-            // open device page on right panel
-            $state.go('device', {
-                url,
-                hostname: device.hostname
-            });
-
-            // select device
-            devicesService.selectDevice(device);
+            var url = self.__getDeviceUrl(device);
+            $state.go('device', { url, hostname: device.hostname });
+            devicesService.selectDevice(device.uuid);
         } else {
-            toastService.info('You can\'t connect to offline devices');
+            toastService.info('You can\'t connect to offline device');
         }
     };
+
+    self.__getDeviceUrl = function(device) {
+        var url = device.ip + ':' + device.port;
+        return (device.ssl ? 'https://' : 'http://') + url;
+    }
 
     self.openDeviceMenu = function($mdMenu, ev) {
         $mdMenu.open(ev);
@@ -38,21 +34,25 @@ function($state, devicesService, toastService, confirmService, $rootScope, elect
     };
 
     // TODO remove
-    self.test = function() {
-        electron.sendReturn('cache-get-files')
-            .then((resp) => {
-                console.log('======>', resp);
-            });
-    }
+    // self.test = function() {
+    //     electron.sendReturn('cache-get-files')
+    //         .then((resp) => {
+    //             console.log('======>', resp);
+    //         });
+    // }
 
     self.deleteDevice = function(device) {
         confirmService.open('Confirm device deletion ?', 'Device will only be removed from list.<br>This is useful to delete obsolete entries.')
-            .then(() => {
-                return devicesService.deleteDevice(device);
-            })
-            .then(() => {
-                toastService.success('Device deleted');
-            });
+            .then(
+                () => {
+                    devicesService.deleteDevice(device)
+                        .then(
+                            () => { toastService.success('Device deleted successfully'); },
+                            () => { toastService.error('Error occured deleting device'); }
+                        );
+                },
+                () => { /* dialog canceled*/ },
+            );
     }
 
     self.reloadDevicePage = function(device) {

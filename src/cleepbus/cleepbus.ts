@@ -14,6 +14,14 @@ import { getError, getWsPort } from '../utils/helpers';
 import { WebSocketServer, WebSocket } from 'ws';
 import { appContext } from '../app-context';
 import os from 'os';
+import { CleebusMessageResponse, CleepbusMessage, CleepbusPeerInfos } from './cleepbus.types';
+import {
+  OnMessageBusConnectedCallback,
+  OnMessageBusErrorCallback,
+  OnMessageBusMessageResponseCallback,
+  OnMessageBusPeerConnectedCallback,
+  OnMessageBusPeerDisconnectedCallback,
+} from './message-bus.types';
 
 export const CLEEPBUS_DIR = path.join(app.getPath('userData'), 'cleepbus');
 const FILENAME_DARWIN = '-macos-';
@@ -28,6 +36,11 @@ export class Cleepbus {
   private github: Octokit;
   private updateAvailableCallback: OnUpdateAvailableCallback;
   private downloadProgressCallback: OnDownloadProgressCallback;
+  private messageBusErrorCallback: OnMessageBusErrorCallback;
+  private messageBusConnectedCallback: OnMessageBusConnectedCallback;
+  private peerConnectedCallback: OnMessageBusPeerConnectedCallback;
+  private peerDisconnectedCallback: OnMessageBusPeerDisconnectedCallback;
+  private messageResponseCallback: OnMessageBusMessageResponseCallback;
   private wsServer: WebSocketServer;
   private cleepbusWs: WebSocket;
   private cleepbusProcess: ChildProcessByStdio<null, Readable, Readable>;
@@ -37,11 +50,20 @@ export class Cleepbus {
     this.github = new Octokit();
   }
 
-  public async configure(): Promise<void> {
+  public async start(): Promise<void> {
     const wsPort = await getWsPort();
 
     this.launchWebsocketServer(wsPort);
     this.launchCleepbus(wsPort);
+  }
+
+  public stop(): void {
+    if (this.cleepbusProcess) {
+      this.cleepbusProcess.kill('SIGTERM');
+    }
+    if (this.wsServer) {
+      this.wsServer.close();
+    }
   }
 
   public async checkForUpdates(force = false): Promise<boolean> {
@@ -72,14 +94,32 @@ export class Cleepbus {
     this.downloadProgressCallback = downloadProgressCallback;
   }
 
+  public setCleepbusCallbacks(
+    messageBusErrorCallback: OnMessageBusErrorCallback,
+    messageBusConnectedCallback: OnMessageBusConnectedCallback,
+    messageResponseCallback: OnMessageBusMessageResponseCallback,
+    peerConnectedCallback: OnMessageBusPeerConnectedCallback,
+    peerDisconnectedCallback: OnMessageBusPeerDisconnectedCallback,
+  ): void {
+    this.messageBusErrorCallback = messageBusErrorCallback;
+    this.messageBusConnectedCallback = messageBusConnectedCallback;
+    this.peerConnectedCallback = peerConnectedCallback;
+    this.peerDisconnectedCallback = peerDisconnectedCallback;
+    this.messageResponseCallback = messageResponseCallback;
+  }
+
   private async launchCleepbus(wsPort: number): Promise<void> {
     const cleepbusPath = this.getCleepbusPath();
     if (!this.checkCleepbusInstallation(cleepbusPath)) {
       return;
     }
 
-    const uuid = appSettings.get('uuid');
+    const debug = appSettings.get('cleep.debug') as boolean;
+    const uuid = appSettings.get('cleep.uuid');
     const cleepbusArgs = [`--ws-port=${wsPort}`, `--uuid=${uuid}`];
+    if (debug) {
+      cleepbusArgs.push('--debug');
+    }
     appLogger.info(`Cleepbus commandline: ${cleepbusPath} ${cleepbusArgs.join(' ')}`);
     const options: SpawnOptionsWithStdioTuple<StdioNull, StdioPipe, StdioPipe> = { stdio: ['ignore', 'pipe', 'pipe'] };
     this.cleepbusProcess = spawn(cleepbusPath, cleepbusArgs, options);
@@ -98,8 +138,9 @@ export class Cleepbus {
 
     // check binary exists (antiviral can delete pyinstaller generated binary)
     if (!fs.existsSync(cleepbusPath)) {
-      appLogger.error('Cleepbus binary was not found on path "' + cleepbusPath + '"');
-      // TODO propagate error to ui in devices area
+      const error = `Cleepbus binary was not found on path "${cleepbusPath}"`;
+      appLogger.error(error);
+      this.messageBusErrorCallback(error);
       return false;
     }
 
@@ -119,13 +160,24 @@ export class Cleepbus {
       if (code !== 0) {
         // error occured, display error to user before terminates application
         const error = this.cleepbusStartupError || 'unknown error';
-        // TODO propagate error to ui in devices area
+        this.messageBusErrorCallback(error);
       }
     }
   }
 
   private handleCleepbusStdoutData(data: Readable): void {
-    appLogger.info(data.toString().trim(), null, 'cleepbus');
+    const stdout = data.toString().trim();
+    for (const log of stdout.split('\n')) {
+      if (log.startsWith('DEBUG:')) {
+        appLogger.debug(log, null, 'cleepbus');
+      } else if (log.startsWith('INFO:')) {
+        appLogger.info(log, null, 'cleepbus');
+      } else if (log.startsWith('WARN:')) {
+        appLogger.warn(log, null, 'cleepbus');
+      } else if (log.startsWith('ERROR:')) {
+        appLogger.error(log, null, 'cleepbus');
+      }
+    }
   }
 
   private handleCleepbusStderrData(data: Readable): void {
@@ -149,18 +201,13 @@ export class Cleepbus {
     appLogger.error(message, null, 'cleepbus');
   }
 
-  public kill(): void {
-    if (this.cleepbusProcess) {
-      this.cleepbusProcess.kill('SIGTERM');
-    }
-  }
-
   private launchWebsocketServer(wsPort: number): void {
     appLogger.info(`Launching websocket server on port ${wsPort}`);
     this.wsServer = new WebSocketServer({ host: '127.0.0.1', port: wsPort });
     this.wsServer.on('connection', (ws: WebSocket) => {
       appLogger.debug('WebsocketServer received new connection');
       this.initCleepbusWebsocket(ws);
+      this.messageBusConnectedCallback(true);
     });
 
     this.wsServer.on('headers', (headers: string[]) => {
@@ -179,13 +226,9 @@ export class Cleepbus {
   private initCleepbusWebsocket(ws: WebSocket): void {
     this.cleepbusWs = ws;
 
-    setTimeout(() => {
-      appLogger.info('######### send coucou');
-      this.cleepbusWs.send('Coucou client');
-    }, 1000);
-
     this.cleepbusWs.on('close', () => {
       appLogger.info('Cleepbus websocket disconnected');
+      this.messageBusConnectedCallback(false);
     });
 
     this.cleepbusWs.on('error', (error: Error) => {
@@ -193,7 +236,26 @@ export class Cleepbus {
     });
 
     this.cleepbusWs.on('message', (message: Buffer) => {
-      appLogger.info('Message received from Cleepbus', message.toString('utf8'));
+      const parsedMessage = JSON.parse(message.toString('utf8')) as CleepbusMessage;
+      appLogger.debug('Message received from Cleepbus', { parsedMessage });
+
+      if (parsedMessage.content_type === 'PEER_CONNECTED' && this.peerConnectedCallback) {
+        const connectedPeer = parsedMessage.data as CleepbusPeerInfos;
+        this.peerConnectedCallback(connectedPeer);
+        return;
+      }
+      if (parsedMessage.content_type === 'PEER_DISCONNECTED' && this.peerDisconnectedCallback) {
+        const disconnectedPeer = parsedMessage.data as CleepbusPeerInfos;
+        this.peerDisconnectedCallback(disconnectedPeer);
+        return;
+      }
+      if (parsedMessage.content_type === 'MESSAGE_RESPONSE' && this.messageResponseCallback) {
+        const messageResponse = parsedMessage.data as CleebusMessageResponse;
+        this.messageResponseCallback(messageResponse);
+        return;
+      }
+
+      appLogger.warn('Unhandled message received from Cleepbus', { message: parsedMessage });
     });
   }
 

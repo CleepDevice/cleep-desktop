@@ -20,7 +20,7 @@
         >
             <md-list class="toolbar" style="padding-top:0px;">
 
-                <md-list-item ng-click="cleep.toggleToolbar()" aria-label="Toggle toolbar">
+                <md-list-item ng-click="cleep.toggleToolbar()">
                     <md-icon md-svg-icon="chevron-double-right" class="white-icon" ng-if="cleep.toolbarCollapsed"></md-icon>
                     <md-icon md-svg-icon="chevron-double-left" class="white-icon" ng-if="!cleep.toolbarCollapsed"></md-icon>
                     <p></p>
@@ -28,28 +28,28 @@
 
                 <md-divider></md-divider>
 
-                <md-list-item ng-click="cleep.openPage('default')" aria-label="Homepage" title="Homepage" title="Homepage">
+                <md-list-item ng-click="cleep.openPage('default')" title="Homepage" title="Homepage">
                     <md-icon md-svg-icon="home" ng-class="cleep.selectedToolbarItem=='default' ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Homepage</p>
                 </md-list-item>
 
                 <md-divider></md-divider>
 
-                <md-list-item ng-click="cleep.openPage('installAuto')" aria-label="Install Cleep" title="Install">
+                <md-list-item ng-click="cleep.openPage('installAuto')" title="Install">
                     <md-icon md-svg-icon="sd" ng-class="cleep.selectedToolbarItem=='installAuto' ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Cleep install</p>
                 </md-list-item>
 
                 <md-divider></md-divider>
                 
-                <md-list-item ng-click="cleep.openPage('monitoring')" aria-label="Monitoring" title="Monitoring">
+                <md-list-item ng-click="cleep.openPage('monitoring')" title="Monitoring">
                     <md-icon md-svg-icon="message-text" ng-class="cleep.selectedToolbarItem=='monitoring' ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Monitoring</p>
                 </md-list-item>
 
                 <md-divider></md-divider>
 
-                <md-list-item ng-click="cleep.openModal('preferencesController', 'js/preferences/preferences-dialog.html')" aria-label="Preferences" title="Preferences">
+                <md-list-item ng-click="cleep.openModal('preferencesController', 'js/preferences/preferences-dialog.html')" title="Preferences">
                     <md-icon class="white-icon" md-svg-icon="cog"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Preferences</p>
                 </md-list-item>
@@ -61,186 +61,151 @@
         <div ng-controller="devicesController as ctl" style="width:300px;" layout-fill class="panel-separator">
 
             <!-- toolbar -->
-            <div md-colors="::{background: 'primary-500'}" class="toolbar-content" layout="row" layout-align="start center">
+            <div md-colors="::{ background: 'primary-500' }" class="toolbar-content" layout="row" layout-align="start center">
                 <div class="toolbar-spacer"></div>
                 <div layout="row" layout-align="left center">
                     <md-icon style="color:white;" md-svg-icon="cellphone"></md-icon>
                     <h1 style="padding-left:5px;" class="md-title">Cleep devices</h1>
                 </div>
             </div>
-            <!-- not used , just to mimic raspiot layout -->
+            <!-- not used , just to mimic cleep device layout -->
             <md-progress-linear md-mode="determinate" value="100"></md-progress-linear>
 
             <md-content>
-                <!-- loader -->
-                <div layout="column" layout-align="center center" ng-if="ctl.devicesService.loading">
-                    <div>
-                        <br/><br/><br/>
-                        <md-progress-circular md-mode="indeterminate"></md-progress-circular>
-                        <br/><br/><br/>
+
+                <!-- not connected to message bus -->
+                <div ng-if="!ctl.devicesService.isMessageBusConnected">
+
+                    <!-- connecting to message bus -->
+                    <div layout="column" layout-padding layout-align="center center" ng-if="!ctl.devicesService.messageBusError">
+                        <br/>
+                        <div>
+                            <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+                        </div>
+                        <br/>
+                        <div>
+                            Connecting to Cleep network
+                        </div>
                     </div>
+
+                    <!-- message bus error -->
+                    <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devicesService.messageBusError">
+                        <div style="padding-top:20px;">
+                            <md-icon md-svg-icon="close-network-outline"></md-icon>
+                            Can't connect to Cleep network.<br>
+                        </div>
+                        <div>
+                            {{ ctl.devicesService.messageBusError }}
+                        </div>
+                        <div>
+                            You won't see your devices.
+                        </div>
+                    </div>
+
                 </div>
 
-                <!-- no network -->
-                <div layout="column"
-                    layout-padding
-                    layout-align="center center"
-                    ng-if="!ctl.devicesService.isConnected"
-                >
-                    <div style="padding-top:20px;">
-                        <md-icon md-svg-icon="close-network-outline"></md-icon>
-                        Can't connect to Cleep network.<br>
-                    </div>
-                    <div>
-                        You won't see your devices.
-                    </div>
-                </div>
+                <!-- connected to message bus -->
+                <div ng-if="ctl.devicesService.isMessageBusConnected">
 
-                <!-- no device -->
-                <div
-                    layout="column"
-                    layout-padding
-                    layout-align="center center"
-                    ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length==0 && ctl.devicesService.isConnected"
-                >
-                    <div style="padding-top:20px;">
-                        No device found...
-                    </div>
-                    <div>
-                        <md-button class="md-raised md-primary" ng-click="ctl.openInstallPage()">
-                            <md-icon md-svg-icon="plus-circle"></md-icon>
-                            Install new device
-                        </md-button>
-                    </div>
-                </div>
-
-                <!-- unconfigured devices -->
-                <div
-                    ng-if="!ctl.devicesService.loading && ctl.devicesService.unconfigured>0 && ctl.devicesService.isConnected"
-                    md-colors="::{background: 'primary-300'}"
-                    class="toolbar-content"
-                    layout="row"
-                    layout-align="start center"
-                >
-                    <div class="toolbar-spacer"></div>
-                    <div layout="row" layout-align="left center">
-                        <h1 style="padding-left:5px;" class="md-title">Unconfigured devices</h1>
-                    </div>
-                </div>
-                <md-list
-                    ng-if="!ctl.devicesService.loading && ctl.devicesService.unconfigured>0 && ctl.devicesService.isConnected"
-                    style="padding:0px;"
-                >
-                    <md-list-item
-                        ng-repeat="device in ctl.devicesService.devices | filter: { extra: { configured: false } }"
-                        ng-if="ctl.devicesService.unconfigured>0"
-                        ng-click="ctl.openDevicePage(device)"
-                        md-colors="device.selected ? {background: 'accent-100'} : {background: 'background'}"
-                    >
-                        <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
-                        <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin md-accent"></md-icon>
-                        <p>{{device.hostname}}</p>
-                        <md-menu class="md-secondary">
-                            <md-button class="md-icon-button" ng-click="ctl.openDeviceMenu($mdMenu, $event)">
-                                <md-icon md-svg-icon="dots-vertical"></md-icon>
+                    <!-- no device -->
+                    <div ng-if="ctl.devicesService.devices.length === 0" layout="column" layout-padding layout-align="center center">
+                        <div style="padding-top:20px;">
+                            <md-icon md-svg-icon="alert-circle-outline"></md-icon>
+                            No device found...
+                        </div>
+                        <div>
+                            <md-button class="md-raised md-primary" ng-click="ctl.openInstallPage()">
+                                <md-icon md-svg-icon="plus-circle"></md-icon>
+                                Install new device
                             </md-button>
-                            <md-menu-content>
-                                <md-menu-item>
-                                    <md-button
-                                        aria-label="Device infos"
-                                        ng-click="cleep.openModal('deviceDetailsController', 'js/device/device-details.dialog.html', device)"
-                                    >
-                                        <md-icon md-svg-icon="information-outline"></md-icon>
-                                        Device infos
-                                    </md-button>
-                                </md-menu-item>
-                                <md-menu-item ng-show="device.selected">
-                                    <md-button
-                                        aria-label="Reload device page"
-                                        ng-click="ctl.reloadDevicePage(device)"
-                                    >
-                                        <md-icon md-svg-icon="information-outline"></md-icon>
-                                        Reload device page
-                                    </md-button>
-                                </md-menu-item>
-                                <md-menu-divider></md-menu-divider>
-                                <md-menu-item>
-                                    <md-button aria-label="Delete device" ng-click="ctl.deleteDevice(device)">
-                                        <md-icon md-svg-icon="delete"></md-icon>
-                                        Delete
-                                    </md-button>
-                                </md-menu-item>
-                            </md-menu-content>
-                        </md-menu>
-                    </md-list-item>
-                </md-list>
-
-                <!-- configured devices -->
-                <div
-                    ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length>0 && ctl.devicesService.isConnected"
-                    md-colors="::{background: 'primary-300'}"
-                    class="toolbar-content"
-                    layout="row"
-                    layout-align="start center"
-                >
-                    <div class="toolbar-spacer"></div>
-                    <div layout="row" layout-align="left center">
-                        <h1 style="padding-left:5px;" class="md-title">Configured devices</h1>
+                        </div>
                     </div>
-                </div>
-                <md-list
-                    ng-if="!ctl.devicesService.loading && ctl.devicesService.devices.length>0 && ctl.devicesService.isConnected"
-                    style="padding:0px;"
-                >
-                    <md-list-item
-                        ng-repeat="device in ctl.devicesService.devices | filter: { extra: { configured: true } }"
-                        ng-click="ctl.openDevicePage(device)"
-                        md-colors="device.selected ? {background: 'accent-100'} : {background: 'background'}"
-                    >
-                        <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
-                        <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin md-accent"></md-icon>
-                        <p>{{device.hostname}}</p>
-                        <md-menu class="md-secondary">
-                            <md-button class="md-icon-button" ng-click="ctl.openDeviceMenu($mdMenu, $event)">
-                                <md-icon md-svg-icon="dots-vertical"></md-icon>
+
+                    <!-- devices -->
+                    <md-list ng-if="ctl.devicesService.devices.length > 0" style="padding:0px;">
+                        <md-subheader class="md-no-sticky">Unconfigured devices</md-subheader>
+                        <md-list-item
+                            ng-repeat="device in ctl.devicesService.devices | filter: { extra: { configured: false } }"
+                            ng-click="ctl.openDevicePage(device)"
+                            md-colors="device.uuid === ctl.devicesService.selectedDeviceUuid ? { background: 'accent-100' } : { background: 'background' }"
+                        >
+                            <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
+                            <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin md-accent"></md-icon>
+                            <p>{{ device.hostname }}</p>
+                            <md-menu class="md-secondary">
+                                <md-button class="md-icon-button" ng-click="ctl.openDeviceMenu($mdMenu, $event)">
+                                    <md-icon md-svg-icon="dots-vertical"></md-icon>
+                                </md-button>
+                                <md-menu-content>
+                                    <md-menu-item>
+                                        <md-button ng-click="cleep.openModal('deviceDetailsController', 'js/device/device-details.dialog.html', device)">
+                                            <md-icon md-svg-icon="information-outline"></md-icon>
+                                            Device infos
+                                        </md-button>
+                                    </md-menu-item>
+                                    <md-menu-item ng-show="device.uuid === ctl.devicesService.selectedDeviceUuid">
+                                        <md-button ng-click="ctl.reloadDevicePage(device)">
+                                            <md-icon md-svg-icon="information-outline"></md-icon>
+                                            Reload device page
+                                        </md-button>
+                                    </md-menu-item>
+                                    <md-menu-divider></md-menu-divider>
+                                    <md-menu-item>
+                                        <md-button ng-click="ctl.deleteDevice(device)">
+                                            <md-icon md-svg-icon="delete"></md-icon>
+                                            Delete
+                                        </md-button>
+                                    </md-menu-item>
+                                </md-menu-content>
+                            </md-menu>
+                        </md-list-item>
+
+                        <md-subheader class="md-no-sticky">Configured devices</md-subheader>
+                        <md-list-item
+                            ng-repeat="device in ctl.devicesService.devices | filter: { extra: { configured: true } }"
+                            ng-click="ctl.openDevicePage(device)"
+                            md-colors="device.uuid === ctl.devicesService.selectedDeviceUuid ? { background: 'accent-100' } : { background: 'background' }"
+                        >
+                            <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
+                            <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin md-accent"></md-icon>
+                            <p>{{ device.hostname }}</p>
+                            <md-menu class="md-secondary">
+                                <md-button class="md-icon-button" ng-click="ctl.openDeviceMenu($mdMenu, $event)">
+                                    <md-icon md-svg-icon="dots-vertical"></md-icon>
+                                </md-button>
+                                <md-menu-content>
+                                    <md-menu-item>
+                                        <md-button ng-click="cleep.openModal('deviceDetailsController', 'js/device/device-details.dialog.html', device)">
+                                            <md-icon md-svg-icon="information-outline"></md-icon>
+                                            Device infos
+                                        </md-button>
+                                    </md-menu-item>
+                                    <md-menu-item ng-show="device.uuid === ctl.devicesService.selectedDeviceUuid">
+                                        <md-button ng-click="ctl.reloadDevicePage(device)">
+                                            <md-icon md-svg-icon="reload"></md-icon>
+                                            Reload device page
+                                        </md-button>
+                                    </md-menu-item>
+                                    <md-menu-divider></md-menu-divider>
+                                    <md-menu-item>
+                                        <md-button ng-click="ctl.deleteDevice(device)">
+                                            <md-icon md-svg-icon="delete"></md-icon>
+                                            Delete
+                                        </md-button>
+                                    </md-menu-item>
+                                </md-menu-content>
+                            </md-menu>
+                        </md-list-item>
+                        <!-- </md-list-item>
+                            <p>Test</p>
+                            <md-button class="md-raised md-primary" ng-click="ctl.test()">
+                                <md-icon md-svg-icon="plus-circle"></md-icon>
+                                Test
                             </md-button>
-                            <md-menu-content>
-                                <md-menu-item>
-                                    <md-button
-                                        aria-label="Device infos"
-                                        ng-click="cleep.openModal('deviceDetailsController', 'js/device/device-details.dialog.html', device)"
-                                    >
-                                        <md-icon md-svg-icon="information-outline"></md-icon>
-                                        Device infos
-                                    </md-button>
-                                </md-menu-item>
-                                <md-menu-item ng-show="device.selected">
-                                    <md-button
-                                        aria-label="Reload device page"
-                                        ng-click="ctl.reloadDevicePage(device)"
-                                    >
-                                        <md-icon md-svg-icon="reload"></md-icon>
-                                        Reload device page
-                                    </md-button>
-                                </md-menu-item>
-                                <md-menu-divider></md-menu-divider>
-                                <md-menu-item>
-                                    <md-button aria-label="Delete device" ng-click="ctl.deleteDevice(device)">
-                                        <md-icon md-svg-icon="delete"></md-icon>
-                                        Delete
-                                    </md-button>
-                                </md-menu-item>
-                            </md-menu-content>
-                        </md-menu>
-                    </md-list-item>
-                    </md-list-item>
-                        <p>Test</p>
-                        <md-button class="md-raised md-primary" ng-click="ctl.test()">
-                            <md-icon md-svg-icon="plus-circle"></md-icon>
-                            Test
-                        </md-button>
-                    </md-list-item>
-                </md-list>
+                        </md-list-item> -->
+                    </md-list>
+
+                </div>
 
             </md-content>
         </div>
@@ -280,7 +245,6 @@
     <script src="js/services/update.service.js"></script>
     <script src="js/services/install.service.js"></script>
     <script src="js/services/devices.service.js"></script>
-    <script src="js/services/device.service.js"></script>
     <script src="js/services/download.service.js"></script>
     <script src="js/services/monitoring.service.js"></script>
     <script src="js/updates/updates.controller.js"></script>

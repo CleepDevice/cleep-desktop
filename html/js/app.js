@@ -20,6 +20,7 @@ function($rootScope, $state, tasksPanelService, modalService, $timeout, $transit
         // TODO devicesService.getDevices();
         updateService.init();
         installService.init();
+        devicesService.init();
 
         // first run? open application help
         settings.get('cleep.firstrun')
