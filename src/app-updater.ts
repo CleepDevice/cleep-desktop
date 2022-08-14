@@ -39,7 +39,7 @@ type CheckForUpdateMode = 'auto' | 'manual';
 export class AppUpdater {
   private window: BrowserWindow;
   private flashTool: Balena;
-  private cleepbus: Cleepbus;
+  private messageBus: Cleepbus;
 
   constructor() {
     // enable this flag to test pre release
@@ -47,10 +47,16 @@ export class AppUpdater {
     autoUpdater.logger = appLogger;
 
     this.flashTool = balena;
-    balena.setUpdateCallbacks(this.onFlashToolUpdateAvailable.bind(this), this.onFlashToolDownloadProgress.bind(this));
+    this.flashTool.setUpdateCallbacks(
+      this.onFlashToolUpdateAvailable.bind(this),
+      this.onFlashToolDownloadProgress.bind(this),
+    );
 
-    this.cleepbus = cleepbus;
-    cleepbus.setUpdateCallbacks(this.onCleepbusUpdateAvailable.bind(this), this.onCleepbusDownloadProgress.bind(this));
+    this.messageBus = cleepbus;
+    this.messageBus.setUpdateCallbacks(
+      this.onCleepbusUpdateAvailable.bind(this),
+      this.onCleepbusDownloadProgress.bind(this),
+    );
 
     this.addListeners();
     this.addIpcs();
@@ -74,7 +80,7 @@ export class AppUpdater {
   }
 
   public isCleepbusInstalled(): boolean {
-    return this.cleepbus.getInstalledVersion() !== null;
+    return this.messageBus.getInstalledVersion() !== null;
   }
 
   public async checkForUpdates(updateMode: CheckForUpdateMode): Promise<UpdateStatus> {
@@ -91,7 +97,7 @@ export class AppUpdater {
 
     const cleepDesktopUpdate = await this.checkForCleepDesktopUpdates();
     const flashToolUpdate = await this.flashTool.checkForUpdates();
-    const cleepbusUpdate = await this.cleepbus.checkForUpdates();
+    const cleepbusUpdate = await this.messageBus.checkForUpdates();
 
     appSettings.set('cleep.lastupdatecheck', lastUpdateCheck);
 
@@ -141,7 +147,7 @@ export class AppUpdater {
 
     ipcMain.handle('updater-get-software-versions', () => {
       const flashToolVersion = this.flashTool.getInstalledVersion();
-      const cleepbusVersion = this.cleepbus.getInstalledVersion();
+      const cleepbusVersion = this.messageBus.getInstalledVersion();
       const lastUpdateCheck = appSettings.get('cleep.lastupdatecheck');
 
       return {
