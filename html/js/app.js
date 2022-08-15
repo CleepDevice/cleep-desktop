@@ -31,15 +31,6 @@ function($rootScope, $state, tasksPanelService, modalService, $timeout, $transit
                 }, 500);
                 settings.set('cleep.firstrun', false);
             });
-
-        // TODO init websocket asap
-        // settings.get('remote.rpcport')
-        //     .then((port) => {
-        //         return cleepService.connectWebSocket(port);
-        //     })
-        //     .then(() => {
-        //         logger.info('Websocket connected, launch angular application');
-        //     });
     };
 
     // open page

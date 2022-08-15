@@ -1,21 +1,12 @@
 angular
 .module('Cleep')
 .controller('installController', ['$rootScope', 'toastService', 'confirmService', 'loggerService', 'updateService', 
-                                'installService', 'modalService', 'cleepService', 'downloadService',
-function($rootScope, toast, confirm, logger, updateService, installService, modalService, cleepService, downloadService) {
+                                'installService', 'modalService',
+function($rootScope, toast, confirm, logger, updateService, installService, modalService) {
 
     var self = this;
     self.installService = installService;
     self.updateService = updateService;
-
-    self.$onInit = function() {
-        // cleepService.getConfig()
-        //     .then(function(resp) {
-        //         self.prefs = resp.data.config.cleep;
-        //     });
-
-        // installService.getStatus();
-    };
 
     self.gotoManualInstall = function() {
         $rootScope.$broadcast('open-page', 'installManually');
