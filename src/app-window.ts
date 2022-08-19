@@ -29,6 +29,25 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     shell.openExternal(url);
   });
 
+  mainWindow.webContents.on('did-attach-webview', (event, webContents) => {
+    console.log('webview attached', webContents);
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    appLogger.info('=====> open modal', { url });
+    if (url === 'about:blank') {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          frame: false,
+          fullscreenable: false,
+          backgroundColor: 'black',
+        },
+      };
+    }
+    return { action: 'deny' };
+  });
+
   // close splashscreen when main window loaded
   mainWindow.once('ready-to-show', function () {
     if (splashScreenWindow) {
