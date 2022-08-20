@@ -2,7 +2,8 @@ import { BrowserWindow, ipcMain } from 'electron';
 import { appLogger } from './app-logger';
 import { appSettings, SettingsObject } from './app-settings';
 import { cleepbus } from './cleepbus/cleepbus';
-import { CleebusMessageResponse, CleepbusPeerInfos } from './cleepbus/cleepbus.types';
+import { CleebusMessageResponse, CleepbusPeerInfos, TEST_DEVICE } from './cleepbus/cleepbus.types';
+import isDev from 'electron-is-dev';
 
 class AppDevices {
   private window: BrowserWindow;
@@ -26,6 +27,10 @@ class AppDevices {
     // set all devices not online and wait for message bus peer connection to set online
     for (const device of Object.values(this.devices)) {
       device.online = false;
+    }
+
+    if (isDev) {
+      this.devices[TEST_DEVICE.uuid] = TEST_DEVICE;
     }
   }
 
