@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'downloadService', 'electronService',
-function($rootScope, $stateParams, logger, $document, $timeout, downloadService, electron) {
+.controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'electronService',
+function($rootScope, $stateParams, logger, $document, $timeout, electron) {
 
     var self = this;
     self.deviceUrl = $stateParams.url;
@@ -10,17 +10,13 @@ function($rootScope, $stateParams, logger, $document, $timeout, downloadService,
 
     // handle external link
     self.wv.addEventListener('new-window', (event) => {
+        logger.debug('new-window event triggered', event.url);
         event.preventDefault();
+        event.stopImmediatePropagation();
 
-        // detect download in url action
-        logger.debug(event.url);
-        if (event.url.indexOf('/download?') !== -1) {
-            // trigger file download
-            logger.debug('Trigger file download: ', event);
-            downloadService.downloadUrl(event.url);
-        } else {
+        // file download is handled by chrome automatically so no action is necessary
+        if (!event.url.includes('/download?')) {
             //open external link
-            logger.debug('Opening external url: ', event);
             electron.send('open-url-in-browser', event.url);
         }
     });

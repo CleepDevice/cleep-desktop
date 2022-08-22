@@ -33,19 +33,19 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     console.log('webview attached', webContents);
   });
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    appLogger.info('=====> open modal', { url });
-    if (url === 'about:blank') {
-      return {
-        action: 'allow',
-        overrideBrowserWindowOptions: {
-          frame: false,
-          fullscreenable: false,
-          backgroundColor: 'black',
-        },
-      };
-    }
-    return { action: 'deny' };
+  mainWindow.webContents.setWindowOpenHandler((details: Electron.HandlerDetails) => {
+    appLogger.info('Open modal from application', { url: details.url });
+    return {
+      action: 'allow',
+      overrideBrowserWindowOptions: {
+        // frame: true,
+        // fullscreenable: false,
+        show: false,
+        focusable: true,
+        alwaysOnTop: false,
+        title: 'Cleep-desktop popup',
+      },
+    };
   });
 
   // close splashscreen when main window loaded

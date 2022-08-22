@@ -28,6 +28,22 @@ app.on('window-all-closed', function () {
   }
 });
 
+app.on('web-contents-created', (event: Electron.Event, webContents: Electron.WebContents) => {
+  appLogger.debug('New Cleep device webview created');
+  webContents.setWindowOpenHandler((details: Electron.HandlerDetails) => {
+    appLogger.info('Open modal from webview', { url: details.url });
+    return {
+      action: 'allow',
+      overrideBrowserWindowOptions: {
+        show: false,
+        focusable: true,
+        alwaysOnTop: false,
+        title: 'Cleep device popup',
+      },
+    };
+  });
+});
+
 app.on('activate', function () {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
@@ -85,6 +101,7 @@ ipcMain.on('open-path', (_event, path: string) => {
 });
 
 ipcMain.on('open-url-in-browser', (_event, url: string) => {
+  appLogger.info('Opening external url', { url });
   shell.openExternal(url);
 });
 
