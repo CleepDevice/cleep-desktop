@@ -7,7 +7,6 @@ Cleep
                                 'electronService',
 function($rootScope, $state, tasksPanelService, modalService, $timeout, $transitions, settings,
         devicesService, updateService, installService, monitoringService, downloadService, electron) {
-
     var self = this;
     self.taskRestartRequiredPanelId = null;
     self.selectedToolbarItem = null;
@@ -97,6 +96,7 @@ function($rootScope, $state, tasksPanelService, modalService, $timeout, $transit
         electron.send('updater-quit-and-install');
     };
 
+    // TODO useful ?
     // disable/enable application quit when process is running (like install process)
     $rootScope.$on('disablequit', function(_event, _data) {
         electron.send('allow-quit', false);

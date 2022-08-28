@@ -2,7 +2,6 @@ angular
 .module('Cleep')
 .controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'electronService',
 function($rootScope, $stateParams, logger, $document, $timeout, electron) {
-
     var self = this;
     self.deviceUrl = $stateParams.url;
     self.wv = document.getElementById('deviceWv');
@@ -41,5 +40,4 @@ function($rootScope, $stateParams, logger, $document, $timeout, electron) {
     $rootScope.$on('reload-device-page', function() {
         self.wv.reloadIgnoringCache();
     });
-
 }]);

@@ -1,7 +1,3 @@
-/**
- * Monitoring controller
- * Display messages from all devices received on bus
- */
 angular
 .module('Cleep')
 .controller('monitoringController', ['monitoringService', '$mdSidenav', function(monitoringService, $mdSidenav) {

@@ -2,7 +2,6 @@ angular
 .module('Cleep')
 .controller('preferencesController', ['$scope', 'debounceService', 'electronService', 'toastService',
 function($scope, debounce, electron, toast) {
-    
     var self = this;
     self.pref = 'general';
     self.settings = {};

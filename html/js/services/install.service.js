@@ -2,7 +2,6 @@ angular
 .module('Cleep')
 .service('installService', ['$rootScope', '$state', 'loggerService', 'tasksPanelService', 'settingsService', 'electronService', 'toastService',
 function($rootScope, $state, logger, tasksPanelService, settingsService, electron, toast) {
-
     var self = this;
     self.settings = {
         isolocal: false,

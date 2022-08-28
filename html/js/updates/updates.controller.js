@@ -1,11 +1,7 @@
-/**
- * Updates controller
- */
 angular
 .module('Cleep')
 .controller('updatesController', ['$rootScope', 'toastService', 'updateService', 'modalService', 'electronService',
 function($rootScope, toast, updateService, modalService, electron) {
-
     var self = this;
     self.loading = false;
     self.updateService = updateService;
@@ -38,5 +34,4 @@ function($rootScope, toast, updateService, modalService, electron) {
                 self.loading = false;
             });
     };
-
 }]);

@@ -2,7 +2,6 @@ angular
 .module('Cleep')
 .service('updateService', ['$rootScope', '$timeout', 'loggerService', 'tasksPanelService', 'electronService',
 function($rootScope, $timeout, logger, tasksPanelService, electron) {
-
     var self = this;
     self.taskUpdatePanelId = null;
     self.flashToolUpdate = {};

@@ -1,7 +1,3 @@
-
-/**
- * Device details controller
- */
 angular
 .module('Cleep')
 .controller('deviceDetailsController', ['modalData', 'closeModal', function(modalData, closeModal) {
@@ -63,5 +59,4 @@ angular
         'a020a0': 'images/raspberry-pi-compute-module-3.jpg',
     }
     self.boardImg = self.boardImages[self.device.extra['hwrevision']];
-
 }]);

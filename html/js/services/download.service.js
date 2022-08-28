@@ -5,7 +5,6 @@ angular
 .module('Cleep')
 .service('downloadService', ['tasksPanelService', 'toastService', 'electronService',
 function(tasksPanelService, toast, electron) {
-
     var self = this;
     self.downloadPanels = {};
 

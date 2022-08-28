@@ -3,7 +3,6 @@ angular
 .controller('installController', ['$rootScope', 'toastService', 'confirmService', 'loggerService', 'updateService', 
                                 'installService', 'modalService',
 function($rootScope, toast, confirm, logger, updateService, installService, modalService) {
-
     var self = this;
     self.installService = installService;
     self.updateService = updateService;

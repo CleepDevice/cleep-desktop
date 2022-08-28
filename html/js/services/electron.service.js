@@ -6,7 +6,6 @@ const { ipcRenderer } = require('electron');
 angular
 .module('Cleep')
 .service('electronService', ['$rootScope', '$timeout', function($rootScope, $timeout) {
-
     var self = this;
 
     /**

@@ -1,8 +1,7 @@
 angular
 .module('Cleep')
-.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope', 'electronService',
-function($state, devicesService, toastService, confirmService, $rootScope, electron) {
-
+.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope',
+function($state, devicesService, toastService, confirmService, $rootScope) {
     var self = this;
     self.devicesService = devicesService;
 
@@ -33,14 +32,6 @@ function($state, devicesService, toastService, confirmService, $rootScope, elect
         $state.go('installAuto');
     };
 
-    // TODO remove
-    // self.test = function() {
-    //     electron.sendReturn('cache-get-files')
-    //         .then((resp) => {
-    //             console.log('======>', resp);
-    //         });
-    // }
-
     self.deleteDevice = function(device) {
         confirmService.open('Confirm device deletion ?', 'Device will only be removed from list.<br>This is useful to delete obsolete entries.')
             .then(
@@ -60,5 +51,4 @@ function($state, devicesService, toastService, confirmService, $rootScope, elect
             $rootScope.$emit('reload-device-page', device.hostname);
         }
     }
-
 }]);

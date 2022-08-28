@@ -1,7 +1,6 @@
 angular
 .module('Cleep')
 .service('settingsService', ['electronService', function(electron) {
-
     var self = this;
     self.locale = 'en';
     

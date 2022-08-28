@@ -2,7 +2,6 @@ angular
 .module('Cleep')
 .controller('wifiController', ['closeModal', 'installService', 'modalData', 
 function(closeModal, installService, modalData) {
-
     var self = this;
     self.closeModal = closeModal;
     self.installService = installService;
@@ -58,5 +57,4 @@ function(closeModal, installService, modalData) {
             });
         }
     };
-    
 }]);

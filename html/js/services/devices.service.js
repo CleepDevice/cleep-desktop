@@ -2,7 +2,6 @@ angular
 .module('Cleep')
 .service('devicesService', ['electronService',
 function(electron) {
-
     var self = this;
     self.devices = [];
     // connected by default to not display startup connection

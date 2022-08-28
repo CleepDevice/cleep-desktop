@@ -171,5 +171,4 @@ angular
             self.panels[panelId].percent = percent;
         }
     }
-
 }]);

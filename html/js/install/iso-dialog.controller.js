@@ -1,11 +1,7 @@
-/**
- * Iso controller
- */
 angular
 .module('Cleep')
 .controller('isoDialogController', ['closeModal', 'installService',
 function(closeModal, installService) {
-
     var self = this;
     self.closeModal = closeModal;
     self.installService = installService;
@@ -47,5 +43,4 @@ function(closeModal, installService) {
         //     });
         // }
     };
-
 }]);
