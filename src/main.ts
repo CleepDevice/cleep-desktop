@@ -2,7 +2,7 @@ import { app, BrowserWindow, screen, ipcMain, shell } from 'electron';
 import { appContext } from './app-context';
 import { createAppMenu } from './app-menu';
 import { createAppWindow, createSplashscreenWindow } from './app-window';
-import { parseArgs } from './utils/helpers';
+import { parseArgs } from './utils/app.helpers';
 import { appLogger } from './app-logger';
 import { appUpdater } from './app-updater';
 import { appFileDownload } from './app-file-download';

@@ -1,7 +1,7 @@
 import { app, ipcMain, shell } from 'electron';
 import logger from 'electron-log';
 import isDev from 'electron-is-dev';
-import { CommandLineArgs } from './utils/helpers';
+import { CommandLineArgs } from './utils/app.helpers';
 import { appSettings } from './app-settings';
 import path from 'path';
 

@@ -10,7 +10,7 @@ import fs from 'fs';
 import extract from 'extract-zip';
 import { GithubRelease } from '../utils/github.types';
 import { appSettings } from '../app-settings';
-import { getError, getWsPort } from '../utils/helpers';
+import { getError, getWsPort } from '../utils/app.helpers';
 import { WebSocketServer, WebSocket } from 'ws';
 import { appContext } from '../app-context';
 import os from 'os';

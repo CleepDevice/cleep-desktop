@@ -4,7 +4,7 @@ import { appLogger } from '../app-logger';
 import fs from 'fs';
 import path from 'path';
 import extract from 'extract-zip';
-import { DriveUnit, findMatches, getError } from '../utils/helpers';
+import { DriveUnit, findMatches, getError } from '../utils/app.helpers';
 import { exec } from 'child_process';
 import { OnUpdateAvailableCallback } from '../app-updater';
 import { FlashOutput, FLASHTOOL_DIR } from '../app-iso';

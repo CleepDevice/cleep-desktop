@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, shell } from 'electron';
+import { BrowserWindow, dialog } from 'electron';
 import url from 'url';
 import { appContext } from './app-context';
 import path from 'path';

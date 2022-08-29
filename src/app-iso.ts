@@ -6,7 +6,7 @@ import { RaspiOs, RaspiosLatestRelease } from './iso/raspios';
 import { Wifi, WifiNetwork } from './iso/wifi';
 import { ReleaseInfo } from './iso/utils';
 import { balena, Drive } from './flash-tool/balena';
-import { getError } from './utils/helpers';
+import { getError } from './utils/app.helpers';
 import path from 'path';
 import { Sudo, SudoOptions } from './sudo/sudo';
 import { writeFile } from 'fs';
