@@ -1,6 +1,6 @@
 {
     "name": "cleep-desktop",
-    "version": "0.1.6",
+    "version": "0.2.0",
     "description": "Desktop application to manage your Cleep devices",
     "main": "main.js",
     "scripts": {
