@@ -14,7 +14,7 @@ function($rootScope, $stateParams, logger, $document, $timeout, electron) {
         event.stopImmediatePropagation();
 
         // file download is handled by chrome automatically so no action is necessary
-        if (!event.url.includes('/download?')) {
+        if (!event.url.includes('/download?') && !event.url.includes('127.0.0.1')) {
             //open external link
             electron.send('open-url-in-browser', event.url);
         }
