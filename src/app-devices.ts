@@ -116,7 +116,7 @@ class AppDevices {
     try {
       this.window.webContents.send(event, data);
     } catch {
-      appLogger.debug('Could appear when trying to access window when stopping application');
+      appLogger.debug('Error could appear when trying to access window when stopping application');
     }
   }
 }

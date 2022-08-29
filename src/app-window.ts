@@ -24,13 +24,13 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
   });
 
   // handle external url
-  mainWindow.webContents.on('new-window', function (e, url) {
-    e.preventDefault();
-    shell.openExternal(url);
-  });
+  // mainWindow.webContents.on('new-window', function (e, url) {
+  //   e.preventDefault();
+  //   shell.openExternal(url);
+  // });
 
-  mainWindow.webContents.on('did-attach-webview', (event, webContents) => {
-    console.log('webview attached', webContents);
+  mainWindow.webContents.on('did-attach-webview', (_event, _webContents) => {
+    appLogger.debug('webview attached');
   });
 
   mainWindow.webContents.setWindowOpenHandler((details: Electron.HandlerDetails) => {
@@ -38,8 +38,6 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     return {
       action: 'allow',
       overrideBrowserWindowOptions: {
-        // frame: true,
-        // fullscreenable: false,
         show: false,
         focusable: true,
         alwaysOnTop: false,
