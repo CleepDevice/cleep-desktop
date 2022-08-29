@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.controller('preferencesController', ['$scope', 'debounceService', 'electronService', 'toastService',
-function($scope, debounce, electron, toast) {
+.controller('preferencesController', ['$scope', 'debounceService', 'toastService', 'settingsService', 'electronService',
+function($scope, debounce, toast, settingsService, electron) {
     var self = this;
     self.pref = 'general';
     self.settings = {};
@@ -9,21 +9,25 @@ function($scope, debounce, electron, toast) {
     self.cachedFiles = [];
 
     self.$onInit = function() {
-        electron.sendReturn('settings-get-all')
-            .then((settings) => {
-                Object.assign(this.settings, settings);
-            });
+        self.getSettings();
         self.getCacheInfos();
     };
 
+    self.getSettings = function() {
+        settingsService.getAll()
+            .then((settings) => {
+                Object.assign(this.settings, settings);
+            });
+    }
+
     self.getCacheInfos = function() {
         electron.sendReturn('cache-get-infos')
-        .then((resp) => {
-            if (!resp.error) {
-                self.fillArray(self.cachedFiles, resp.data.files);
-                self.cacheDir = resp.data.dir;
-            }
-        });
+            .then((resp) => {
+                if (!resp.error) {
+                    self.fillArray(self.cachedFiles, resp.data.files);
+                    self.cacheDir = resp.data.dir;
+                }
+            });
     };
 
     $scope.$watch(function() {
@@ -40,6 +44,7 @@ function($scope, debounce, electron, toast) {
                 if (!success) {
                     toast.warning('Invalid settings, please check it');
                 }
+                self.getSettings();
             })
             .catch(() => { /* handle rejection */ });
     };

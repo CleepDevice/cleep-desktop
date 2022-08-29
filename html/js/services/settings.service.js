@@ -3,13 +3,18 @@ angular
 .service('settingsService', ['electronService', function(electron) {
     var self = this;
     self.locale = 'en';
+    self.settings = {};
     
     self.get = function(key) {
         return electron.sendReturn('settings-get', key);
     };
 
-    self.getAll = function(keys) {
-        return electron.sendReturn('settings-get-multiple', keys);
+    self.getAll = function() {
+        return electron.sendReturn('settings-get-all');
+    }
+
+    self.getSelected = function(keys) {
+        return electron.sendReturn('settings-get-selected', keys);
     }
     
     self.set = function(key, value) {

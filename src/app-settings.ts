@@ -87,7 +87,7 @@ export class AppSettings {
       return this.get(arg);
     });
 
-    ipcMain.handle('settings-get-multiple', (_event, arg: KeyPath[]) => {
+    ipcMain.handle('settings-get-selected', (_event, arg: KeyPath[]) => {
       const result: Record<string, unknown> = {};
       for (const keyPath of arg) {
         result[keyPath] = this.get(keyPath);

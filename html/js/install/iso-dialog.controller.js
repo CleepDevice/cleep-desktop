@@ -9,7 +9,10 @@ function(closeModal, installService) {
 
     self.$onInit = function () {
         self.loading = true;
-        self.installService.refreshIsosInfo()
+        self.installService.getIsoSettings()
+            .then(() => {
+                return self.installService.refreshIsosInfo();
+            })
             .finally(() => {
                 self.loading = false;
             });
