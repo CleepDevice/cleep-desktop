@@ -15,6 +15,7 @@ import { appUpdater } from './app-updater';
 import { NotInstalledException } from './exceptions/not-installed.exception';
 import { appCache } from './app-cache';
 import { appContext } from './app-context';
+import { sendDataToAngularJs } from './utils/ui.helpers';
 
 export interface WifiData {
   network: string;
@@ -167,7 +168,7 @@ class AppIso {
       error: downloadProgress?.error || '',
     };
     // appLogger.debug('Download progress', installProgress);
-    this.window.webContents.send('iso-install-progress', installProgress);
+    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
   }
 
   public async startInstall(installData: InstallData): Promise<void> {
@@ -232,7 +233,7 @@ class AppIso {
       eta: 0,
       step: 'privileges',
     };
-    this.window.webContents.send('iso-install-progress', installProgress);
+    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
 
     const options: SudoOptions = {
       appName: app.name,
@@ -255,7 +256,7 @@ class AppIso {
       step: 'idle',
       terminated: true,
     };
-    this.window.webContents.send('iso-install-progress', installProgress);
+    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
 
     appContext.allowAppClosing = true;
   }
@@ -269,7 +270,7 @@ class AppIso {
       eta: flashOutput.eta,
       step: flashOutput.mode,
     };
-    this.window.webContents.send('iso-install-progress', installProgress);
+    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
   }
 
   private flashStderrCallback(stderr: string) {
@@ -278,7 +279,7 @@ class AppIso {
     const installProgress: InstallProgress = {
       error: stderr,
     };
-    this.window.webContents.send('iso-install-progress', installProgress);
+    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
   }
 
   private addIpcs(): void {

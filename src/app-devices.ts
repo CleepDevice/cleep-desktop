@@ -4,6 +4,7 @@ import { appSettings, SettingsObject } from './app-settings';
 import { cleepbus } from './cleepbus/cleepbus';
 import { CleebusMessageResponse, CleepbusPeerInfos, TEST_DEVICE } from './cleepbus/cleepbus.types';
 import isDev from 'electron-is-dev';
+import { sendDataToAngularJs } from './utils/ui.helpers';
 
 class AppDevices {
   private window: BrowserWindow;
@@ -40,7 +41,7 @@ class AppDevices {
 
     // send devices list at startup
     this.window.webContents.once('dom-ready', () => {
-      this.sendToAngularJs('devices-updated', this.devicesObjectToArray());
+      sendDataToAngularJs(this.window, 'devices-updated', this.devicesObjectToArray());
     });
 
     cleepbus.start();
@@ -52,12 +53,12 @@ class AppDevices {
 
   private onMessageBusError(error: string): void {
     appLogger.error('Message bus error', { error });
-    this.sendToAngularJs('devices-message-bus-error', error);
+    sendDataToAngularJs(this.window, 'devices-message-bus-error', error);
   }
 
   private onMessageBusConnected(connected: boolean): void {
     appLogger.info('Message bus connected', { connected });
-    this.sendToAngularJs('devices-message-bus-connected', connected);
+    sendDataToAngularJs(this.window, 'devices-message-bus-connected', connected);
   }
 
   private onMessageResponse(messageResponse: CleebusMessageResponse): void {
@@ -68,13 +69,13 @@ class AppDevices {
   private onPeerDisconnected(peerInfos: CleepbusPeerInfos): void {
     appLogger.info('Peer disconnected', { peerInfos });
     this.updateDevices(peerInfos);
-    this.sendToAngularJs('devices-updated', this.devicesObjectToArray());
+    sendDataToAngularJs(this.window, 'devices-updated', this.devicesObjectToArray());
   }
 
   private onPeerConnected(peerInfos: CleepbusPeerInfos): void {
     appLogger.info('Peer connected', { uuid: peerInfos.uuid });
     this.updateDevices(peerInfos);
-    this.sendToAngularJs('devices-updated', this.devicesObjectToArray());
+    sendDataToAngularJs(this.window, 'devices-updated', this.devicesObjectToArray());
   }
 
   private updateDevices(peerInfos: CleepbusPeerInfos): void {
@@ -98,7 +99,7 @@ class AppDevices {
     delete this.devices[deviceUuid];
     appSettings.set('devices', this.devices as unknown as SettingsObject);
 
-    this.sendToAngularJs('devices-updated', this.devicesObjectToArray());
+    sendDataToAngularJs(this.window, 'devices-updated', this.devicesObjectToArray());
 
     return true;
   }
@@ -110,14 +111,6 @@ class AppDevices {
       appLogger.info('Device deleted result', { deleted: deviceDeleted });
       return { data: null, error: !deviceDeleted };
     });
-  }
-
-  private sendToAngularJs(event: string, data: unknown): void {
-    try {
-      this.window.webContents.send(event, data);
-    } catch {
-      appLogger.debug('Error could appear when trying to access window when stopping application');
-    }
   }
 }
 

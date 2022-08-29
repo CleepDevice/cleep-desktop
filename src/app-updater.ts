@@ -8,6 +8,7 @@ import { getError } from './utils/app.helpers';
 import { appSettings } from './app-settings';
 import isDev from 'electron-is-dev';
 import { cleepbus, Cleepbus } from './cleepbus/cleepbus';
+import { sendDataToAngularJs } from './utils/ui.helpers';
 
 export interface UpdateProgress {
   progress: ProgressInfo;
@@ -165,7 +166,7 @@ export class AppUpdater {
         percent: 100,
         error: getError(error),
       };
-      this.window.webContents.send('updater-cleepdesktop-download-progress', data);
+      sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', data);
     });
 
     autoUpdater.addListener('update-available', (info: UpdateInfo) => {
@@ -177,14 +178,14 @@ export class AppUpdater {
         changelog: changelog,
         percent: 0,
       };
-      this.window.webContents.send('updater-cleepdesktop-update-available', data);
+      sendDataToAngularJs(this.window, 'updater-cleepdesktop-update-available', data);
     });
 
     autoUpdater.addListener('download-progress', (progress: UpdateProgress) => {
       const data: UpdateData = {
         percent: progress.percent,
       };
-      this.window.webContents.send('updater-cleepdesktop-download-progress', data);
+      sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', data);
     });
 
     autoUpdater.addListener('update-downloaded', (info: UpdateInfo) => {
@@ -195,24 +196,24 @@ export class AppUpdater {
         percent: 100,
         installed: true,
       };
-      this.window.webContents.send('updater-cleepdesktop-download-progress', data);
+      sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', data);
     });
   }
 
   private onFlashToolUpdateAvailable(updateData: UpdateData): void {
-    this.window.webContents.send('updater-flashtool-update-available', updateData);
+    sendDataToAngularJs(this.window, 'updater-flashtool-update-available', updateData);
   }
 
   private onFlashToolDownloadProgress(updateData: UpdateData): void {
-    this.window.webContents.send('updater-flashtool-download-progress', updateData);
+    sendDataToAngularJs(this.window, 'updater-flashtool-download-progress', updateData);
   }
 
   private onCleepbusUpdateAvailable(updateData: UpdateData): void {
-    this.window.webContents.send('updater-cleepbus-update-available', updateData);
+    sendDataToAngularJs(this.window, 'updater-cleepbus-update-available', updateData);
   }
 
   private onCleepbusDownloadProgress(updateData: UpdateData): void {
-    this.window.webContents.send('updater-cleepbus-download-progress', updateData);
+    sendDataToAngularJs(this.window, 'updater-cleepbus-download-progress', updateData);
   }
 
   private getChangelog(changelog?: string | ReleaseNoteInfo[]): string {

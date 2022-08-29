@@ -1,5 +1,6 @@
 import { BrowserWindow, DownloadItem, ipcMain } from 'electron';
 import electronDl, { download } from 'electron-dl';
+import { sendDataToAngularJs } from './utils/ui.helpers';
 import uuid4 from 'uuid4';
 import { appLogger } from './app-logger';
 
@@ -65,7 +66,7 @@ export class AppFileDownload {
       const download = this.getDownload(downloadId);
       if (download) {
         this.deleteDownload(downloadId);
-        this.window.webContents.send('download-file-status', {
+        sendDataToAngularJs(this.window, 'download-file-status', {
           downloadId,
           filename: download.downloadItem.getFilename(),
           status: 'failed',
@@ -78,7 +79,11 @@ export class AppFileDownload {
   private onDownloadStarted(downloadId: string, url: string, downloadItem: DownloadItem): void {
     appLogger.debug(`Download ${downloadId} started`);
     this.downloads[downloadId] = { downloadId, downloadItem };
-    this.window.webContents.send('download-file-started', { downloadId, filename: downloadItem.getFilename(), url });
+    sendDataToAngularJs(this.window, 'download-file-started', {
+      downloadId,
+      filename: downloadItem.getFilename(),
+      url,
+    });
   }
 
   private onDownloadProgress(downloadId: string, progress: electronDl.Progress): void {
@@ -86,7 +91,7 @@ export class AppFileDownload {
 
     const download = this.getDownload(downloadId);
     if (download) {
-      this.window.webContents.send('download-file-status', {
+      sendDataToAngularJs(this.window, 'download-file-status', {
         downloadId,
         filename: download.downloadItem.getFilename(),
         status: 'downloading',
@@ -101,7 +106,7 @@ export class AppFileDownload {
     const download = this.getDownload(downloadId);
     if (download) {
       this.deleteDownload(downloadId);
-      this.window.webContents.send('download-file-status', {
+      sendDataToAngularJs(this.window, 'download-file-status', {
         downloadId,
         filename: download.downloadItem.getFilename(),
         status: 'canceled',
@@ -115,7 +120,7 @@ export class AppFileDownload {
 
     const download = this.getDownload(downloadId);
     if (download) {
-      this.window.webContents.send('download-file-status', {
+      sendDataToAngularJs(this.window, 'download-file-status', {
         downloadId,
         filename: download.downloadItem.getFilename(),
         status: 'success',
