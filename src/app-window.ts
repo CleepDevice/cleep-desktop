@@ -23,12 +23,6 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     title: 'CleepDesktop',
   });
 
-  // handle external url
-  // mainWindow.webContents.on('new-window', function (e, url) {
-  //   e.preventDefault();
-  //   shell.openExternal(url);
-  // });
-
   mainWindow.webContents.on('did-attach-webview', (_event, _webContents) => {
     appLogger.debug('webview attached');
   });
