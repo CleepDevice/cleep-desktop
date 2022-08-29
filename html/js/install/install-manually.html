@@ -51,11 +51,11 @@
                     <md-list-item class="md-2-line">
                         <md-icon md-svg-icon="chevron-right"></md-icon>
                         <div class="md-list-item-text">
-                            <h3>Download selected Cleep image file</h3>
+                            <h3>Download selected image file</h3>
                             <p ng-if="ctl.installService.installConfig.iso.url">{{ctl.installService.installConfig.iso.url}}</p>
                             <p ng-if="!ctl.installService.installConfig.iso.url">No distribution selected</p>
                         </div>
-                        <md-button class="md-secondary md-raised md-primary" ng-click="ctl.downloadIso()" ng-disabled="!ctl.installService.installConfig.iso.url">
+                        <md-button class="md-secondary md-raised md-primary" ng-click="ctl.downloadIso()" ng-disabled="!ctl.installService.installConfig.iso.url || ctl.installService.installConfig.iso.category==='local'">
                             <md-icon md-svg-icon="download"></md-icon>
                             Download
                         </md-button>
