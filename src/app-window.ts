@@ -77,7 +77,7 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
 
   // give a chance to user to not stop current running action
   mainWindow.on('close', function (e) {
-    // set closing flag (to avoid catching core process error)
+    // set closing flag
     appContext.closingApplication = true;
 
     if (!appContext.allowAppClosing) {

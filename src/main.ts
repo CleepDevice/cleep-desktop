@@ -8,7 +8,6 @@ import { appUpdater } from './app-updater';
 import { appFileDownload } from './app-file-download';
 import isDev from 'electron-is-dev';
 import { appIso } from './app-iso';
-import { Sudo } from './sudo/sudo';
 import { appDevices } from './app-devices';
 
 let mainWindow: BrowserWindow;
@@ -89,44 +88,7 @@ app.on('ready', async function () {
   }
 });
 
-// handle event to allow to quit application (or not)
-ipcMain.on('allow-quit', (_event, arg) => {
-  appLogger.debug('allow-quit=' + arg);
-  appContext.allowQuit = arg;
-});
-
-// open external path
-ipcMain.on('open-path', (_event, path: string) => {
-  shell.openPath(path);
-});
-
 ipcMain.on('open-url-in-browser', (_event, url: string) => {
   appLogger.info('Opening external url', { url });
   shell.openExternal(url);
 });
-
-ipcMain.on('test', () => {
-  try {
-    const sudo = new Sudo({
-      appName: app.name,
-      stdoutCallback: stdoutCb,
-      stderrCallback: stderrCb,
-      terminatedCallback: terminatedCb,
-    });
-    sudo.run('/home/tang/testpkexec.sh');
-  } catch (error) {
-    appLogger.error('Error occured', error);
-  }
-});
-
-function stderrCb(str: string): void {
-  appLogger.error('----------', str);
-}
-
-function stdoutCb(str: string): void {
-  appLogger.info('++++++++++', str);
-}
-
-function terminatedCb(exitCode: number): void {
-  appLogger.info('==========', { exitCode });
-}

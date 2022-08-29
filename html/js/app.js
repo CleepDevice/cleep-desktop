@@ -94,13 +94,4 @@ function($rootScope, $state, tasksPanelService, modalService, $timeout, $transit
     self.restartApplication = function() {
         electron.send('updater-quit-and-install');
     };
-
-    // TODO useful ?
-    // disable/enable application quit when process is running (like install process)
-    $rootScope.$on('disablequit', function(_event, _data) {
-        electron.send('allow-quit', false);
-    });
-    $rootScope.$on('enablequit', function(_event, _data) {
-        electron.send('allow-quit', true);
-    });
 }]);
