@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog } from 'electron';
+import { BrowserWindow, dialog, shell } from 'electron';
 import url from 'url';
 import { appContext } from './app-context';
 import path from 'path';
@@ -29,15 +29,8 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
 
   mainWindow.webContents.setWindowOpenHandler((details: Electron.HandlerDetails) => {
     appLogger.info('Open modal from application', { url: details.url });
-    return {
-      action: 'allow',
-      overrideBrowserWindowOptions: {
-        show: false,
-        focusable: true,
-        alwaysOnTop: false,
-        title: 'Cleep-desktop popup',
-      },
-    };
+    shell.openExternal(details.url);
+    return { action: 'deny' };
   });
 
   // close splashscreen when main window loaded
