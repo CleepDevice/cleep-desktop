@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, screen, ipcMain, shell, dialog, OpenDialogSyncOptions } from 'electron';
 import { appContext } from './app-context';
 import { createAppMenu } from './app-menu';
 import { createAppWindow, createSplashscreenWindow } from './app-window';
@@ -91,4 +91,9 @@ app.on('ready', async function () {
 ipcMain.on('open-url-in-browser', (_event, url: string) => {
   appLogger.info('Opening external url', { url });
   shell.openExternal(url);
+});
+
+ipcMain.handle('open-dialog', (_event, dialogOptions: OpenDialogSyncOptions) => {
+  const result = dialog.showOpenDialogSync(dialogOptions);
+  return result || [];
 });

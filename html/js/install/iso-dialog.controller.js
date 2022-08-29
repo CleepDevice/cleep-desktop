@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.controller('isoDialogController', ['closeModal', 'installService',
-function(closeModal, installService) {
+.controller('isoDialogController', ['closeModal', 'installService', 'electronService',
+function(closeModal, installService, electron) {
     var self = this;
     self.closeModal = closeModal;
     self.installService = installService;
@@ -32,18 +32,26 @@ function(closeModal, installService) {
             filters: [
                 {
                     name: 'Iso file',
-                    extensions: ['zip', 'iso', 'img', 'dmg', 'raw']
+                    extensions: ['zip', 'iso', 'img', 'dmg', 'raw', 'xz']
                 }
             ]
         };
-        // TODO handle dialog in electron area
-        // const result = dialog.showOpenDialogSync(options);
-        // if (result && result.length) {
-        //     self.closeModal({
-        //         'url': 'file://' + result[0],
-        //         'label': path.parse(result[0]).base,
-        //         'category': 'local',
-        //     });
-        // }
+
+        electron.sendReturn('open-dialog', options)
+            .then((result) => {
+                if (result.length) {
+                    var filename = result[0].split('\\').pop().split('/').pop()
+                    var data = {
+                        'url': 'file://' + result[0],
+                        'label': filename,
+                        'filename': filename,
+                        'category': 'local',
+                        'date': new Date(),
+                        'size': 0,
+                        'sha256': undefined,
+                    }
+                    self.closeModal(data);
+                }
+            });
     };
 }]);
