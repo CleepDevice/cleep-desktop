@@ -14,6 +14,7 @@ import { cancelDownload, downloadFile, DownloadProgress } from './utils/download
 import { appUpdater } from './app-updater';
 import { NotInstalledException } from './exceptions/not-installed.exception';
 import { appCache } from './app-cache';
+import { appContext } from './app-context';
 
 export interface WifiData {
   network: string;
@@ -170,6 +171,8 @@ class AppIso {
   }
 
   public async startInstall(installData: InstallData): Promise<void> {
+    appContext.allowAppClosing = false;
+
     const cachedFile = this.getCachedFilepath(installData);
     appLogger.debug('Cached file', cachedFile);
     if (!cachedFile) {
@@ -253,6 +256,8 @@ class AppIso {
       terminated: true,
     };
     this.window.webContents.send('iso-install-progress', installProgress);
+
+    appContext.allowAppClosing = true;
   }
 
   private flashStdoutCallback(stdout: string) {

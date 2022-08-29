@@ -6,8 +6,8 @@ import fs from 'fs';
 import * as Sentry from '@sentry/electron';
 
 class AppContext {
-  public allowQuit = true;
-  public closingApplication = false; // TODO handle app closing
+  public allowAppClosing = true;
+  public closingApplication = false;
   public version: string;
   public changelog: string;
 

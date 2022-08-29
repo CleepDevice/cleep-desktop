@@ -80,7 +80,7 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     // set closing flag (to avoid catching core process error)
     appContext.closingApplication = true;
 
-    if (!appContext.allowQuit) {
+    if (!appContext.allowAppClosing) {
       // something does not allow application to quit. Request user to quit or not
       const btnIndex = dialog.showMessageBoxSync(mainWindow, {
         type: 'question',
