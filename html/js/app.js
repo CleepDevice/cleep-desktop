@@ -16,7 +16,6 @@ function($rootScope, $state, tasksPanelService, modalService, $timeout, $transit
         // init services
         downloadService.init();
         monitoringService.init();
-        // TODO devicesService.getDevices();
         updateService.init();
         installService.init();
         devicesService.init();
