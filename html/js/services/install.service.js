@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.service('installService', ['$rootScope', '$state', 'loggerService', 'tasksPanelService', 'settingsService', 'electronService', 'toastService',
-function($rootScope, $state, logger, tasksPanelService, settingsService, electron, toast) {
+.service('installService', ['$state', 'loggerService', 'tasksPanelService', 'settingsService', 'electronService', 'toastService',
+function($state, logger, tasksPanelService, settingsService, electron, toast) {
     var self = this;
     self.settings = {
         isolocal: false,
@@ -37,8 +37,6 @@ function($rootScope, $state, logger, tasksPanelService, settingsService, electro
 
     self.init = function() {
         self.addIpcs();
-        self.getIsoSettings();
-        $rootScope.$on('configchanged', self.getIsoSettings);
     };
 
     self.addIpcs = function() {
@@ -64,7 +62,7 @@ function($rootScope, $state, logger, tasksPanelService, settingsService, electro
     }
 
     self.getIsoSettings = function() {
-        settingsService.getAll(['cleep.isolocal', 'cleep.isoraspios'])
+        return settingsService.getSelected(['cleep.isolocal', 'cleep.isoraspios'])
             .then((settings) => {
                 if (settings['cleep.isoraspios'] !== self.settings.isoraspios) {
                     self.isosInfo.retrieved = false;
