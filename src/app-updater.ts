@@ -10,14 +10,6 @@ import isDev from 'electron-is-dev';
 import { cleepbus, Cleepbus } from './cleepbus/cleepbus';
 import { sendDataToAngularJs } from './utils/ui.helpers';
 
-export interface UpdateProgress {
-  progress: ProgressInfo;
-  bytesPerSecond: number;
-  percent: number;
-  total: number;
-  transferred: number;
-}
-
 export interface UpdateStatus {
   lastUpdateCheck: number;
   cleepDesktop: boolean;
@@ -181,7 +173,7 @@ export class AppUpdater {
       sendDataToAngularJs(this.window, 'updater-cleepdesktop-update-available', data);
     });
 
-    autoUpdater.addListener('download-progress', (progress: UpdateProgress) => {
+    autoUpdater.addListener('download-progress', (progress: ProgressInfo) => {
       const data: UpdateData = {
         percent: progress.percent,
       };
