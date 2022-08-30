@@ -4,6 +4,9 @@ import { appLogger } from './app-logger';
 import path from 'path';
 import fs from 'fs';
 import * as Sentry from '@sentry/electron';
+import { appSettings } from './app-settings';
+
+const SENTRY_DSN = 'https://8e703f88899c42c18b8466c44b612472@o97410.ingest.sentry.io/213385';
 
 class AppContext {
   public allowAppClosing = true;
@@ -66,11 +69,15 @@ class AppContext {
   }
 
   private configureCrashReport(): void {
-    if (!isDev) {
+    if (isDev) {
+      appLogger.info('Crash report is disabled during development');
+      return;
+    }
+
+    const crashReport = appSettings.get('cleep.crashreport');
+    if (crashReport) {
       appLogger.info('Crash report is enabled');
-      Sentry.init({
-        dsn: 'https://8e703f88899c42c18b8466c44b612472:3dfcd33abfda47c99768d43ce668d258@sentry.io/213385',
-      });
+      Sentry.init({ dsn: SENTRY_DSN });
     } else {
       appLogger.info('Crash report is disabled');
     }
