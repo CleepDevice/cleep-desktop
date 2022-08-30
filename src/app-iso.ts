@@ -318,13 +318,13 @@ class AppIso {
     ipcMain.handle('iso-get-drives', async () => {
       try {
         const drives = await this.getDriveList();
-        return { data: drives, error: false };
+        return { data: drives, error: false, flashToolInstalled: true };
       } catch (error) {
         if (error instanceof NotInstalledException) {
-          return { data: [], error: true, noFlashTool: true };
+          return { data: [], error: true, flashToolInstalled: true };
         }
         appLogger.error('Unable to get drives', { error });
-        return { data: [], error: true, noFlashTool: false };
+        return { data: [], error: true, flashToolInstalled: false };
       }
     });
 

@@ -24,7 +24,7 @@
 
         <!-- list -->
         <md-list ng-show="!ctl.loading" style="padding: 0px;">
-            <md-list-item ng-if="ctl.installService.drives.length === 0 && !ctl.installService.noFlashTool" class="md-2-line">
+            <md-list-item ng-if="ctl.installService.drives.length === 0 && !ctl.installService.flashToolInstalled" class="md-2-line">
                 <md-icon md-svg-icon="alert"></md-icon>
                 <div class="md-list-item-text">
                     <h3>Flash tool is not installed</h3>
@@ -35,7 +35,7 @@
                     Open updates page
                 </md-button>
             </md-list-item>
-            <md-list-item ng-if="ctl.installService.drives.length === 0 && ctl.installService.noFlashTool" class="md-2-line">
+            <md-list-item ng-if="ctl.installService.drives.length === 0 && ctl.installService.flashToolInstalled" class="md-2-line">
                 <md-icon md-svg-icon="alert"></md-icon>
                 <div class="md-list-item-text">
                     <h3>No drive found</h3>

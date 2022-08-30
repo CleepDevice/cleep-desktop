@@ -33,7 +33,7 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
     }
     self.drives = [];
     self.taskInstallPanelId = null;
-    self.noFlashTool = false;
+    self.flashToolInstalled = false;
 
     self.init = function() {
         self.addIpcs();
@@ -116,14 +116,12 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
     self.refreshDriveList = function() {
         return electron.sendReturn('iso-get-drives')
             .then((response) => {
-                if (response.error && !response.noFlashTool) {
-                    self.noFlashTool = true;
-                } else if (response.error && response.noFlashTool) {
-                    self.noFlashTool = false;
+                self.flashToolInstalled = response.flashToolInstalled;
+
+                if (response.error) {
                     toast.error('Unable to get drives');
                     return;
                 }
-                self.noFlashTool = false;
                 self.fillArray(self.drives, response.data);
             });
     };
