@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { appLogger } from '../app-logger';
 import { findMatches } from '../utils/app.helpers';
 import { getChecksumFromUrl, getFilenameFromUrl, HEADERS, ReleaseInfo } from './utils';
 
@@ -68,7 +69,8 @@ export class RaspiOs {
       category: 'raspios',
     };
     for (const match of matches) {
-      if (match[1].endsWith('.zip')) {
+      appLogger.debug('Raspios release', match);
+      if (match[1].endsWith('.zip') || match[1].endsWith('.xz')) {
         info.url = `${release.url}${match[1]}`;
         info.filename = getFilenameFromUrl(info.url);
       }
