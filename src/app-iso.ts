@@ -90,7 +90,8 @@ class AppIso {
   }
 
   public async getLatestRaspios(): Promise<RaspiosLatestRelease> {
-    if (!appSettings.get('cleep.isoraspios')) {
+    const isoRaspios = appSettings.get<boolean>('cleep.isoraspios');
+    if (!isoRaspios) {
       return;
     }
 

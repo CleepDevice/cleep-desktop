@@ -114,8 +114,8 @@ export class Cleepbus {
       return;
     }
 
-    const debug = appSettings.get('cleep.debug') as boolean;
-    const uuid = appSettings.get('cleep.uuid');
+    const debug = appSettings.get<boolean>('cleep.debug');
+    const uuid = appSettings.get<string>('cleep.uuid');
     const cleepbusArgs = [`--ws-port=${wsPort}`, `--uuid=${uuid}`];
     if (debug) {
       cleepbusArgs.push('--debug');

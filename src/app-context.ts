@@ -74,7 +74,7 @@ class AppContext {
       return;
     }
 
-    const crashReport = appSettings.get('cleep.crashreport');
+    const crashReport = appSettings.get<boolean>('cleep.crashreport');
     if (crashReport) {
       appLogger.info('Crash report is enabled');
       Sentry.init({ dsn: SENTRY_DSN });

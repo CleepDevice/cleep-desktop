@@ -25,7 +25,7 @@ export type LoggerFrom = 'main' | 'renderer' | 'core' | 'cleepbus';
 export class AppLogger {
   constructor() {
     this.addIpcs();
-    const debugEnabled = appSettings.get('cleep.debug') as boolean;
+    const debugEnabled = appSettings.get<boolean>('cleep.debug');
     this.initConsoleLogging(debugEnabled);
     this.initFileLogging(debugEnabled);
   }

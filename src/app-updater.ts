@@ -110,7 +110,8 @@ export class AppUpdater {
   }
 
   private async checkForCleepDesktopUpdates(): Promise<UpdateCheckResult> {
-    if (appSettings.get('cleep.autoupdate')) {
+    const autoUpdate = appSettings.get<boolean>('cleep.autoupdate');
+    if (autoUpdate) {
       return autoUpdater.checkForUpdates();
     }
 
@@ -141,7 +142,7 @@ export class AppUpdater {
     ipcMain.handle('updater-get-software-versions', () => {
       const flashToolVersion = this.flashTool.getInstalledVersion();
       const cleepbusVersion = this.messageBus.getInstalledVersion();
-      const lastUpdateCheck = appSettings.get('cleep.lastupdatecheck');
+      const lastUpdateCheck = appSettings.get<number>('cleep.lastupdatecheck');
 
       return {
         lastUpdateCheck,

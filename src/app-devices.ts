@@ -23,7 +23,8 @@ class AppDevices {
   }
 
   private loadDevicesFromSettings(): void {
-    Object.assign(this.devices, appSettings.get('devices'));
+    const devices = appSettings.get('devices');
+    Object.assign(this.devices, devices);
 
     // set all devices not online and wait for message bus peer connection to set online
     for (const device of Object.values(this.devices)) {

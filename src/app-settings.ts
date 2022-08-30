@@ -47,8 +47,8 @@ export class AppSettings {
     return settings.getSync();
   }
 
-  public get(keyPath: KeyPath): SettingsValue {
-    return settings.getSync(keyPath);
+  public get<T>(keyPath: KeyPath): T {
+    return settings.getSync(keyPath) as unknown as T;
   }
 
   public setAll(obj: SettingsObject): void {

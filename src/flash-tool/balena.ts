@@ -129,7 +129,8 @@ export class Balena {
   }
 
   public getInstalledVersion(): string {
-    return (fs.existsSync(this.getBalenaBinPath()) && (appSettings.get('flashtool.version') as string)) || null;
+    const flashtoolVersion = appSettings.get<string>('flashtool.version');
+    return (fs.existsSync(this.getBalenaBinPath()) && flashtoolVersion) || null;
   }
 
   private getBalenaBinPath(): string {

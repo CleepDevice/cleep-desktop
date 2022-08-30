@@ -52,7 +52,7 @@ export function parseArgs(argv: string[]): CommandLineArgs {
 export async function getWsPort(): Promise<number> {
   if (isDev) {
     // use static port from config
-    return Number(appSettings.get('remote.rpcport'));
+    return appSettings.get<number>('remote.rpcport');
   }
 
   // detect available port for production
