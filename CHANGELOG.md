@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0] - 2022-09-08
+
+### Changed
+
+- Move all logic previously in angularjs to electron
+- Remove cleepbus from cleepdesktop as external binary
+- Clean angularjs code
+- Rewrite most of electron source code
+- Bump electron to latest v20
+- Bump dependencies
+
 ## [0.1.5] - 2022-02-05
 
 ### Fixed
