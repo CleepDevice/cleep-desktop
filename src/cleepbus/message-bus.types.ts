@@ -1,10 +1,13 @@
 import { CleebusMessageResponse, CleepbusPeerInfos } from './cleepbus.types';
 
-export type OnMessageBusMessageResponseCallback = (messageResponse: CleebusMessageResponse) => void;
+export type OnMessageBusMessageResponseCallback = (
+  peerInfos: CleepbusPeerInfos,
+  messageResponse: CleebusMessageResponse,
+) => void;
 
-export type OnMessageBusPeerConnectedCallback = (messageResponse: CleepbusPeerInfos) => void;
+export type OnMessageBusPeerConnectedCallback = (peerInfos: CleepbusPeerInfos) => void;
 
-export type OnMessageBusPeerDisconnectedCallback = (messageResponse: CleepbusPeerInfos) => void;
+export type OnMessageBusPeerDisconnectedCallback = (peerInfos: CleepbusPeerInfos) => void;
 
 export type OnMessageBusConnectedCallback = (connected: boolean) => void;
 

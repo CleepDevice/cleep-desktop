@@ -62,9 +62,10 @@ class AppDevices {
     sendDataToAngularJs(this.window, 'devices-message-bus-connected', connected);
   }
 
-  private onMessageResponse(messageResponse: CleebusMessageResponse): void {
-    // TODO handle message response
-    appLogger.info('Received message response from Cleepbus', { messageResponse });
+  private onMessageResponse(peerInfos: CleepbusPeerInfos, messageResponse: CleebusMessageResponse): void {
+    appLogger.debug('Received message response from Cleepbus', { peerInfos, messageResponse });
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    sendDataToAngularJs(this.window, 'devices-message', { timestamp, peerInfos, message: messageResponse });
   }
 
   private onPeerDisconnected(peerInfos: CleepbusPeerInfos): void {

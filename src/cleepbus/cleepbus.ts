@@ -240,18 +240,19 @@ export class Cleepbus {
       appLogger.debug('Message received from Cleepbus', { parsedMessage });
 
       if (parsedMessage.content_type === 'PEER_CONNECTED' && this.peerConnectedCallback) {
-        const connectedPeer = parsedMessage.data as CleepbusPeerInfos;
+        const connectedPeer = parsedMessage.peer_infos as CleepbusPeerInfos;
         this.peerConnectedCallback(connectedPeer);
         return;
       }
       if (parsedMessage.content_type === 'PEER_DISCONNECTED' && this.peerDisconnectedCallback) {
-        const disconnectedPeer = parsedMessage.data as CleepbusPeerInfos;
+        const disconnectedPeer = parsedMessage.peer_infos as CleepbusPeerInfos;
         this.peerDisconnectedCallback(disconnectedPeer);
         return;
       }
       if (parsedMessage.content_type === 'MESSAGE_RESPONSE' && this.messageResponseCallback) {
+        const peerInfos = parsedMessage.peer_infos as CleepbusPeerInfos;
         const messageResponse = parsedMessage.data as CleebusMessageResponse;
-        this.messageResponseCallback(messageResponse);
+        this.messageResponseCallback(peerInfos, messageResponse);
         return;
       }
 

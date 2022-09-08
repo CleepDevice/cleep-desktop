@@ -47,10 +47,10 @@
                     <md-list-item ng-repeat="message in ctl.monitoring.messages" class="md-2-line" ng-click="ctl.toggleEventDetails(message)">
                         <md-icon md-svg-icon="message-text"></md-icon>
                         <div class="md-list-item-text">
-                            <h3>{{message.peer_infos.hostname}} [{{message.peer_infos.ip}}]: {{message.event}}</h3>
-                            <p ng-if="message.params" ng-bind="message.params"></p>
+                            <h3><b>{{message.message.event}}</b> <i>from {{message.peerInfos.hostname}} ({{message.peerInfos.ip}})</i></h3>
+                            <p ng-if="message.message.params" ng-bind="message.message.params"></p>
                         </div>
-                        <md-button class="md-secondary" ng-click="null">{{message.timestamp | hrDatetime}}</md-button>
+                        <div class="md-secondary">{{message.timestamp | hrDatetime}}</div>
                     </md-list-item>
                 </md-list>
 

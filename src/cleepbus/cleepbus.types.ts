@@ -1,8 +1,11 @@
 export interface CleebusMessageResponse {
-  error: boolean;
-  message: string;
-  data: unknown;
-  broadcast?: boolean;
+  event?: string;
+  command?: string;
+  to?: string;
+  params: unknown;
+  startup: boolean;
+  device_id?: string;
+  sender: string;
 }
 
 export interface CleepbusPeerInfos {
@@ -22,7 +25,8 @@ export type CleepbusContentType = 'PEER_CONNECTED' | 'PEER_DISCONNECTED' | 'MESS
 
 export interface CleepbusMessage {
   content_type: CleepbusContentType;
-  data: unknown;
+  peer_infos: CleepbusPeerInfos;
+  data?: unknown;
 }
 
 export const TEST_DEVICE = {
