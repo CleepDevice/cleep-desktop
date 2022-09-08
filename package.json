@@ -48,7 +48,7 @@
         "@typescript-eslint/eslint-plugin": "^5.35.1",
         "@typescript-eslint/parser": "^5.35.1",
         "copyfiles": "^2.4.1",
-        "electron": "20.1",
+        "electron": "20.1.2",
         "electron-builder": "^23.3.3",
         "electron-notarize": "^1.2.1",
         "eslint": "^8.23.0",
