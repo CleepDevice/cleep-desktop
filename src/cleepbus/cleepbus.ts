@@ -114,20 +114,27 @@ export class Cleepbus {
       return;
     }
 
-    const debug = appSettings.get<boolean>('cleep.debug');
-    const uuid = appSettings.get<string>('cleep.uuid');
-    const cleepbusArgs = [`--ws-port=${wsPort}`, `--uuid=${uuid}`];
-    if (debug) {
-      cleepbusArgs.push('--debug');
-    }
-    appLogger.info(`Cleepbus commandline: ${cleepbusPath} ${cleepbusArgs.join(' ')}`);
-    const options: SpawnOptionsWithStdioTuple<StdioNull, StdioPipe, StdioPipe> = { stdio: ['ignore', 'pipe', 'pipe'] };
-    this.cleepbusProcess = spawn(cleepbusPath, cleepbusArgs, options);
+    try {
+      const debug = appSettings.get<boolean>('cleep.debug');
+      const uuid = appSettings.get<string>('cleep.uuid');
+      const cleepbusArgs = [`--ws-port=${wsPort}`, `--uuid=${uuid}`];
+      if (debug) {
+        cleepbusArgs.push('--debug');
+      }
+      appLogger.info(`Cleepbus commandline: ${cleepbusPath} ${cleepbusArgs.join(' ')}`);
+      const options: SpawnOptionsWithStdioTuple<StdioNull, StdioPipe, StdioPipe> = {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      };
+      this.cleepbusProcess = spawn(cleepbusPath, cleepbusArgs, options);
 
-    // handle process events
-    this.cleepbusProcess.on('close', this.handleCleepbusProcessClosed);
-    this.cleepbusProcess.stdout.on('data', this.handleCleepbusStdoutData);
-    this.cleepbusProcess.stderr.on('data', this.handleCleepbusStderrData);
+      // handle process events
+      this.cleepbusProcess.on('close', this.handleCleepbusProcessClosed.bind(this));
+      this.cleepbusProcess.stdout.on('data', this.handleCleepbusStdoutData.bind(this));
+      this.cleepbusProcess.stderr.on('data', this.handleCleepbusStderrData.bind(this));
+    } catch (error) {
+      this.cleepbusStartupError = 'Startup error';
+      appLogger.error('Fatal error launching cleepbus', { error });
+    }
   }
 
   private checkCleepbusInstallation(cleepbusPath: string): boolean {
@@ -156,10 +163,10 @@ export class Cleepbus {
 
   private handleCleepbusProcessClosed(code: number) {
     if (!appContext.closingApplication) {
-      appLogger.error(`Cleepbus exited with code "${code}"`, null, 'cleepbus');
+      appLogger.error(`Cleepbus exited with code "${code}"`);
       if (code !== 0) {
         // error occured, display error to user before terminates application
-        const error = this.cleepbusStartupError || 'unknown error';
+        const error = this.cleepbusStartupError || 'Unable to launch cleepbus';
         this.messageBusErrorCallback(error);
       }
     }
