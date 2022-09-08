@@ -88,22 +88,26 @@ export class AppUpdater {
       };
     }
 
-    const cleepDesktopUpdate = await this.checkForCleepDesktopUpdates();
+    const cleepDesktopUpdateCheckResult = await this.checkForCleepDesktopUpdates();
+    const cleepDesktopUpdate = cleepDesktopUpdateCheckResult?.updateInfo?.version
+      ? cleepDesktopUpdateCheckResult?.updateInfo?.version !== appContext.version
+      : false;
     const flashToolUpdate = await this.flashTool.checkForUpdates();
     const cleepbusUpdate = await this.messageBus.checkForUpdates();
+    appLogger.debug('Update results', { cleepDesktopUpdate, flashToolUpdate, cleepbusUpdate });
 
     appSettings.set('cleep.lastupdatecheck', lastUpdateCheck);
 
     const changelogSize = appContext.getChangelogFilesize();
-    if (changelogSize === 0) {
-      const changelog = this.getChangelog(cleepDesktopUpdate.updateInfo.releaseNotes);
+    if (changelogSize === 0 && cleepDesktopUpdateCheckResult?.updateInfo?.releaseNotes) {
+      const changelog = this.getChangelog(cleepDesktopUpdateCheckResult.updateInfo.releaseNotes);
       appLogger.info('changelog:', changelog);
       appContext.saveChangelog(changelog);
     }
 
     return {
       lastUpdateCheck,
-      cleepDesktop: cleepDesktopUpdate.updateInfo.version !== appContext.version,
+      cleepDesktop: cleepDesktopUpdate,
       flashTool: flashToolUpdate,
       cleepbus: cleepbusUpdate,
     };
