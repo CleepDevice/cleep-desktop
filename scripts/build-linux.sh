@@ -26,20 +26,7 @@ rm -rf packaging/
 # create dirs
 mkdir -p "$CLEEPDESKTOPPATH"
 
-# pyinstaller
-echo
-echo
-echo "Packaging cleepdesktopcore..."
-echo "-----------------------------"
-python3 -m pip install -r requirements.txt
-checkResult $? 0 "Failed to install python dependencies"
-cp config/cleepdesktopcore-mac64.spec cleepdesktopcore-mac64.spec
-/usr/local/bin/pyinstaller --workpath packaging --clean --noconfirm --noupx --debug all --log-level INFO cleepdesktopcore-mac64.spec
-checkResult $? 0 "Failed to build core application"
-rm cleepdesktopcore-mac64.spec
-mv dist/cleepdesktopcore "$CLEEPDESKTOPPATH"
-
-#update npm
+# electron
 echo
 echo
 echo "Building electron app..."
@@ -69,27 +56,26 @@ if [ "$1" == "publish" ]
 then
     echo "Publishing cleepdesktop..."
     echo "--------------------------"
-    GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP node_modules/.bin/electron-builder --mac --x64 --projectDir "$CLEEPDESKTOPPATH" --publish always
+    GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP node_modules/.bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH" --publish always
     checkResult $? 0 "Failed to publish cleepdesktop"
 else
     echo "Packaging cleepdesktop..."
     echo "-------------------------"
-    node_modules/.bin/electron-builder --mac --x64 --projectDir "$CLEEPDESKTOPPATH" --publish never
+    node_modules/.bin/electron-builder --linux --x64 --projectDir "$CLEEPDESKTOPPATH" --publish never
     checkResult $? 0 "Failed to package cleepdesktop"
 fi
 
-#cleaning
+# cleaning
 echo
 echo
 echo "Finalizing..."
 echo "-------------"
 sleep 1
 mv "./$CLEEPDESKTOPPATH/dist" .
-rm -rf packaging
-rm -rf __pycache__
-rm -rf core/__pycache__
-rm -rf core/libs/__pycache__
-rm -rf core/modules/__pycache__
+if [ "$1" == "publish" ]
+then
+    rm -rf packaging
+fi
 echo "Done"
 
 echo
