@@ -9,6 +9,7 @@ import { appFileDownload } from './app-file-download';
 import isDev from 'electron-is-dev';
 import { appIso } from './app-iso';
 import { appDevices } from './app-devices';
+import { appSettings } from './app-settings';
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
@@ -52,6 +53,9 @@ app.on('activate', function () {
 });
 
 app.on('ready', async function () {
+  appSettings.configure();
+  appContext.configure();
+
   appLogger.info('========== cleep-desktop started ==========');
   appLogger.info('Platform: ' + process.platform);
   const display = screen.getPrimaryDisplay();

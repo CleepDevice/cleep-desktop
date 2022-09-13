@@ -20,6 +20,9 @@ class AppContext {
     } else {
       this.version = app.getVersion();
     }
+  }
+
+  public configure(): void {
     this.loadChangelog();
     this.configureCrashReport();
     this.addIpcs();

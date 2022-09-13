@@ -39,6 +39,9 @@ export interface KeyValue {
 export class AppSettings {
   constructor() {
     settings.configure({ prettify: true });
+  }
+
+  public configure(): void {
     this.checkAndFixConfig();
     this.addIpcs();
   }
