@@ -150,8 +150,8 @@ export class AppSettings {
     }
 
     // remote section
-    if (!settings.hasSync('remote.rpcport')) {
-      settings.setSync('remote.rpcport', DEFAULT_SETTINGS.rpcPort);
+    if (!settings.hasSync('remote.wsport')) {
+      settings.setSync('remote.wsport', DEFAULT_SETTINGS.wsPort);
     }
 
     // proxy section
