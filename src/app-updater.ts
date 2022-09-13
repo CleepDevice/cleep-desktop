@@ -57,6 +57,8 @@ export class AppUpdater {
 
   public configure(window: BrowserWindow): void {
     this.window = window;
+
+    this.checkForUpdates('auto');
   }
 
   public quitAndInstall(): void {
@@ -138,8 +140,8 @@ export class AppUpdater {
       this.quitAndInstall();
     });
 
-    ipcMain.handle('updater-check-for-updates', async (_event, updateMode: CheckForUpdateMode) => {
-      const updates = await this.checkForUpdates(updateMode);
+    ipcMain.handle('updater-check-for-updates', async (_event) => {
+      const updates = await this.checkForUpdates('manual');
       return updates;
     });
 

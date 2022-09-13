@@ -18,10 +18,6 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     self.init = function() {
         self.addIpcs();
         self.updateSofwareVersions();
-
-        $timeout(() => {
-            self.checkForUpdates('auto');
-        }, 10 * 1000);
     };
  
     self.addIpcs = function() {
@@ -77,6 +73,8 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     };
     
     self.onCleepDesktopUpdateCallback =  function(_event, updateData) {
+        self.openUpdateTaskPanel();
+
         Object.assign(self.cleepDesktopUpdate, updateData);
 
         if (self.flashToolUpdate.terminated && self.cleepbusUpdate.terminated) {
@@ -89,6 +87,8 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     };
 
     self.onFlashToolUpdateCallback = function(_event, updateData) {
+        self.openUpdateTaskPanel();
+
         Object.assign(self.flashToolUpdate, updateData);
 
         if (self.flashToolUpdate.terminated) {
@@ -99,6 +99,8 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     }
 
     self.onCleepbusUpdateCallback = function(_event, updateData) {
+        self.openUpdateTaskPanel();
+        
         Object.assign(self.cleepbusUpdate, updateData);
 
         if (self.cleepbusUpdate.terminated) {
@@ -108,8 +110,8 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
         }
     }
 
-    self.checkForUpdates = function(mode = 'manual') {
-        return electron.sendReturn('updater-check-for-updates', mode)
+    self.checkForUpdates = function() {
+        return electron.sendReturn('updater-check-for-updates')
             .then((updateStatus) => {
                 // logger.info('Check for software updates', updateStatus);
                 self.lastUpdateCheck = updateStatus.lastUpdateCheck;
