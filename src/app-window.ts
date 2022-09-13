@@ -64,8 +64,8 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     mainWindow.webContents.openDevTools();
 
     // log electron and chrome versions
-    appLogger.debug('Electron version: ' + process.versions.electron);
-    appLogger.debug('Chrome version: ' + process.versions.chrome);
+    appLogger.info('Electron version: ' + process.versions.electron);
+    appLogger.info('Chrome version: ' + process.versions.chrome);
   }
 
   // give a chance to user to not stop current running action
