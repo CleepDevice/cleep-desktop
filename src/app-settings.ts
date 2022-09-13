@@ -1,7 +1,6 @@
 import { ipcMain } from 'electron';
 import settings from 'electron-settings';
 import isDev from 'electron-is-dev';
-import { appContext } from './app-context';
 import { appLogger } from './app-logger';
 import uuid4 from 'uuid4';
 
@@ -113,11 +112,7 @@ export class AppSettings {
 
   private checkAndFixConfig() {
     // cleep section
-    if (isDev) {
-      settings.setSync('cleep.version', require('./package.json').version);
-    } else {
-      settings.setSync('cleep.version', appContext.version);
-    }
+    settings.setSync('cleep.version', require('./package.json').version);
     if (!settings.hasSync('cleep.isoraspios')) {
       settings.setSync('cleep.isoraspios', DEFAULT_SETTINGS.isoRaspios);
     }
