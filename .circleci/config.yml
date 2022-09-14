@@ -69,7 +69,7 @@ jobs:
     steps:
       - run:
           name: Installing node
-          command: nvm install 16 && nvm alias default 16 && node --version
+          command: node --version
       - checkout
       - run:
           name: Building
@@ -86,7 +86,7 @@ jobs:
     steps:
       - run:
           name: Installing node
-          command: nvm install 16 && nvm alias default 16 && node --version
+          command: node --version
       - checkout
       - run:
           name: Publishing
