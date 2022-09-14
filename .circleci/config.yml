@@ -8,6 +8,9 @@ jobs:
       name: win/default
       shell: powershell.exe
     steps:
+      - run:
+          name: Preparing node
+          command: node --version
       - checkout
       - run:
           name: Building
@@ -17,6 +20,9 @@ jobs:
       name: win/default
       shell: powershell.exe
     steps:
+      - run:
+          name: Preparing node
+          command: node --version
       - checkout
       - run:
           name: Publishing
@@ -31,7 +37,7 @@ jobs:
           command: curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
       - run:
           name: Installing node
-          command: sudo apt-get install -y nodejs
+          command: sudo apt-get install -y nodejs && node --version
       - checkout
       - run:
           name: Building
@@ -51,7 +57,7 @@ jobs:
           command: curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
       - run:
           name: Installing node
-          command: sudo apt-get install -y nodejs
+          command: sudo apt-get install -y nodejs && node --version
       - checkout
       - run:
           name: Publishing
@@ -59,14 +65,11 @@ jobs:
 
   build-macos:
     macos:
-      xcode: 12.5.1
+      xcode: 10.15.5
     steps:
       - run:
-          name: Installing node sources
-          command: curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-      - run:
           name: Installing node
-          command: sudo apt-get install -y nodejs
+          command: nvm install 16 && nvm alias default 16 && node --version
       - checkout
       - run:
           name: Building
@@ -79,17 +82,14 @@ jobs:
           template: basic_success_1
   publish-macos:
     macos:
-      xcode: 12.5.1
+      xcode: 10.15.5
     steps:
       - run:
-          name: Installing node sources
-          command: curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-      - run:
           name: Installing node
-          command: sudo apt-get install -y nodejs
+          command: nvm install 16 && nvm alias default 16 && node --version
       - checkout
       - run:
-          name: Building
+          name: Publishing
           command: npm run publish-macos
 
 workflows:
