@@ -72,6 +72,8 @@ echo Done
 
 echo.
 echo Build result in dist/ folder
+cd dist
+dir
 
 :error
 echo ===== Error occured see above =====

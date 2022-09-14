@@ -77,3 +77,5 @@ echo "Done"
 
 echo
 echo "Build result in dist/ folder"
+cd dist
+ls -lh

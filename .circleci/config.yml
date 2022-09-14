@@ -3,42 +3,95 @@ orbs:
   win: circleci/windows@2.4.0
   slack: circleci/slack@4.4.0
 jobs:
-  publish-windows:
-    executor:
-      name: win/default
-      shell: powershell.exe
-    steps:
-      - checkout
-      - run: npm run publish-win
   build-windows:
     executor:
       name: win/default
       shell: powershell.exe
     steps:
       - checkout
-      - run: npm run build-win
-  publish-linux:
-    docker:
-      - image: cimg/base:edge
+      - run:
+          name: Building
+          command: npm run build-win
+  publish-windows:
+    executor:
+      name: win/default
+      shell: powershell.exe
     steps:
-      - run: curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-      - run: sudo apt-get install -y nodejs
       - checkout
-      - run: npm run publish-linux-circleci
+      - run:
+          name: Publishing
+          command: npm run publish-win
+
   build-linux:
     docker:
       - image: cimg/base:edge
     steps:
-      - run: curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-      - run: sudo apt-get install -y nodejs
+      - run:
+          name: Installing node sources
+          command: curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+      - run:
+          name: Installing node
+          command: sudo apt-get install -y nodejs
       - checkout
-      - run: npm run build-linux-circleci
+      - run:
+          name: Building
+          command: npm run build-linux
       - slack/notify:
           event: fail
           template: basic_fail_1
       - slack/notify:
           event: pass
           template: basic_success_1
+  publish-linux:
+    docker:
+      - image: cimg/base:edge
+    steps:
+      - run:
+          name: Installing node sources
+          command: curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+      - run:
+          name: Installing node
+          command: sudo apt-get install -y nodejs
+      - checkout
+      - run:
+          name: Publishing
+          command: npm run publish-linux
+
+  build-macos:
+    macos:
+      xcode: 12.5.1
+    steps:
+      - run:
+          name: Installing node sources
+          command: curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+      - run:
+          name: Installing node
+          command: sudo apt-get install -y nodejs
+      - checkout
+      - run:
+          name: Building
+          command: npm run build-macos
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: basic_success_1
+  publish-macos:
+    macos:
+      xcode: 12.5.1
+    steps:
+      - run:
+          name: Installing node sources
+          command: curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+      - run:
+          name: Installing node
+          command: sudo apt-get install -y nodejs
+      - checkout
+      - run:
+          name: Building
+          command: npm run publish-macos
+
 workflows:
   version: 2
   windows:
@@ -62,6 +115,18 @@ workflows:
             branches:
               ignore: /.*/
       - build-linux:
+          filters:
+            branches:
+              only: master
+  macos:
+    jobs:
+      - publish-macos:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+      - build-macos:
           filters:
             branches:
               only: master
