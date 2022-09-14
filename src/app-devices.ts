@@ -14,6 +14,7 @@ class AppDevices {
     cleepbus.setCleepbusCallbacks(
       this.onMessageBusError.bind(this),
       this.onMessageBusConnected.bind(this),
+      this.onMessageBusUpdating.bind(this),
       this.onMessageResponse.bind(this),
       this.onPeerConnected.bind(this),
       this.onPeerDisconnected.bind(this),
@@ -60,6 +61,11 @@ class AppDevices {
   private onMessageBusConnected(connected: boolean): void {
     appLogger.info('Message bus connected', { connected });
     sendDataToAngularJs(this.window, 'devices-message-bus-connected', connected);
+  }
+
+  private onMessageBusUpdating(updating: boolean): void {
+    appLogger.info('Message bus updating', { updating });
+    sendDataToAngularJs(this.window, 'devices-message-bus-updating', updating);
   }
 
   private onMessageResponse(peerInfos: CleepbusPeerInfos, messageResponse: CleebusMessageResponse): void {

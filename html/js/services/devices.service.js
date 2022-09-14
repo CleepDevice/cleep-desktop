@@ -7,6 +7,7 @@ function(electron) {
     // connected by default to not display startup connection
     self.isMessageBusConnected = false;
     self.messageBusError = '';
+    self.messageBusUpdating = false;
     self.selectedDeviceUuid = null;
 
     self.init = function() {
@@ -17,6 +18,7 @@ function(electron) {
         electron.on('devices-updated', self.onDevicesUpdated.bind(self));
         electron.on('devices-message-bus-connected', self.onMessageBusConnected.bind(self));
         electron.on('devices-message-bus-error', self.onMessageBusError.bind(self));
+        electron.on('devices-message-bus-updating', self.onMessageBusUpdating.bind(self));
     };
 
     self.onDevicesUpdated = function(_event, devices) {
@@ -44,6 +46,9 @@ function(electron) {
         self.messageBusError = error;
     }
 
+    self.onMessageBusUpdating = function(_event, updating) {
+        self.messageBusUpdating = updating;
+    }
 
     self.selectDevice = function(selectedDeviceUuid) {
         self.selectedDeviceUuid = selectedDeviceUuid;

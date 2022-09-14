@@ -21,6 +21,7 @@ import {
   OnMessageBusMessageResponseCallback,
   OnMessageBusPeerConnectedCallback,
   OnMessageBusPeerDisconnectedCallback,
+  OnMessageBusUpdatingCallback,
 } from './message-bus.types';
 
 export const CLEEPBUS_DIR = path.join(app.getPath('userData'), 'cleepbus');
@@ -30,6 +31,7 @@ const FILENAME_WINDOWS = '-windows-';
 const CLEEPBUS_DARWIN_BIN = 'cleepbus';
 const CLEEPBUS_LINUX_BIN = 'cleepbus';
 const CLEEPBUS_WINDOWS_BIN = 'cleepbus.exe';
+const CLEEPBUS_STOP_MESSAGE = '$$STOP$$';
 
 export class Cleepbus {
   private readonly CLEEPBUS_REPO = { owner: 'tangb', repo: 'cleep-desktop-cleepbus' };
@@ -38,6 +40,7 @@ export class Cleepbus {
   private downloadProgressCallback: OnDownloadProgressCallback;
   private messageBusErrorCallback: OnMessageBusErrorCallback;
   private messageBusConnectedCallback: OnMessageBusConnectedCallback;
+  private messageBusUpdatingCallback: OnMessageBusUpdatingCallback;
   private peerConnectedCallback: OnMessageBusPeerConnectedCallback;
   private peerDisconnectedCallback: OnMessageBusPeerDisconnectedCallback;
   private messageResponseCallback: OnMessageBusMessageResponseCallback;
@@ -57,9 +60,13 @@ export class Cleepbus {
     this.launchCleepbus(wsPort);
   }
 
-  public stop(): void {
+  public stop(gentleStop = false): void {
     if (this.cleepbusProcess) {
-      this.cleepbusProcess.kill('SIGTERM');
+      if (gentleStop) {
+        this.sendMessage(CLEEPBUS_STOP_MESSAGE);
+      } else {
+        this.cleepbusProcess.kill('SIGTERM');
+      }
     }
     if (this.wsServer) {
       this.wsServer.close();
@@ -97,12 +104,14 @@ export class Cleepbus {
   public setCleepbusCallbacks(
     messageBusErrorCallback: OnMessageBusErrorCallback,
     messageBusConnectedCallback: OnMessageBusConnectedCallback,
+    messageBusUpdatingCallback: OnMessageBusUpdatingCallback,
     messageResponseCallback: OnMessageBusMessageResponseCallback,
     peerConnectedCallback: OnMessageBusPeerConnectedCallback,
     peerDisconnectedCallback: OnMessageBusPeerDisconnectedCallback,
   ): void {
     this.messageBusErrorCallback = messageBusErrorCallback;
     this.messageBusConnectedCallback = messageBusConnectedCallback;
+    this.messageBusUpdatingCallback = messageBusUpdatingCallback;
     this.peerConnectedCallback = peerConnectedCallback;
     this.peerDisconnectedCallback = peerDisconnectedCallback;
     this.messageResponseCallback = messageResponseCallback;
@@ -163,8 +172,9 @@ export class Cleepbus {
 
   private handleCleepbusProcessClosed(code: number) {
     if (!appContext.closingApplication) {
-      appLogger.error(`Cleepbus exited with code "${code}"`);
+      appLogger.debug('Cleepbus stopped');
       if (code !== 0) {
+        appLogger.error(`Cleepbus exited with code "${code}"`);
         // error occured, display error to user before terminates application
         const error = this.cleepbusStartupError || 'Unable to launch cleepbus';
         this.messageBusErrorCallback(error);
@@ -191,7 +201,7 @@ export class Cleepbus {
     // do not process user warning messages
     const message = data.toString().trim();
     if (message.search('UserWarning:') != -1) {
-      appLogger.debug('Drop UserWarning message', null, 'cleepbus');
+      appLogger.debug('Drop UserWarning message', { message }, 'cleepbus');
       return;
     }
 
@@ -281,6 +291,9 @@ export class Cleepbus {
     }
 
     try {
+      this.messageBusUpdatingCallback(true);
+      this.stop(true);
+
       const downloadUrl = release[platform as keyof typeof release as 'darwin' | 'linux' | 'win32'].downloadUrl;
       const archivePath = await downloadFile(downloadUrl, this.downloadProgressCallback);
       await this.unzipArchive(archivePath);
@@ -288,11 +301,12 @@ export class Cleepbus {
       appSettings.set('cleepbus.version', release.version);
       this.downloadProgressCallback({ terminated: true });
 
-      const wsPort = await getWsPort();
-      this.launchCleepbus(wsPort);
+      this.start();
     } catch (error) {
       appLogger.error(`Error installing Cleepbus: ${error}`);
       this.downloadProgressCallback({ percent: 100, error: getError(error) });
+    } finally {
+      this.messageBusUpdatingCallback(false);
     }
   }
 

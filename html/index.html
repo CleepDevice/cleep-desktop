@@ -77,7 +77,7 @@
                 <div ng-if="!ctl.devicesService.isMessageBusConnected">
 
                     <!-- connecting to message bus -->
-                    <div layout="column" layout-padding layout-align="center center" ng-if="!ctl.devicesService.messageBusError">
+                    <div layout="column" layout-padding layout-align="center center" ng-if="!ctl.devicesService.isMessageBusConnected && !ctl.devicesService.messageBusUpdating">
                         <br/>
                         <div>
                             <md-progress-circular md-mode="indeterminate"></md-progress-circular>
@@ -85,6 +85,18 @@
                         <br/>
                         <div>
                             Connecting to Cleep network
+                        </div>
+                    </div>
+
+                    <!-- updating message bus -->
+                    <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devicesService.messageBusUpdating">
+                        <br/>
+                        <div>
+                            <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+                        </div>
+                        <br/>
+                        <div>
+                            Updating cleepbus...
                         </div>
                     </div>
 

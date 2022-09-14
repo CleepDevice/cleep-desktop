@@ -12,3 +12,5 @@ export type OnMessageBusPeerDisconnectedCallback = (peerInfos: CleepbusPeerInfos
 export type OnMessageBusConnectedCallback = (connected: boolean) => void;
 
 export type OnMessageBusErrorCallback = (message: string) => void;
+
+export type OnMessageBusUpdatingCallback = (updating: boolean) => void;
