@@ -65,7 +65,7 @@ jobs:
 
   build-macos:
     macos:
-      xcode: 10.15.5
+      xcode: 11.7
     steps:
       - run:
           name: Installing node
@@ -82,7 +82,7 @@ jobs:
           template: basic_success_1
   publish-macos:
     macos:
-      xcode: 10.15.5
+      xcode: 11.7
     steps:
       - run:
           name: Installing node
