@@ -58,7 +58,9 @@ export class AppUpdater {
   public configure(window: BrowserWindow): void {
     this.window = window;
 
-    this.checkForUpdates('auto');
+    setTimeout(() => {
+      this.checkForUpdates('auto');
+    }, 2000);
   }
 
   public quitAndInstall(): void {
