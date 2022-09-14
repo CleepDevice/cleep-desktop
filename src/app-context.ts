@@ -73,16 +73,16 @@ class AppContext {
 
   private configureCrashReport(): void {
     if (isDev) {
-      appLogger.info('Crash report is disabled during development');
+      appLogger.info('Crash report disabled during development');
       return;
     }
 
     const crashReport = appSettings.get<boolean>('cleep.crashreport');
     if (crashReport) {
-      appLogger.info('Crash report is enabled');
+      appLogger.info('Crash report enabled');
       Sentry.init({ dsn: SENTRY_DSN });
     } else {
-      appLogger.info('Crash report is disabled');
+      appLogger.info('Crash report disabled');
     }
   }
 }
