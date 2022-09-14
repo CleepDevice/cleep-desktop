@@ -9,30 +9,30 @@ jobs:
       shell: powershell.exe
     steps:
       - checkout
-      - run: npm run publish-win64
+      - run: npm run publish-win
   build-windows64:
     executor:
       name: win/default
       shell: powershell.exe
     steps:
       - checkout
-      - run: npm run build-win64
+      - run: npm run build-win
   publish-linux64:
     docker:
       - image: cimg/base:edge
     steps:
-      - run: curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+      - run: curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
       - run: sudo apt-get install -y nodejs
       - checkout
-      - run: npm run publish-linux64-circleci
+      - run: npm run publish-linux-circleci
   build-linux64:
     docker:
       - image: cimg/base:edge
     steps:
-      - run: curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+      - run: curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
       - run: sudo apt-get install -y nodejs
       - checkout
-      - run: npm run build-linux64-circleci
+      - run: npm run build-linux-circleci
       - slack/notify:
           event: fail
           template: basic_fail_1
@@ -41,9 +41,9 @@ jobs:
           template: basic_success_1
 workflows:
   version: 2
-  windows64:
+  windows:
     jobs:
-      - publish-windows64:
+      - publish-windows:
           filters:
             tags:
               only: /^v.*/
@@ -53,15 +53,15 @@ workflows:
           filters:
             branches:
               only: master
-  linux64:
+  linux:
     jobs:
-      - publish-linux64:
+      - publish-linux:
           filters:
             tags:
               only: /^v.*/
             branches:
               ignore: /.*/
-      - build-linux64:
+      - build-linux:
           filters:
             branches:
               only: master

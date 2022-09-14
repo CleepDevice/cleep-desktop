@@ -68,9 +68,6 @@
         "productName": "CleepDesktop",
         "asar": true,
         "afterPack": "./buildAfterPackHook.js",
-        "asarUnpack": [
-            "cleepdesktopcore/**"
-        ],
         "linux": {
             "icon": "resources/",
             "target": [
