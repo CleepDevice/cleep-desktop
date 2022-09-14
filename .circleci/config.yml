@@ -3,21 +3,21 @@ orbs:
   win: circleci/windows@2.4.0
   slack: circleci/slack@4.4.0
 jobs:
-  publish-windows64:
+  publish-windows:
     executor:
       name: win/default
       shell: powershell.exe
     steps:
       - checkout
       - run: npm run publish-win
-  build-windows64:
+  build-windows:
     executor:
       name: win/default
       shell: powershell.exe
     steps:
       - checkout
       - run: npm run build-win
-  publish-linux64:
+  publish-linux:
     docker:
       - image: cimg/base:edge
     steps:
@@ -25,7 +25,7 @@ jobs:
       - run: sudo apt-get install -y nodejs
       - checkout
       - run: npm run publish-linux-circleci
-  build-linux64:
+  build-linux:
     docker:
       - image: cimg/base:edge
     steps:
@@ -49,7 +49,7 @@ workflows:
               only: /^v.*/
             branches:
               ignore: /.*/
-      - build-windows64:
+      - build-windows:
           filters:
             branches:
               only: master
