@@ -186,13 +186,13 @@ export class Cleepbus {
     const stdout = data.toString().trim();
     for (const log of stdout.split('\n')) {
       if (log.startsWith('DEBUG:')) {
-        appLogger.debug(log, null, 'cleepbus');
+        appLogger.debug(log.substring(6), null, 'cleepbus');
       } else if (log.startsWith('INFO:')) {
-        appLogger.info(log, null, 'cleepbus');
+        appLogger.info(log.substring(5), null, 'cleepbus');
       } else if (log.startsWith('WARN:')) {
-        appLogger.warn(log, null, 'cleepbus');
+        appLogger.warn(log.substring(5), null, 'cleepbus');
       } else if (log.startsWith('ERROR:')) {
-        appLogger.error(log, null, 'cleepbus');
+        appLogger.error(log.substring(6), null, 'cleepbus');
       }
     }
   }

@@ -56,7 +56,7 @@ app.on('activate', function () {
 });
 
 app.on('ready', async function () {
-  appLogger.info('========== cleep-desktop started ==========');
+  appLogger.info(`========== cleep-desktop started ${isDev ? '[DEV MODE]' : ''}==========`);
   appLogger.info('Platform: ' + process.platform);
   const display = screen.getPrimaryDisplay();
   appLogger.info('Display: ' + display.size.width + 'x' + display.size.height);
@@ -70,6 +70,7 @@ app.on('ready', async function () {
     appLogger.info('Logs dir: ' + app.getPath('logs'));
     appLogger.info('Temp dir: ' + app.getPath('temp'));
   }
+  appLogger.info(`Crash report ${appContext.crashReportEnabled ? 'enabled' : 'disabled'}`);
 
   // splashscreen asap
   splashScreenWindow = createSplashscreenWindow(mainWindow);

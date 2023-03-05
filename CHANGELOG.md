@@ -1,5 +1,15 @@
 # Changelog
 
+## [x.x.x] - xxxx-xx-xx
+
+### Changed
+
+- Improve logging
+
+### Fixed
+
+- Issue saving changelog
+
 ## [0.2.0] - 2022-09-08
 
 ### Changed

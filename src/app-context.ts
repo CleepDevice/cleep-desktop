@@ -13,6 +13,7 @@ class AppContext {
   public closingApplication = false;
   public version: string;
   public changelog: string;
+  public crashReportEnabled = false;
 
   constructor() {
     if (isDev) {
@@ -73,16 +74,17 @@ class AppContext {
 
   private configureCrashReport(): void {
     if (isDev) {
+      this.crashReportEnabled = false;
       appLogger.info('Crash report disabled during development');
       return;
     }
 
     const crashReport = appSettings.get<boolean>('cleep.crashreport');
     if (crashReport) {
-      appLogger.info('Crash report enabled');
+      this.crashReportEnabled = true;
       Sentry.init({ dsn: SENTRY_DSN });
     } else {
-      appLogger.info('Crash report disabled');
+      this.crashReportEnabled = false;
     }
   }
 }
