@@ -31,6 +31,13 @@ app.on('window-all-closed', function () {
   }
 });
 
+// allow self signed certificate
+app.on('certificate-error', (event, _webContents, _url, _error, _certificate, callback) => {
+  appLogger.debug('Certificate error => bypass');
+  event.preventDefault();
+  callback(true);
+});
+
 app.on('web-contents-created', (event: Electron.Event, webContents: Electron.WebContents) => {
   appLogger.debug('New Cleep device webview created');
   webContents.setWindowOpenHandler((details: Electron.HandlerDetails) => {
