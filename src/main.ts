@@ -6,15 +6,19 @@ import { parseArgs } from './utils/app.helpers';
 import { appLogger } from './app-logger';
 import { appUpdater } from './app-updater';
 import { appFileDownload } from './app-file-download';
-import isDev from 'electron-is-dev';
 import { appIso } from './app-iso';
 import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
+import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
 
-appSettings.configure();
+// if (appContext.isDev) {
+//   app.commandLine.appendSwitch('no-sandbox');
+// }
+
+appSettings.configure(app);
 appContext.configure();
 
 app.on('will-quit', function () {
@@ -31,17 +35,44 @@ app.on('window-all-closed', function () {
   }
 });
 
-app.on('web-contents-created', (event: Electron.Event, webContents: Electron.WebContents) => {
+// allow self signed certificate
+app.on('certificate-error', (event, _webContents, _url, _error, certificate, callback) => {
+  // appLogger.debug('Certificate error, always allow', { certificate });
+  event.preventDefault();
+
+  callback(certificate?.subjectName === 'Cleep' && certificate?.issuerName === 'Cleep');
+});
+
+app.on('login', (event, _webContents, _request, authInfo, callback) => {
+  appLogger.debug('Auth requested', { authInfo });
+  const url = authInfo.host;
+  const auth = appAuth.getAuth(authInfo.host);
+
+  if (!auth) {
+    appLogger.warn('No auth found for the device');
+    appAuth.resetAuthAttempts(url);
+  } else if (auth?.attempts >= MAX_AUTH_ATTEMPTS) {
+    appLogger.debug('Max auth attempts reached');
+    appAuth.resetAuthAttempts(url);
+    mainWindow.webContents.send('auth-error', { ip: authInfo.host, errorCode: 'INVALID_AUTH' });
+  } else {
+    appLogger.debug('Found auth', { url: authInfo.host, account: auth.account });
+    event.preventDefault();
+    callback(auth.account, auth.password);
+  }
+});
+
+app.on('web-contents-created', (_event: Electron.Event, webContents: Electron.WebContents) => {
   appLogger.debug('New Cleep device webview created');
   webContents.setWindowOpenHandler((details: Electron.HandlerDetails) => {
-    appLogger.info('Open modal from webview', { url: details.url });
+    appLogger.debug('Open modal from webview', { url: details.url });
     return {
       action: 'allow',
       overrideBrowserWindowOptions: {
         show: false,
         focusable: true,
         alwaysOnTop: false,
-        title: 'Cleep device popup',
+        title: 'Cleep device dialog',
       },
     };
   });
@@ -56,16 +87,12 @@ app.on('activate', function () {
 });
 
 app.on('ready', async function () {
-  appLogger.info(`========== cleep-desktop started ${isDev ? '[DEV MODE]' : ''}==========`);
+  appLogger.info(`========== cleep-desktop started ${appContext.isDev ? '[DEV MODE]' : ''}==========`);
   appLogger.info('Platform: ' + process.platform);
   const display = screen.getPrimaryDisplay();
   appLogger.info('Display: ' + display.size.width + 'x' + display.size.height);
-  if (isDev) {
-    appLogger.info('Version: ' + require('./package.json').version);
-  } else {
-    appLogger.info('Version: ' + appContext.version);
-  }
-  if (isDev) {
+  appLogger.info('Version: ' + appContext.version);
+  if (appContext.isDev) {
     appLogger.info('App dir: ' + app.getPath('userData'));
     appLogger.info('Logs dir: ' + app.getPath('logs'));
     appLogger.info('Temp dir: ' + app.getPath('temp'));
@@ -84,6 +111,7 @@ app.on('ready', async function () {
     createAppMenu(mainWindow);
 
     // configure modules
+    appAuth.configure(mainWindow);
     appUpdater.configure(mainWindow);
     appFileDownload.configure(mainWindow);
     appIso.configure(mainWindow);

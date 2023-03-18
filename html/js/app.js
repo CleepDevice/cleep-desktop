@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-this-alias */
 var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router', 'ngSanitize', 'ngWebSocket']);
 
 Cleep
@@ -32,18 +34,37 @@ function($rootScope, $state, tasksPanelService, modalService, $timeout, $transit
     };
 
     // open page
-    self.openPage = function(page) {
+    self.openPage = function(page, params) {
         devicesService.selectDevice(null);
-        $state.go(page);
+        $state.go(page, params || {});
     };
 
-    electron.on('open-page', function(_event, page) {
-        self.openPage(page);
+    electron.on('open-page', function(_event, data) {
+        const { page, ...params } = data;
+        self.openPage(page, params);
     });
 
-    $rootScope.$on('open-page', (_event, page) => {
-        self.openPage(page);
+    $rootScope.$on('open-page', (_event, data) => {
+        const { page, ...params } = data;
+        self.openPage(page, params);
     })
+
+    // auth
+    electron.on('auth-error', function(_event, data) {
+        const foundDevice = devicesService.getSelectedDevice() || devicesService.findDevice(null, data.ip);
+
+        if (foundDevice) {
+            const params = {
+                url: foundDevice.url,
+                hostname: foundDevice.hostname,
+                deviceUuid: foundDevice.uuid,
+                errorCode: data.errorCode || 'UNKNOWN_ERROR',
+            }
+            $state.go('deviceAuth', params);
+        } else {
+            $state.go('deviceError', params);
+        }
+    });
 
     // open modal
     self.openModal = function(controllerName, templateUrl, data) {

@@ -11,7 +11,7 @@
 
     <md-content ng-controller="cleepController as cleep" layout-fill layout="row">
 
-        <!-- tools panel -->
+        <!-- vertical menu panel -->
         <md-content
             style="background-color:#607d8b; overflow-x:hidden;"
             ng-style="{'width':(cleep.toolbarCollapsed ? '60px' : '250px')}"
@@ -69,15 +69,15 @@
                 </div>
             </div>
             <!-- not used , just to mimic cleep device layout -->
-            <md-progress-linear md-mode="determinate" value="100"></md-progress-linear>
+            <!-- <md-progress-linear md-mode="determinate" value="100"></md-progress-linear> -->
 
             <md-content>
 
                 <!-- not connected to message bus -->
-                <div ng-if="!ctl.devicesService.isMessageBusConnected">
+                <div ng-if="ctl.devicesService.busStatus != 'CONNECTED'">
 
                     <!-- connecting to message bus -->
-                    <div layout="column" layout-padding layout-align="center center" ng-if="!ctl.devicesService.isMessageBusConnected && !ctl.devicesService.messageBusUpdating">
+                    <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devicesService.busStatus == 'CONNECTING'">
                         <br/>
                         <div>
                             <md-progress-circular md-mode="indeterminate"></md-progress-circular>
@@ -89,7 +89,7 @@
                     </div>
 
                     <!-- updating message bus -->
-                    <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devicesService.messageBusUpdating">
+                    <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devicesService.busStatus == 'UPDATING'">
                         <br/>
                         <div>
                             <md-progress-circular md-mode="indeterminate"></md-progress-circular>
@@ -101,7 +101,7 @@
                     </div>
 
                     <!-- message bus error -->
-                    <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devicesService.messageBusError">
+                    <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devicesService.busStatus == 'ERROR'">
                         <div style="padding-top:20px;">
                             <md-icon md-svg-icon="close-network-outline"></md-icon>
                             <b>Can't connect to Cleep network.</b><br>
@@ -117,7 +117,7 @@
                 </div>
 
                 <!-- connected to message bus -->
-                <div ng-if="ctl.devicesService.isMessageBusConnected">
+                <div ng-if="ctl.devicesService.busStatus == 'CONNECTED'">
 
                     <!-- no device -->
                     <div ng-if="ctl.devicesService.devices.length === 0" layout="column" layout-padding layout-align="center center">
@@ -141,9 +141,12 @@
                             ng-click="ctl.openDevicePage(device)"
                             md-colors="device.uuid === ctl.devicesService.selectedDeviceUuid ? { background: 'accent-100' } : { background: 'background' }"
                         >
-                            <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
-                            <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin md-accent"></md-icon>
-                            <p>{{ device.hostname }}</p>
+                            <md-icon ng-if="device.online && !device.auth" md-svg-icon="cellphone" class="icon-margin"></md-icon>
+                            <md-icon ng-if="!device.online  && !device.auth" md-svg-icon="cellphone-off" class="icon-margin md-accent"></md-icon>
+                            <md-icon ng-if="device.online && device.auth" md-svg-icon="cellphone-lock" class="icon-margin"></md-icon>
+                            <p>
+                                {{ device.hostname }}
+                            </p>
                             <md-menu class="md-secondary">
                                 <md-button class="md-icon-button" ng-click="ctl.openDeviceMenu($mdMenu, $event)">
                                     <md-icon md-svg-icon="dots-vertical"></md-icon>
@@ -178,9 +181,12 @@
                             ng-click="ctl.openDevicePage(device)"
                             md-colors="device.uuid === ctl.devicesService.selectedDeviceUuid ? { background: 'accent-100' } : { background: 'background' }"
                         >
-                            <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
-                            <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin md-accent"></md-icon>
-                            <p>{{ device.hostname }}</p>
+                            <md-icon ng-if="device.online && !device.auth" md-svg-icon="cellphone" class="icon-margin"></md-icon>
+                            <md-icon ng-if="!device.online  && !device.auth" md-svg-icon="cellphone-off" class="icon-margin md-accent"></md-icon>
+                            <md-icon ng-if="device.online && device.auth" md-svg-icon="cellphone-lock" class="icon-margin"></md-icon>
+                            <p>
+                                {{ device.hostname }}
+                            </p>
                             <md-menu class="md-secondary">
                                 <md-button class="md-icon-button" ng-click="ctl.openDeviceMenu($mdMenu, $event)">
                                     <md-icon md-svg-icon="dots-vertical"></md-icon>
@@ -267,6 +273,8 @@
     <script src="js/device/device.controller.js"></script>
     <script src="js/device/devices.controller.js"></script>
     <script src="js/device/device-details.controller.js"></script>
+    <script src="js/device-auth/device-auth.controller.js"></script>
+    <script src="js/device-error/device-error.controller.js"></script>
     <script src="js/monitoring/monitoring.controller.js"></script>
     <script src="js/about/about.controller.js"></script>
     <script src="js/help/help-dialog.controller.js"></script>

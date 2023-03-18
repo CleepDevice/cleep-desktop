@@ -1,16 +1,17 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
+        "module": "CommonJS",
         "noImplicitAny": true,
         "sourceMap": true,
         "outDir": "build",
         "baseUrl": ".",
+        "target": "ES2023",
         "paths": {
             "*": ["node_modules/*"]
         },
         "esModuleInterop": true
     },
     "include": [
-        "src/**/*"
+        "src/"
     ]
 }

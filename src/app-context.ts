@@ -1,9 +1,8 @@
 import { app, ipcMain } from 'electron';
-import isDev from 'electron-is-dev';
 import { appLogger } from './app-logger';
 import path from 'path';
 import fs from 'fs';
-import * as Sentry from '@sentry/electron';
+import { init as sentryInit } from '@sentry/electron/main';
 import { appSettings } from './app-settings';
 
 const SENTRY_DSN = 'https://8e703f88899c42c18b8466c44b612472@o97410.ingest.sentry.io/213385';
@@ -14,12 +13,12 @@ class AppContext {
   public version: string;
   public changelog: string;
   public crashReportEnabled = false;
+  public readonly isDev = !app.isPackaged;
 
   constructor() {
-    if (isDev) {
-      this.version = require('./package.json').version;
-    } else {
-      this.version = app.getVersion();
+    this.version = app.getVersion();
+    if (this.isDev) {
+      this.version += '-dev';
     }
   }
 
@@ -30,7 +29,7 @@ class AppContext {
   }
 
   private addIpcs(): void {
-    ipcMain.handle('get-changelog', async () => {
+    ipcMain.handle('get-changelog', () => {
       return this.changelog;
     });
   }
@@ -73,7 +72,7 @@ class AppContext {
   }
 
   private configureCrashReport(): void {
-    if (isDev) {
+    if (this.isDev) {
       this.crashReportEnabled = false;
       appLogger.info('Crash report disabled during development');
       return;
@@ -82,7 +81,7 @@ class AppContext {
     const crashReport = appSettings.get<boolean>('cleep.crashreport');
     if (crashReport) {
       this.crashReportEnabled = true;
-      Sentry.init({ dsn: SENTRY_DSN });
+      sentryInit({ dsn: SENTRY_DSN });
     } else {
       this.crashReportEnabled = false;
     }

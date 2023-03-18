@@ -1,8 +1,8 @@
-import { ipcMain } from 'electron';
+import { App, ipcMain } from 'electron';
 import settings from 'electron-settings';
-import isDev from 'electron-is-dev';
 import { appLogger } from './app-logger';
-import uuid4 from 'uuid4';
+import { v4 as uuidv4 } from 'uuid';
+import { appContext } from './app-context';
 
 const DEFAULT_SETTINGS: {
   [k: string]: string | number | boolean | { [k: string]: string };
@@ -40,8 +40,8 @@ export class AppSettings {
     settings.configure({ prettify: true });
   }
 
-  public configure(): void {
-    this.checkAndFixConfig();
+  public configure(app: App): void {
+    this.checkAndFixConfig(app.getVersion());
     this.addIpcs();
   }
 
@@ -110,9 +110,12 @@ export class AppSettings {
     });
   }
 
-  private checkAndFixConfig() {
+  private checkAndFixConfig(version: string) {
     // cleep section
-    settings.setSync('cleep.version', require('./package.json').version);
+    if (appContext.isDev) {
+      version += 'dev';
+    }
+    settings.setSync('cleep.version', version);
     if (!settings.hasSync('cleep.isoraspios')) {
       settings.setSync('cleep.isoraspios', DEFAULT_SETTINGS.isoRaspios);
     }
@@ -125,15 +128,15 @@ export class AppSettings {
     if (!settings.hasSync('cleep.debug')) {
       settings.setSync('cleep.debug', DEFAULT_SETTINGS.debug);
     }
-    settings.setSync('cleep.isdev', isDev);
+    settings.setSync('cleep.isdev', appContext.isDev);
     if (!settings.hasSync('cleep.crashreport')) {
       settings.setSync('cleep.crashreport', DEFAULT_SETTINGS.crashReport);
     }
-    if (isDev) {
+    if (appContext.isDev) {
       settings.setSync('cleep.crashreport', false);
     }
     if (!settings.hasSync('cleep.uuid')) {
-      settings.setSync('cleep.uuid', uuid4());
+      settings.setSync('cleep.uuid', uuidv4());
     }
     if (!settings.hasSync('cleep.lastupdatecheck')) {
       settings.setSync('cleep.lastupdatecheck', 0);

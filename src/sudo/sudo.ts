@@ -113,7 +113,7 @@ export class Sudo {
     const batchOutputPath = path.join(app.getPath('temp'), `sudo-output-${batchId}.log`);
     appLogger.debug('Windows batch paths', { batchPath, batchOutputPath });
     const batchContent = `${command} ${(args || []).join(' ')} > ${batchOutputPath} 2>&1 `;
-    appLogger.debug('Windows batch content', {batchContent});
+    appLogger.debug('Windows batch content', { batchContent });
     fs.writeFileSync(batchPath, batchContent);
     fs.writeFileSync(batchOutputPath, '');
 
@@ -191,7 +191,7 @@ export class Sudo {
         unwatchFile(logFileOutput.log);
         unlinkSync(logFileOutput.script);
         unlinkSync(logFileOutput.log);
-      }, 500);     
+      }, 500);
     }
   }
 
@@ -208,7 +208,7 @@ export class Sudo {
   }
 
   private onWatcherChanged(logFileOutput: LogFileOutput): void {
-    const stream = createReadStream(logFileOutput.log, {encoding: 'utf8', start: logFileOutput.readIndex});
+    const stream = createReadStream(logFileOutput.log, { encoding: 'utf8', start: logFileOutput.readIndex });
     stream.on('data', (chunk: Buffer) => {
       logFileOutput.readIndex += chunk.length;
       if (this.process) {
@@ -216,7 +216,7 @@ export class Sudo {
       }
     });
     stream.on('error', (error) => {
-      appLogger.error('Error occured during file reading', {error});
+      appLogger.error('Error occured during file reading', { error });
       if (this.process) {
         this.process.stderr.emit('data', error);
       }

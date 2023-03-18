@@ -1,20 +1,20 @@
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
-import uuid4 from 'uuid4';
+import { v4 as uuidv4 } from 'uuid';
 import { app } from 'electron';
 import progress_stream, { Progress } from 'progress-stream';
 import { appLogger } from '../app-logger';
 import crypto from 'crypto';
 
-export interface DownloadProgress {
-  percent?: number;
+export interface IDownloadProgress {
+  percent: number;
+  terminated: boolean;
   eta?: number;
-  terminated?: boolean;
   error?: string;
 }
 
-export type OnDownloadProgressCallback = (downloadProgress: DownloadProgress) => void;
+export type OnDownloadProgressCallback = (downloadProgress: IDownloadProgress) => void;
 
 const abordDownloads: Record<string, AbortController> = {};
 
@@ -24,13 +24,13 @@ export async function downloadFile(
   sha256?: string,
 ): Promise<string> {
   const headers = { 'user-agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0' };
-  const tmpFilename = path.join(app.getPath('temp'), uuid4() + '.zip');
+  const tmpFilename = path.join(app.getPath('temp'), uuidv4() + '.zip');
   appLogger.debug(`Download file to ${tmpFilename}`);
   const writer = fs.createWriteStream(tmpFilename);
 
   abordDownloads[url] = new AbortController();
 
-  appLogger.debug(`Download flash-tool from ${url}`);
+  appLogger.debug(`Download file from ${url}`);
   const download = await axios({
     url,
     method: 'GET',
@@ -47,6 +47,7 @@ export async function downloadFile(
     writer.on('finish', async () => {
       appLogger.debug('Download file completed');
       downloadProgressCallback({
+        terminated: true,
         percent: 100,
         eta: 0,
       });
@@ -56,7 +57,7 @@ export async function downloadFile(
       if (sha256) {
         const checksum = await generateSha256(tmpFilename);
         if (checksum !== sha256) {
-          reject('Invalid checksum');
+          reject(new Error('Invalid downloaded file checksum'));
           return;
         }
       }
@@ -68,6 +69,7 @@ export async function downloadFile(
     });
     progress.on('progress', (progress: Progress) => {
       downloadProgressCallback({
+        terminated: false,
         percent: Math.round(progress.percentage),
         eta: progress.eta,
       });

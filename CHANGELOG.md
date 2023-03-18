@@ -1,14 +1,31 @@
 # Changelog
 
-## [x.x.x] - xxxx-xx-xx
+## [0.3.0] - 2024-02-28
 
 ### Changed
 
 - Improve logging
+- Bump dependencies (electron23->33)
+- Handle deprecation error on balena-cli
+- Update balena-cli version
+- Improve Cleepbus UI infos
+- Update github repo urls
 
 ### Fixed
 
+- External link from device does not open browser
 - Issue saving changelog
+- Fix macos CircleCi config
+- Fix bug deleting device in devices panel
+- Fix UI issue when iso download failed
+- Fix issu when wifi file not specified during flash
+
+### Added
+
+- Handle self-sign certificate
+- Handle Cleep device auth
+- Kill Cleepbus previous instances
+- Relaunch Cleepbus when it crashs
 
 ## [0.2.0] - 2022-09-08
 

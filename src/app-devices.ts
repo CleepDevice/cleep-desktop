@@ -3,8 +3,8 @@ import { appLogger } from './app-logger';
 import { appSettings, SettingsObject } from './app-settings';
 import { cleepbus } from './cleepbus/cleepbus';
 import { CleebusMessageResponse, CleepbusPeerInfos, TEST_DEVICE } from './cleepbus/cleepbus.types';
-import isDev from 'electron-is-dev';
 import { sendDataToAngularJs } from './utils/ui.helpers';
+import { appContext } from './app-context';
 
 class AppDevices {
   private window: BrowserWindow;
@@ -32,7 +32,7 @@ class AppDevices {
       device.online = false;
     }
 
-    if (isDev) {
+    if (appContext.isDev) {
       this.devices[TEST_DEVICE.uuid] = TEST_DEVICE;
     }
   }
