@@ -1,0 +1,32 @@
+<div>
+
+    <div style="width:100%; height:80%;">
+        <md-toolbar flex="initial">
+            <div class="md-toolbar-tools">
+                <h2>
+                    Auth requested by {{ ctl.hostname }}
+                </h2>
+                <span flex></span>
+            </div>
+        </md-toolbar>
+        <md-progress-linear md-mode="determinate" value="100"></md-progress-linear>
+
+        <md-content layout-padding>
+            <div layout="column" layout-sm="column" layout-align="center center" layout-fill>
+                <md-input-container>
+                    <label>Account</label>
+                    <input ng-model="ctl.account" required>
+                </md-input-container>
+            
+                <md-input-container>
+                    <label>Password</label>
+                    <input ng-model="ctl.password" type="password" required>
+                </md-input-container>
+                <div>
+                    <md-button class="md-raised md-primary" ng-click="ctl.login()">  Login  </md-button>
+                </div>
+            </div>
+        </md-content>
+    </div>
+
+</div>

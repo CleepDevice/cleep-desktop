@@ -10,6 +10,7 @@ import isDev from 'electron-is-dev';
 import { appIso } from './app-iso';
 import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
+import { appAuth } from './app-auth';
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
@@ -32,13 +33,25 @@ app.on('window-all-closed', function () {
 });
 
 // allow self signed certificate
-app.on('certificate-error', (event, _webContents, _url, _error, _certificate, callback) => {
-  appLogger.debug('Certificate error => bypass');
+app.on('certificate-error', (event, _webContents, _url, _error, certificate, callback) => {
+  // appLogger.debug('Certificate error, always allow', { certificate });
   event.preventDefault();
-  callback(true);
+
+  callback(certificate?.subjectName === 'Cleep' && certificate?.issuerName === 'Cleep');
 });
 
-app.on('web-contents-created', (event: Electron.Event, webContents: Electron.WebContents) => {
+app.on('login', (event, _webContents, _request, authInfo, callback) => {
+  appLogger.debug('Auth requested', { authInfo });
+  event.preventDefault();
+
+  const auth = appAuth.getAuth(authInfo.host);
+  // TODO handle when no auth available
+  appLogger.debug('Found auth', { url: authInfo.host, account: auth.account });
+
+  callback(auth.account, auth.password);
+});
+
+app.on('web-contents-created', (_event: Electron.Event, webContents: Electron.WebContents) => {
   appLogger.debug('New Cleep device webview created');
   webContents.setWindowOpenHandler((details: Electron.HandlerDetails) => {
     appLogger.info('Open modal from webview', { url: details.url });
@@ -91,6 +104,7 @@ app.on('ready', async function () {
     createAppMenu(mainWindow);
 
     // configure modules
+    appAuth.configure(mainWindow);
     appUpdater.configure(mainWindow);
     appFileDownload.configure(mainWindow);
     appIso.configure(mainWindow);

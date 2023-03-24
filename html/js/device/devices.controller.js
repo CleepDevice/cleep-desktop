@@ -1,7 +1,9 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
-.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope',
-function($state, devicesService, toastService, confirmService, $rootScope) {
+.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope', 'loggerService',
+function($state, devicesService, toastService, confirmService, $rootScope, logger) {
     var self = this;
     self.devicesService = devicesService;
 
@@ -12,7 +14,12 @@ function($state, devicesService, toastService, confirmService, $rootScope) {
 
         if (device.online) {
             var url = self.__getDeviceUrl(device);
-            $state.go('device', { url, hostname: device.hostname });
+            logger.debug('Open device page', device);
+            if (!device.auth || device.hasAuthStored) {
+                $state.go('device', { url, hostname: device.hostname });
+            } else {
+                $state.go('deviceauth', { url, hostname: device.hostname, deviceUuid: device.uuid });
+            }
             devicesService.selectDevice(device.uuid);
         } else {
             toastService.info('You can\'t connect to offline device');

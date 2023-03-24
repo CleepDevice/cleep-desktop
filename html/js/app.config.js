@@ -1,3 +1,6 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-this-alias */
+
 /**
  * Theme configuration
  */
@@ -70,6 +73,17 @@
             controller: 'deviceController',
             controllerAs: 'ctl',
             templateUrl: 'js/device/device.html'
+        })
+        .state('deviceauth', {
+            url: '/deviceauth',
+            params: {
+                url: null,
+                hostname: null,
+                deviceUuid: null
+            },
+            controller: 'deviceAuthController',
+            controllerAs: 'ctl',
+            templateUrl: 'js/device-auth/device-auth.html'
         })
         .state('monitoring', {
             url: '/monitoring',

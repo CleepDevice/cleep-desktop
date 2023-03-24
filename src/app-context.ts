@@ -30,7 +30,7 @@ class AppContext {
   }
 
   private addIpcs(): void {
-    ipcMain.handle('get-changelog', async () => {
+    ipcMain.handle('get-changelog', () => {
       return this.changelog;
     });
   }

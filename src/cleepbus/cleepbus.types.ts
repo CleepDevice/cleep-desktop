@@ -19,6 +19,7 @@ export interface CleepbusPeerInfos {
   cleepdesktop: boolean;
   online: boolean;
   extra?: Record<string, unknown>;
+  auth?: boolean;
 }
 
 export type CleepbusContentType = 'PEER_CONNECTED' | 'PEER_DISCONNECTED' | 'MESSAGE_RESPONSE';

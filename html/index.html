@@ -141,9 +141,12 @@
                             ng-click="ctl.openDevicePage(device)"
                             md-colors="device.uuid === ctl.devicesService.selectedDeviceUuid ? { background: 'accent-100' } : { background: 'background' }"
                         >
-                            <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
-                            <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin md-accent"></md-icon>
-                            <p>{{ device.hostname }}</p>
+                            <md-icon ng-if="device.online && !device.auth" md-svg-icon="cellphone" class="icon-margin"></md-icon>
+                            <md-icon ng-if="!device.online  && !device.auth" md-svg-icon="cellphone-off" class="icon-margin md-accent"></md-icon>
+                            <md-icon ng-if="device.online && device.auth" md-svg-icon="cellphone-lock" class="icon-margin"></md-icon>
+                            <p>
+                                {{ device.hostname }}
+                            </p>
                             <md-menu class="md-secondary">
                                 <md-button class="md-icon-button" ng-click="ctl.openDeviceMenu($mdMenu, $event)">
                                     <md-icon md-svg-icon="dots-vertical"></md-icon>
@@ -178,9 +181,12 @@
                             ng-click="ctl.openDevicePage(device)"
                             md-colors="device.uuid === ctl.devicesService.selectedDeviceUuid ? { background: 'accent-100' } : { background: 'background' }"
                         >
-                            <md-icon ng-if="device.online" md-svg-icon="cellphone-link" class="icon-margin"></md-icon>
-                            <md-icon ng-if="!device.online" md-svg-icon="cellphone-link-off" class="icon-margin md-accent"></md-icon>
-                            <p>{{ device.hostname }}</p>
+                            <md-icon ng-if="device.online && !device.auth" md-svg-icon="cellphone" class="icon-margin"></md-icon>
+                            <md-icon ng-if="!device.online  && !device.auth" md-svg-icon="cellphone-off" class="icon-margin md-accent"></md-icon>
+                            <md-icon ng-if="device.online && device.auth" md-svg-icon="cellphone-lock" class="icon-margin"></md-icon>
+                            <p>
+                                {{ device.hostname }}
+                            </p>
                             <md-menu class="md-secondary">
                                 <md-button class="md-icon-button" ng-click="ctl.openDeviceMenu($mdMenu, $event)">
                                     <md-icon md-svg-icon="dots-vertical"></md-icon>
@@ -267,6 +273,7 @@
     <script src="js/device/device.controller.js"></script>
     <script src="js/device/devices.controller.js"></script>
     <script src="js/device/device-details.controller.js"></script>
+    <script src="js/device-auth/device-auth.controller.js"></script>
     <script src="js/monitoring/monitoring.controller.js"></script>
     <script src="js/about/about.controller.js"></script>
     <script src="js/help/help-dialog.controller.js"></script>

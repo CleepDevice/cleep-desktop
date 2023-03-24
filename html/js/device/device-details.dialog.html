@@ -30,6 +30,16 @@
                         </md-list-item>
                         <md-list-item>
                             <md-icon md-svg-icon="chevron-right"></md-icon>
+                            <p>Security</p>
+                            <div class="md-secondary">
+                                <ul>
+                                    <li>SSL: {{::ctl.device.ssl}}</li>
+                                    <li>Auth: {{::ctl.device.auth}}</li>
+                                </ul>
+                            </div>
+                        </md-list-item>
+                        <md-list-item>
+                            <md-icon md-svg-icon="chevron-right"></md-icon>
                             <p>Cleep version</p>
                             <div class="md-secondary">{{::ctl.device.extra.version}}</div>
                         </md-list-item>
