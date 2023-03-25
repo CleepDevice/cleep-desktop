@@ -55,6 +55,12 @@ function($rootScope, $stateParams, logger, $document, $timeout, electron, $state
     });
 
     $rootScope.$on('reload-device-page', function() {
+        if (!self.wv || self.wv.isLoading()) {
+            return;
+        }
+
+        logger.debug('Reloading device page');
+        self.loading = true;
         self.wv.reloadIgnoringCache();
     });
 }]);
