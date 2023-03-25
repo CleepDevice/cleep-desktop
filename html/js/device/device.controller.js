@@ -1,9 +1,12 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
-.controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'electronService',
-function($rootScope, $stateParams, logger, $document, $timeout, electron) {
+.controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'electronService', '$state',
+function($rootScope, $stateParams, logger, $document, $timeout, electron, $state) {
     var self = this;
-    self.deviceUrl = $stateParams.url;
+    logger.debug("deviceController stateParams", $stateParams);
+    self.hostname = $stateParams.hostname;
     self.wv = document.getElementById('deviceWv');
     self.loading = true;
 
@@ -25,6 +28,20 @@ function($rootScope, $stateParams, logger, $document, $timeout, electron) {
         $timeout(function() {
             self.loading = false;
         }, 0);
+    });
+
+    // error loading device page
+    self.wv.addEventListener('did-fail-load', (event) => {
+        logger.warn("Unable to open device page", {
+            errorCode: event.errorCode,
+            description: event.errorDescription,
+            url : event.validatedURL,
+        });
+
+        var params = {
+            hostname: $stateParams.hostname,
+        };
+        $state.go('deviceError', params);
     });
 
     // configure webview src as soon as document is ready

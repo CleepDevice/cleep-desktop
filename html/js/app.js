@@ -47,6 +47,23 @@ function($rootScope, $state, tasksPanelService, modalService, $timeout, $transit
         self.openPage(page, params);
     })
 
+    // auth
+    electron.on('auth-error', function(_event, data) {
+        const foundDevice = devicesService.getSelectedDevice() || devicesService.findDevice(null, data.ip);
+
+        if (foundDevice) {
+            const params = {
+                url: foundDevice.url,
+                hostname: foundDevice.hostname,
+                deviceUuid: foundDevice.uuid,
+                errorCode: data.errorCode || 'UNKNOWN_ERROR',
+            }
+            $state.go('deviceAuth', params);
+        } else {
+            $state.go('deviceError', params);
+        }
+    });
+
     // open modal
     self.openModal = function(controllerName, templateUrl, data) {
         modalService.open(controllerName, templateUrl, data || {});

@@ -5,6 +5,7 @@ import { sendDataToAngularJs } from './utils/ui.helpers';
 export interface IAuth {
   account: string;
   password: string;
+  attempts: number;
 }
 
 export interface IAuthEvent {
@@ -13,6 +14,8 @@ export interface IAuthEvent {
   account: string;
   password: string;
 }
+
+export const MAX_AUTH_ATTEMPTS = 5;
 
 class AppAuth {
   private auth: Record<string, IAuth> = {};
@@ -24,7 +27,16 @@ class AppAuth {
   }
 
   public getAuth(url: string): IAuth {
+    if (this.auth[url]) {
+      this.auth[url].attempts += 1;
+    }
     return this.auth[url];
+  }
+
+  public resetAuthAttempts(url: string): void {
+    if (this.auth[url]?.attempts) {
+      this.auth[url].attempts = 0;
+    }
   }
 
   private addIpcs(): void {
@@ -35,6 +47,7 @@ class AppAuth {
       this.auth[url.hostname] = {
         account: auth.account,
         password: auth.password,
+        attempts: 0,
       };
 
       // return back device has auth to angular

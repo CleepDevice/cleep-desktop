@@ -13,23 +13,28 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
         }
 
         if (device.online) {
-            var url = self.__getDeviceUrl(device);
             logger.debug('Open device page', device);
             if (!device.auth || device.hasAuthStored) {
-                $state.go('device', { url, hostname: device.hostname });
+                var paramsDevice = {
+                    url: device.url,
+                    hostname: device.hostname,
+                    auth: device.auth,
+                    deviceUuid: device.uuid,
+                };
+                $state.go('device', paramsDevice);
             } else {
-                $state.go('deviceauth', { url, hostname: device.hostname, deviceUuid: device.uuid });
+                var paramsDeviceAuth = {
+                    url: device.url,
+                    hostname: device.hostname,
+                    deviceUuid: device.uuid,
+                };
+                $state.go('deviceAuth', paramsDeviceAuth);
             }
             devicesService.selectDevice(device.uuid);
         } else {
             toastService.info('You can\'t connect to offline device');
         }
     };
-
-    self.__getDeviceUrl = function(device) {
-        var url = device.ip + ':' + device.port;
-        return (device.ssl ? 'https://' : 'http://') + url;
-    }
 
     self.openDeviceMenu = function($mdMenu, ev) {
         $mdMenu.open(ev);

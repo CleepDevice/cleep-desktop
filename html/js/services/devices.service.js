@@ -28,11 +28,12 @@ function(electron, logger) {
         // sync all devices
         Object.assign(self.devices, devices);
 
-        // add missing custom fields
+        // add custom fields for frontend usage
         self.devices.forEach((device) => {
             if (device['hasAuthStored'] === undefined) {
                 device.hasAuthStored = false;
             }
+            device.url = (device.ssl ? 'https://' : 'http://') + device.ip + ':' + device.port;
         })
 
         // workaround: sometimes ui doesn't catch connected event and bus stays in connecting state
@@ -78,6 +79,10 @@ function(electron, logger) {
         self.selectedDeviceUuid = selectedDeviceUuid;
     };
 
+    self.getSelectedDevice = function() {
+        return self.findDevice(self.selectedDeviceUuid);
+    }
+
     self.deleteDevice = function(device) {
         return electron.sendReturn('devices-delete-device', device.uuid)
             .then((response) => {
@@ -86,5 +91,21 @@ function(electron, logger) {
                 }
             });
     };
+
+    self.findDevice = function(deviceUuid, deviceIp) {
+        let device;
+        
+        // search by uuid
+        if (deviceUuid) {
+            device = self.devices.find((device) => device.uuid === deviceUuid);
+        }
+
+        // search by ip if necessary
+        if (!device && deviceIp) {
+            device = self.devices.find((device) => device.ip === deviceIp);
+        }
+
+        return device
+    }
 
 }]);

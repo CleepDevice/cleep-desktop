@@ -13,18 +13,32 @@
 
         <md-content layout-padding>
             <div layout="column" layout-sm="column" layout-align="center center" layout-fill>
-                <md-input-container>
-                    <label>Account</label>
-                    <input ng-model="ctl.account" required>
-                </md-input-container>
-            
-                <md-input-container>
-                    <label>Password</label>
-                    <input ng-model="ctl.password" type="password" required>
-                </md-input-container>
-                <div>
-                    <md-button class="md-raised md-primary" ng-click="ctl.login()">  Login  </md-button>
-                </div>
+                <form>
+                    <md-card>
+                        <img ng-src="images/device-auth.png" class="md-card-image">
+                        <md-card-title>
+                            <md-card-title-text ng-if="ctl.errorCode === 'INVALID_AUTH'">
+                                <div>
+                                    <md-icon md-svg-icon="alert-circle-outline"></md-icon>
+                                    Invalid credentials specified
+                                </div>
+                            </md-card-title-text>
+                        </md-card-title>
+                        <md-card-content layout="column" layout-sm="column">
+                            <md-input-container>
+                                <label>Account</label>
+                                <input ng-model="ctl.account" required>
+                            </md-input-container>
+                            <md-input-container>
+                                <label>Password</label>
+                                <input ng-model="ctl.password" type="password" required>
+                            </md-input-container>
+                        </md-card-content>
+                        <md-card-actions layout="row" layout-align="end center">
+                            <md-button class="md-raised md-primary" ng-click="ctl.login()" type="submit">Login</md-button>
+                        </md-card-actions>
+                    </md-card>
+                </form>
             </div>
         </md-content>
     </div>

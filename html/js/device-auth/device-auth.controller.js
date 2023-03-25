@@ -2,14 +2,15 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
-.controller('deviceAuthController', ['loggerService', 'electronService', '$stateParams', '$rootScope',
-function(logger, electron, $stateParams, $rootScope) {
+.controller('deviceAuthController', ['loggerService', 'electronService', '$stateParams', '$state', 'devicesService',
+function(logger, electron, $stateParams, $state) {
     var self = this;
-    logger.debug("stateParams", $stateParams);
+    logger.debug("deviceAuthController stateParams", $stateParams);
 
     self.hostname = $stateParams.hostname;
     self.url = $stateParams.url;
     self.deviceUuid = $stateParams.deviceUuid;
+    self.errorCode = $stateParams.errorCode;
     self.account = null;
     self.password = null;
 
@@ -23,7 +24,13 @@ function(logger, electron, $stateParams, $rootScope) {
 
         electron.sendReturn('update-device-auth', params)
             .then(() => {
-                $rootScope.$broadcast('open-page', 'device', { url: self.url, hostname: self.hostname });
+                const paramsDevice = {
+                    url: self.url,
+                    hostname: self.hostname,
+                    deviceUuid: self.deviceUuid,
+                    auth: true,
+                };
+                $state.go('device', paramsDevice);
             })
     };
 }]);

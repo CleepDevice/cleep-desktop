@@ -10,7 +10,7 @@ import isDev from 'electron-is-dev';
 import { appIso } from './app-iso';
 import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
-import { appAuth } from './app-auth';
+import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
@@ -42,13 +42,21 @@ app.on('certificate-error', (event, _webContents, _url, _error, certificate, cal
 
 app.on('login', (event, _webContents, _request, authInfo, callback) => {
   appLogger.debug('Auth requested', { authInfo });
-  event.preventDefault();
-
+  const url = authInfo.host;
   const auth = appAuth.getAuth(authInfo.host);
-  // TODO handle when no auth available
-  appLogger.debug('Found auth', { url: authInfo.host, account: auth.account });
 
-  callback(auth.account, auth.password);
+  if (!auth) {
+    appLogger.warn('No auth found for the device');
+    appAuth.resetAuthAttempts(url);
+  } else if (auth?.attempts >= MAX_AUTH_ATTEMPTS) {
+    appLogger.debug('Max auth attempts reached');
+    appAuth.resetAuthAttempts(url);
+    mainWindow.webContents.send('auth-error', { ip: authInfo.host, errorCode: 'INVALID_AUTH' });
+  } else {
+    appLogger.debug('Found auth', { url: authInfo.host, account: auth.account });
+    event.preventDefault();
+    callback(auth.account, auth.password);
+  }
 });
 
 app.on('web-contents-created', (_event: Electron.Event, webContents: Electron.WebContents) => {
