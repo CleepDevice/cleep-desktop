@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-this-alias */
 /**
  * Download service handle download from angularjs app handling download panels
  */

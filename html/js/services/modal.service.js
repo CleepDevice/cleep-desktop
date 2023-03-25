@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-this-alias */
 /**
  * ModalService displays your controller (and its template) into a modal
  * Charge in you to have proper template content based on examples at https://material.angularjs.org/HEAD/demo/dialog
