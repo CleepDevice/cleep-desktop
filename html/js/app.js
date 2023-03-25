@@ -39,11 +39,13 @@ function($rootScope, $state, tasksPanelService, modalService, $timeout, $transit
         $state.go(page, params || {});
     };
 
-    electron.on('open-page', function(_event, page, params) {
+    electron.on('open-page', function(_event, data) {
+        const { page, ...params } = data;
         self.openPage(page, params);
     });
 
-    $rootScope.$on('open-page', (_event, page, params) => {
+    $rootScope.$on('open-page', (_event, data) => {
+        const { page, ...params } = data;
         self.openPage(page, params);
     })
 

@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
 .controller('installController', ['$rootScope', 'toastService', 'confirmService', 'loggerService', 'updateService', 
@@ -8,7 +10,7 @@ function($rootScope, toast, confirm, logger, updateService, installService, moda
     self.updateService = updateService;
 
     self.gotoManualInstall = function() {
-        $rootScope.$broadcast('open-page', 'installManually');
+        $rootScope.$broadcast('open-page', { page: 'installManually' });
     };
 
     self.openIsoDialog = function() {

@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
 .service('updateService', ['$rootScope', '$timeout', 'loggerService', 'tasksPanelService', 'electronService',
@@ -39,7 +41,7 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     }
 
     self.goToUpdates = function() {
-        $rootScope.$broadcast('open-page', 'updates');
+        $rootScope.$broadcast('open-page', { page: 'updates' });
     };
  
     self.closeUpdateTaskPanel = function() {

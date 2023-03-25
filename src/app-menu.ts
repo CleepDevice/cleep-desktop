@@ -8,7 +8,7 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'Updates',
         click: () => {
-          window.webContents.send('open-page', 'updates');
+          window.webContents.send('open-page', { page: 'updates' });
         },
       },
       {
@@ -44,14 +44,14 @@ export function createAppMenu(window: BrowserWindow): void {
   //         {
   //             label: 'Install',
   //             click: () => {
-  //                 window.webContents.send('open-page', 'installAuto');
+  //                 window.webContents.send('open-page', { page: 'installAuto' });
   //             }
   //         }, {
   //             type: 'separator'
   //         }, {
   //             label: 'Monitoring',
   //             click: () => {
-  //                 window.webContents.send('open-page', 'monitoring');
+  //                 window.webContents.send('open-page', { page: 'monitoring' });
   //             }
   //         }
   //     ])
@@ -63,7 +63,7 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'Application help',
         click: () => {
-          window.webContents.send('open-page', 'help');
+          window.webContents.send('open-page', { page: 'help' });
         },
       },
       {
@@ -72,7 +72,7 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'Get support',
         click: () => {
-          window.webContents.send('open-page', 'support');
+          window.webContents.send('open-page', { page: 'support' });
         },
       },
       {
@@ -81,7 +81,7 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'About',
         click: () => {
-          window.webContents.send('open-page', 'about');
+          window.webContents.send('open-page', { page: 'about' });
         },
       },
     ]),

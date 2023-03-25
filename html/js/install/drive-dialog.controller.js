@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
 .controller('driveController', ['closeModal', 'installService', 'toastService', '$rootScope',
@@ -29,6 +31,6 @@ function(closeModal, installService, toast, $rootScope) {
     };
 
     self.gotoUpdates = function() {
-        $rootScope.$broadcast('open-page', 'updates');
+        $rootScope.$broadcast('open-page', { page: 'updates' });
     };
 }]);
