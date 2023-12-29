@@ -152,7 +152,7 @@ export class Balena {
       const drives: Drive[] = [];
 
       const path = this.getBalenaBinPath();
-      exec(`"${path}" util available-drives`, (error, stdout, stderr) => {
+      exec(`"${path}" --unsupported util available-drives`, (error, stdout, stderr) => {
         if (error) {
           appLogger.error('Unable to get drives', { error });
           reject(error);
