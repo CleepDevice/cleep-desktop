@@ -23,8 +23,12 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     title: 'CleepDesktop',
   });
 
-  mainWindow.webContents.on('did-attach-webview', (_event, _webContents) => {
+  mainWindow.webContents.on('did-attach-webview', (_event, webContents: Electron.WebContents) => {
     appLogger.debug('webview attached');
+    webContents.setWindowOpenHandler((details) => {
+      mainWindow.webContents.send('webview-new-window', webContents.id, details);
+      return { action: 'deny' };
+    });
   });
 
   mainWindow.webContents.setWindowOpenHandler((details: Electron.HandlerDetails) => {
