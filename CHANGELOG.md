@@ -1,14 +1,24 @@
 # Changelog
 
-## [x.x.x] - xxxx-xx-xx
+## [0.3.0] - 2024-01-xx
 
 ### Changed
 
 - Improve logging
+- Bump dependencies (electron23->28)
+- Handle deprecation error on balena-cli
+- Update balena-cli version
 
 ### Fixed
 
+- External link from device does not open browser
 - Issue saving changelog
+- Fix macos CircleCi config
+
+### Added
+
+- Handle self-sign certificate
+- Handle Cleep device auth
 
 ## [0.2.0] - 2022-09-08
 
