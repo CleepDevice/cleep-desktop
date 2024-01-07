@@ -111,7 +111,7 @@ export class AppLogger {
     logger.transports.file.level = isDev || debugEnabled ? 'debug' : 'info';
     logger.transports.file.maxSize = 1 * 1024 * 1024;
     const logFilepath = path.join(app.getPath('userData'), 'cleepdesktop.log');
-    logger.transports.file.resolvePath = () => logFilepath;
+    logger.transports.file.resolvePathFn = () => logFilepath;
   }
 }
 
