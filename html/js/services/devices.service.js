@@ -26,7 +26,7 @@ function(electron, logger) {
 
     self.onDevicesUpdated = function(_event, devices) {
         // sync all devices
-        Object.assign(self.devices, devices);
+        self.devices = devices;
 
         // add custom fields for frontend usage
         self.devices.forEach((device) => {
