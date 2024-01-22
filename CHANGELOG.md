@@ -14,6 +14,7 @@
 - External link from device does not open browser
 - Issue saving changelog
 - Fix macos CircleCi config
+- Fix bug deleting device in devices panel
 
 ### Added
 
