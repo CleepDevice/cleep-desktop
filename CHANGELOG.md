@@ -1,11 +1,11 @@
 # Changelog
 
-## [0.3.0] - 2024-01-xx
+## [0.3.0] - 2024-02-28
 
 ### Changed
 
 - Improve logging
-- Bump dependencies (electron23->28)
+- Bump dependencies (electron23->29)
 - Handle deprecation error on balena-cli
 - Update balena-cli version
 
