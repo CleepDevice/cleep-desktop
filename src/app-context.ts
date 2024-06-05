@@ -3,7 +3,7 @@ import isDev from 'electron-is-dev';
 import { appLogger } from './app-logger';
 import path from 'path';
 import fs from 'fs';
-import * as Sentry from '@sentry/electron';
+import { init as sentryInit } from '@sentry/electron/main';
 import { appSettings } from './app-settings';
 
 const SENTRY_DSN = 'https://8e703f88899c42c18b8466c44b612472@o97410.ingest.sentry.io/213385';
@@ -82,7 +82,7 @@ class AppContext {
     const crashReport = appSettings.get<boolean>('cleep.crashreport');
     if (crashReport) {
       this.crashReportEnabled = true;
-      Sentry.init({ dsn: SENTRY_DSN });
+      sentryInit({ dsn: SENTRY_DSN });
     } else {
       this.crashReportEnabled = false;
     }

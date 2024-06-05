@@ -124,7 +124,7 @@ class AppCache {
       try {
         const filepath = path.join(this.cacheDir, filename);
         cachedFiles.push(this.getFileInfos(filepath));
-      } catch (error) {
+      } catch {
         appLogger.warn(`Invalid file "${filename}" in cache directory`);
       }
     }
@@ -159,7 +159,7 @@ class AppCache {
     for (const filename of filenames) {
       try {
         this.deleteCachedFile(filename);
-      } catch (error) {
+      } catch {
         appLogger.warn(`Invalid file "${filename}" in cache directory`);
       }
     }

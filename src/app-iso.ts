@@ -333,7 +333,7 @@ class AppIso {
       try {
         const hasWifi = await this.wifi.hasWifi();
         return { data: hasWifi, error: false };
-      } catch (error) {
+      } catch {
         appLogger.error('Unable to know if wifi adapter exists');
         return { data: false, error: true };
       }

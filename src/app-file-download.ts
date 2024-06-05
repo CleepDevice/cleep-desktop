@@ -1,5 +1,5 @@
 import { BrowserWindow, DownloadItem, ipcMain } from 'electron';
-import electronDl, { download } from 'electron-dl';
+import { Progress, download } from 'electron-dl';
 import { sendDataToAngularJs } from './utils/ui.helpers';
 import uuid4 from 'uuid4';
 import { appLogger } from './app-logger';
@@ -52,7 +52,7 @@ export class AppFileDownload {
         onStarted: (item: DownloadItem) => {
           this.onDownloadStarted(downloadId, url, item);
         },
-        onProgress: (progress: electronDl.Progress) => {
+        onProgress: (progress: Progress) => {
           this.onDownloadProgress(downloadId, progress);
         },
         onCancel: (item: DownloadItem) => {
@@ -62,7 +62,7 @@ export class AppFileDownload {
           this.onDownloadCompleted(downloadId, item);
         },
       });
-    } catch (error) {
+    } catch {
       const download = this.getDownload(downloadId);
       if (download) {
         this.deleteDownload(downloadId);
@@ -86,7 +86,7 @@ export class AppFileDownload {
     });
   }
 
-  private onDownloadProgress(downloadId: string, progress: electronDl.Progress): void {
+  private onDownloadProgress(downloadId: string, progress: Progress): void {
     if (typeof progress?.percent !== 'number' || !Object.keys(this.downloads).length) return;
 
     const download = this.getDownload(downloadId);

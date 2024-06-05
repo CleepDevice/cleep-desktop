@@ -13,6 +13,7 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
       webviewTag: true,
       nodeIntegration: true,
       contextIsolation: false,
+      allowRunningInsecureContent: true,
     },
     width: 1024,
     height: 600,
