@@ -56,12 +56,12 @@ if [ "$1" == "publish" ]
 then
     echo "Publishing cleepdesktop..."
     echo "--------------------------"
-    GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP node_modules/.bin/electron-builder --mac --x64 --projectDir "$CLEEPDESKTOPPATH" --publish always
+    GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP node_modules/.bin/electron-builder --mac --arm64 --projectDir "$CLEEPDESKTOPPATH" --publish always
     checkResult $? 0 "Failed to publish cleepdesktop"
 else
     echo "Packaging cleepdesktop..."
     echo "-------------------------"
-    node_modules/.bin/electron-builder --mac --x64 --projectDir "$CLEEPDESKTOPPATH" --publish never
+    node_modules/.bin/electron-builder --mac --arm64 --projectDir "$CLEEPDESKTOPPATH" --publish never
     checkResult $? 0 "Failed to package cleepdesktop"
 fi
 
