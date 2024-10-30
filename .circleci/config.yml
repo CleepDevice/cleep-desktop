@@ -30,7 +30,7 @@ jobs:
 
   build-linux:
     docker:
-      - image: cimg/base:edge
+      - image: cimg/base:current
     steps:
       - run:
           name: Installing node sources
@@ -50,7 +50,7 @@ jobs:
           template: basic_success_1
   publish-linux:
     docker:
-      - image: cimg/base:edge
+      - image: cimg/base:current
     steps:
       - run:
           name: Installing node sources
@@ -65,8 +65,8 @@ jobs:
 
   build-macos:
     macos:
-      xcode: 12.5.1
-    resource_class: macos.x86.medium.gen2
+      xcode: 16.0.0
+    resource_class: macos.m1.medium.gen1
     steps:
       - run:
           name: Installing node
