@@ -5,12 +5,15 @@
         "sourceMap": true,
         "outDir": "build",
         "baseUrl": ".",
+        "target": "ES2023",
         "paths": {
             "*": ["node_modules/*"]
         },
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "rootDir": "src"
     },
     "include": [
-        "src/**/*"
+        "src/"
     ]
 }

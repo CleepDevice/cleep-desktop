@@ -17,7 +17,7 @@
         "publish-macos": "scripts/build-mac.sh publish",
         "publish-win": "scripts\\build-windows.bat publish"
     },
-    "repository": "https://github.com/tangb/cleep-desktop",
+    "repository": "https://github.com/CleepDevice/cleep-desktop",
     "keywords": [
         "cleep",
         "rasperrypi",
@@ -28,36 +28,36 @@
     "license": "MIT",
     "devDependencies": {
         "@types/detect-port": "^1.3.5",
-        "@types/node": "^20.14.1",
+        "@types/node": "^22.8.5",
         "@types/progress-stream": "^2.0.5",
         "@types/semver": "^7.5.8",
         "@types/uuid4": "^2.0.3",
-        "@types/ws": "^8.5.10",
-        "@typescript-eslint/eslint-plugin": "^7.12.0",
-        "@typescript-eslint/parser": "^7.12.0",
+        "@types/ws": "^8.5.12",
+        "@typescript-eslint/eslint-plugin": "^8.12.2",
+        "@typescript-eslint/parser": "^8.12.2",
         "copyfiles": "^2.4.1",
-        "electron": "30.0.9",
-        "electron-builder": "^25.0.0-alpha.9",
-        "eslint": "^8.57.0",
-        "rimraf": "^5.0.7",
-        "typescript": "^5.4.5"
+        "electron": "27.3.11",
+        "electron-builder": "^25.1.8",
+        "eslint": "^8.57.1",
+        "rimraf": "^6.0.1",
+        "typescript": "^5.6.3"
     },
     "dependencies": {
-        "@electron/notarize": "^2.3.2",
-        "@octokit/rest": "^20.1.1",
-        "@sentry/electron": "^5.0.0",
-        "axios": "^1.7.2",
+        "@electron/notarize": "^2.5.0",
+        "@octokit/rest": "^19.0.13",
+        "@sentry/electron": "^5.7.0",
+        "axios": "^1.7.7",
         "detect-port": "^1.6.1",
         "electron-dl": "^3.5.2",
         "electron-is-dev": "^2.0.0",
-        "electron-log": "^5.1.5",
+        "electron-log": "^5.2.0",
         "electron-settings": "^4.0.4",
-        "electron-updater": "^6.1.8",
+        "electron-updater": "^6.3.9",
         "extract-zip": "^2.0.1",
         "node-wifi": "^2.0.16",
         "progress-stream": "^2.0.0",
         "uuid4": "^2.0.3",
-        "ws": "^8.17.0"
+        "ws": "^8.18.0"
     },
     "build": {
         "appId": "com.cleep.cleepdesktop",
@@ -112,7 +112,7 @@
         },
         "publish": {
             "provider": "github",
-            "owner": "tangb",
+            "owner": "CleepDevice",
             "releaseType": "release",
             "repo": "cleep-desktop"
         }

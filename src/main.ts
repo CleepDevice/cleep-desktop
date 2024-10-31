@@ -15,7 +15,7 @@ import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
 
-appSettings.configure();
+appSettings.configure(app);
 appContext.configure();
 
 app.on('will-quit', function () {
@@ -88,11 +88,7 @@ app.on('ready', async function () {
   appLogger.info('Platform: ' + process.platform);
   const display = screen.getPrimaryDisplay();
   appLogger.info('Display: ' + display.size.width + 'x' + display.size.height);
-  if (isDev) {
-    appLogger.info('Version: ' + require('./package.json').version);
-  } else {
-    appLogger.info('Version: ' + appContext.version);
-  }
+  appLogger.info('Version: ' + appContext.version);
   if (isDev) {
     appLogger.info('App dir: ' + app.getPath('userData'));
     appLogger.info('Logs dir: ' + app.getPath('logs'));

@@ -62,7 +62,8 @@ export class AppFileDownload {
           this.onDownloadCompleted(downloadId, item);
         },
       });
-    } catch {
+    } catch (error) {
+      appLogger.error('Error occured during download', error);
       const download = this.getDownload(downloadId);
       if (download) {
         this.deleteDownload(downloadId);
