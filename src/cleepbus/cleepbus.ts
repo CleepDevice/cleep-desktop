@@ -34,7 +34,7 @@ const CLEEPBUS_WINDOWS_BIN = 'cleepbus.exe';
 const CLEEPBUS_STOP_MESSAGE = '$$STOP$$';
 
 export class Cleepbus {
-  private readonly CLEEPBUS_REPO = { owner: 'tangb', repo: 'cleep-desktop-cleepbus' };
+  private readonly CLEEPBUS_REPO = { owner: 'CleepDevice', repo: 'cleep-desktop-cleepbus' };
   private github: Octokit;
   private updateAvailableCallback: OnUpdateAvailableCallback;
   private downloadProgressCallback: OnDownloadProgressCallback;

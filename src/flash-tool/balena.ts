@@ -33,7 +33,7 @@ export interface Drive {
 }
 
 export class Balena {
-  private readonly BALENA_REPO = { owner: 'tangb', repo: 'cleep-desktop-flashtool' };
+  private readonly BALENA_REPO = { owner: 'CleepDevice', repo: 'cleep-desktop-flashtool' };
   private github: Octokit;
   private updateAvailableCallback: OnUpdateAvailableCallback;
   private downloadProgressCallback: OnDownloadProgressCallback;

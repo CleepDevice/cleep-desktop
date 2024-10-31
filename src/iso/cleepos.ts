@@ -3,7 +3,7 @@ import { appLogger } from '../app-logger';
 import { getChecksumFromUrl, getFilenameFromUrl, ReleaseInfo } from './utils';
 
 export class CleepOs {
-  private readonly CLEEPOS_REPO = { owner: 'tangb', repo: 'cleep-os' };
+  private readonly CLEEPOS_REPO = { owner: 'CleepDevice', repo: 'cleep-os' };
   private github: Octokit;
 
   constructor() {
