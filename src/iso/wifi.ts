@@ -1,6 +1,5 @@
 import { appLogger } from '../app-logger';
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const NodeWifi = require('node-wifi');
+import * as NodeWifi from 'node-wifi';
 
 export type WifiNetworkSecurity = 'WPA' | 'WPA2' | 'WPA3' | 'WEP' | 'UNSECURED' | 'UNKNOWN';
 
@@ -14,23 +13,6 @@ export interface WifiNetwork {
   security: WifiNetworkSecurity;
 }
 
-interface NodeWifiNetwork {
-  ssid: string;
-  bssid: string;
-  mac: string;
-  channel: number;
-  frequency: number;
-  signal_level: number;
-  quality: number;
-  security: string;
-  security_flags: string;
-  mode: string;
-}
-
-interface NodeWifiConnection extends NodeWifiNetwork {
-  iface: string;
-}
-
 export class Wifi {
   private networks: WifiNetwork[];
 
@@ -40,7 +22,7 @@ export class Wifi {
 
   public refreshNetworks(): Promise<WifiNetwork[]> {
     return new Promise((resolve, reject) => {
-      NodeWifi.scan((error: unknown, networks: NodeWifiNetwork[]) => {
+      NodeWifi.scan((error: Error | null, networks: NodeWifi.WiFiNetwork[]) => {
         appLogger.debug('node-wifi.scan result', { error, networks });
         if (error) {
           reject(error);
@@ -53,7 +35,7 @@ export class Wifi {
 
   public hasWifi(): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      NodeWifi.getCurrentConnections((error: unknown, connections: NodeWifiConnection[]) => {
+      NodeWifi.getCurrentConnections((error: Error | null, connections: NodeWifi.WiFiNetwork[]) => {
         appLogger.debug('node-wifi.getCurrentConnections result', { error, connections });
         if (error) {
           reject(error);
@@ -63,7 +45,7 @@ export class Wifi {
     });
   }
 
-  private parseNetworks(networks: NodeWifiNetwork[]): void {
+  private parseNetworks(networks: NodeWifi.WiFiNetwork[]): void {
     for (const network of networks) {
       this.networks.push({
         ssid: network?.ssid || 'unknown',

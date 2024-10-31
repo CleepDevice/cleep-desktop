@@ -32,7 +32,10 @@ export class AppLogger {
 
   public setLogLevel(args: CommandLineArgs): void {
     if (isDev) {
-      // config already set during init, do not overwrite
+      console.log('++++++++++++++++++++ log debug');
+      // force debug during developments
+      logger.transports.console.level = 'debug';
+      logger.transports.file.level = 'debug';
       return;
     }
     if (args.consoleLogLevel === 'no') {
