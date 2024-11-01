@@ -32,7 +32,6 @@ export class AppLogger {
 
   public setLogLevel(args: CommandLineArgs): void {
     if (isDev) {
-      console.log('++++++++++++++++++++ log debug');
       // force debug during developments
       logger.transports.console.level = 'debug';
       logger.transports.file.level = 'debug';

@@ -139,7 +139,13 @@ class AppCache {
     const newFilepath = path.join(this.cacheDir, newFilename);
     appLogger.debug(`Cache file "${filepath}" to "${newFilepath}"`);
 
-    fs.renameSync(filepath, newFilepath);
+    try {
+      fs.copyFileSync(filepath, newFilepath);
+      fs.unlinkSync(filepath);
+    } catch (error) {
+      appLogger.error(`Error occured while moving file to cache: ${error}`);
+      throw new Error('Unable to move file to cache folder');
+    }
 
     return newFilepath;
   }
