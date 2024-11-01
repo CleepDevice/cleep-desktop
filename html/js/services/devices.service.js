@@ -6,11 +6,16 @@ angular
 function(electron, logger) {
     var self = this;
     self.devices = [];
-    // connected by default to not display startup connection
-    self.isMessageBusConnected = false;
     self.messageBusError = '';
-    self.messageBusUpdating = false;
     self.selectedDeviceUuid = null;
+
+    // status:
+    // - CONNECTED: when connected to cleepbus
+    // - CONNECTING: when connecting
+    // - UPDATING: when cleepbus is installing/updating
+    // - ERROR: when error occured
+    // connected at startup to not display loader
+    self.busStatus = 'CONNECTED';
 
     self.init = function() {
         self.addIpcs();
@@ -37,7 +42,7 @@ function(electron, logger) {
         })
 
         // workaround: sometimes ui doesn't catch connected event and bus stays in connecting state
-        self.isMessageBusConnected = true;
+        self.busStatus = 'CONNECTED';
 
         // remove obsolete devices
         var devicesUuids = devices.map((device) => device.uuid);
@@ -62,17 +67,21 @@ function(electron, logger) {
     }
 
     self.onMessageBusConnected = function(_event, connected) {
-        self.isMessageBusConnected = connected;
+        if (self.busStatus === 'ERROR') {
+            // do not overwrite error status
+            return;
+        }
+        self.busStatus = connected ? 'CONNECTED' : 'CONNECTING';
         self.messageBusError = '';
     }
 
     self.onMessageBusError = function(_event, error) {
-        self.isMessageBusConnected = false;
+        self.busStatus = 'ERROR';
         self.messageBusError = error;
     }
 
     self.onMessageBusUpdating = function(_event, updating) {
-        self.messageBusUpdating = updating;
+        self.busStatus = updating ? 'UPDATING' : 'CONNECTING';
     }
 
     self.selectDevice = function(selectedDeviceUuid) {

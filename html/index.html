@@ -74,10 +74,10 @@
             <md-content>
 
                 <!-- not connected to message bus -->
-                <div ng-if="!ctl.devicesService.isMessageBusConnected">
+                <div ng-if="ctl.devicesService.busStatus != 'CONNECTED'">
 
                     <!-- connecting to message bus -->
-                    <div layout="column" layout-padding layout-align="center center" ng-if="!ctl.devicesService.isMessageBusConnected && !ctl.devicesService.messageBusUpdating">
+                    <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devicesService.busStatus == 'CONNECTING'">
                         <br/>
                         <div>
                             <md-progress-circular md-mode="indeterminate"></md-progress-circular>
@@ -89,7 +89,7 @@
                     </div>
 
                     <!-- updating message bus -->
-                    <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devicesService.messageBusUpdating">
+                    <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devicesService.busStatus == 'UPDATING'">
                         <br/>
                         <div>
                             <md-progress-circular md-mode="indeterminate"></md-progress-circular>
@@ -101,7 +101,7 @@
                     </div>
 
                     <!-- message bus error -->
-                    <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devicesService.messageBusError">
+                    <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devicesService.busStatus == 'ERROR'">
                         <div style="padding-top:20px;">
                             <md-icon md-svg-icon="close-network-outline"></md-icon>
                             <b>Can't connect to Cleep network.</b><br>
@@ -117,7 +117,7 @@
                 </div>
 
                 <!-- connected to message bus -->
-                <div ng-if="ctl.devicesService.isMessageBusConnected">
+                <div ng-if="ctl.devicesService.busStatus == 'CONNECTED'">
 
                     <!-- no device -->
                     <div ng-if="ctl.devicesService.devices.length === 0" layout="column" layout-padding layout-align="center center">
