@@ -130,7 +130,7 @@ class AppIso {
     return drives;
   }
 
-  public async downloadIso(installData: InstallData) {
+  public async downloadIso(installData: InstallData): Promise<void> {
     try {
       this.currentInstall.isoUrl = installData.isoUrl;
       const isoPath = await downloadFile(
@@ -146,6 +146,7 @@ class AppIso {
     } catch (error) {
       appLogger.error(`Error downloading iso: ${error}`);
       this.downloadProgressCallback({ percent: 100, terminated: true, error: getError(error) });
+      throw error;
     } finally {
       this.currentInstall.isoUrl = '';
     }
@@ -161,7 +162,7 @@ class AppIso {
     return cachedFileInfos.checksum === installData.isoSha256 ? cachedFileInfos.filepath : null;
   }
 
-  private downloadProgressCallback(downloadProgress: DownloadProgress) {
+  private downloadProgressCallback(downloadProgress: DownloadProgress): void {
     const installProgress: InstallProgress = {
       percent: downloadProgress.percent,
       eta: downloadProgress.eta,
@@ -173,17 +174,22 @@ class AppIso {
   }
 
   public async startInstall(installData: InstallData): Promise<void> {
-    appContext.allowAppClosing = false;
+    try {
+      appContext.allowAppClosing = false;
 
-    const cachedFile = this.getCachedFilepath(installData);
-    appLogger.debug('Cached file', cachedFile);
-    if (!cachedFile) {
-      await this.downloadIso(installData);
+      const cachedFile = this.getCachedFilepath(installData);
+      appLogger.debug('Cached file', cachedFile);
+      if (!cachedFile) {
+        await this.downloadIso(installData);
+      }
+
+      await this.writeWifiFile(installData);
+
+      this.flashDrive(installData);
+    } catch (error) {
+      appContext.allowAppClosing = true;
+      appLogger.error(`Iso install failed ${error}`);
     }
-
-    await this.writeWifiFile(installData);
-
-    this.flashDrive(installData);
   }
 
   public cancelInstall(): void {
@@ -214,7 +220,7 @@ class AppIso {
       };
       writeFile(installData.wifiFilePath, JSON.stringify(config), (error: Error) => {
         if (error) {
-          reject(`Error writing wifi file ${error?.message || 'unknown error'}`);
+          reject(new Error(`Error writing wifi file ${error?.message || 'unknown error'}`));
           return;
         }
 

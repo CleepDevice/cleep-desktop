@@ -56,7 +56,7 @@ export async function downloadFile(
       if (sha256) {
         const checksum = await generateSha256(tmpFilename);
         if (checksum !== sha256) {
-          reject('Invalid checksum');
+          reject(new Error('Invalid downloaded file checksum'));
           return;
         }
       }

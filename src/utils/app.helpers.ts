@@ -65,7 +65,7 @@ export function getError(error: Error): string {
   if (!error) {
     return 'Unknown error';
   }
-  return `${error?.name || 'Error'}: ${error?.message || 'no message'}`;
+  return `${error?.message || 'no error message'}`;
 }
 
 export function findMatches(pattern: RegExp, search: string, matches: string[][]) {

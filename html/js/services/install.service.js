@@ -47,7 +47,11 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
 
     self.onHandleInstallProgress = function(_event, installProgress) {
         Object.assign(self.installProgress, installProgress);
-        self.installing = !self.installProgress.terminated;
+        if(self.installProgress.terminated || self.installProgress.error) {
+            self.installing = false;
+        } else {
+            self.installing = true;
+        }
 
         if (!self.installing) {
             self.terminateInstall();
