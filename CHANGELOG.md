@@ -5,9 +5,11 @@
 ### Changed
 
 - Improve logging
-- Bump dependencies (electron23->29)
+- Bump dependencies (electron23->33)
 - Handle deprecation error on balena-cli
 - Update balena-cli version
+- Improve Cleepbus UI infos
+- Update github repo urls
 
 ### Fixed
 
@@ -15,11 +17,14 @@
 - Issue saving changelog
 - Fix macos CircleCi config
 - Fix bug deleting device in devices panel
+- Fix UI issue when iso download failed
 
 ### Added
 
 - Handle self-sign certificate
 - Handle Cleep device auth
+- Kill Cleepbus previous instances
+- Relaunch Cleepbus when it crashs
 
 ## [0.2.0] - 2022-09-08
 
