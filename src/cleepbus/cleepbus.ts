@@ -23,6 +23,8 @@ import {
   OnMessageBusPeerDisconnectedCallback,
   OnMessageBusUpdatingCallback,
 } from './message-bus.types';
+import find from 'find-process';
+import terminate from 'terminate';
 
 export const CLEEPBUS_DIR = path.join(app.getPath('userData'), 'cleepbus');
 const FILENAME_DARWIN = '-macos-';
@@ -48,16 +50,17 @@ export class Cleepbus {
   private cleepbusWs: WebSocket;
   private cleepbusProcess: ChildProcessByStdio<null, Readable, Readable>;
   private cleepbusStartupError: string;
+  private wsPort: number;
 
   constructor() {
     this.github = new Octokit();
   }
 
   public async start(): Promise<void> {
-    const wsPort = await getWsPort();
+    this.wsPort = await getWsPort();
 
-    this.launchWebsocketServer(wsPort);
-    this.launchCleepbus(wsPort);
+    this.launchWebsocketServer();
+    this.launchCleepbus();
   }
 
   public stop(gentleStop = false): void {
@@ -117,16 +120,19 @@ export class Cleepbus {
     this.messageResponseCallback = messageResponseCallback;
   }
 
-  private async launchCleepbus(wsPort: number): Promise<void> {
+  private async launchCleepbus(): Promise<void> {
     const cleepbusPath = this.getCleepbusPath();
     if (!this.checkCleepbusInstallation(cleepbusPath)) {
       return;
     }
 
+    // make sure previous install does not running
+    this.killCleepbusInstances();
+
     try {
       const debug = appSettings.get<boolean>('cleep.debug');
       const uuid = appSettings.get<string>('cleep.uuid');
-      const cleepbusArgs = [`--ws-port=${wsPort}`, `--uuid=${uuid}`];
+      const cleepbusArgs = [`--ws-port=${this.wsPort}`, `--uuid=${uuid}`];
       if (debug) {
         cleepbusArgs.push('--debug');
       }
@@ -143,6 +149,20 @@ export class Cleepbus {
     } catch (error) {
       this.cleepbusStartupError = 'Startup error';
       appLogger.error('Fatal error launching cleepbus', { error });
+    }
+  }
+
+  private async killCleepbusInstances(): Promise<void> {
+    try {
+      const processes = await find('name', 'cleepbus');
+      for (const process of processes) {
+        if (process.cmd.search('ws-port') < 0) {
+          continue;
+        }
+        terminate(process.pid);
+      }
+    } catch (error) {
+      appLogger.error('Unable to kill Cleepbus instance', { error: error.message });
     }
   }
 
@@ -176,9 +196,13 @@ export class Cleepbus {
       if (code !== 0) {
         appLogger.error(`Cleepbus exited with code "${code}"`);
         // error occured, display error to user before terminates application
-        const error = this.cleepbusStartupError || 'Unable to launch cleepbus';
+        const error = this.cleepbusStartupError || 'Cleepbus stopped';
         this.messageBusErrorCallback(error);
       }
+
+      // relaunch cleepbus
+      appLogger.info('Relaunching cleepbus');
+      this.launchCleepbus();
     }
   }
 
@@ -218,9 +242,9 @@ export class Cleepbus {
     appLogger.error(message, null, 'cleepbus');
   }
 
-  private launchWebsocketServer(wsPort: number): void {
-    appLogger.info(`Launching websocket server on port ${wsPort}`);
-    this.wsServer = new WebSocketServer({ host: '127.0.0.1', port: wsPort });
+  private launchWebsocketServer(): void {
+    appLogger.info(`Launching websocket server on port ${this.wsPort}`);
+    this.wsServer = new WebSocketServer({ host: '127.0.0.1', port: this.wsPort });
     this.wsServer.on('connection', (ws: WebSocket) => {
       appLogger.debug('WebsocketServer received new connection');
       this.initCleepbusWebsocket(ws);

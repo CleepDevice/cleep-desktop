@@ -55,8 +55,10 @@
         "electron-settings": "^4.0.4",
         "electron-updater": "^6.3.9",
         "extract-zip": "^2.0.1",
+        "find-process": "^1.4.7",
         "node-wifi": "^2.0.16",
         "progress-stream": "^2.0.0",
+        "terminate": "^2.8.0",
         "uuid4": "^2.0.3",
         "ws": "^8.18.0"
     },
