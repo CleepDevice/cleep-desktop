@@ -87,7 +87,11 @@ export class AppLogger {
     }
 
     const messageStr = `[${from}] ${message}`;
-    extra ? loggerCall(messageStr, extra) : loggerCall(messageStr);
+    if (extra) {
+      loggerCall(messageStr, extra);
+    } else {
+      loggerCall(messageStr);
+    }
   }
 
   private addIpcs() {

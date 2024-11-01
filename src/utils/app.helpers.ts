@@ -70,6 +70,9 @@ export function getError(error: Error): string {
 
 export function findMatches(pattern: RegExp, search: string, matches: string[][]) {
   const res = pattern.exec(search);
-  res && matches.push(res) && findMatches(pattern, search, matches);
+  if (res) {
+    matches.push(res);
+    findMatches(pattern, search, matches);
+  }
   return matches;
 }
