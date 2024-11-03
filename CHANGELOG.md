@@ -18,6 +18,7 @@
 - Fix macos CircleCi config
 - Fix bug deleting device in devices panel
 - Fix UI issue when iso download failed
+- Fix issu when wifi file not specified during flash
 
 ### Added
 

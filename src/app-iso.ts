@@ -233,7 +233,10 @@ class AppIso {
   private flashDrive(installData: InstallData): void {
     const extension = process.platform === 'win32' ? '.bat' : '.sh';
     const command = path.join(FLASHTOOL_DIR, 'flash' + extension);
-    const args = [FLASHTOOL_DIR, installData.drivePath, installData.isoPath, installData.wifiFilePath];
+    const args = [FLASHTOOL_DIR, installData.drivePath, installData.isoPath];
+    if (installData.wifiFilePath) {
+      args.push(installData.wifiFilePath);
+    }
 
     const installProgress: InstallProgress = {
       percent: 0,
