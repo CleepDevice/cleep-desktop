@@ -74,4 +74,11 @@
         </md-list>
     </md-dialog-content>
 
+    <md-dialog-actions>
+        <md-button ng-click="ctl.refreshIsos()" class="md-primary md-raised" ng-disabled="ctl.loading">
+            <md-icon md-svg-icon="refresh"></md-icon>
+            Refresh versions
+        </md-button>
+    </md-dialog-actions>
+
 </md-dialog>
