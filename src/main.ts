@@ -15,7 +15,9 @@ import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
 
-app.commandLine.appendSwitch('no-sandbox');
+if (!isDev) {
+  app.commandLine.appendSwitch('no-sandbox');
+}
 
 appSettings.configure(app);
 appContext.configure();
