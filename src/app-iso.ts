@@ -16,6 +16,7 @@ import { NotInstalledException } from './exceptions/not-installed.exception';
 import { appCache } from './app-cache';
 import { appContext } from './app-context';
 import { sendDataToAngularJs } from './utils/ui.helpers';
+import drivelist from 'drivelist';
 
 export interface WifiData {
   network: string;
@@ -124,7 +125,7 @@ class AppIso {
     if (!appUpdater.isFlashToolInstalled()) {
       throw new NotInstalledException('flash-tool');
     }
-    const drives = await balena.getDriveList();
+    const drives = await drivelist.list();
     appLogger.info('Found drives', drives);
 
     return drives;

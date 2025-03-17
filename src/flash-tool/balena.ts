@@ -147,6 +147,9 @@ export class Balena {
     }
   }
 
+  /**
+   * @deprecated prefer using drivelist.list()
+   */
   public async getDriveList(): Promise<Drive[]> {
     return new Promise((resolve, reject) => {
       const drives: Drive[] = [];
