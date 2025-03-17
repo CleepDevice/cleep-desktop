@@ -38,7 +38,7 @@
         "@typescript-eslint/parser": "^8.26.1",
         "concurrently": "^9.1.2",
         "copyfiles": "^2.4.1",
-        "electron": "35.0.1",
+        "electron": "^35.0.2",
         "electron-builder": "^25.1.8",
         "electron-reload": "^2.0.0-alpha.1",
         "eslint": "^9.22.0",
@@ -46,7 +46,7 @@
         "typescript": "^5.8.2"
     },
     "dependencies": {
-        "@electron/notarize": "^2.5.0",
+        "@electron/notarize": "^3.0.0",
         "@octokit/rest": "^21.1.1",
         "@sentry/electron": "^6.1.0",
         "axios": "^1.8.3",
