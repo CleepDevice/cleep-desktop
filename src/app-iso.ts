@@ -331,10 +331,10 @@ class AppIso {
         return { data: drives, error: false, flashToolInstalled: true };
       } catch (error) {
         if (error instanceof NotInstalledException) {
-          return { data: [], error: true, flashToolInstalled: true };
+          return { data: [], error: true, flashToolInstalled: false };
         }
         appLogger.error('Unable to get drives', { error });
-        return { data: [], error: true, flashToolInstalled: false };
+        return { data: [], error: true, flashToolInstalled: true };
       }
     });
 
