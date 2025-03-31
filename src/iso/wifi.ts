@@ -40,7 +40,7 @@ export class Wifi {
         if (error) {
           reject(error);
         }
-        resolve(connections.length > 0);
+        resolve(connections?.length > 0);
       });
     });
   }
