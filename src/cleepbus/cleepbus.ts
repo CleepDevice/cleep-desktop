@@ -51,10 +51,7 @@ export class Cleepbus {
   private cleepbusProcess: ChildProcessByStdio<null, Readable, Readable>;
   private cleepbusStartupError: string;
   private wsPort: number;
-
-  constructor() {
-    this.github = new Octokit();
-  }
+  private forcedStop = false;
 
   public async start(): Promise<void> {
     this.wsPort = await getWsPort();
@@ -63,11 +60,11 @@ export class Cleepbus {
     this.launchCleepbus();
   }
 
-  public stop(gentleStop = false): void {
+  public stop(): void {
+    // mark as forced stopped to avoid watchdog to relaunch cleepbus
+    this.forcedStop = true;
+
     if (this.cleepbusProcess) {
-      if (gentleStop) {
-        this.sendMessage(CLEEPBUS_STOP_MESSAGE);
-      } else {
         this.cleepbusProcess.kill('SIGTERM');
       }
     }
@@ -121,6 +118,8 @@ export class Cleepbus {
   }
 
   private async launchCleepbus(): Promise<void> {
+    this.forcedStop = false;
+
     const cleepbusPath = this.getCleepbusPath();
     if (!this.checkCleepbusInstallation(cleepbusPath)) {
       return;
@@ -191,7 +190,11 @@ export class Cleepbus {
   }
 
   private handleCleepbusProcessClosed(code: number) {
-    if (!appContext.closingApplication) {
+    if (appContext.closingApplication || this.forcedStop) {
+      appLogger.debug('Cleepbus voluntary stopped. Do not relaunch it');
+      return;
+    }
+
       appLogger.debug('Cleepbus stopped');
       if (code !== 0) {
         appLogger.error(`Cleepbus exited with code "${code}"`);
@@ -316,7 +319,7 @@ export class Cleepbus {
 
     try {
       this.messageBusUpdatingCallback(true);
-      this.stop(true);
+      this.stop();
 
       const downloadUrl = release[platform as keyof typeof release as 'darwin' | 'linux' | 'win32'].downloadUrl;
       const archivePath = await downloadFile(downloadUrl, this.downloadProgressCallback);
@@ -325,6 +328,7 @@ export class Cleepbus {
       appSettings.set('cleepbus.version', release.version);
       this.downloadProgressCallback({ terminated: true });
 
+      appLogger.info(`Cleepbus v${release.version}updated successfully`);
       this.start();
     } catch (error) {
       appLogger.error(`Error installing Cleepbus: ${error}`);
