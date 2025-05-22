@@ -125,6 +125,7 @@ export class AppUpdater {
 
     // dummy content when autoupdate disabled
     return {
+      isUpdateAvailable: false,
       updateInfo: {
         version: appContext.version,
         releaseNotes: '',
