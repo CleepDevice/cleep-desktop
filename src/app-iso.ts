@@ -4,7 +4,7 @@ import { appSettings } from './app-settings';
 import { CleepOs } from './iso/cleepos';
 import { RaspiOs, RaspiosLatestRelease } from './iso/raspios';
 import { Wifi, WifiNetwork } from './iso/wifi';
-import { ReleaseInfo } from './iso/utils';
+import { IIsoReleaseInfo } from './iso/utils';
 import { balena, Drive } from './flash-tool/balena';
 import { getError } from './utils/app.helpers';
 import path from 'path';
@@ -61,7 +61,7 @@ class AppIso {
   private cleepos: CleepOs;
   private wifi: Wifi;
   private isosReleases: {
-    cleepos: ReleaseInfo;
+    cleepos: IIsoReleaseInfo;
     raspios: RaspiosLatestRelease;
   } = { cleepos: null, raspios: null };
   private window: BrowserWindow;
@@ -111,7 +111,7 @@ class AppIso {
     }
   }
 
-  public async getLatestCleepos(): Promise<ReleaseInfo> {
+  public async getLatestCleepos(): Promise<IIsoReleaseInfo> {
     if (this.isosReleases.cleepos) {
       return this.isosReleases.cleepos;
     }
@@ -298,7 +298,8 @@ class AppIso {
       try {
         const releases = await Promise.all([this.getLatestRaspios(), this.getLatestCleepos()]);
         const [raspios, cleepos] = releases;
-        return { data: { raspios, cleepos }, error: false };
+        const error = raspios.error || cleepos.error;
+        return { data: { raspios, cleepos }, error };
       } catch (error) {
         appLogger.error('Unable to get isos', { error });
         return { data: {}, error: true };

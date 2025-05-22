@@ -1,21 +1,14 @@
-import { Octokit } from '@octokit/rest';
-import { appLogger } from '../app-logger';
-import { getChecksumFromUrl, getFilenameFromUrl, ReleaseInfo } from './utils';
+import { getChecksumFromUrl, getFilenameFromUrl, IIsoReleaseInfo } from './utils';
+import { getLatestRelease, IGithubRepo } from '../utils/github';
 
 export class CleepOs {
-  private readonly CLEEPOS_REPO = { owner: 'CleepDevice', repo: 'cleep-os' };
-  private github: Octokit;
+  private readonly CLEEPOS_REPO: IGithubRepo = { owner: 'CleepDevice', repo: 'cleep-os' };
 
-  constructor() {
-    this.github = new Octokit();
-  }
+  public async getLatestRelease(): Promise<IIsoReleaseInfo> {
+    const latestRelease = await getLatestRelease(this.CLEEPOS_REPO);
 
-  public async getLatestRelease(): Promise<ReleaseInfo> {
-    const latestRelease = await this.github.rest.repos.getLatestRelease(this.CLEEPOS_REPO);
-    appLogger.debug('Cleepos Github result', JSON.stringify(latestRelease.data));
-
-    const isoAsset = latestRelease.data.assets.find((asset) => asset.name.indexOf('.zip') >= 0);
-    const checksumAsset = latestRelease.data.assets.find((asset) => asset.name.indexOf('.sha256') >= 0);
+    const isoAsset = latestRelease.assets.find((asset) => asset.name.indexOf('.zip') >= 0);
+    const checksumAsset = latestRelease.assets.find((asset) => asset.name.indexOf('.sha256') >= 0);
     const sha256 = await getChecksumFromUrl(checksumAsset?.browser_download_url);
 
     return {
@@ -26,6 +19,7 @@ export class CleepOs {
       date: new Date(isoAsset?.updated_at),
       sha256,
       category: 'cleepos',
+      error: latestRelease.error,
     };
   }
 

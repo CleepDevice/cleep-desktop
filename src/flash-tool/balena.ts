@@ -1,4 +1,3 @@
-import { Octokit } from '@octokit/rest';
 import { appSettings } from '../app-settings';
 import { appLogger } from '../app-logger';
 import fs from 'fs';
@@ -9,7 +8,7 @@ import { exec } from 'child_process';
 import { OnUpdateAvailableCallback } from '../app-updater';
 import { FlashOutput, FLASHTOOL_DIR } from '../app-iso';
 import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
-import { GithubRelease } from '../utils/github.types';
+import { getLatestRelease, IGithubRepo, IRelease } from '../utils/github';
 
 const FILENAME_DARWIN = '-darwin-';
 const FILENAME_LINUX = '-linux-';
@@ -33,14 +32,9 @@ export interface Drive {
 }
 
 export class Balena {
-  private readonly BALENA_REPO = { owner: 'CleepDevice', repo: 'cleep-desktop-flashtool' };
-  private github: Octokit;
+  private readonly BALENA_REPO: IGithubRepo = { owner: 'CleepDevice', repo: 'cleep-desktop-flashtool' };
   private updateAvailableCallback: OnUpdateAvailableCallback;
   private downloadProgressCallback: OnDownloadProgressCallback;
-
-  constructor() {
-    this.github = new Octokit();
-  }
 
   public async checkForUpdates(force = false): Promise<boolean> {
     const latestBalenaRelease = await this.getLatestRelease();
@@ -53,6 +47,7 @@ export class Balena {
       this.updateAvailableCallback({
         version: latestBalenaRelease.version,
         percent: 0,
+        error: latestBalenaRelease.error,
       });
       this.install(latestBalenaRelease);
       return true;
@@ -70,7 +65,7 @@ export class Balena {
     this.downloadProgressCallback = downloadProgressCallback;
   }
 
-  public async install(release: GithubRelease): Promise<boolean> {
+  public async install(release: IRelease): Promise<boolean> {
     const platform = String(process.platform);
     if (Object.keys(release).findIndex((key) => key === platform) === -1) {
       appLogger.error(`No flash-tool version for platform ${platform}`);
@@ -99,16 +94,15 @@ export class Balena {
     appLogger.info('Flash-tool extracted successfully');
   }
 
-  public async getLatestRelease(): Promise<GithubRelease> {
-    const latestRelease = await this.github.rest.repos.getLatestRelease(this.BALENA_REPO);
-    appLogger.debug(JSON.stringify(latestRelease.data));
+  public async getLatestRelease(): Promise<IRelease> {
+    const latestRelease = await getLatestRelease(this.BALENA_REPO);
 
-    const darwinAsset = latestRelease.data.assets.find((asset) => asset.name.indexOf(FILENAME_DARWIN) >= 0);
-    const linuxAsset = latestRelease.data.assets.find((asset) => asset.name.indexOf(FILENAME_LINUX) >= 0);
-    const windowsAsset = latestRelease.data.assets.find((asset) => asset.name.indexOf(FILENAME_WINDOWS) >= 0);
+    const darwinAsset = latestRelease.assets.find((asset) => asset.name.indexOf(FILENAME_DARWIN) >= 0);
+    const linuxAsset = latestRelease.assets.find((asset) => asset.name.indexOf(FILENAME_LINUX) >= 0);
+    const windowsAsset = latestRelease.assets.find((asset) => asset.name.indexOf(FILENAME_WINDOWS) >= 0);
 
-    const release: GithubRelease = {
-      version: latestRelease.data.tag_name.replace('v', ''),
+    const release: IRelease = {
+      version: latestRelease.tag.replace('v', ''),
       darwin: {
         downloadUrl: darwinAsset?.browser_download_url,
         filename: darwinAsset?.name,
@@ -124,6 +118,7 @@ export class Balena {
         filename: windowsAsset?.name,
         size: windowsAsset?.size,
       },
+      error: latestRelease.error,
     };
     return release;
   }
