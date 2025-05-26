@@ -5,7 +5,7 @@ import path from 'path';
 import extract from 'extract-zip';
 import { DriveUnit, findMatches, getError } from '../utils/app.helpers';
 import { exec } from 'child_process';
-import { OnUpdateAvailableCallback } from '../app-updater';
+import { IToolUpdateStatus, OnUpdateAvailableCallback } from '../app-updater';
 import { FlashOutput, FLASHTOOL_DIR } from '../app-iso';
 import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
 import { getLatestRelease, IGithubRepo, IRelease } from '../utils/github';
@@ -36,24 +36,23 @@ export class Balena {
   private updateAvailableCallback: OnUpdateAvailableCallback;
   private downloadProgressCallback: OnDownloadProgressCallback;
 
-  public async checkForUpdates(force = false): Promise<boolean> {
+  public async checkForUpdates(force = false): Promise<IToolUpdateStatus> {
     const latestBalenaRelease = await this.getLatestRelease();
     appLogger.debug('Latest Flash-tool release', { release: latestBalenaRelease });
     const currentBalenaVersion = this.getInstalledVersion();
     const balenaBinPath = this.getBalenaBinPath();
 
+    if (latestBalenaRelease.error) {
+      return { updated: false, error: latestBalenaRelease.error };
+    }
+
     if (latestBalenaRelease.version !== currentBalenaVersion || force || !fs.existsSync(balenaBinPath)) {
       appLogger.info('Flash-tool update available');
-      this.updateAvailableCallback({
-        version: latestBalenaRelease.version,
-        percent: 0,
-        error: latestBalenaRelease.error,
-      });
       this.install(latestBalenaRelease);
-      return true;
+      return { updated: true };
     } else {
       appLogger.info('No flash-tool update available');
-      return false;
+      return { updated: false };
     }
   }
 
@@ -73,6 +72,11 @@ export class Balena {
     }
 
     try {
+      this.updateAvailableCallback({
+        version: release.version,
+        percent: 0,
+      });
+
       const downloadUrl = release[platform as keyof typeof release as 'darwin' | 'linux' | 'win32'].downloadUrl;
       const archivePath = await downloadFile(downloadUrl, this.downloadProgressCallback);
       await this.unzipArchive(archivePath);

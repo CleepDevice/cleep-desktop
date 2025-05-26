@@ -1,6 +1,5 @@
 import { Octokit } from '@octokit/rest';
 import { appLogger } from '../app-logger';
-import { getError } from '../utils/app.helpers';
 
 export interface IGithubRepo {
   owner: string;
@@ -57,7 +56,7 @@ export async function getLatestRelease(repo: IGithubRepo): Promise<IGithubReleas
     return {
       assets: [],
       tag: '',
-      error: getError(error),
+      error: 'Unable to request Github',
     };
   }
 }

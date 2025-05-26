@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
-.service('updateService', ['$rootScope', '$timeout', 'loggerService', 'tasksPanelService', 'electronService',
-function($rootScope, $timeout, logger, tasksPanelService, electron) {
+.service('updateService', ['$rootScope', 'loggerService', 'tasksPanelService', 'electronService', 'toolsService',
+function($rootScope, logger, tasksPanelService, electron, tools) {
     var self = this;
     self.taskUpdatePanelId = null;
     self.flashToolUpdate = {};
@@ -13,6 +13,7 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     self.softwareVersions = {
         cleepDesktop: null,
         flashTool: null,
+        cleepbus: null,
     }
     self.lastUpdateCheck = 0;
     self.changelog = '';
@@ -36,7 +37,7 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
             .then((softwareVersions) => {
                 logger.debug('Software versions', softwareVersions);
                 self.lastUpdateCheck = softwareVersions.lastUpdateCheck;
-                Object.assign(self.softwareVersions, softwareVersions);
+                tools.updateObject(self.softwareVersions, softwareVersions);
             });
     }
 
@@ -77,12 +78,12 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     self.onCleepDesktopUpdateCallback =  function(_event, updateData) {
         self.openUpdateTaskPanel();
 
-        Object.assign(self.cleepDesktopUpdate, updateData);
+        tools.updateObject(self.cleepDesktopUpdate, updateData);
 
         if (self.flashToolUpdate.terminated && self.cleepbusUpdate.terminated) {
             self.restartRequired = true;
-            self.clearObject(self.flashToolUpdate);
-            self.clearObject(self.cleepbusUpdate);
+            tools.clearObject(self.flashToolUpdate);
+            tools.clearObject(self.cleepbusUpdate);
             self.closeUpdateTaskPanel();
             self.updateSofwareVersions();
         }
@@ -91,10 +92,11 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     self.onFlashToolUpdateCallback = function(_event, updateData) {
         self.openUpdateTaskPanel();
 
-        Object.assign(self.flashToolUpdate, updateData);
+        tools.updateObject(self.flashToolUpdate, updateData);
+        console.log('+++++++', updateData, self.flashToolUpdate);
 
         if (self.flashToolUpdate.terminated) {
-            self.clearObject(self.flashToolUpdate);
+            tools.clearObject(self.flashToolUpdate);
             self.closeUpdateTaskPanel();
             self.updateSofwareVersions();
         }
@@ -103,10 +105,10 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
     self.onCleepbusUpdateCallback = function(_event, updateData) {
         self.openUpdateTaskPanel();
         
-        Object.assign(self.cleepbusUpdate, updateData);
+        tools.updateObject(self.cleepbusUpdate, updateData);
 
         if (self.cleepbusUpdate.terminated) {
-            self.clearObject(self.cleepbusUpdate);
+            tools.clearObject(self.cleepbusUpdate);
             self.closeUpdateTaskPanel();
             self.updateSofwareVersions();
         }
@@ -121,15 +123,15 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
                 var hasUpdate = false;
                 if (updateStatus.cleepDesktop) {
                     hasUpdate = true;
-                    Object.assign(self.cleepDesktopUpdate, {percent: 0, error: ''});
+                    tools.updateObject(self.cleepDesktopUpdate, {percent:0, error: ''});
                 }
-                if (updateStatus.flashTool) {
+                if (updateStatus.flashTool.update) {
                     hasUpdate = true;
-                    Object.assign(self.flashToolUpdate, {percent: 0, error: ''});
+                    tools.updateObject(self.flashToolUpdate, {percent:0, error: ''});
                 }
-                if (updateStatus.cleepbus) {
+                if (updateStatus.cleepbus.update) {
                     hasUpdate = true;
-                    Object.assign(self.cleepbusUpdate, {percent: 0, error: ''});
+                    tools.updateObject(self.cleepbusUpdate, {percent:0, error: ''});
                 }
         
                 if (hasUpdate) {
@@ -139,10 +141,4 @@ function($rootScope, $timeout, logger, tasksPanelService, electron) {
                 return hasUpdate;
             });
     };
-
-    self.clearObject = function(obj) {
-        for (var key in obj) {
-            delete obj[key];
-        }
-    }
 }]);

@@ -10,11 +10,16 @@ import isDev from 'electron-is-dev';
 import { cleepbus, Cleepbus } from './cleepbus/cleepbus';
 import { sendDataToAngularJs } from './utils/ui.helpers';
 
+export interface IToolUpdateStatus {
+  updated: boolean;
+  error?: string;
+}
+
 export interface UpdateStatus {
   lastUpdateCheck: number;
   cleepDesktop: boolean;
-  flashTool: boolean;
-  cleepbus: boolean;
+  flashTool: IToolUpdateStatus;
+  cleepbus: IToolUpdateStatus;
 }
 
 export type OnUpdateAvailableCallback = (updateData: UpdateData) => void;
@@ -87,8 +92,8 @@ export class AppUpdater {
       return {
         lastUpdateCheck,
         cleepDesktop: false,
-        flashTool: false,
-        cleepbus: false,
+        flashTool: { updated: false },
+        cleepbus: { updated: false },
       };
     }
 
@@ -97,7 +102,19 @@ export class AppUpdater {
       ? cleepDesktopUpdateCheckResult?.updateInfo?.version !== appContext.version
       : false;
     const flashToolUpdate = await this.flashTool.checkForUpdates();
+    if (flashToolUpdate.error) {
+      sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', {
+        percent: 100,
+        error: flashToolUpdate.error,
+      });
+    }
     const cleepbusUpdate = await this.messageBus.checkForUpdates();
+    if (cleepbusUpdate.error) {
+      sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', {
+        percent: 100,
+        error: cleepbusUpdate.error,
+      });
+    }
     appLogger.debug('Update results', { cleepDesktopUpdate, flashToolUpdate, cleepbusUpdate });
 
     appSettings.set('cleep.lastupdatecheck', lastUpdateCheck);

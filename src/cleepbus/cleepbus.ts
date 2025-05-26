@@ -1,4 +1,4 @@
-import { OnUpdateAvailableCallback } from '../app-updater';
+import { IToolUpdateStatus, OnUpdateAvailableCallback } from '../app-updater';
 import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
 import { appLogger } from '../app-logger';
 import path from 'path';
@@ -69,7 +69,7 @@ export class Cleepbus {
     }
   }
 
-  public async checkForUpdates(force = false): Promise<boolean> {
+  public async checkForUpdates(force = false): Promise<IToolUpdateStatus> {
     const latestCleepbusRelease = await this.getLatestRelease();
     const currentCleepbusVersion = this.getInstalledVersion();
     const cleepbusBinPath = this.getCleepbusBinPath();
@@ -80,20 +80,16 @@ export class Cleepbus {
         percent: 0,
         error: latestCleepbusRelease.error,
       });
-      return false;
+      return { updated: false, error: latestCleepbusRelease.error };
     }
 
     if (latestCleepbusRelease.version !== currentCleepbusVersion || force || !fs.existsSync(cleepbusBinPath)) {
       appLogger.info('Cleepbus update available');
-      this.updateAvailableCallback({
-        version: latestCleepbusRelease.version,
-        percent: 0,
-      });
       this.install(latestCleepbusRelease);
-      return true;
+      return { updated: true };
     } else {
       appLogger.info('No Cleepbus update available');
-      return false;
+      return { updated: false };
     }
   }
 
@@ -323,6 +319,11 @@ export class Cleepbus {
     try {
       this.messageBusUpdatingCallback(true);
       this.stop();
+
+      this.updateAvailableCallback({
+        version: release.version,
+        percent: 0,
+      });
 
       const downloadUrl = release[platform as keyof typeof release as 'darwin' | 'linux' | 'win32'].downloadUrl;
       const archivePath = await downloadFile(downloadUrl, this.downloadProgressCallback);
