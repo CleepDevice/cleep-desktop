@@ -16,7 +16,7 @@ import { NotInstalledException } from './exceptions/not-installed.exception';
 import { appCache } from './app-cache';
 import { appContext } from './app-context';
 import { sendDataToAngularJs } from './utils/ui.helpers';
-import drivelist from 'drivelist';
+import * as drivelist from 'drivelist';
 
 export interface WifiData {
   network: string;
@@ -125,8 +125,26 @@ class AppIso {
     if (!appUpdater.isFlashToolInstalled()) {
       throw new NotInstalledException('flash-tool');
     }
-    const drives = await drivelist.list();
-    appLogger.info('Found drives', drives);
+
+    const rawDrives = await drivelist.list();
+    appLogger.info('Found drives', rawDrives);
+
+    const drives: Drive[] = [];
+    for (const rawDrive of rawDrives) {
+      if (rawDrive.busType === 'SATA') {
+        // try to keep only volatile drive
+        continue;
+      } else if (!rawDrive.size) {
+        // invalid size
+        continue;
+      }
+
+      drives.push({
+        device: rawDrive.device,
+        description: rawDrive.description,
+        size: rawDrive.size,
+      });
+    }
 
     return drives;
   }

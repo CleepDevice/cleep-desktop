@@ -30,7 +30,7 @@ export async function downloadFile(
 
   abordDownloads[url] = new AbortController();
 
-  appLogger.debug(`Download flash-tool from ${url}`);
+  appLogger.debug(`Download file from ${url}`);
   const download = await axios({
     url,
     method: 'GET',
