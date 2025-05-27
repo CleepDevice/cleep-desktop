@@ -5,7 +5,6 @@ import { CleepOs } from './iso/cleepos';
 import { RaspiOs, RaspiosLatestRelease } from './iso/raspios';
 import { Wifi, WifiNetwork } from './iso/wifi';
 import { IIsoReleaseInfo } from './iso/utils';
-import { balena, Drive } from './flash-tool/balena';
 import { getError } from './utils/app.helpers';
 import path from 'path';
 import { Sudo, SudoOptions } from './sudo/sudo';
@@ -17,6 +16,8 @@ import { appCache } from './app-cache';
 import { appContext } from './app-context';
 import { sendDataToAngularJs } from './utils/ui.helpers';
 import * as drivelist from 'drivelist';
+import { rpiImager } from './flash-tool/rpi-imager';
+import { Drive } from './flash-tool/flashtool.interface';
 
 export interface WifiData {
   network: string;
@@ -91,8 +92,10 @@ class AppIso {
   }
 
   public async getLatestRaspios(): Promise<RaspiosLatestRelease> {
+    appLogger.info('Getting latest RaspiOs release');
     const isoRaspios = appSettings.get<boolean>('cleep.isoraspios');
     if (!isoRaspios) {
+      appLogger.debug('RaspiOs release disabled from config');
       return;
     }
 
@@ -112,7 +115,9 @@ class AppIso {
   }
 
   public async getLatestCleepos(): Promise<IIsoReleaseInfo> {
+    appLogger.info('Getting latest CleepOs release');
     if (this.isosReleases.cleepos) {
+      appLogger.debug('CleepOs release already searched');
       return this.isosReleases.cleepos;
     }
 
@@ -131,7 +136,9 @@ class AppIso {
 
     const drives: Drive[] = [];
     for (const rawDrive of rawDrives) {
-      if (rawDrive.busType === 'SATA') {
+      if (rawDrive.error) {
+        continue;
+      } else if (!rawDrive.isUSB && !rawDrive.isCard) {
         // try to keep only volatile drive
         continue;
       } else if (!rawDrive.size) {
@@ -159,8 +166,8 @@ class AppIso {
       );
       this.downloadProgressCallback({ percent: 100, terminated: true, eta: 0 });
 
-      // cache file
       installData.isoPath = appCache.cacheFile(isoPath, installData.isoSha256, installData.isoFilename);
+
       appLogger.info(`Iso downloaded to ${installData.isoPath}`);
     } catch (error) {
       appLogger.error(`Error downloading iso: ${error}`);
@@ -198,10 +205,11 @@ class AppIso {
 
       const cachedFile = this.getCachedFilepath(installData);
       appLogger.debug('Cached file', cachedFile);
-      if (!cachedFile) {
+      if (installData.isoUrl.startsWith('file://')) {
+        installData.isoPath = installData.isoUrl.replace('file://', '');
+      } else if (!cachedFile) {
         await this.downloadIso(installData);
       }
-
       await this.writeWifiFile(installData);
 
       this.flashDrive(installData);
@@ -291,8 +299,11 @@ class AppIso {
   }
 
   private flashStdoutCallback(stdout: string) {
-    const flashOutput = balena.parseFlashOutput(stdout);
-    if (!flashOutput) return;
+    appLogger.debug('Drive flash stdout', stdout);
+    const flashOutput = rpiImager.parseFlashOutput(stdout);
+    if (!flashOutput) {
+      return;
+    }
 
     const installProgress: InstallProgress = {
       percent: flashOutput.percent,
@@ -316,7 +327,7 @@ class AppIso {
       try {
         const releases = await Promise.all([this.getLatestRaspios(), this.getLatestCleepos()]);
         const [raspios, cleepos] = releases;
-        const error = raspios.error || cleepos.error;
+        const error = raspios?.error || cleepos?.error;
         return { data: { raspios, cleepos }, error };
       } catch (error) {
         appLogger.error('Unable to get isos', { error });

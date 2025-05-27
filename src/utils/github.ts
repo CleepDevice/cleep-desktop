@@ -44,6 +44,7 @@ export interface IRelease {
 
 export async function getLatestRelease(repo: IGithubRepo): Promise<IGithubRelease> {
   try {
+    appLogger.debug(`Getting latest release for repo ${repo.owner}:${repo.repo}`);
     const latestRelease = await github.rest.repos.getLatestRelease({ owner: repo.owner, repo: repo.repo });
     appLogger.debug(JSON.stringify(latestRelease.data));
 

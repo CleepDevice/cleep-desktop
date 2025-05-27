@@ -9,6 +9,7 @@ import { IToolUpdateStatus, OnUpdateAvailableCallback } from '../app-updater';
 import { FlashOutput, FLASHTOOL_DIR } from '../app-iso';
 import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
 import { getLatestRelease, IGithubRepo, IRelease } from '../utils/github';
+import { Drive } from './flashtool.interface';
 
 const FILENAME_DARWIN = '-darwin-';
 const FILENAME_LINUX = '-linux-';
@@ -24,12 +25,6 @@ const UNITS: DriveUnit[] = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'];
 
 const BALENA_FLASH_PATTERN = /.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)/gmu;
 const BALENA_ETA_PATTERN = /(\d+)([hms])/gmu;
-
-export interface Drive {
-  size: number;
-  description: string;
-  device: string;
-}
 
 export class Balena {
   private readonly BALENA_REPO: IGithubRepo = { owner: 'CleepDevice', repo: 'cleep-desktop-flashtool' };

@@ -17,12 +17,6 @@ const RPIIMAGER_LINUX_BIN = 'rpi-imager';
 const RPIIMAGER_WINDOWS_BIN = 'rpi-imager.exe';
 const RPIIMAGER_FLASH_PATTERN = /\s*(Writing|Verifying):\s*\[.*\]\s*(\d+)\s*/gmu;
 
-export interface Drive {
-  size: number;
-  description: string;
-  device: string;
-}
-
 export class RpiImager {
   private readonly FLASHTOOL_REPO: IGithubRepo = { owner: 'CleepDevice', repo: 'cleep-desktop-flashtool' };
   private updateAvailableCallback: OnUpdateAvailableCallback;
