@@ -75,5 +75,11 @@ echo Build result in dist/ folder
 cd dist
 dir
 
+goto :done
+
 :error
 echo ===== Error occured see above =====
+exit /b 1
+
+:done
+echo ===== Success =====

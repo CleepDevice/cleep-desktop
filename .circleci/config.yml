@@ -106,8 +106,6 @@ workflows:
               ignore: /.*/
       - build-windows:
           filters:
-            tags:
-              only: /^v.*-rc.*/
             branches:
               only: master
   linux:
@@ -120,8 +118,6 @@ workflows:
               ignore: /.*/
       - build-linux:
           filters:
-            tags:
-              only: /^v.*-rc.*/
             branches:
               only: master
   macos:
@@ -134,7 +130,5 @@ workflows:
               ignore: /.*/
       - build-macos:
           filters:
-            tags:
-              only: /^v.*-rc.*/
             branches:
               only: master
