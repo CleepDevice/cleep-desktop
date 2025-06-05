@@ -84,7 +84,7 @@ jobs:
   publish-macos:
     macos:
       xcode: 16.3.0
-    resource_class: macos.x86.medium.gen2
+    resource_class: macos.m1.medium.gen1
     steps:
       - run:
           name: Installing node
