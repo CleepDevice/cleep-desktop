@@ -5,7 +5,6 @@ import { appLogger } from './app-logger';
 import { appContext } from './app-context';
 import { getError } from './utils/app.helpers';
 import { appSettings } from './app-settings';
-import isDev from 'electron-is-dev';
 import { cleepbus, Cleepbus } from './cleepbus/cleepbus';
 import { sendDataToAngularJs } from './utils/ui.helpers';
 import { RpiImager, rpiImager } from './flash-tool/rpi-imager';
@@ -87,7 +86,7 @@ export class AppUpdater {
 
   public async checkForUpdates(updateMode: CheckForUpdateMode): Promise<UpdateStatus> {
     const lastUpdateCheck = Math.round(new Date().getTime() / 1000);
-    if (isDev && updateMode === 'auto') {
+    if (appContext.isDev && updateMode === 'auto') {
       appLogger.debug('Auto update is disabled during dev');
       return {
         lastUpdateCheck,

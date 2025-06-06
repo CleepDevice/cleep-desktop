@@ -1,5 +1,4 @@
 import { app, ipcMain } from 'electron';
-import isDev from 'electron-is-dev';
 import { appLogger } from './app-logger';
 import path from 'path';
 import fs from 'fs';
@@ -14,10 +13,11 @@ class AppContext {
   public version: string;
   public changelog: string;
   public crashReportEnabled = false;
+  public readonly isDev = app.isPackaged;
 
   constructor() {
     this.version = app.getVersion();
-    if (isDev) {
+    if (this.isDev) {
       this.version += '-dev';
     }
   }
@@ -72,7 +72,7 @@ class AppContext {
   }
 
   private configureCrashReport(): void {
-    if (isDev) {
+    if (this.isDev) {
       this.crashReportEnabled = false;
       appLogger.info('Crash report disabled during development');
       return;

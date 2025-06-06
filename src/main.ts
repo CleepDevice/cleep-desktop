@@ -6,7 +6,6 @@ import { parseArgs } from './utils/app.helpers';
 import { appLogger } from './app-logger';
 import { appUpdater } from './app-updater';
 import { appFileDownload } from './app-file-download';
-import isDev from 'electron-is-dev';
 import { appIso } from './app-iso';
 import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
@@ -18,7 +17,7 @@ electronReload(__dirname, {});
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
 
-if (!isDev) {
+if (!appContext.isDev) {
   app.commandLine.appendSwitch('no-sandbox');
 }
 
@@ -91,12 +90,12 @@ app.on('activate', function () {
 });
 
 app.on('ready', async function () {
-  appLogger.info(`========== cleep-desktop started ${isDev ? '[DEV MODE]' : ''}==========`);
+  appLogger.info(`========== cleep-desktop started ${appContext.isDev ? '[DEV MODE]' : ''}==========`);
   appLogger.info('Platform: ' + process.platform);
   const display = screen.getPrimaryDisplay();
   appLogger.info('Display: ' + display.size.width + 'x' + display.size.height);
   appLogger.info('Version: ' + appContext.version);
-  if (isDev) {
+  if (appContext.isDev) {
     appLogger.info('App dir: ' + app.getPath('userData'));
     appLogger.info('Logs dir: ' + app.getPath('logs'));
     appLogger.info('Temp dir: ' + app.getPath('temp'));

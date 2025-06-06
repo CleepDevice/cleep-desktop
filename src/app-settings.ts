@@ -1,8 +1,8 @@
 import { App, ipcMain } from 'electron';
 import settings from 'electron-settings';
-import isDev from 'electron-is-dev';
 import { appLogger } from './app-logger';
 import uuid4 from 'uuid4';
+import { appContext } from './app-context';
 
 const DEFAULT_SETTINGS: {
   [k: string]: string | number | boolean | { [k: string]: string };
@@ -112,7 +112,7 @@ export class AppSettings {
 
   private checkAndFixConfig(version: string) {
     // cleep section
-    if (isDev) {
+    if (appContext.isDev) {
       version += 'dev';
     }
     settings.setSync('cleep.version', version);
@@ -128,11 +128,11 @@ export class AppSettings {
     if (!settings.hasSync('cleep.debug')) {
       settings.setSync('cleep.debug', DEFAULT_SETTINGS.debug);
     }
-    settings.setSync('cleep.isdev', isDev);
+    settings.setSync('cleep.isdev', appContext.isDev);
     if (!settings.hasSync('cleep.crashreport')) {
       settings.setSync('cleep.crashreport', DEFAULT_SETTINGS.crashReport);
     }
-    if (isDev) {
+    if (appContext.isDev) {
       settings.setSync('cleep.crashreport', false);
     }
     if (!settings.hasSync('cleep.uuid')) {

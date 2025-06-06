@@ -1,7 +1,7 @@
 import { LoggerLevel, LoggerLevelEnum } from '../app-logger';
 import detectPort from 'detect-port';
 import { appSettings } from '../app-settings';
-import isDev from 'electron-is-dev';
+import { appContext } from '../app-context';
 
 export interface CommandLineArgs {
   coreDisabled: boolean;
@@ -50,7 +50,7 @@ export function parseArgs(argv: string[]): CommandLineArgs {
 }
 
 export async function getWsPort(): Promise<number> {
-  if (isDev) {
+  if (appContext.isDev) {
     // use static port from config
     return appSettings.get<number>('remote.wsport');
   }

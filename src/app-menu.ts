@@ -1,5 +1,5 @@
 import { app, BrowserWindow, Menu, MenuItemConstructorOptions } from 'electron';
-import isDev from 'electron-is-dev';
+import { appContext } from './app-context';
 
 export function createAppMenu(window: BrowserWindow): void {
   const subMenuFile: MenuItemConstructorOptions = {
@@ -107,7 +107,7 @@ export function createAppMenu(window: BrowserWindow): void {
     subMenuFile,
     ...(isMac ? [subMenuEdit] : []),
     subMenuHelp,
-    ...(isDev ? [subMenuView] : []),
+    ...(appContext.isDev ? [subMenuView] : []),
   ];
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);

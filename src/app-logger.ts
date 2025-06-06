@@ -1,9 +1,9 @@
 import { app, ipcMain, shell } from 'electron';
 import logger from 'electron-log';
-import isDev from 'electron-is-dev';
 import { CommandLineArgs } from './utils/app.helpers';
 import { appSettings } from './app-settings';
 import path from 'path';
+import { appContext } from './app-context';
 
 export enum LoggerLevelEnum {
   'no' = 'no',
@@ -31,7 +31,7 @@ export class AppLogger {
   }
 
   public setLogLevel(args: CommandLineArgs): void {
-    if (isDev) {
+    if (appContext.isDev) {
       // force debug during developments
       logger.transports.console.level = 'debug';
       logger.transports.file.level = 'debug';
@@ -110,11 +110,11 @@ export class AppLogger {
   }
 
   private initConsoleLogging(debugEnabled: boolean): void {
-    logger.transports.console.level = isDev || debugEnabled ? 'debug' : 'info';
+    logger.transports.console.level = appContext.isDev || debugEnabled ? 'debug' : 'info';
   }
 
   private initFileLogging(debugEnabled: boolean): void {
-    logger.transports.file.level = isDev || debugEnabled ? 'debug' : 'info';
+    logger.transports.file.level = appContext.isDev || debugEnabled ? 'debug' : 'info';
     logger.transports.file.maxSize = 1 * 1024 * 1024;
     const logFilepath = path.join(app.getPath('userData'), 'cleepdesktop.log');
     logger.transports.file.resolvePathFn = () => logFilepath;
