@@ -48,12 +48,12 @@ export class RaspiOs {
 
     const matches: string[][] = [];
     findMatches(RELEASE_PATTERN, html, matches);
-    // appLogger.debug('Found Raspios matches', matches);
+    appLogger.debug('Found Raspios matches', matches);
 
     const releases: RaspiOsRelease[] = [];
     for (const match of matches) {
       releases.push({
-        url: `${url}${match[1]}`,
+        url: `${url}/${match[1]}`,
         type: match[2],
         date: new Date(match[3]),
       });
@@ -67,7 +67,7 @@ export class RaspiOs {
 
     const matches: string[][] = [];
     findMatches(RELEASE_INFO_PATTERN, html, matches);
-    // appLogger.debug('Found Raspios release info matches', matches);
+    appLogger.debug('Found Raspios release info matches', matches);
 
     const info: IIsoReleaseInfo = {
       sha256: null,
@@ -79,7 +79,7 @@ export class RaspiOs {
     };
     for (const match of matches) {
       appLogger.debug('Raspios release', match);
-      if (match[1].endsWith('.zip') || match[1].endsWith('.xz')) {
+      if (match[1].endsWith('.zip') || match[1].endsWith('.img.xz')) {
         info.url = `${release.url}${match[1]}`;
         info.filename = getFilenameFromUrl(info.url);
       }
