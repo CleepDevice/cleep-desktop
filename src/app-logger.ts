@@ -1,5 +1,5 @@
 import { app, ipcMain, shell } from 'electron';
-import logger from 'electron-log';
+import logger from 'electron-log/node';
 import { CommandLineArgs } from './utils/app.helpers';
 import { appSettings } from './app-settings';
 import path from 'path';
