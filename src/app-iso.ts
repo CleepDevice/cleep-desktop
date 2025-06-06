@@ -206,8 +206,13 @@ class AppIso {
       const cachedFile = this.getCachedFilepath(installData);
       appLogger.debug('Cached file', cachedFile);
       if (installData.isoUrl.startsWith('file://')) {
+        // local file : remove prefix
         installData.isoPath = installData.isoUrl.replace('file://', '');
-      } else if (!cachedFile) {
+      } else if (cachedFile) {
+        // cached file : store path
+        installData.isoPath = cachedFile;
+      } else {
+        // download file
         await this.downloadIso(installData);
       }
       await this.writeWifiFile(installData);
@@ -300,26 +305,29 @@ class AppIso {
 
   private flashStdoutCallback(stdout: string) {
     appLogger.debug('Drive flash stdout', stdout);
-    const flashOutput = rpiImager.parseFlashOutput(stdout);
-    if (!flashOutput) {
-      return;
-    }
-
-    const installProgress: InstallProgress = {
-      percent: flashOutput.percent,
-      eta: flashOutput.eta,
-      step: flashOutput.mode,
-    };
-    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
   }
 
   private flashStderrCallback(stderr: string) {
     appLogger.error('Drive flash failed', { error: stderr });
 
-    const installProgress: InstallProgress = {
-      error: stderr,
-    };
-    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
+    const flashOutput = rpiImager.parseFlashOutput(stderr);
+    appLogger.debug('Flash output parse result', flashOutput);
+    if (flashOutput) {
+      // send progress
+      const installProgress: InstallProgress = {
+        percent: flashOutput.percent,
+        eta: flashOutput.eta,
+        step: flashOutput.mode,
+        error: '',
+      };
+      sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
+    } else {
+      // send error
+      const installProgress: InstallProgress = {
+        error: stderr.trim(),
+      };
+      sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
+    }
   }
 
   private addIpcs(): void {

@@ -3,7 +3,7 @@ import { appLogger } from '../app-logger';
 import fs from 'fs';
 import path from 'path';
 import extract from 'extract-zip';
-import { findMatches, getError } from '../utils/app.helpers';
+import { getError } from '../utils/app.helpers';
 import { IToolUpdateStatus, OnUpdateAvailableCallback } from '../app-updater';
 import { FlashOutput, FLASHTOOL_DIR } from '../app-iso';
 import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
@@ -15,7 +15,7 @@ const FILENAME_WINDOWS = '-windows-';
 const RPIIMAGER_MACOS_BIN = 'rpi-imager';
 const RPIIMAGER_LINUX_BIN = 'rpi-imager';
 const RPIIMAGER_WINDOWS_BIN = 'rpi-imager.exe';
-const RPIIMAGER_FLASH_PATTERN = /\s*(Writing|Verifying):\s*\[.*\]\s*(\d+)\s*/gmu;
+const RPIIMAGER_FLASH_PATTERN = /\s*(Writing|Verifying):\s*\[.*\]\s*(\d+)\s*/imu;
 
 export class RpiImager {
   private readonly FLASHTOOL_REPO: IGithubRepo = { owner: 'CleepDevice', repo: 'cleep-desktop-flashtool' };
@@ -134,17 +134,39 @@ export class RpiImager {
 
   public parseFlashOutput(line: string): FlashOutput {
     const matches: string[][] = [];
-    findMatches(RPIIMAGER_FLASH_PATTERN, line, matches);
+    if (line.includes('opening drive') || line.includes('opening image file') || line.includes('unmounting drive')) {
+      return {
+        mode: 'flashing',
+        percent: 0,
+        eta: -1,
+      };
+    } else if (line.includes('Writing') && line.includes('Verifying')) {
+      // at end of process, bin returns all states
+      return {
+        mode: 'validating',
+        percent: 100,
+        eta: -1,
+      };
+    } else {
+      this.parseOutput(line, matches);
+      if (matches.length !== 1 || matches[0].length !== 3) {
+        return;
+      }
 
-    if (matches.length !== 1 || matches[0].length !== 4) {
-      return;
+      return {
+        mode: matches[0][1].toLowerCase() === 'writing' ? 'flashing' : 'validating',
+        percent: parseInt(matches[0][2]),
+        eta: -1,
+      };
     }
+  }
 
-    return {
-      mode: matches[0][1].toLowerCase() === 'writing' ? 'flashing' : 'validating',
-      percent: parseInt(matches[0][2]),
-      eta: -1,
-    };
+  private parseOutput(line: string, matches: string[][]): void {
+    const res = RPIIMAGER_FLASH_PATTERN.exec(line);
+    appLogger.debug('>>>>', res);
+    if (res) {
+      matches.push(res);
+    }
   }
 }
 

@@ -125,15 +125,18 @@
                                 Step 2/3: requesting permissions to write on drive
                             </span>
                             <span ng-if="ctl.installService.installProgress.step === 'flashing'">
-                                Step 2/3: installing on drive (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
+                                Step 2/3: installing on drive
+                                <span ng-if="ctl.installService.installProgress.eta >= 0">
+                                    (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
+                                </span>
                             </span>
                             <span ng-if="ctl.installService.installProgress.step === 'validating'">
-                                Step 3/3: validating operation (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
+                                Step 3/3: validating operation
+                                <span ng-if="ctl.installService.installProgress.eta >= 0">
+                                    (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
+                                </span>
                             </span>
                         </div>
-                        <!-- TODO axios cancelation does not work <div>
-                            <md-button ng-click="ctl.cancelInstall()" class="md-raised md-primary" ng-disabled="!ctl.installService.installing">Cancel</md-button>
-                        </div> -->
                     </div>
                     <div ng-if="ctl.installService.installProgress.error.length > 0">
                         Installation failed: {{ ctl.installService.installProgress.error }}
