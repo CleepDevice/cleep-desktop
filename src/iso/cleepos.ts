@@ -7,8 +7,8 @@ export class CleepOs {
   public async getLatestRelease(): Promise<IIsoReleaseInfo> {
     const latestRelease = await getLatestGithubRelease(this.CLEEPOS_REPO);
 
-    const isoAsset = latestRelease.assets.find((asset) => asset.name.indexOf('.zip') >= 0);
-    const checksumAsset = latestRelease.assets.find((asset) => asset.name.indexOf('.sha256') >= 0);
+    const isoAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf('.zip') >= 0);
+    const checksumAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf('.sha256') >= 0);
     const sha256 = await getChecksumFromUrl(checksumAsset?.browser_download_url);
 
     return {
@@ -24,10 +24,10 @@ export class CleepOs {
   }
 
   private getCleanFilename(filename: string): string {
-    return this.capitalize(filename.replace('.zip', '').replace('_', ' '));
+    return this.capitalize(filename?.replace('.zip', '').replace('_', ' '));
   }
 
   private capitalize(sentence: string): string {
-    return sentence.toLowerCase().replace(/\w/, (firstLetter) => firstLetter.toUpperCase());
+    return sentence?.toLowerCase().replace(/\w/, (firstLetter) => firstLetter.toUpperCase());
   }
 }

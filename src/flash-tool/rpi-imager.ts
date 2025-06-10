@@ -87,12 +87,12 @@ export class RpiImager {
   public async getLatestRelease(): Promise<IRelease> {
     const latestRelease = await getLatestGithubRelease(this.FLASHTOOL_REPO);
 
-    const darwinAsset = latestRelease.assets.find((asset) => asset.name.indexOf(FILENAME_DARWIN) >= 0);
-    const linuxAsset = latestRelease.assets.find((asset) => asset.name.indexOf(FILENAME_LINUX) >= 0);
-    const windowsAsset = latestRelease.assets.find((asset) => asset.name.indexOf(FILENAME_WINDOWS) >= 0);
+    const darwinAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf(FILENAME_DARWIN) >= 0);
+    const linuxAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf(FILENAME_LINUX) >= 0);
+    const windowsAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf(FILENAME_WINDOWS) >= 0);
 
     const release: IRelease = {
-      version: latestRelease.tag.replace('v', ''),
+      version: latestRelease?.tag?.replace('v', ''),
       darwin: {
         downloadUrl: darwinAsset?.browser_download_url,
         filename: darwinAsset?.name,
