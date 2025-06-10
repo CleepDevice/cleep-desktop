@@ -13,7 +13,7 @@ class AppContext {
   public version: string;
   public changelog: string;
   public crashReportEnabled = false;
-  public readonly isDev = app.isPackaged;
+  public readonly isDev = !app.isPackaged;
 
   constructor() {
     this.version = app.getVersion();
