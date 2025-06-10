@@ -74,6 +74,7 @@ echo.
 echo Build result in dist/ folder
 cd dist
 dir
+cd ..
 
 goto :done
 
