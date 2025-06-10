@@ -38,16 +38,16 @@ export class Balena {
     const balenaBinPath = this.getBalenaBinPath();
 
     if (latestBalenaRelease.error) {
-      return { updated: false, error: latestBalenaRelease.error };
+      return { updateAvailable: false, error: latestBalenaRelease.error };
     }
 
     if (latestBalenaRelease.version !== currentBalenaVersion || force || !fs.existsSync(balenaBinPath)) {
       appLogger.info('Flash-tool update available');
       this.install(latestBalenaRelease);
-      return { updated: true };
+      return { updateAvailable: true };
     } else {
       appLogger.info('No flash-tool update available');
-      return { updated: false };
+      return { updateAvailable: false };
     }
   }
 
@@ -70,6 +70,7 @@ export class Balena {
       this.updateAvailableCallback({
         version: release.version,
         percent: 0,
+        terminated: false,
       });
 
       const downloadUrl = release[platform as keyof typeof release as 'darwin' | 'linux' | 'win32'].downloadUrl;
@@ -77,10 +78,10 @@ export class Balena {
       await this.unzipArchive(archivePath);
 
       appSettings.set('flashtool.version', release.version);
-      this.downloadProgressCallback({ terminated: true });
+      this.downloadProgressCallback({ terminated: true, percent: 100 });
     } catch (error) {
       appLogger.error(`Error installing flash-tool: ${error}`);
-      this.downloadProgressCallback({ percent: 100, error: getError(error) });
+      this.downloadProgressCallback({ percent: 100, terminated: true, error: getError(error) });
     }
   }
 

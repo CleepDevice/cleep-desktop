@@ -8,9 +8,9 @@ import { appLogger } from '../app-logger';
 import crypto from 'crypto';
 
 export interface DownloadProgress {
-  percent?: number;
+  percent: number;
+  terminated: boolean;
   eta?: number;
-  terminated?: boolean;
   error?: string;
 }
 
@@ -47,6 +47,7 @@ export async function downloadFile(
     writer.on('finish', async () => {
       appLogger.debug('Download file completed');
       downloadProgressCallback({
+        terminated: true,
         percent: 100,
         eta: 0,
       });
@@ -68,6 +69,7 @@ export async function downloadFile(
     });
     progress.on('progress', (progress: Progress) => {
       downloadProgressCallback({
+        terminated: false,
         percent: Math.round(progress.percentage),
         eta: progress.eta,
       });

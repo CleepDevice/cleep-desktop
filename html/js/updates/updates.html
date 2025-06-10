@@ -60,20 +60,21 @@
                     <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
                         <p>CleepDesktop v{{ ctl.updateService.softwareVersions.cleepDesktop }} is installed</p>
+                        <div class="md-secondary" ng-if="ctl.updateService.cleepDesktopUpdate.error">
+                            Error: {{ctl.updateService.cleepDesktopUpdate.error}}
+                        </div>
                         <div
                             class="md-secondary"
-                            ng-if="ctl.updateService.cleepDesktopUpdate.percent>=0"
+                            ng-if="ctl.updateService.cleepDesktopUpdate.percent>=0 && !ctl.updateService.cleepDesktopUpdate.error"
                         >
-                            <div ng-if="ctl.updateService.cleepDesktopUpdate.error.length<=0">
-                                Updating to {{ctl.updateService.cleepDesktopUpdate.version}}...
+                            <div>
+                                {{ ctl.updateService.cleepDesktopUpdate.message }}
                             </div>
-                            <div ng-if="ctl.updateService.cleepDesktopUpdate.error.length>0">
-                                Update failed: {{ctl.updateService.cleepDesktopUpdate.error}}
-                            </div>
-                            <md-progress-linear ng-if="ctl.updateService.cleepDesktopUpdate.percent === 0"
+                            
+                            <md-progress-linear ng-if="ctl.updateService.cleepDesktopUpdate.percent===0"
                                 md-mode="indeterminate" style="width: 250px;" class="md-accent">
                             </md-progress-linear>
-                            <md-progress-linear ng-if="ctl.updateService.cleepDesktopUpdate.percent !== 0"
+                            <md-progress-linear ng-if="ctl.updateService.cleepDesktopUpdate.percent>0"
                                 md-mode="determinate" style="width: 250px;" class="md-accent"
                                 value="{{ctl.updateService.cleepDesktopUpdate.percent}}">
                             </md-progress-linear>
@@ -97,20 +98,20 @@
                         <p ng-if="!ctl.updateService.softwareVersions.flashTool">
                             Flash tool is not installed. Click on "Check updates" button to install.
                         </p>
+                        <div class="md-secondary" ng-if="ctl.updateService.flashToolUpdate.error">
+                            Error: {{ ctl.updateService.flashToolUpdate.error }}
+                        </div>
                         <div
                             class="md-secondary"
-                            ng-if="ctl.updateService.flashToolUpdate.percent>=0"
+                            ng-if="ctl.updateService.flashToolUpdate.percent>=0 && !ctl.updateService.flashToolUpdate.error"
                         >
-                            <div ng-if="!ctl.updateService.flashToolUpdate.error">
-                                Updating to v{{ctl.updateService.flashToolUpdate.version}}...
+                            <div>
+                                {{ ctl.updateService.flashToolUpdate.message }}
                             </div>
-                            <div ng-if="ctl.updateService.flashToolUpdate.error">
-                                Update failed: {{ctl.updateService.flashToolUpdate.error}}
-                            </div>
-                            <md-progress-linear ng-if="ctl.updateService.flashToolUpdate.percent===0 && !ctl.updateService.flashToolUpdate.error"
+                            <md-progress-linear ng-if="ctl.updateService.flashToolUpdate.percent===0"
                                 style="width: 250px;" md-mode="indeterminate" class="md-accent">
                             </md-progress-linear>
-                            <md-progress-linear ng-if="ctl.updateService.flashToolUpdate.percent!==0 && !ctl.updateService.flashToolUpdate.error"
+                            <md-progress-linear ng-if="ctl.updateService.flashToolUpdate.percent>0"
                                 style="width: 250px;" md-mode="determinate" class="md-accent"
                                 value="{{ctl.updateService.flashToolUpdate.percent}}">
                             </md-progress-linear>
@@ -126,20 +127,21 @@
                         <p ng-if="!ctl.updateService.softwareVersions.cleepbus">
                             Cleepbus is not installed. Click on "Check updates" button to install.
                         </p>
+                        <div class="md-secondary" ng-if="ctl.updateService.cleepbusUpdate.error">
+                            Error: {{ctl.updateService.cleepbusUpdate.error}}
+                        </div>
                         <div
                             class="md-secondary"
-                            ng-if="ctl.updateService.cleepbusUpdate.percent>=0"
+                            ng-if="ctl.updateService.cleepbusUpdate.percent>=0 && !ctl.updateService.cleepbusUpdate.error"
                         >
-                            <div ng-if="!ctl.updateService.cleepbusUpdate.error">
-                                Updating to v{{ctl.updateService.cleepbusUpdate.version}}...
+                            <div>
+                                {{ ctl.updateService.cleepbusUpdate.message }}
                             </div>
-                            <div ng-if="ctl.updateService.cleepbusUpdate.error">
-                                Update failed: {{ctl.updateService.cleepbusUpdate.error}}
-                            </div>
-                            <md-progress-linear ng-if="ctl.updateService.cleepbusUpdate.percent===0 && !ctl.updateService.cleepbusUpdate.error"
+                            
+                            <md-progress-linear ng-if="ctl.updateService.cleepbusUpdate.percent===0"
                                 style="width: 250px;" md-mode="indeterminate" class="md-accent">
                             </md-progress-linear>
-                            <md-progress-linear ng-if="ctl.updateService.cleepbusUpdate.percent!==0 && !ctl.updateService.cleepbusUpdate.error"
+                            <md-progress-linear ng-if="ctl.updateService.cleepbusUpdate.percent>=0"
                                 style="width: 250px;" md-mode="determinate" class="md-accent"
                                 value="{{ctl.updateService.cleepbusUpdate.percent}}">
                             </md-progress-linear>

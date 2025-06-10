@@ -68,6 +68,13 @@ const GIHHUB_HEADERS = {
   accept: 'application/vnd.github+json',
 };
 
+function getGithubErrorMessage(error: any): string {
+  if (error?.status === 403 || error?.status === 429) {
+    return 'Too many requests. Retry in few minutes.';
+  }
+  return error.message || 'Unknown error';
+}
+
 export async function getLatestGithubRelease(repo: IGithubRepo): Promise<IGithubRelease> {
   try {
     appLogger.debug(`Getting latest release for repo ${repo.owner}:${repo.repo}`);
@@ -82,10 +89,11 @@ export async function getLatestGithubRelease(repo: IGithubRepo): Promise<IGithub
     };
   } catch (error) {
     appLogger.error('Unable to call github api', error);
+    const errorMessage = getGithubErrorMessage(error);
     return {
       assets: [],
       tag: '',
-      error: `Unable to request Github (${error.message})`,
+      error: `Unable to request Github (${errorMessage})`,
     };
   }
 }

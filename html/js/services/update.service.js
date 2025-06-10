@@ -2,13 +2,13 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
-.service('updateService', ['$rootScope', 'loggerService', 'tasksPanelService', 'electronService', 'toolsService',
-function($rootScope, logger, tasksPanelService, electron, tools) {
+.service('updateService', ['$rootScope', 'loggerService', 'tasksPanelService', 'electronService',
+function($rootScope, logger, tasksPanelService, electron) {
     var self = this;
     self.taskUpdatePanelId = null;
-    self.flashToolUpdate = {};
-    self.cleepbusUpdate = {};
-    self.cleepDesktopUpdate = {};
+    self.flashToolUpdate = { terminated: true };
+    self.cleepbusUpdate = { terminated: true };
+    self.cleepDesktopUpdate = { terminated: true };
     self.restartRequired = false;
     self.softwareVersions = {
         cleepDesktop: null,
@@ -17,6 +17,7 @@ function($rootScope, logger, tasksPanelService, electron, tools) {
     }
     self.lastUpdateCheck = 0;
     self.changelog = '';
+    self.loading = false;
  
     self.init = function() {
         self.addIpcs();
@@ -37,7 +38,7 @@ function($rootScope, logger, tasksPanelService, electron, tools) {
             .then((softwareVersions) => {
                 logger.debug('Software versions', softwareVersions);
                 self.lastUpdateCheck = softwareVersions.lastUpdateCheck;
-                tools.updateObject(self.softwareVersions, softwareVersions);
+                angular.copy(softwareVersions, self.softwareVersions);
             });
     }
 
@@ -46,14 +47,8 @@ function($rootScope, logger, tasksPanelService, electron, tools) {
     };
  
     self.closeUpdateTaskPanel = function() {
-        var isCleepdesktopUpdating = Object.keys(self.cleepDesktopUpdate).length > 0;
-        var isFlashToolUpdating = Object.keys(self.flashToolUpdate).length > 0;
-        var isCleepbusUpdating = Object.keys(self.cleepbusUpdate).length > 0;
-
-        if (!isCleepdesktopUpdating && !isFlashToolUpdating && !isCleepbusUpdating) {
-            tasksPanelService.removePanel(self.taskUpdatePanelId);
-            self.taskUpdatePanelId = null;
-        }
+        tasksPanelService.removePanel(self.taskUpdatePanelId);
+        self.taskUpdatePanelId = null;
     };
 
     self.openUpdateTaskPanel = function() {
@@ -76,69 +71,80 @@ function($rootScope, logger, tasksPanelService, electron, tools) {
     };
     
     self.onCleepDesktopUpdateCallback =  function(_event, updateData) {
-        self.openUpdateTaskPanel();
+        angular.copy(updateData, self.cleepDesktopUpdate);
+        self.cleepDesktopUpdate.message = `Updating to ${self.cleepDesktopUpdate.version}`;
 
-        tools.updateObject(self.cleepDesktopUpdate, updateData);
-
-        if (self.flashToolUpdate.terminated && self.cleepbusUpdate.terminated) {
+        if (self.cleepDesktopUpdate.terminated && !self.cleepDesktopUpdate.error) {
             self.restartRequired = true;
-            tools.clearObject(self.flashToolUpdate);
-            tools.clearObject(self.cleepbusUpdate);
-            self.closeUpdateTaskPanel();
-            self.updateSofwareVersions();
+            self.cleepDesktopUpdate.message = 'Updated successfully';
+        } else if (!self.cleepDesktopUpdate.terminated) {
+            self.openUpdateTaskPanel();
         }
+
+        this.updateOverallUpdateStatus();
     };
 
     self.onFlashToolUpdateCallback = function(_event, updateData) {
-        self.openUpdateTaskPanel();
-
-        tools.updateObject(self.flashToolUpdate, updateData);
-        console.log('+++++++', updateData, self.flashToolUpdate);
+        angular.copy(updateData, self.flashToolUpdate);
+        self.flashToolUpdate.message = `Updating to ${self.flashToolUpdate.version}`;
 
         if (self.flashToolUpdate.terminated) {
-            tools.clearObject(self.flashToolUpdate);
-            self.closeUpdateTaskPanel();
-            self.updateSofwareVersions();
+            self.flashToolUpdate.message = 'Updated successfully';
+        } else {
+            self.openUpdateTaskPanel();
         }
+
+        this.updateOverallUpdateStatus();
     }
 
     self.onCleepbusUpdateCallback = function(_event, updateData) {
-        self.openUpdateTaskPanel();
-        
-        tools.updateObject(self.cleepbusUpdate, updateData);
+        angular.copy(updateData, self.cleepbusUpdate);
+        self.cleepbusUpdate.message = `Updating to ${self.cleepbusUpdate.version}`;
 
         if (self.cleepbusUpdate.terminated) {
-            tools.clearObject(self.cleepbusUpdate);
-            self.closeUpdateTaskPanel();
-            self.updateSofwareVersions();
+            self.cleepbusUpdate.message = 'Updated successfully';
+        } else {
+            self.openUpdateTaskPanel();
         }
+
+        this.updateOverallUpdateStatus();
     }
 
     self.checkForUpdates = function() {
+        if (self.loading) {
+            return;
+        }
+
+        self.loading = true;
         return electron.sendReturn('updater-check-for-updates')
             .then((updateStatus) => {
-                // logger.info('Check for software updates', updateStatus);
+                logger.info('Check for software updates', updateStatus);
                 self.lastUpdateCheck = updateStatus.lastUpdateCheck;
         
-                var hasUpdate = false;
-                if (updateStatus.cleepDesktop) {
-                    hasUpdate = true;
-                    tools.updateObject(self.cleepDesktopUpdate, {percent:0, error: ''});
-                }
-                if (updateStatus.flashTool.update) {
-                    hasUpdate = true;
-                    tools.updateObject(self.flashToolUpdate, {percent:0, error: ''});
-                }
-                if (updateStatus.cleepbus.update) {
-                    hasUpdate = true;
-                    tools.updateObject(self.cleepbusUpdate, {percent:0, error: ''});
-                }
-        
+                angular.copy(updateStatus.cleepDesktop, self.cleepDesktopUpdate);
+                angular.copy(updateStatus.flashTool, self.flashToolUpdate);
+                angular.copy(updateStatus.cleepbus, self.cleepbusUpdate);
+
+                const hasUpdate = updateStatus.cleepDesktop?.updateAvailable 
+                    || updateStatus.flashTool?.updateAvailable
+                    || updateStatus.cleepbus?.updateAvailable;
                 if (hasUpdate) {
                     self.openUpdateTaskPanel();
+                } else {
+                    self.loading = false;
                 }
         
                 return hasUpdate;
             });
     };
+
+    self.updateOverallUpdateStatus = function() {
+        if (!self.cleepbusUpdate.terminated || !self.flashToolUpdate.terminated || !self.cleepDesktopUpdate.terminated) {
+            return;
+        }
+
+        self.closeUpdateTaskPanel();
+        self.updateSofwareVersions();
+        self.loading = false;
+    }
 }]);

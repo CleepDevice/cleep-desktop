@@ -29,16 +29,16 @@ export class RpiImager {
     const rpiImagerBinPath = this.getRpiImagerBinPath();
 
     if (latestFlashtoolRelease.error) {
-      return { updated: false, error: latestFlashtoolRelease.error };
+      return { updateAvailable: false, error: latestFlashtoolRelease.error };
     }
 
     if (latestFlashtoolRelease.version !== currentFlashtoolVersion || force || !fs.existsSync(rpiImagerBinPath)) {
       appLogger.info('Flashtool update available');
       this.install(latestFlashtoolRelease);
-      return { updated: true };
+      return { updateAvailable: true };
     } else {
       appLogger.info('No flashtool update available');
-      return { updated: false };
+      return { updateAvailable: false };
     }
   }
 
@@ -61,6 +61,7 @@ export class RpiImager {
       this.updateAvailableCallback({
         version: release.version,
         percent: 0,
+        terminated: false,
       });
 
       const downloadUrl = release[platform as keyof typeof release as 'darwin' | 'linux' | 'win32'].downloadUrl;
@@ -68,10 +69,10 @@ export class RpiImager {
       await this.unzipArchive(archivePath);
 
       appSettings.set('flashtool.version', release.version);
-      this.downloadProgressCallback({ terminated: true });
+      this.downloadProgressCallback({ terminated: true, percent: 100 });
     } catch (error) {
       appLogger.error(`Error installing flashtool: ${error}`);
-      this.downloadProgressCallback({ percent: 100, error: getError(error) });
+      this.downloadProgressCallback({ percent: 100, terminated: true, error: getError(error) });
     }
   }
 

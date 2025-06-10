@@ -79,17 +79,18 @@ export class Cleepbus {
         version: latestCleepbusRelease.version,
         percent: 0,
         error: latestCleepbusRelease.error,
+        terminated: true,
       });
-      return { updated: false, error: latestCleepbusRelease.error };
+      return { updateAvailable: false, error: latestCleepbusRelease.error };
     }
 
     if (latestCleepbusRelease.version !== currentCleepbusVersion || force || !fs.existsSync(cleepbusBinPath)) {
       appLogger.info('Cleepbus update available');
       this.install(latestCleepbusRelease);
-      return { updated: true };
+      return { updateAvailable: true };
     } else {
       appLogger.info('No Cleepbus update available');
-      return { updated: false };
+      return { updateAvailable: false };
     }
   }
 
@@ -317,26 +318,28 @@ export class Cleepbus {
     }
 
     try {
-      this.messageBusUpdatingCallback(true);
-      this.stop();
-
       this.updateAvailableCallback({
         version: release.version,
         percent: 0,
+        terminated: false,
       });
 
       const downloadUrl = release[platform as keyof typeof release as 'darwin' | 'linux' | 'win32'].downloadUrl;
       const archivePath = await downloadFile(downloadUrl, this.downloadProgressCallback);
+
+      // stop before unzipping to avoid error with running process
+      this.messageBusUpdatingCallback(true);
+      this.stop();
       await this.unzipArchive(archivePath);
 
       appSettings.set('cleepbus.version', release.version);
-      this.downloadProgressCallback({ terminated: true });
+      this.downloadProgressCallback({ terminated: true, percent: 100 });
 
       appLogger.info(`Cleepbus v${release.version}updated successfully`);
       this.start();
     } catch (error) {
       appLogger.error(`Error installing Cleepbus: ${error}`);
-      this.downloadProgressCallback({ percent: 100, error: getError(error) });
+      this.downloadProgressCallback({ percent: 100, terminated: true, error: getError(error) });
     } finally {
       this.messageBusUpdatingCallback(false);
     }
