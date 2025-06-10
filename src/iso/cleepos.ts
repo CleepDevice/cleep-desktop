@@ -1,11 +1,11 @@
 import { getChecksumFromUrl, getFilenameFromUrl, IIsoReleaseInfo } from './utils';
-import { getLatestRelease, IGithubRepo } from '../utils/github';
+import { getLatestGithubRelease, IGithubRepo } from '../utils/github';
 
 export class CleepOs {
   private readonly CLEEPOS_REPO: IGithubRepo = { owner: 'CleepDevice', repo: 'cleep-os' };
 
   public async getLatestRelease(): Promise<IIsoReleaseInfo> {
-    const latestRelease = await getLatestRelease(this.CLEEPOS_REPO);
+    const latestRelease = await getLatestGithubRelease(this.CLEEPOS_REPO);
 
     const isoAsset = latestRelease.assets.find((asset) => asset.name.indexOf('.zip') >= 0);
     const checksumAsset = latestRelease.assets.find((asset) => asset.name.indexOf('.sha256') >= 0);

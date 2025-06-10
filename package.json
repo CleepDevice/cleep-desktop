@@ -46,7 +46,6 @@
     },
     "dependencies": {
         "@electron/notarize": "^3.0.1",
-        "@octokit/rest": "^20.1.2",
         "@sentry/electron": "^6.6.0",
         "axios": "^1.9.0",
         "detect-port": "^2.1.0",

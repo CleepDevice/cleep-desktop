@@ -7,7 +7,7 @@ import { getError } from '../utils/app.helpers';
 import { IToolUpdateStatus, OnUpdateAvailableCallback } from '../app-updater';
 import { FlashOutput, FLASHTOOL_DIR } from '../app-iso';
 import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
-import { getLatestRelease, IGithubRepo, IRelease } from '../utils/github';
+import { getLatestGithubRelease, IGithubRepo, IRelease } from '../utils/github';
 
 const FILENAME_DARWIN = '-macos-';
 const FILENAME_LINUX = '-linux-';
@@ -85,7 +85,7 @@ export class RpiImager {
   }
 
   public async getLatestRelease(): Promise<IRelease> {
-    const latestRelease = await getLatestRelease(this.FLASHTOOL_REPO);
+    const latestRelease = await getLatestGithubRelease(this.FLASHTOOL_REPO);
 
     const darwinAsset = latestRelease.assets.find((asset) => asset.name.indexOf(FILENAME_DARWIN) >= 0);
     const linuxAsset = latestRelease.assets.find((asset) => asset.name.indexOf(FILENAME_LINUX) >= 0);

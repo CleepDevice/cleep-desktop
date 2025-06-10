@@ -23,7 +23,7 @@ import {
 } from './message-bus.types';
 import find from 'find-process';
 import terminate from 'terminate';
-import { IGithubRepo, getLatestRelease, IRelease } from '../utils/github';
+import { IGithubRepo, IRelease, getLatestGithubRelease } from '../utils/github';
 
 export const CLEEPBUS_DIR = path.join(app.getPath('userData'), 'cleepbus');
 const FILENAME_DARWIN = '-macos-';
@@ -370,7 +370,7 @@ export class Cleepbus {
   }
 
   public async getLatestRelease(): Promise<IRelease> {
-    const latestRelease = await getLatestRelease(this.CLEEPBUS_REPO);
+    const latestRelease = await getLatestGithubRelease(this.CLEEPBUS_REPO);
 
     const darwinAsset = latestRelease.assets.find((asset) => asset.name.indexOf(FILENAME_DARWIN) >= 0);
     const linuxAsset = latestRelease.assets.find((asset) => asset.name.indexOf(FILENAME_LINUX) >= 0);
