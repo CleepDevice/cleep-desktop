@@ -98,18 +98,19 @@ export class AppLogger {
     });
 
     ipcMain.on('open-electron-logs', async () => {
-      const logPath = await logger.transports.file.getFile();
+      const logPath = logger.transports.file.getFile();
       shell.openPath(logPath.path);
     });
 
     ipcMain.handle('get-electron-log-path', async () => {
-      const logPath = await logger.transports.file.getFile();
+      const logPath = logger.transports.file.getFile();
       return logPath.path;
     });
   }
 
   private initConsoleLogging(debugEnabled: boolean): void {
     logger.transports.console.level = !app.isPackaged || debugEnabled ? 'debug' : 'info';
+    logger.transports.console.format = '%c[{h}:{i}:{s}.{ms} - {level}]%c {text}';
   }
 
   private initFileLogging(debugEnabled: boolean): void {
