@@ -108,42 +108,33 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-              ignore: /^v.*-windows.*/
             branches:
               ignore: /.*/
       - build-windows:
           filters:
             branches:
               only: master
-            tags:
-              only: /^v.*-windows.*/
   linux:
     jobs:
       - publish-linux:
           filters:
             tags:
               only: /^v.*/
-              ignore: /^v.*-linux.*/
             branches:
               ignore: /.*/
       - build-linux:
           filters:
             branches:
               only: master
-            tags:
-              only: /^v.*-linux.*/
   macos:
     jobs:
       - publish-macos:
           filters:
             tags:
               only: /^v.*/
-              ignore: /^v.*-macos.*/
             branches:
               ignore: /.*/
       - build-macos:
           filters:
             branches:
               only: master
-            tags:
-              only: /^v.*-macos.*/
