@@ -1,7 +1,7 @@
 import { App, ipcMain } from 'electron';
 import settings from 'electron-settings';
 import { appLogger } from './app-logger';
-import uuid4 from 'uuid4';
+import { v4 as uuidv4 } from 'uuid';
 import { appContext } from './app-context';
 
 const DEFAULT_SETTINGS: {
@@ -136,7 +136,7 @@ export class AppSettings {
       settings.setSync('cleep.crashreport', false);
     }
     if (!settings.hasSync('cleep.uuid')) {
-      settings.setSync('cleep.uuid', uuid4());
+      settings.setSync('cleep.uuid', uuidv4());
     }
     if (!settings.hasSync('cleep.lastupdatecheck')) {
       settings.setSync('cleep.lastupdatecheck', 0);

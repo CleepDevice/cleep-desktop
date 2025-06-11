@@ -1,8 +1,7 @@
 import { BrowserWindow, DownloadItem, ipcMain } from 'electron';
-import { Progress, download } from 'electron-dl';
 import { sendDataToAngularJs } from './utils/ui.helpers';
-import uuid4 from 'uuid4';
 import { appLogger } from './app-logger';
+import { v4 as uuidv4 } from 'uuid';
 
 interface Download {
   downloadId: string;
@@ -39,7 +38,7 @@ export class AppFileDownload {
     });
 
     ipcMain.on('download-file', async (_event, url: string) => {
-      const downloadId = uuid4();
+      const downloadId = uuidv4();
       appLogger.info(`Downloading file from ${url} with id ${downloadId}`);
       this.downloadUrl(downloadId, url);
     });
