@@ -9,7 +9,7 @@ import { getError } from './utils/app.helpers';
 import path from 'path';
 import { Sudo, SudoOptions } from './sudo/sudo';
 import { writeFile } from 'fs';
-import { cancelDownload, downloadFile, DownloadProgress } from './utils/download';
+import { cancelDownload, downloadFile, IDownloadProgress } from './utils/download';
 import { appUpdater } from './app-updater';
 import { NotInstalledException } from './exceptions/not-installed.exception';
 import { appCache } from './app-cache';
@@ -188,7 +188,7 @@ class AppIso {
     return cachedFileInfos.checksum === installData.isoSha256 ? cachedFileInfos.filepath : null;
   }
 
-  private downloadProgressCallback(downloadProgress: DownloadProgress): void {
+  private downloadProgressCallback(downloadProgress: IDownloadProgress): void {
     const installProgress: InstallProgress = {
       percent: downloadProgress.percent,
       eta: downloadProgress.eta,
@@ -308,8 +308,7 @@ class AppIso {
   }
 
   private flashStderrCallback(stderr: string) {
-    appLogger.error('Drive flash failed', { error: stderr });
-
+    // rpi-imager stdout is displayed on stderr on linux (maybe other platforms)
     const flashOutput = rpiImager.parseFlashOutput(stderr);
     appLogger.debug('Flash output parse result', flashOutput);
     if (flashOutput) {
@@ -323,6 +322,7 @@ class AppIso {
       sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
     } else {
       // send error
+      appLogger.error('Drive flash failed', { error: stderr });
       const installProgress: InstallProgress = {
         error: stderr.trim(),
       };

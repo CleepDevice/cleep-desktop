@@ -68,6 +68,7 @@ const GIHHUB_HEADERS = {
   accept: 'application/vnd.github+json',
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getGithubErrorMessage(error: any): string {
   if (error?.status === 403 || error?.status === 429) {
     return 'Too many requests. Retry in few minutes.';

@@ -51,7 +51,7 @@ export class AppFileDownload {
         onStarted: (item: DownloadItem) => {
           this.onDownloadStarted(downloadId, url, item);
         },
-        onProgress: (progress: Progress) => {
+        onProgress: (progress: IDownloadFileProgress) => {
           this.onDownloadProgress(downloadId, progress);
         },
         onCancel: (item: DownloadItem) => {
@@ -86,7 +86,7 @@ export class AppFileDownload {
     });
   }
 
-  private onDownloadProgress(downloadId: string, progress: Progress): void {
+  private onDownloadProgress(downloadId: string, progress: IDownloadFileProgress): void {
     if (typeof progress?.percent !== 'number' || !Object.keys(this.downloads).length) return;
 
     const download = this.getDownload(downloadId);

@@ -7,14 +7,14 @@ import progress_stream, { Progress } from 'progress-stream';
 import { appLogger } from '../app-logger';
 import crypto from 'crypto';
 
-export interface DownloadProgress {
+export interface IDownloadProgress {
   percent: number;
   terminated: boolean;
   eta?: number;
   error?: string;
 }
 
-export type OnDownloadProgressCallback = (downloadProgress: DownloadProgress) => void;
+export type OnDownloadProgressCallback = (downloadProgress: IDownloadProgress) => void;
 
 const abordDownloads: Record<string, AbortController> = {};
 

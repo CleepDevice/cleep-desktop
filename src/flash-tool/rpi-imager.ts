@@ -133,7 +133,10 @@ export class RpiImager {
     }
   }
 
-  public parseFlashOutput(line: string): FlashOutput {
+  /**
+   * Parse specified line and return FlashOutput if something useful was found or undefined otherwise (real error ?)
+   */
+  public parseFlashOutput(line: string): FlashOutput | undefined {
     const matches: string[][] = [];
     if (line.includes('opening drive') || line.includes('opening image file') || line.includes('unmounting drive')) {
       return {
