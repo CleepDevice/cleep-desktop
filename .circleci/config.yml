@@ -14,9 +14,7 @@ jobs:
             choco install nvm
             nvm install 22
             nvm use 22
-      - run:
-          name: Preparing node
-          command: node --version
+            node --version
       - checkout
       - run:
           name: Building
@@ -27,8 +25,12 @@ jobs:
       shell: powershell.exe
     steps:
       - run:
-          name: Preparing node
-          command: node --version
+          name: Installing node
+          command: |
+            choco install nvm
+            nvm install 22
+            nvm use 22
+            node --version
       - checkout
       - run:
           name: Publishing
@@ -40,10 +42,10 @@ jobs:
     steps:
       - run:
           name: Installing node
-          command: curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-      - run:
-          name: Installing node
-          command: sudo apt-get install -y nodejs && node --version
+          command: |
+            curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            node --version
       - checkout
       - run:
           name: Building
@@ -60,10 +62,10 @@ jobs:
     steps:
       - run:
           name: Installing node
-          command: curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-      - run:
-          name: Installing node
-          command: sudo apt-get install -y nodejs && node --version
+          command: |
+            curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            node --version
       - checkout
       - run:
           name: Publishing
