@@ -10,16 +10,13 @@ import { appIso } from './app-iso';
 import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
 import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
-import electronReload from 'electron-reload';
-
-electronReload(__dirname, {});
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
 
-if (!appContext.isDev) {
-  app.commandLine.appendSwitch('no-sandbox');
-}
+// if (appContext.isDev) {
+//   app.commandLine.appendSwitch('no-sandbox');
+// }
 
 appSettings.configure(app);
 appContext.configure();
@@ -68,14 +65,14 @@ app.on('login', (event, _webContents, _request, authInfo, callback) => {
 app.on('web-contents-created', (_event: Electron.Event, webContents: Electron.WebContents) => {
   appLogger.debug('New Cleep device webview created');
   webContents.setWindowOpenHandler((details: Electron.HandlerDetails) => {
-    appLogger.info('Open modal from webview', { url: details.url });
+    appLogger.debug('Open modal from webview', { url: details.url });
     return {
       action: 'allow',
       overrideBrowserWindowOptions: {
         show: false,
         focusable: true,
         alwaysOnTop: false,
-        title: 'Cleep device popup',
+        title: 'Cleep device dialog',
       },
     };
   });
