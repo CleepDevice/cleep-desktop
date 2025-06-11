@@ -9,6 +9,12 @@ jobs:
       shell: powershell.exe
     steps:
       - run:
+          name: Installing node
+          command: |
+            choco install nvm
+            nvm install 22
+            nvm use 22
+      - run:
           name: Preparing node
           command: node --version
       - checkout
@@ -33,7 +39,7 @@ jobs:
       - image: cimg/base:current
     steps:
       - run:
-          name: Installing node sources
+          name: Installing node
           command: curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
       - run:
           name: Installing node
@@ -53,7 +59,7 @@ jobs:
       - image: cimg/base:current
     steps:
       - run:
-          name: Installing node sources
+          name: Installing node
           command: curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
       - run:
           name: Installing node
@@ -102,33 +108,42 @@ workflows:
           filters:
             tags:
               only: /^v.*/
+              ignore: /^v.*-windows.*/
             branches:
               ignore: /.*/
       - build-windows:
           filters:
             branches:
               only: master
+            tags:
+              only: /^v.*-windows.*/
   linux:
     jobs:
       - publish-linux:
           filters:
             tags:
               only: /^v.*/
+              ignore: /^v.*-linux.*/
             branches:
               ignore: /.*/
       - build-linux:
           filters:
             branches:
               only: master
+            tags:
+              only: /^v.*-linux.*/
   macos:
     jobs:
       - publish-macos:
           filters:
             tags:
               only: /^v.*/
+              ignore: /^v.*-macos.*/
             branches:
               ignore: /.*/
       - build-macos:
           filters:
             branches:
               only: master
+            tags:
+              only: /^v.*-macos.*/
