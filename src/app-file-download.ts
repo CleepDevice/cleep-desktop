@@ -2,6 +2,7 @@ import { BrowserWindow, DownloadItem, ipcMain } from 'electron';
 import { sendDataToAngularJs } from './utils/ui.helpers';
 import { appLogger } from './app-logger';
 import { v4 as uuidv4 } from 'uuid';
+import { electronDownload, IDownloadFileProgress } from './utils/electron-dl';
 
 interface Download {
   downloadId: string;
@@ -37,17 +38,18 @@ export class AppFileDownload {
       }
     });
 
-    ipcMain.on('download-file', async (_event, url: string) => {
+    ipcMain.on('download-file', async (_event, options: { url: string; title?: string }) => {
       const downloadId = uuidv4();
-      appLogger.info(`Downloading file from ${url} with id ${downloadId}`);
-      this.downloadUrl(downloadId, url);
+      appLogger.info(`Downloading file from ${options.url} with id ${downloadId}`);
+      this.downloadUrl(downloadId, options.url, options.title);
     });
   }
 
-  private async downloadUrl(downloadId: string, url: string): Promise<void> {
+  private async downloadUrl(downloadId: string, url: string, dialogTitle = 'Download'): Promise<void> {
     try {
-      await download(this.window, url, {
+      await electronDownload(this.window, url, {
         saveAs: true,
+        dialogOptions: { title: dialogTitle },
         onStarted: (item: DownloadItem) => {
           this.onDownloadStarted(downloadId, url, item);
         },

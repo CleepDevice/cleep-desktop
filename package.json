@@ -55,6 +55,7 @@
         "electron-updater": "^6.6.2",
         "extract-zip": "^2.0.1",
         "find-process": "^1.4.10",
+        "mime": "^4.0.7",
         "node-wifi": "^2.0.16",
         "progress-stream": "^2.0.0",
         "terminate": "^2.8.0",

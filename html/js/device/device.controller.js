@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
-.controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'electronService', '$state',
-function($rootScope, $stateParams, logger, $document, $timeout, electron, $state) {
+.controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'electronService', '$state', 'downloadService',
+function($rootScope, $stateParams, logger, $document, $timeout, electron, $state, downloadService) {
     var self = this;
     logger.debug("deviceController stateParams", $stateParams);
     self.hostname = $stateParams.hostname;
@@ -26,7 +26,7 @@ function($rootScope, $stateParams, logger, $document, $timeout, electron, $state
         event.stopImmediatePropagation();
 
         if (url.includes('/download?') || url.includes('127.0.0.1')) {
-            // file download is handled by chrome automatically so no action is necessary
+            downloadService.downloadUrl(url);
             return;
         }
 

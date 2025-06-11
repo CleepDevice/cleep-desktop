@@ -19,7 +19,7 @@ function(tasksPanelService, toast, electron) {
             toast.warning('File is already downloading');
             return;
         }
-        electron.send('download-file', url);
+        electron.send('download-file', { url, title: 'Download file from device' });
     }
 
     self.isDownloadWithUrl = function(url) {
