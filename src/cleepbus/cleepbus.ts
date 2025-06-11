@@ -127,7 +127,7 @@ export class Cleepbus {
     }
 
     // make sure previous install does not running
-    this.killCleepbusInstances();
+    await this.killCleepbusInstances();
 
     try {
       const debug = appSettings.get<boolean>('cleep.debug');

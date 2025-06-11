@@ -10,55 +10,78 @@ angular
         return ['audio', 'cleepbus', 'network', 'parameters', 'system', 'update'].indexOf(app)===-1;
     });
     self.boardImages = {
-        // model A
-        '0007':   'images/raspberry-pi-1-model-a.jpg',
-        '0008':   'images/raspberry-pi-1-model-a.jpg',
-        '0009':   'images/raspberry-pi-1-model-a.jpg',
-        // model B
         '0002':   'images/raspberry-pi-1-model-b.jpg',
         '0003':   'images/raspberry-pi-1-model-b.jpg',
         '0004':   'images/raspberry-pi-1-model-b.jpg',
         '0005':   'images/raspberry-pi-1-model-b.jpg',
         '0006':   'images/raspberry-pi-1-model-b.jpg',
+        '0007':   'images/raspberry-pi-1-model-a.jpg',
+        '0008':   'images/raspberry-pi-1-model-a.jpg',
+        '0009':   'images/raspberry-pi-1-model-a.jpg',
         '000d':   'images/raspberry-pi-1-model-b.jpg',
         '000e':   'images/raspberry-pi-1-model-b.jpg',
         '000f':   'images/raspberry-pi-1-model-b.jpg',
-        // model A+
+        '0010':   'images/raspberry-pi-1-model-b+.jpg',
+        '0011':   'images/raspberry-pi-compute-module-1.jpg',
         '0012':   'images/raspberry-pi-1-model-a+.jpg',
+        '0013':   'images/raspberry-pi-1-model-b+.jpg',
+        '0014':   'images/raspberry-pi-compute-module-1.jpg',
         '0015':   'images/raspberry-pi-1-model-a+.jpg',
         '900021': 'images/raspberry-pi-1-model-a+.jpg',
-        // model B+
-        '0010':   'images/raspberry-pi-1-model-b+.jpg',
-        '0013':   'images/raspberry-pi-1-model-b+.jpg',
         '900032': 'images/raspberry-pi-1-model-b+.jpg',
-        // 2 Model B
         'a01040': 'images/raspberry-pi-2-model-b.jpg',
         'a01041': 'images/raspberry-pi-2-model-b.jpg',
         'a21041': 'images/raspberry-pi-2-model-b.jpg',
         'a22042': 'images/raspberry-pi-2-model-b.jpg',
-        // 3 Model B
+        '900061': 'images/raspberry-pi-compute-module-1.jpg',
         'a02082': 'images/raspberry-pi-3-model-b.jpg',
         'a22082': 'images/raspberry-pi-3-model-b.jpg',
         'a32082': 'images/raspberry-pi-3-model-b.jpg',
-        // 3 Model B+
-        'a020d3': 'images/raspberry-pi-3-model-b+.jpg',
-        // 3 Model A+
-        '9020e0': 'images/raspberry-pi-3-model-a+.jpg',
-        // 4 Model B
-        'a03111': 'images/raspberry-pi-3-model-b.jpg',
-        'b03111': 'images/raspberry-pi-3-model-b.jpg',
-        'c03111': 'images/raspberry-pi-3-model-b.jpg',
-        // Zero
+        'a52082': 'images/raspberry-pi-3-model-b.jpg',
+        'a22083': 'images/raspberry-pi-3-model-b.jpg',
         '900092': 'images/raspberry-pi-zero.jpg',
+        '920092': 'images/raspberry-pi-zero.jpg',
         '900093': 'images/raspberry-pi-zero.jpg',
         '920093': 'images/raspberry-pi-zero.jpg',
-        // Zero W
-        '9000c1': 'images/raspberry-pi-zero-w.jpg',
-        // Compute Module 1
-        '0011':   'images/raspberry-pi-compute-module-1.jpg',
-        '0014':   'images/raspberry-pi-compute-module-1.jpg',
-        // Compute Module 3
         'a020a0': 'images/raspberry-pi-compute-module-3.jpg',
+        'a220a0': 'images/raspberry-pi-compute-module-3.jpg',
+        '9000c1': 'images/raspberry-pi-zero-w.jpg',
+        'a020d3': 'images/raspberry-pi-3-model-b+.jpg',
+        'a020d4': 'images/raspberry-pi-3-model-b+.jpg',
+        '9020e0': 'images/raspberry-pi-3-model-a+.jpg',
+        '9020e1': 'images/raspberry-pi-3-model-a+.jpg',
+        'a02100': 'images/raspberry-pi-compute-module-3+.jpg',
+        'a03111': 'images/raspberry-pi-4-model-b.jpg',
+        'b03111': 'images/raspberry-pi-4-model-b.jpg',
+        'c03111': 'images/raspberry-pi-4-model-b.jpg',
+        'b03112': 'images/raspberry-pi-4-model-b.jpg',
+        'c03112': 'images/raspberry-pi-4-model-b.jpg',
+        'b03114': 'images/raspberry-pi-4-model-b.jpg',
+        'c03114': 'images/raspberry-pi-4-model-b.jpg',
+        'd03114': 'images/raspberry-pi-4-model-b.jpg',
+        'b03115': 'images/raspberry-pi-4-model-b.jpg',
+        'c03115': 'images/raspberry-pi-4-model-b.jpg',
+        'd03115': 'images/raspberry-pi-4-model-b.jpg',
+        '902120': 'images/raspberry-pi-zero-2-w.jpg',
+        'c03130': 'images/raspberry-pi-400.jpg',
+        'a03140': 'images/raspberry-pi-compute-module-4.jpg',
+        'b03140': 'images/raspberry-pi-compute-module-4.jpg',
+        'c03140': 'images/raspberry-pi-compute-module-4.jpg',
+        'd03140': 'images/raspberry-pi-compute-module-4.jpg',
+        'b04170': 'images/raspberry-pi-5.jpg',
+        'c04170': 'images/raspberry-pi-5.jpg',
+        'd04170': 'images/raspberry-pi-5.jpg',
+        'b04171': 'images/raspberry-pi-5.jpg',
+        'c04171': 'images/raspberry-pi-5.jpg',
+        'd04171': 'images/raspberry-pi-5.jpg',
+        'e04171': 'images/raspberry-pi-5.jpg',
+        'b04180': 'images/raspberry-pi-compute-module-5.jpg',
+        'c04180': 'images/raspberry-pi-compute-module-5.jpg',
+        'd04180': 'images/raspberry-pi-compute-module-5.jpg',
+        'd04190': 'images/raspberry-pi-500.jpg',
+        'b041a0': 'images/raspberry-pi-compute-module-5.jpg',
+        'c041a0': 'images/raspberry-pi-compute-module-5.jpg',
+        'd041a0': 'images/raspberry-pi-compute-module-5.jpg'
     }
     self.boardImg = self.boardImages[self.device.extra['hwrevision']];
 }]);
