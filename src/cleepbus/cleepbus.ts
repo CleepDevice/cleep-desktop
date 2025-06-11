@@ -204,9 +204,11 @@ export class Cleepbus {
       this.messageBusErrorCallback(error);
     }
 
-    // relaunch cleepbus
-    appLogger.info('Relaunching cleepbus');
-    this.launchCleepbus();
+    // relaunch cleepbus after 1 second to avoid useless log flood
+    setTimeout(() => {
+      appLogger.info('Relaunching cleepbus');
+      this.launchCleepbus();
+    }, 1000);
   }
 
   private handleCleepbusStdoutData(data: Readable): void {
