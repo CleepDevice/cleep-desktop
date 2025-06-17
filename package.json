@@ -85,7 +85,8 @@
         "win": {
             "icon": "resources/icon",
             "target": "nsis",
-            "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
+            "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+            "verifyUpdateCodeSignature": false
         },
         "nsis": {
             "menuCategory": "Cleep",
