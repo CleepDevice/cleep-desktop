@@ -1,13 +1,14 @@
+import { FlashOutput } from './flashtool.interface';
+import { FLASHTOOL_DIR } from './constants';
+import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
+import { getLatestGithubRelease, IGithubRepo, IRelease } from '../utils/github';
+import { extractZipArchive } from '../utils/unzip';
 import { appSettings } from '../app-settings';
 import { appLogger } from '../app-logger';
 import fs from 'fs';
 import path from 'path';
 import { getError } from '../utils/app.helpers';
 import { IToolUpdateStatus, OnUpdateAvailableCallback } from '../app-updater';
-import { FlashOutput, FLASHTOOL_DIR } from '../app-iso';
-import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
-import { getLatestGithubRelease, IGithubRepo, IRelease } from '../utils/github';
-import { extractZipArchive } from '../utils/unzip';
 
 const FILENAME_DARWIN = '-macos-';
 const FILENAME_LINUX = '-linux-';
@@ -167,7 +168,7 @@ export class RpiImager {
 
   private parseOutput(line: string, matches: string[][]): void {
     const res = RPIIMAGER_FLASH_PATTERN.exec(line);
-    appLogger.debug('>>>>', res);
+    appLogger.debug('rpi-imager progress match', res);
     if (res) {
       matches.push(res);
     }

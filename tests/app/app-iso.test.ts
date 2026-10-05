@@ -213,6 +213,12 @@ describe('AppIso', () => {
       expect.objectContaining({ percent: 55, step: 'flashing' }),
     );
 
+    lastSudoOptions?.stderrCallback('ignorable flash log line');
+    expect(send).not.toHaveBeenCalledWith(
+      'iso-install-progress',
+      expect.objectContaining({ error: 'ignorable flash log line' }),
+    );
+
     lastSudoOptions?.stderrCallback('fatal flash error');
     expect(send).toHaveBeenCalledWith(
       'iso-install-progress',
@@ -220,11 +226,71 @@ describe('AppIso', () => {
     );
 
     lastSudoOptions?.stdoutCallback('ok');
+    lastSudoOptions?.terminatedCallback(1);
+    expect(send).toHaveBeenCalledWith(
+      'iso-install-progress',
+      expect.objectContaining({
+        terminated: true,
+        step: 'idle',
+        error: 'fatal flash error',
+      }),
+    );
+  });
+
+  it('reports exit code when flash fails without stderr error', async () => {
+    const installData: InstallData = {
+      isoUrl: 'file:///tmp/local-exit.img',
+      isoSha256: 'abc',
+      isoFilename: 'local-exit.img',
+      drivePath: '/dev/sdb',
+      wifiData: null as unknown as InstallData['wifiData'],
+    };
+
+    await appIso.startInstall(installData);
+    lastSudoOptions?.terminatedCallback(42);
+    expect(send).toHaveBeenCalledWith(
+      'iso-install-progress',
+      expect.objectContaining({
+        terminated: true,
+        error: 'Flash failed with exit code 42',
+      }),
+    );
+  });
+
+  it('reports success when flash exits cleanly', async () => {
+    const installData: InstallData = {
+      isoUrl: 'file:///tmp/local-ok.img',
+      isoSha256: 'abc',
+      isoFilename: 'local-ok.img',
+      drivePath: '/dev/sdb',
+      wifiData: null as unknown as InstallData['wifiData'],
+    };
+
+    await appIso.startInstall(installData);
     lastSudoOptions?.terminatedCallback(0);
     expect(send).toHaveBeenCalledWith(
       'iso-install-progress',
-      expect.objectContaining({ terminated: true, step: 'idle' }),
+      expect.objectContaining({
+        terminated: true,
+        step: 'idle',
+        error: '',
+      }),
     );
+  });
+
+  it('ignores concurrent startInstall while one is running', async () => {
+    const installData: InstallData = {
+      isoUrl: 'file:///tmp/local-concurrent.img',
+      isoSha256: 'abc',
+      isoFilename: 'local-concurrent.img',
+      drivePath: '/dev/sdb',
+      wifiData: null as unknown as InstallData['wifiData'],
+    };
+    await appIso.startInstall(installData);
+    const callsAfterFirst = sudoRun.mock.calls.length;
+    await appIso.startInstall(installData);
+    expect(sudoRun.mock.calls.length).toBe(callsAfterFirst);
+    lastSudoOptions?.terminatedCallback(0);
   });
 
   it('cancelInstall aborts sudo flash when running', async () => {
@@ -238,6 +304,10 @@ describe('AppIso', () => {
     await appIso.startInstall(installData);
     appIso.cancelInstall();
     expect(sudoKill).toHaveBeenCalled();
+    expect(send).toHaveBeenCalledWith(
+      'iso-install-progress',
+      expect.objectContaining({ step: 'canceled', terminated: true }),
+    );
   });
 
   it('cancelInstall cancels download when isoUrl is active', async () => {
@@ -287,13 +357,13 @@ describe('AppIso', () => {
     });
   });
 
-  it('iso-has-wifi returns error payload when adapter check fails', async () => {
-    vi.mocked(NodeWifi.getCurrentConnections).mockImplementationOnce((callback) => {
+  it('iso-has-wifi returns false when adapter scan fails', async () => {
+    vi.mocked(NodeWifi.scan).mockImplementationOnce((callback) => {
       callback(new Error('no adapter'), []);
     });
     await expect(ipcHandleHandlers.get('iso-has-wifi')({})).resolves.toEqual({
       data: false,
-      error: true,
+      error: false,
     });
   });
 

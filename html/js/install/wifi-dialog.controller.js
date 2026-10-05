@@ -18,14 +18,21 @@ function(closeModal, installService, modalData) {
         installService.hasWifi();
     };
 
+    self.isUnsecured = function() {
+        if (installService.wifiInfo.hasWifi && self.network === 1 && self.selectedWifi) {
+            return String(self.selectedWifi.security || '').toUpperCase() === 'UNSECURED';
+        }
+        return self.wifiNetworkSecurity === 'unsecured';
+    };
+
     self.disableSaveButton = function() {
         if (self.network === 1) {
             // user wants to connect to available wifi network
             if (!installService.wifiInfo.hasWifi && !self.wifiNetworkName ) {
                 return true;
-            } else if (installService.wifiInfo.hasWifi && (!self.selectedWifi || !self.selectedWifi.network)) {
+            } else if (installService.wifiInfo.hasWifi && (!self.selectedWifi || !self.selectedWifi.ssid)) {
                 return true;
-            } else if(self.wifiNetworkSecurity !== 'unsecured' && !self.wifiPassword) {
+            } else if (!self.isUnsecured() && !self.wifiPassword) {
                 return true;
             }
         }
@@ -34,7 +41,7 @@ function(closeModal, installService, modalData) {
             // user wants to connect to hidden network
             if (!self.wifiNetworkName) {
                 return true;
-            } else if (self.wifiNetworkSecurity !== 'unsecured' && !self.wifiPassword) {
+            } else if (!self.isUnsecured() && !self.wifiPassword) {
                 return true;
             }
         }
@@ -46,15 +53,15 @@ function(closeModal, installService, modalData) {
         if (self.selectedWifi) {
             self.closeModal({
                 network: self.selectedWifi.ssid,
-                security: self.selectedWifi.security,
-                password: self.wifiPassword,
+                security: String(self.selectedWifi.security || '').toLowerCase(),
+                password: self.isUnsecured() ? '' : self.wifiPassword,
                 hidden: self.network === 2,
             });
         } else {
             self.closeModal({
                 network: self.wifiNetworkName,
                 security: self.wifiNetworkSecurity,
-                password: self.wifiPassword,
+                password: self.isUnsecured() ? '' : self.wifiPassword,
                 hidden: self.network === 2,
             });
         }

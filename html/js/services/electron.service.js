@@ -30,7 +30,7 @@ angular
             callback(event, parameters);
             $timeout(() => {
                 $rootScope.$digest();
-            }, 500);
+            }, 0);
         });
     };
     
@@ -49,7 +49,7 @@ angular
             .then((response) => {
                 $timeout(() => {
                     $rootScope.$digest();
-                }, 500);
+                }, 0);
                 return response;
             });
     }

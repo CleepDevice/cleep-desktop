@@ -2,7 +2,7 @@ import fs from 'fs';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { IGithubRelease } from '../../src/utils/github';
 
-vi.mock('../../src/app-iso', () => ({
+vi.mock('../../src/flash-tool/constants', () => ({
   FLASHTOOL_DIR: '/tmp/cleep-rpi-imager-test',
 }));
 

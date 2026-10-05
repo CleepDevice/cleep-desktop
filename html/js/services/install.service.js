@@ -39,6 +39,7 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
 
     self.init = function() {
         self.addIpcs();
+        self.getIsoSettings();
     };
 
     self.addIpcs = function() {
@@ -47,7 +48,7 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
 
     self.onHandleInstallProgress = function(_event, installProgress) {
         Object.assign(self.installProgress, installProgress);
-        if(self.installProgress.terminated || self.installProgress.error) {
+        if(self.installProgress.terminated || self.installProgress.error || self.installProgress.step === 'canceled') {
             self.installing = false;
         } else {
             self.installing = true;
@@ -59,7 +60,7 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
     };
 
     self.terminateInstall = function() {
-        if (self.installProgress.error.length === 0) {
+        if (self.installProgress.error.length === 0 && self.installProgress.step !== 'canceled') {
             // install terminated without error, reset only drive field that
             // must be scanned again if user installs another device
             self.installConfig.drive = null;
@@ -102,20 +103,20 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
             });
     };
 
-    self.refreshIsosInfo = function() {
-        if (self.isosInfo.retrieved) {
+    self.refreshIsosInfo = function(force = false) {
+        if (self.isosInfo.retrieved && !force) {
             return Promise.resolve();
         }
 
-        return electron.sendReturn('iso-get-isos')
+        return electron.sendReturn('iso-get-isos', Boolean(force))
             .then((response) => {
                 if (response.error) {
                     toast.error('Unable to get files');
                     return;
                 }
                 self.isosInfo.retrieved = true;
-                Object.assign(self.isosInfo.raspios, response.data.raspios);
-                Object.assign(self.isosInfo.cleepos, response.data.cleepos);
+                self.isosInfo.raspios = response.data.raspios || {};
+                self.isosInfo.cleepos = response.data.cleepos || {};
             });
     };
 
@@ -134,6 +135,10 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
 
     self.startInstall = function() {
         self.installing = true;
+        self.installProgress.error = '';
+        self.installProgress.terminated = false;
+        self.installProgress.step = 'idle';
+        self.installProgress.percent = 0;
         if (!self.taskInstallPanelId) {
             self.taskInstallPanelId = tasksPanelService.addPanel(
                 'Installing device...', 
@@ -150,12 +155,13 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
             );
         }
 
+        var useWifi = self.installConfig.iso.category === 'cleepos' && self.installConfig.network !== 0;
         var installData = {
             isoUrl: self.installConfig.iso.url,
             isoSha256: self.installConfig.iso.sha256,
             isoFilename: self.installConfig.iso.filename,
             drivePath: self.installConfig.drive.device,
-            wifiData: self.installConfig.wifi,
+            wifiData: useWifi ? self.installConfig.wifi : null,
         };
         logger.debug('Install data', installData);
         electron.send('iso-start-install', installData);

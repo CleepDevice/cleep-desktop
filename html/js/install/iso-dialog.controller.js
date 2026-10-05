@@ -9,23 +9,23 @@ function(closeModal, installService, electron) {
     self.installService = installService;
     self.loading = false;
 
-    self.$onInit = function () {
-        self.refreshIsos();
-    };
-
-    self.selectRemoteIso = function(item) {
-        self.closeModal(item);
-    };
-
-    self.refreshIsos = function() {
+    self.refreshIsos = function(force) {
         self.loading = true;
         self.installService.getIsoSettings()
             .then(() => {
-                return self.installService.refreshIsosInfo();
+                return self.installService.refreshIsosInfo(Boolean(force));
             })
             .finally(() => {
                 self.loading = false;
             });
+    };
+
+    self.$onInit = function () {
+        self.refreshIsos(false);
+    };
+
+    self.selectRemoteIso = function(item) {
+        self.closeModal(item);
     };
 
     self.selectLocalIso = function() {

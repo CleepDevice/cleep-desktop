@@ -99,6 +99,23 @@ describe('AppCache', () => {
     expect(infos.filepath).toContain('tool===checksum1.bin');
   });
 
+  it('returns the matching cached file when multiple files exist', () => {
+    const sourceA = path.join(os.tmpdir(), `cleep-cache-a-${Date.now()}.img`);
+    const sourceB = path.join(os.tmpdir(), `cleep-cache-b-${Date.now()}.img`);
+    fs.writeFileSync(sourceA, 'aaa');
+    fs.writeFileSync(sourceB, 'bbbb');
+    appCache.cacheFile(sourceA, 'checksumA', 'first.img');
+    appCache.cacheFile(sourceB, 'checksumB', 'second.img');
+
+    const infos = appCache.getCachedFileInfos('second.img');
+    expect(infos).toMatchObject({
+      filename: 'second.img',
+      checksum: 'checksumB',
+      filesize: 4,
+    });
+    expect(infos.filepath).toContain('second===checksumB.img');
+  });
+
   it('returns null when cached file does not exist', () => {
     expect(appCache.getCachedFileInfos('missing.zip')).toBeNull();
   });

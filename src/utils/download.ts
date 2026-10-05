@@ -16,7 +16,7 @@ export interface IDownloadProgress {
 
 export type OnDownloadProgressCallback = (downloadProgress: IDownloadProgress) => void;
 
-const abordDownloads: Record<string, AbortController> = {};
+const abortDownloads: Record<string, AbortController> = {};
 const PROGRESS_INTERVAL_MS = 1000;
 
 function createDownloadProgressStream(
@@ -61,7 +61,7 @@ export async function downloadFile(
   appLogger.debug(`Download file to ${tmpFilename}`);
   const writer = fs.createWriteStream(tmpFilename);
 
-  abordDownloads[url] = new AbortController();
+  abortDownloads[url] = new AbortController();
 
   appLogger.debug(`Download file from ${url}`);
   const download = await axios({
@@ -69,7 +69,7 @@ export async function downloadFile(
     method: 'GET',
     headers,
     responseType: 'stream',
-    signal: abordDownloads[url].signal,
+    signal: abortDownloads[url].signal,
   });
   const totalSize = Number(download.headers['content-length']) || 0;
   appLogger.debug(`File to download size ${totalSize}`);
@@ -90,7 +90,7 @@ export async function downloadFile(
         percent: 100,
         eta: 0,
       });
-      delete abordDownloads[url];
+      delete abortDownloads[url];
 
       // checksum
       if (sha256) {
@@ -110,7 +110,7 @@ export async function downloadFile(
 }
 
 export function cancelDownload(url: string): boolean {
-  const controller = abordDownloads[url];
+  const controller = abortDownloads[url];
   if (controller) {
     controller.abort();
     return true;

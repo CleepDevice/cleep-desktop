@@ -9,6 +9,10 @@ function($rootScope, toast, confirm, logger, updateService, installService, moda
     self.installService = installService;
     self.updateService = updateService;
 
+    self.$onInit = function() {
+        installService.getIsoSettings();
+    };
+
     self.gotoManualInstall = function() {
         $rootScope.$broadcast('open-page', { page: 'installManually' });
     };
@@ -18,6 +22,10 @@ function($rootScope, toast, confirm, logger, updateService, installService, moda
             .then((iso) => {
                 logger.debug('Selected iso', iso);
                 installService.installConfig.iso = iso;
+                if (iso.category !== 'cleepos') {
+                    installService.installConfig.wifi = null;
+                    installService.installConfig.network = 0;
+                }
             })
             .catch(() => { /* handle rejection */ });
     };
@@ -47,8 +55,16 @@ function($rootScope, toast, confirm, logger, updateService, installService, moda
             toast.error('Please select a Cleep version and a drive');
             return;
         }
-        if (installService.installConfig.network !== 0 && !installService.installConfig.wifi) {
+        if (
+            installService.installConfig.iso.category === 'cleepos' &&
+            installService.installConfig.network !== 0 &&
+            !installService.installConfig.wifi
+        ) {
             toast.error('Please configure wifi');
+            return;
+        }
+        if (!updateService.softwareVersions.flashTool && !installService.flashToolInstalled) {
+            toast.error('Flash tool is not installed yet. Please wait for updates to finish.');
             return;
         }
 

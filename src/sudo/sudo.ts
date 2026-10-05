@@ -27,7 +27,7 @@ const BINARIES_LINUX = {
 type BinaryLinux = keyof typeof BINARIES_LINUX;
 
 const BINARIES_DARWIN = {
-  osascript: ['-e', '"do shell script \\"=COMMAND=\\" with administrator privileges"'],
+  osascript: ['-e', 'do shell script "=COMMAND=" with administrator privileges'],
 };
 type BinaryDarwin = keyof typeof BINARIES_DARWIN;
 
@@ -74,8 +74,22 @@ export class Sudo {
   }
 
   public kill(): void {
-    if (this.process) {
+    if (!this.process?.pid) {
+      return;
+    }
+
+    const pid = this.process.pid;
+    if (process.platform === 'win32') {
+      spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { windowsHide: true });
+      return;
+    }
+
+    // Kill child processes first (elevated flash may outlive pkexec/osascript wrapper).
+    spawnSync('pkill', ['-TERM', '-P', String(pid)]);
+    try {
       this.process.kill('SIGTERM');
+    } catch {
+      // process may already be gone
     }
   }
 
@@ -95,7 +109,7 @@ export class Sudo {
     const escapedAppName = this.escapeDoubleQuotes(this.options.appName);
     const binaryArgs = BINARIES_LINUX[binaryCommand].map((arg) => arg.replace('=APPNAME=', escapedAppName));
     binaryArgs.push(command);
-    binaryArgs.push(...args);
+    binaryArgs.push(...(args || []));
 
     return { command: binaryPath, args: binaryArgs };
   }
@@ -112,7 +126,8 @@ export class Sudo {
     const batchPath = path.join(app.getPath('temp'), `sudo-command-${batchId}.bat`);
     const batchOutputPath = path.join(app.getPath('temp'), `sudo-output-${batchId}.log`);
     appLogger.debug('Windows batch paths', { batchPath, batchOutputPath });
-    const batchContent = `${command} ${(args || []).join(' ')} > ${batchOutputPath} 2>&1 `;
+    const quotedArgs = [command, ...(args || [])].map((arg) => this.quoteWindowsArg(arg)).join(' ');
+    const batchContent = `${quotedArgs} > ${this.quoteWindowsArg(batchOutputPath)} 2>&1\r\n`;
     appLogger.debug('Windows batch content', { batchContent });
     fs.writeFileSync(batchPath, batchContent);
     fs.writeFileSync(batchOutputPath, '');
@@ -121,8 +136,7 @@ export class Sudo {
     const logFileOutput = new LogFileOutput(batchPath, batchOutputPath);
     watchFile(batchOutputPath, { persistent: true, interval: 250 }, this.onWatcherChanged.bind(this, logFileOutput));
 
-    const binaryArgs = BINARIES_WIN32[binaryCommand];
-    binaryArgs.push(batchPath);
+    const binaryArgs = [...BINARIES_WIN32[binaryCommand], batchPath];
 
     return { command: binaryPath, args: binaryArgs, logFileOutput };
   }
@@ -134,8 +148,10 @@ export class Sudo {
       throw new Error('No sudo binary found');
     }
 
-    const userCommand = [command, ...args].join(' ');
-    const binaryArgs = BINARIES_DARWIN[binaryCommand].map((arg) => arg.replace('=COMMAND=', userCommand));
+    const userCommand = [command, ...(args || [])].map((arg) => this.quoteShellArg(arg)).join(' ');
+    const binaryArgs = BINARIES_DARWIN[binaryCommand].map((arg) =>
+      arg.replace('=COMMAND=', this.escapeDoubleQuotes(userCommand)),
+    );
 
     return { command: binaryPath, args: binaryArgs };
   }
@@ -173,6 +189,11 @@ export class Sudo {
     const win32Keys = Object.keys(BINARIES_WIN32) as BinaryWin32[];
     const binary = win32Keys[0];
     const elevateSrc = path.join(__dirname, binary);
+    if (!fs.existsSync(elevateSrc)) {
+      throw new Error(
+        `Windows elevation binary missing at ${elevateSrc}. Rebuild with npm run copy:elevate-exe.`,
+      );
+    }
     const elevateDst = path.join(app.getPath('temp'), binary);
     fs.copyFileSync(elevateSrc, elevateDst);
 
@@ -225,5 +246,16 @@ export class Sudo {
 
   private escapeDoubleQuotes(str: string): string {
     return str.replace(/"/g, '\\"');
+  }
+
+  private quoteShellArg(arg: string): string {
+    return `'${arg.replace(/'/g, `'\\''`)}'`;
+  }
+
+  private quoteWindowsArg(arg: string): string {
+    if (!/[ \t"]/g.test(arg)) {
+      return arg;
+    }
+    return `"${arg.replace(/"/g, '""')}"`;
   }
 }

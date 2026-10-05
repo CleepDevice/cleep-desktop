@@ -28,13 +28,13 @@
             <md-subheader class="md-no-sticky">
                 Cleep versions
             </md-subheader>
-            <md-list-item ng-if="ctl.cleepisos===0" class="md-2-line">
+            <md-list-item ng-if="!ctl.installService.isosInfo.cleepos.label" class="md-2-line">
                 <div class="md-list-item-text">
                     <h3>No Cleep version found</h3>
                     <p>You surely reach free Github api requests amount. Please retry next hour.</p>
                 </div>
             </md-list-item>
-            <md-list-item ng-if="ctl.installService.isosInfo.cleepos" ng-click="ctl.selectRemoteIso(ctl.installService.isosInfo.cleepos)">
+            <md-list-item ng-if="ctl.installService.isosInfo.cleepos.label" ng-click="ctl.selectRemoteIso(ctl.installService.isosInfo.cleepos)">
                 <md-icon md-svg-icon="circle-small"></md-icon>
                 <p>
                     {{ctl.installService.isosInfo.cleepos.label}} - 
@@ -75,7 +75,7 @@
     </md-dialog-content>
 
     <md-dialog-actions>
-        <md-button ng-click="ctl.refreshIsos()" class="md-primary md-raised" ng-disabled="ctl.loading">
+        <md-button ng-click="ctl.refreshIsos(true)" class="md-primary md-raised" ng-disabled="ctl.loading">
             <md-icon md-svg-icon="refresh"></md-icon>
             Refresh versions
         </md-button>

@@ -24,7 +24,7 @@ Application main window is separated in 2 parts:
 
 ### SD card burning
 
-CleepDesktop embeds flashing SD card tool (Balena-etcher) and searches automatically available latest Cleep release. So user can install Cleep distribution in 3 clicks.
+CleepDesktop embeds a flashing SD card tool (Raspberry Pi Imager) and searches automatically available latest Cleep release. So user can install Cleep distribution in 3 clicks.
 There is also a simple way to pre-configure wifi access in case of device uses wireless connection.
 
 ### Auto update

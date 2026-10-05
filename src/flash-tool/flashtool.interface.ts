@@ -3,3 +3,9 @@ export interface Drive {
   description: string;
   device: string;
 }
+
+export interface FlashOutput {
+  mode: 'flashing' | 'validating';
+  percent: number;
+  eta: number;
+}

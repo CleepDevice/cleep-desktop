@@ -50,6 +50,18 @@ describe('Wifi', () => {
           mode: 'Unknown',
         },
         {
+          ssid: 'Legacy',
+          bssid: '22:22',
+          mac: '22:22',
+          channel: 2,
+          frequency: 2417,
+          signal_level: -50,
+          quality: 50,
+          security: 'WEP',
+          security_flags: [],
+          mode: 'Unknown',
+        },
+        {
           ssid: '',
           bssid: '',
           mac: undefined as unknown as string,
@@ -67,11 +79,12 @@ describe('Wifi', () => {
     const wifi = new Wifi();
     const networks = await wifi.refreshNetworks();
 
-    expect(networks).toHaveLength(4);
+    expect(networks).toHaveLength(5);
     expect(networks[0]).toMatchObject({ ssid: 'Home', security: 'WPA2' });
     expect(networks[1]).toMatchObject({ ssid: 'Guest', security: 'WPA3' });
     expect(networks[2]).toMatchObject({ ssid: 'OpenNet', security: 'UNSECURED' });
-    expect(networks[3]).toMatchObject({ ssid: 'unknown', security: 'UNKNOWN', mac: '' });
+    expect(networks[3]).toMatchObject({ ssid: 'Legacy', security: 'WEP' });
+    expect(networks[4]).toMatchObject({ ssid: 'unknown', security: 'UNKNOWN', mac: '' });
     expect(wifi.getNetworks()).toEqual(networks);
   });
 
@@ -84,40 +97,19 @@ describe('Wifi', () => {
     await expect(wifi.refreshNetworks()).rejects.toThrow('no wifi adapter');
   });
 
-  it('detects current wifi connection', async () => {
-    vi.mocked(NodeWifi.getCurrentConnections).mockImplementation((callback) => {
-      callback(null, [
-        {
-          ssid: 'Home',
-          bssid: 'aa:bb',
-          mac: 'aa:bb',
-          channel: 6,
-          frequency: 2437,
-          signal_level: -40,
-          quality: 80,
-          security: 'WPA2',
-          security_flags: [],
-          mode: 'Unknown',
-        },
-      ]);
+  it('detects wifi adapter when scan succeeds', async () => {
+    vi.mocked(NodeWifi.scan).mockImplementation((callback) => {
+      callback(null, []);
     });
 
     await expect(new Wifi().hasWifi()).resolves.toBe(true);
   });
 
-  it('returns false when no current connection', async () => {
-    vi.mocked(NodeWifi.getCurrentConnections).mockImplementation((callback) => {
-      callback(null, []);
-    });
-
-    await expect(new Wifi().hasWifi()).resolves.toBe(false);
-  });
-
-  it('rejects hasWifi when adapter lookup fails', async () => {
-    vi.mocked(NodeWifi.getCurrentConnections).mockImplementation((callback) => {
+  it('returns false when scan fails (no adapter)', async () => {
+    vi.mocked(NodeWifi.scan).mockImplementation((callback) => {
       callback(new Error('wifi error'), []);
     });
 
-    await expect(new Wifi().hasWifi()).rejects.toThrow('wifi error');
+    await expect(new Wifi().hasWifi()).resolves.toBe(false);
   });
 });

@@ -66,14 +66,11 @@ export class AppCache {
   }
 
   public getCachedFileInfos(filename: string): CachedFileInfos {
-    const files = fs.readdirSync(this.cacheDir, { encoding: 'utf8' });
-    for (const file of files) {
-      const appFilename = this.filenameToAppFilename(filename);
-      if (appFilename) {
-        return this.getFileInfos(path.join(this.cacheDir, file));
-      }
+    const appFilename = this.filenameToAppFilename(filename);
+    if (!appFilename) {
+      return null;
     }
-    return null;
+    return this.getFileInfos(appFilename.realFilepath);
   }
 
   private getFileInfos(realFilepath: string): CachedFileInfos {

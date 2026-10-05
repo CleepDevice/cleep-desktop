@@ -10,7 +10,7 @@
                 <span flex></span>
             </div>
         </md-toolbar>
-        <md-progress-linear md-mode="determinate"></md-progress-linear>
+        <md-progress-linear md-mode="determinate" value="{{ctl.installService.installProgress.percent || 0}}"></md-progress-linear>
 
         <md-content layout-padding>
 
@@ -61,7 +61,8 @@
                                 <md-select ng-model="ctl.installService.installConfig.network"
                                     placeholder="Network connection"
                                     class="md-no-underline"
-                                    ng-disabled="ctl.installService.installing">
+                                    ng-disabled="ctl.installService.installing"
+                                    ng-change="ctl.installService.installConfig.network === 0 && (ctl.installService.installConfig.wifi = null)">
                                     <md-option ng-value="0">Wired connection</md-option>
                                     <md-option ng-value="1">Wifi on available network</md-option>
                                     <md-option ng-value="2">Wifi on hidden network</md-option>
@@ -82,10 +83,15 @@
                         </md-list-item>
 
                         <!-- install button -->
-                        <md-list-item>
+                        <md-list-item class="md-2-line">
                             <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Click on button to install Cleep and follow install process below</p>
-                            <md-button ng-click="ctl.startInstall()" ng-disabled="ctl.installService.installing || !ctl.updateService.softwareVersions.flashTool" class="md-secondary md-raised md-accent">
+                            <div class="md-list-item-text">
+                                <h3>Click on button to install Cleep and follow install process below</h3>
+                                <p ng-if="!ctl.updateService.softwareVersions.flashTool && !ctl.installService.flashToolInstalled">
+                                    Flash tool is not installed yet. Please wait until application updates finish.
+                                </p>
+                            </div>
+                            <md-button ng-click="ctl.startInstall()" ng-disabled="ctl.installService.installing || (!ctl.updateService.softwareVersions.flashTool && !ctl.installService.flashToolInstalled)" class="md-secondary md-raised md-accent">
                                 <md-icon md-svg-icon="sd"></md-icon>
                                 Install
                             </md-button>
@@ -118,25 +124,38 @@
                             <span ng-if="ctl.installService.installProgress.step === 'idle' && !ctl.installService.installing && ctl.installService.installProgress.terminated">
                                 Installation terminated. If no error insert SDCard on your raspberry and power it up.
                             </span>
+                            <span ng-if="ctl.installService.installProgress.step === 'canceled'">
+                                Installation canceled.
+                            </span>
                             <span ng-if="ctl.installService.installProgress.step === 'downloading'">
-                                Step 1/3: downloading files (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
+                                Step 1/4: downloading files
+                                <span ng-if="ctl.installService.installProgress.eta >= 0">
+                                    (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
+                                </span>
                             </span>
                             <span ng-if="ctl.installService.installProgress.step === 'privileges'">
-                                Step 2/3: requesting permissions to write on drive
+                                Step 2/4: requesting permissions to write on drive
                             </span>
                             <span ng-if="ctl.installService.installProgress.step === 'flashing'">
-                                Step 2/3: flashing drive
+                                Step 3/4: flashing drive
                                 <span ng-if="ctl.installService.installProgress.eta >= 0">
                                     (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
                                 </span>
                             </span>
                             <span ng-if="ctl.installService.installProgress.step === 'validating'">
-                                Step 3/3: validating operation
+                                Step 4/4: validating operation
                                 <span ng-if="ctl.installService.installProgress.eta >= 0">
                                     (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
                                 </span>
                             </span>
                         </div>
+                        <md-button
+                            class="md-raised"
+                            ng-click="ctl.cancelInstall()"
+                            ng-if="ctl.installService.installing"
+                            ng-disabled="!ctl.installService.installing">
+                            Cancel
+                        </md-button>
                     </div>
                     <div ng-if="ctl.installService.installProgress.error.length > 0">
                         Installation failed: {{ ctl.installService.installProgress.error }}
@@ -145,7 +164,7 @@
                         <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.installService.installProgress.percent || 0}}" style="padding-top: 15px !important;"></md-progress-linear>
                     </div>
                     <div layout="row" layout-align="end center" style="padding-top:30px;">
-                        Powered by&nbsp;<a href="https://www.balena.io/etcher" target="_blank"><img style="height:25px;" src="images/balena-etcher.png"/></a>
+                        <span class="md-caption">Powered by&nbsp;<a href="https://www.raspberrypi.com/software/" target="_blank">Raspberry Pi Imager</a></span>
                     </div>
                 </md-card-content>
             </md-card>
@@ -170,4 +189,3 @@
         </md-content>
 
     </div>
-

@@ -37,6 +37,7 @@ describe('Sudo', () => {
     child.stdout = new EventEmitter();
     child.stderr = new EventEmitter();
     child.kill = vi.fn();
+    child.pid = 4242;
     vi.mocked(spawn).mockReturnValue(child as never);
 
     const terminatedCallback = vi.fn();
@@ -66,6 +67,7 @@ describe('Sudo', () => {
     expect(terminatedCallback).toHaveBeenCalledWith(0);
 
     sudo.kill();
+    expect(spawnSync).toHaveBeenCalledWith('pkill', ['-TERM', '-P', '4242']);
     expect(child.kill).toHaveBeenCalledWith('SIGTERM');
   });
 
@@ -149,7 +151,7 @@ describe('Sudo', () => {
       stdoutCallback: vi.fn(),
       stderrCallback: vi.fn(),
     });
-    sudo.run('echo', ['hello']);
+    sudo.run('C:\\Program Files\\tool.exe', ['hello world']);
 
     expect(spawn).toHaveBeenCalledWith(
       expect.stringContaining('elevate.exe'),
@@ -157,6 +159,12 @@ describe('Sudo', () => {
       expect.any(Object),
     );
 
+    const batchFiles = fs.readdirSync(os.tmpdir()).filter((file) => file.startsWith('sudo-command-'));
+    expect(batchFiles.length).toBeGreaterThan(0);
+    const batchContent = fs.readFileSync(path.join(os.tmpdir(), batchFiles[0]), 'utf8');
+    expect(batchContent).toContain('"C:\\Program Files\\tool.exe"');
+
+    sudo.kill();
     // cleanup generated batch files in temp
     for (const file of fs.readdirSync(os.tmpdir())) {
       if (file.startsWith('sudo-command-') || file.startsWith('sudo-output-') || file === 'elevate.exe') {

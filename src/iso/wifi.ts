@@ -35,14 +35,16 @@ export class Wifi {
   }
 
   public hasWifi(): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      NodeWifi.getCurrentConnections((error: Error | null, connections: NodeWifi.WiFiNetwork[]) => {
-        appLogger.debug('node-wifi.getCurrentConnections result', { error, connections });
+    // Successful scan means a WiFi adapter is available (even with zero networks).
+    // getCurrentConnections only reflects an active association and is too strict.
+    return new Promise((resolve) => {
+      NodeWifi.scan((error: Error | null) => {
+        appLogger.debug('node-wifi.scan (hasWifi) result', { error });
         if (error) {
-          reject(error);
+          resolve(false);
           return;
         }
-        resolve(connections?.length > 0);
+        resolve(true);
       });
     });
   }
@@ -72,7 +74,10 @@ export class Wifi {
     if (lowerCaseSecurity.indexOf('wpa3') !== -1) return 'WPA3';
     if (lowerCaseSecurity.indexOf('wpa2') !== -1) return 'WPA2';
     if (lowerCaseSecurity.indexOf('wpa') !== -1) return 'WPA';
-    if (lowerCaseSecurity.indexOf('open') !== -1) return 'UNSECURED';
+    if (lowerCaseSecurity.indexOf('wep') !== -1) return 'WEP';
+    if (lowerCaseSecurity.indexOf('open') !== -1 || lowerCaseSecurity.indexOf('none') !== -1) {
+      return 'UNSECURED';
+    }
     return 'UNKNOWN';
   }
 }
