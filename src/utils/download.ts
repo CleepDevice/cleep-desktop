@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { app } from 'electron';
-import progress_stream, { Progress } from 'progress-stream';
+import { Transform } from 'stream';
 import { appLogger } from '../app-logger';
 import crypto from 'crypto';
 
@@ -17,6 +17,39 @@ export interface IDownloadProgress {
 export type OnDownloadProgressCallback = (downloadProgress: IDownloadProgress) => void;
 
 const abordDownloads: Record<string, AbortController> = {};
+const PROGRESS_INTERVAL_MS = 1000;
+
+function createDownloadProgressStream(
+  totalSize: number,
+  onProgress: (percent: number, eta: number) => void,
+): Transform {
+  let transferred = 0;
+  const startedAt = Date.now();
+  let lastEmitAt = 0;
+
+  const emitProgress = (): void => {
+    const now = Date.now();
+    if (now - lastEmitAt < PROGRESS_INTERVAL_MS) {
+      return;
+    }
+    lastEmitAt = now;
+
+    const elapsedSeconds = Math.max((now - startedAt) / 1000, 0.001);
+    const percent = totalSize > 0 ? Math.min(100, Math.round((transferred / totalSize) * 100)) : 0;
+    const bytesPerSecond = transferred / elapsedSeconds;
+    const remainingBytes = Math.max(totalSize - transferred, 0);
+    const eta = bytesPerSecond > 0 ? Math.round(remainingBytes / bytesPerSecond) : 0;
+    onProgress(percent, eta);
+  };
+
+  return new Transform({
+    transform(chunk, _encoding, callback) {
+      transferred += chunk.length;
+      emitProgress();
+      callback(null, chunk);
+    },
+  });
+}
 
 export async function downloadFile(
   url: string,
@@ -40,7 +73,13 @@ export async function downloadFile(
   });
   const totalSize = Number(download.headers['content-length']) || 0;
   appLogger.debug(`File to download size ${totalSize}`);
-  const progress = progress_stream({ length: totalSize, time: 1000 });
+  const progress = createDownloadProgressStream(totalSize, (percent, eta) => {
+    downloadProgressCallback({
+      terminated: false,
+      percent,
+      eta,
+    });
+  });
   download.data.pipe(progress).pipe(writer);
 
   return new Promise((resolve, reject) => {
@@ -66,13 +105,6 @@ export async function downloadFile(
     });
     writer.on('error', (error) => {
       reject(error);
-    });
-    progress.on('progress', (progress: Progress) => {
-      downloadProgressCallback({
-        terminated: false,
-        percent: Math.round(progress.percentage),
-        eta: progress.eta,
-      });
     });
   });
 }
