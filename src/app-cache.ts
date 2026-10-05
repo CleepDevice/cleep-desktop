@@ -17,7 +17,7 @@ interface AppFilename {
   realFilepath: string;
 }
 
-class AppCache {
+export class AppCache {
   private cacheDir = path.join(app.getPath('userData'), 'file-cache');
   private readonly SEPARATOR = '===';
 

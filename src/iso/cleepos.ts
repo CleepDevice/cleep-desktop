@@ -9,14 +9,16 @@ export class CleepOs {
 
     const isoAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf('.zip') >= 0);
     const checksumAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf('.sha256') >= 0);
-    const sha256 = await getChecksumFromUrl(checksumAsset?.browser_download_url);
+    const sha256 = checksumAsset?.browser_download_url
+      ? await getChecksumFromUrl(checksumAsset.browser_download_url)
+      : null;
 
     return {
       url: isoAsset?.browser_download_url,
       size: isoAsset?.size,
-      filename: getFilenameFromUrl(isoAsset?.browser_download_url),
+      filename: isoAsset?.browser_download_url ? getFilenameFromUrl(isoAsset.browser_download_url) : '',
       label: this.getCleanFilename(isoAsset?.name),
-      date: new Date(isoAsset?.updated_at),
+      date: isoAsset?.updated_at ? new Date(isoAsset.updated_at) : undefined,
       sha256,
       category: 'cleepos',
       error: latestRelease.error,

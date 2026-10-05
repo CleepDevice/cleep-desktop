@@ -14,7 +14,7 @@ export interface WifiNetwork {
 }
 
 export class Wifi {
-  private networks: WifiNetwork[];
+  private networks: WifiNetwork[] = [];
 
   constructor() {
     NodeWifi.init({});
@@ -26,6 +26,7 @@ export class Wifi {
         appLogger.debug('node-wifi.scan result', { error, networks });
         if (error) {
           reject(error);
+          return;
         }
         this.parseNetworks(networks);
         resolve(this.networks);
@@ -39,6 +40,7 @@ export class Wifi {
         appLogger.debug('node-wifi.getCurrentConnections result', { error, connections });
         if (error) {
           reject(error);
+          return;
         }
         resolve(connections?.length > 0);
       });
@@ -46,6 +48,7 @@ export class Wifi {
   }
 
   private parseNetworks(networks: NodeWifi.WiFiNetwork[]): void {
+    this.networks = [];
     for (const network of networks) {
       this.networks.push({
         ssid: network?.ssid || 'unknown',
