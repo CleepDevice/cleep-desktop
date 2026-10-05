@@ -10,13 +10,12 @@ import { appIso } from './app-iso';
 import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
 import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
+import { setupDevReloader } from './utils/dev-reloader';
+
+setupDevReloader();
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
-
-// if (appContext.isDev) {
-//   app.commandLine.appendSwitch('no-sandbox');
-// }
 
 appSettings.configure(app);
 appContext.configure();

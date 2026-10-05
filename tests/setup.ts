@@ -57,6 +57,9 @@ vi.mock('electron', () => {
         return USER_DATA_DIR;
       },
       quit: vi.fn(),
+      relaunch: vi.fn(),
+      exit: vi.fn(),
+      on: vi.fn(),
       badgeCount: 0,
       dock: {
         downloadFinished: vi.fn(),

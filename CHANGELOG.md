@@ -13,6 +13,7 @@
 ### Added
 
 - Unit tests (~93% coverage)
+- Implements hot-reload for developments
 
 ## [0.3.0] - 2024-02-28
 

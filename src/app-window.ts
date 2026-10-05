@@ -1,8 +1,8 @@
 import { BrowserWindow, dialog, shell } from 'electron';
 import url from 'url';
 import { appContext } from './app-context';
-import path from 'path';
 import { appLogger } from './app-logger';
+import { getHtmlFilePath, getResourceFilePath } from './utils/paths';
 
 // create application main window
 export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindow {
@@ -19,7 +19,7 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     minHeight: 640,
     minWidth: 375,
     show: false,
-    icon: __dirname + '/resources/256x256.png',
+    icon: getResourceFilePath('256x256.png'),
     title: 'CleepDesktop',
   });
 
@@ -58,9 +58,18 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
   });
 
   // and load the index.html of the app.
-  mainWindow.loadURL(`file://${__dirname}/html/index.html`, {
-    extraHeaders: 'pragma: no-cache\n',
-  });
+  const indexHtmlPath = getHtmlFilePath('index.html');
+  appLogger.debug('Loading application UI', { indexHtmlPath });
+  mainWindow.loadURL(
+    url.format({
+      pathname: indexHtmlPath,
+      protocol: 'file:',
+      slashes: true,
+    }),
+    {
+      extraHeaders: 'pragma: no-cache\n',
+    },
+  );
 
   // Open the DevTools in dev mode only
   if (appContext.isDev || process.env.CLEEPDESKTOP_DEBUG) {
@@ -109,7 +118,7 @@ export function createSplashscreenWindow(mainWindow: BrowserWindow): BrowserWind
     frame: false,
     parent: mainWindow,
     resizable: false,
-    icon: __dirname + '/resources/256x256.png',
+    icon: getResourceFilePath('256x256.png'),
     webPreferences: {
       webSecurity: false,
     },
@@ -118,7 +127,7 @@ export function createSplashscreenWindow(mainWindow: BrowserWindow): BrowserWind
   // load splashscreen content
   splashScreenWindow.loadURL(
     url.format({
-      pathname: path.join(__dirname, 'html/loading.html'),
+      pathname: getHtmlFilePath('loading.html'),
       protocol: 'file:',
       slashes: true,
     }),
