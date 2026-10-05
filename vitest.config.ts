@@ -12,7 +12,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'text-summary'],
       include: ['src/**/*.ts'],
-      exclude: ['src/main.ts', '**/*.types.ts'],
+      exclude: ['src/main.ts', 'src/pyre/**', '**/*.types.ts'],
     },
   },
 });

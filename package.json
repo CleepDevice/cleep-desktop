@@ -33,7 +33,6 @@
         "@types/node-wifi": "^2.0.2",
         "@types/semver": "^7.8.0",
         "@types/unzipper": "^0.10.11",
-        "@types/ws": "^8.18.2",
         "@vitest/coverage-v8": "^3.2.7",
         "concurrently": "^9.2.4",
         "copyfiles": "^2.4.1",
@@ -54,13 +53,10 @@
         "electron-log": "^5.4.4",
         "electron-settings": "^4.0.4",
         "electron-updater": "^6.8.9",
-        "find-process": "^2.1.1",
         "mime": "^4.1.0",
         "node-wifi": "^2.0.16",
-        "terminate": "^2.8.0",
         "unzipper": "^0.12.5",
-        "uuid": "^11.1.1",
-        "ws": "^8.22.0"
+        "uuid": "^11.1.1"
     },
     "build": {
         "appId": "com.cleep.cleepdesktop",

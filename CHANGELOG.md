@@ -8,6 +8,7 @@
 - Update Electron from 36 to 41
 - Replace eslint by oxlint
 - Replace extract-zip by unzipper (outdated since 2020)
+- Replace python cleepbus by pyre-ts
 
 ### Added
 

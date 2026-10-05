@@ -187,11 +187,3 @@ vi.mock('node-wifi', () => ({
     callback(null, []),
   ),
 }));
-
-vi.mock('find-process', () => ({
-  default: vi.fn(async () => []),
-}));
-
-vi.mock('terminate', () => ({
-  default: vi.fn((_pid: number, callback?: (error?: Error) => void) => callback?.()),
-}));

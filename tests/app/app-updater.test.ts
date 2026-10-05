@@ -51,7 +51,7 @@ describe('AppUpdater', () => {
     expect(status).toMatchObject({
       cleepDesktop: { updateAvailable: false },
       flashTool: { updateAvailable: false, error: 'no update in tests' },
-      cleepbus: { updateAvailable: false, error: 'no update in tests' },
+      cleepbus: { updateAvailable: false },
     });
     expect(status.lastUpdateCheck).toBeTypeOf('number');
   });
