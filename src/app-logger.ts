@@ -66,23 +66,14 @@ export class AppLogger {
   }
 
   public log(level: LoggerLevel, from: LoggerFrom, message: string, extra?: unknown): void {
-    let loggerCall = null;
-    switch (level) {
-      case 'debug':
-        loggerCall = logger.debug;
-        break;
-      case 'info':
-        loggerCall = logger.info;
-        break;
-      case 'warn':
-        loggerCall = logger.warn;
-        break;
-      case 'error':
-        loggerCall = logger.error;
-        break;
-      default:
-        loggerCall = logger.info;
-    }
+    const loggerByLevel: Record<LoggerLevel, typeof logger.info> = {
+      no: logger.info,
+      debug: logger.debug,
+      info: logger.info,
+      warn: logger.warn,
+      error: logger.error,
+    };
+    const loggerCall = loggerByLevel[level];
 
     const messageStr = `[${from}] ${message}`;
     if (extra) {

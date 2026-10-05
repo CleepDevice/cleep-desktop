@@ -144,7 +144,7 @@ export class AppCache {
       fs.unlinkSync(filepath);
     } catch (error) {
       appLogger.error(`Error occured while moving file to cache: ${error}`);
-      throw new Error('Unable to move file to cache folder');
+      throw new Error('Unable to move file to cache folder', { cause: error });
     }
 
     return newFilepath;

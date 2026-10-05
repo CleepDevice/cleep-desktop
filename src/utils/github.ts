@@ -68,12 +68,29 @@ const GIHHUB_HEADERS = {
   accept: 'application/vnd.github+json',
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getGithubErrorMessage(error: any): string {
-  if (error?.status === 403 || error?.status === 429) {
+function getGithubErrorMessage(error: unknown): string {
+  if (isGithubRateLimitError(error)) {
     return 'Too many requests. Retry in few minutes.';
   }
-  return error.message || 'Unknown error';
+  if (error instanceof Error) {
+    return error.message || 'Unknown error';
+  }
+  return 'Unknown error';
+}
+
+function isGithubRateLimitError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const status =
+    'status' in error && typeof error.status === 'number'
+      ? error.status
+      : axios.isAxiosError(error)
+        ? error.response?.status
+        : undefined;
+
+  return status === 403 || status === 429;
 }
 
 export async function getLatestGithubRelease(repo: IGithubRepo): Promise<IGithubRelease> {

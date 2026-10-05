@@ -41,7 +41,8 @@ describe('getLatestGithubRelease', () => {
   });
 
   it('returns a friendly error on rate limit', async () => {
-    vi.mocked(axios.get).mockRejectedValue({ status: 403, message: 'Forbidden' });
+    const rateLimitError = Object.assign(new Error('Forbidden'), { status: 403 });
+    vi.mocked(axios.get).mockRejectedValue(rateLimitError);
 
     const release = await getLatestGithubRelease({ owner: 'CleepDevice', repo: 'cleep-os' });
 

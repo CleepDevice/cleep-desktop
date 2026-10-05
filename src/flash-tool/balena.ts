@@ -17,10 +17,8 @@ const FILENAME_WINDOWS = '-windows-';
 const BALENA_DARWIN_BIN = 'balena';
 const BALENA_LINUX_BIN = 'balena';
 const BALENA_WINDOWS_BIN = 'balena.exe';
-// eslint-disable-next-line no-useless-escape
-const DRIVELIST_WINDOWS = /^(\\.*?)\s+([\d\.]+)\s+(.*?)\s+(.*?)$/gmu;
-// eslint-disable-next-line no-useless-escape
-const DRIVELIST_LINUX = /^(\/.*?)\s+([\d\.]+)\s+(.*?)\s+(.*?)$/gmu;
+const DRIVELIST_WINDOWS = /^(\\.*?)\s+([\d.]+)\s+(.*?)\s+(.*?)$/gmu;
+const DRIVELIST_LINUX = /^(\/.*?)\s+([\d.]+)\s+(.*?)\s+(.*?)$/gmu;
 const UNITS: DriveUnit[] = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'];
 
 const BALENA_FLASH_PATTERN = /.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)/gmu;
