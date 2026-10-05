@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Progress-stream lib replaced by internal code (outdated since 2017)
+- Update Electron from 36 to 41
+- Replace eslint by oxlint
+- Replace extract-zip by unzipper (outdated since 2020)
+
+### Added
+
+- Unit tests (~93% coverage)
+
 ## [0.3.0] - 2024-02-28
 
 ### Changed

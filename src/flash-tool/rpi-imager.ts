@@ -2,12 +2,12 @@ import { appSettings } from '../app-settings';
 import { appLogger } from '../app-logger';
 import fs from 'fs';
 import path from 'path';
-import extract from 'extract-zip';
 import { getError } from '../utils/app.helpers';
 import { IToolUpdateStatus, OnUpdateAvailableCallback } from '../app-updater';
 import { FlashOutput, FLASHTOOL_DIR } from '../app-iso';
 import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
 import { getLatestGithubRelease, IGithubRepo, IRelease } from '../utils/github';
+import { extractZipArchive } from '../utils/unzip';
 
 const FILENAME_DARWIN = '-macos-';
 const FILENAME_LINUX = '-linux-';
@@ -81,7 +81,7 @@ export class RpiImager {
     fs.rmSync(destinationPath, { recursive: true, force: true });
     fs.mkdirSync(destinationPath, { recursive: true });
     appLogger.debug(`Unzipping flashtool archive "${sourcePath}" to "${destinationPath}"`);
-    await extract(sourcePath, { dir: destinationPath });
+    await extractZipArchive(sourcePath, destinationPath);
     appLogger.info('Flashtool extracted successfully');
   }
 

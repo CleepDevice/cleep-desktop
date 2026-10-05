@@ -15,8 +15,8 @@ vi.mock('../../src/utils/download', () => ({
   downloadFile: vi.fn(async () => '/tmp/cleepbus.zip'),
 }));
 
-vi.mock('extract-zip', () => ({
-  default: vi.fn(async () => undefined),
+vi.mock('../../src/utils/unzip', () => ({
+  extractZipArchive: vi.fn(async () => undefined),
 }));
 
 describe('Cleepbus', () => {

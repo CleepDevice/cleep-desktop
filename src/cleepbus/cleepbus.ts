@@ -6,7 +6,6 @@ import { app } from 'electron';
 import { ChildProcessByStdio, spawn, SpawnOptionsWithStdioTuple, StdioNull, StdioPipe } from 'child_process';
 import { Readable } from 'stream';
 import fs from 'fs';
-import extract from 'extract-zip';
 import { appSettings } from '../app-settings';
 import { getError, getWsPort } from '../utils/app.helpers';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -24,6 +23,7 @@ import {
 import find from 'find-process';
 import terminate from 'terminate';
 import { IGithubRepo, IRelease, getLatestGithubRelease } from '../utils/github';
+import { extractZipArchive } from '../utils/unzip';
 
 export const CLEEPBUS_DIR = path.join(app.getPath('userData'), 'cleepbus');
 const FILENAME_DARWIN = '-macos-';
@@ -370,7 +370,7 @@ export class Cleepbus {
     fs.rmSync(destinationPath, { recursive: true, force: true });
     fs.mkdirSync(destinationPath, { recursive: true });
     appLogger.debug(`Unzipping Cleepbus archive "${sourcePath}" to "${destinationPath}"`);
-    await extract(sourcePath, { dir: destinationPath });
+    await extractZipArchive(sourcePath, destinationPath);
     appLogger.info('Cleepbus extracted successfully');
   }
 

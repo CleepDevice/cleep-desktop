@@ -30,8 +30,8 @@ vi.mock('../../src/utils/github', () => ({
   getLatestGithubRelease: vi.fn(),
 }));
 
-vi.mock('extract-zip', () => ({
-  default: vi.fn(),
+vi.mock('../../src/utils/unzip', () => ({
+  extractZipArchive: vi.fn(),
 }));
 
 vi.mock('child_process', async () => {
@@ -174,9 +174,9 @@ describe('Balena', () => {
 
   it('install succeeds and extracts archive', async () => {
     const { downloadFile } = await import('../../src/utils/download');
-    const extract = (await import('extract-zip')).default;
+    const { extractZipArchive } = await import('../../src/utils/unzip');
     vi.mocked(downloadFile).mockResolvedValue('/tmp/flashtool.zip');
-    vi.mocked(extract).mockResolvedValue(undefined);
+    vi.mocked(extractZipArchive).mockResolvedValue(undefined);
 
     const updateCb = vi.fn();
     const progressCb = vi.fn();

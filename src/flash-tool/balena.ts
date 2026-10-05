@@ -2,13 +2,13 @@ import { appSettings } from '../app-settings';
 import { appLogger } from '../app-logger';
 import fs from 'fs';
 import path from 'path';
-import extract from 'extract-zip';
 import { DriveUnit, findMatches, getError } from '../utils/app.helpers';
 import { exec } from 'child_process';
 import { IToolUpdateStatus, OnUpdateAvailableCallback } from '../app-updater';
 import { FlashOutput, FLASHTOOL_DIR } from '../app-iso';
 import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
 import { getLatestGithubRelease, IGithubRepo, IRelease } from '../utils/github';
+import { extractZipArchive } from '../utils/unzip';
 import { Drive } from './flashtool.interface';
 
 const FILENAME_DARWIN = '-darwin-';
@@ -88,7 +88,7 @@ export class Balena {
     fs.rmSync(destinationPath, { recursive: true, force: true });
     fs.mkdirSync(destinationPath, { recursive: true });
     appLogger.debug(`Unzipping flash-tool archive "${sourcePath}" to "${destinationPath}"`);
-    await extract(sourcePath, { dir: destinationPath });
+    await extractZipArchive(sourcePath, destinationPath);
     appLogger.info('Flash-tool extracted successfully');
   }
 
