@@ -9,6 +9,7 @@ import { appContext } from './app-context';
 class AppDevices {
   private window: BrowserWindow;
   private devices: Record<string, CleepbusPeerInfos> = {};
+  private busConnected = false;
 
   constructor() {
     cleepbus.setCleepbusCallbacks(
@@ -40,12 +41,6 @@ class AppDevices {
   public configure(window: BrowserWindow): void {
     this.window = window;
     this.addIpcs();
-
-    // send devices list at startup
-    this.window.webContents.once('dom-ready', () => {
-      sendDataToAngularJs(this.window, 'devices-updated', this.devicesObjectToArray());
-    });
-
     cleepbus.start();
   }
 
@@ -55,11 +50,13 @@ class AppDevices {
 
   private onMessageBusError(error: string): void {
     appLogger.error('Message bus error', { error });
+    this.busConnected = false;
     sendDataToAngularJs(this.window, 'devices-message-bus-error', error);
   }
 
   private onMessageBusConnected(connected: boolean): void {
     appLogger.info('Message bus connected', { connected });
+    this.busConnected = connected;
     sendDataToAngularJs(this.window, 'devices-message-bus-connected', connected);
   }
 
@@ -113,6 +110,13 @@ class AppDevices {
   }
 
   private addIpcs(): void {
+    ipcMain.handle('devices-get-ui-state', async () => {
+      return {
+        devices: this.devicesObjectToArray(),
+        busConnected: this.busConnected,
+      };
+    });
+
     ipcMain.handle('devices-delete-device', async (_event, deviceUuid: string) => {
       appLogger.info(`Deleting device ${deviceUuid}`);
       const deviceDeleted = this.deleteDevice(deviceUuid);

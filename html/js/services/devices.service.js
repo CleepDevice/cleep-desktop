@@ -19,6 +19,18 @@ function(electron, logger) {
 
     self.init = function() {
         self.addIpcs();
+        // Pull current state after listeners are registered (covers startup + html hot-reload).
+        electron.sendReturn('devices-get-ui-state')
+            .then((state) => {
+                if (!state) {
+                    return;
+                }
+                self.onDevicesUpdated(null, state.devices || []);
+                self.onMessageBusConnected(null, Boolean(state.busConnected));
+            })
+            .catch((error) => {
+                logger.error('Unable to load devices ui state', error);
+            });
     };
  
     self.addIpcs = function() {

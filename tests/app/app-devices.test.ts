@@ -37,6 +37,7 @@ describe('AppDevices', () => {
   const send = vi.fn();
   const window = {
     webContents: {
+      on: vi.fn((_event: string, cb: () => void) => cb()),
       once: vi.fn((_event: string, cb: () => void) => cb()),
       send,
     },
@@ -47,8 +48,9 @@ describe('AppDevices', () => {
     appDevices.configure(window);
   });
 
-  it('configure starts bus and syncs peer connection updates', () => {
+  it('configure starts bus and exposes get-ui-state ipc', async () => {
     send.mockClear();
+    busCallbacks.connected?.(true);
     busCallbacks.peerConnected?.({
       uuid: 'device-1',
       hostname: 'pi',
@@ -63,6 +65,10 @@ describe('AppDevices', () => {
       .filter((call) => call[0] === 'devices-updated')
       .map((call) => call[1] as Array<{ uuid: string }>);
     expect(deviceUpdates.some((devices) => devices.some((device) => device.uuid === 'device-1'))).toBe(true);
+
+    const state = await ipcHandleHandlers.get('devices-get-ui-state')({});
+    expect(state.busConnected).toBe(true);
+    expect(state.devices.some((device: { uuid: string }) => device.uuid === 'device-1')).toBe(true);
 
     busCallbacks.peerDisconnected?.({
       uuid: 'device-1',
