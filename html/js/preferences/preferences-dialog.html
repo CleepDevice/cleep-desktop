@@ -60,6 +60,58 @@
                 </md-card>
 
             </md-tab>
+
+            <!-- network -->
+            <md-tab label="Network" layout-padding md-on-select="ctl.loadNetworkConfig()">
+                <md-card>
+                    <md-card-title>
+                        <md-card-title-text>
+                            <span class="md-headline">
+                                <md-icon class="rounded-icon" md-svg-icon="web"></md-icon>
+                                Network interface
+                            </span>
+                        </md-card-title-text>
+                    </md-card-title>
+                    <md-card-content>
+                        <p class="md-body-1">
+                            If you experience network issues, the automatically detected network interface may not be the correct one.
+                            In that case, select the appropriate interface from the list below.
+                        </p>
+                        <md-list>
+                            <md-list-item>
+                                <md-icon md-svg-icon="chevron-right"></md-icon>
+                                <p>Interface</p>
+                                <md-select
+                                    class="md-secondary"
+                                    ng-model="ctl.selectedNetworkInterface"
+                                    ng-change="ctl.applyNetworkInterface()"
+                                    ng-disabled="ctl.networkApplying"
+                                    placeholder="Automatic">
+                                    <md-option value="">Automatic</md-option>
+                                    <md-option
+                                        ng-repeat="iface in ctl.networkInterfaces"
+                                        ng-value="iface.name"
+                                        ng-disabled="!iface.usableForBus">
+                                        {{iface.name}}{{iface.address ? ' — ' + iface.address : ''}}{{iface.onDefaultRoute ? ' (default route)' : ''}}
+                                    </md-option>
+                                </md-select>
+                            </md-list-item>
+                        </md-list>
+                        <div layout="row" layout-align="end center">
+                            <span class="md-caption" ng-if="!ctl.networkConfig.activeInterface && ctl.selectedNetworkInterface">
+                                The selected interface has no usable IPv4 address for device discovery.
+                            </span>
+                            <span class="md-caption" ng-if="ctl.networkApplying">Restarting message bus…</span>
+                            <span class="md-caption" ng-if="!ctl.networkApplying && ctl.networkConfig.busConnected">
+                                {{ctl.networkConfig.peerCount}} device{{ctl.networkConfig.peerCount === 1 ? '' : 's'}} detected on the message bus.
+                            </span>
+                            <span class="md-caption" ng-if="!ctl.networkApplying && !ctl.networkConfig.busConnected">
+                                Message bus is not connected.
+                            </span>
+                        </div>
+                    </md-card-content>
+                </md-card>
+            </md-tab>
             
             <!-- cache -->
             <md-tab label="Cache" layout-padding>

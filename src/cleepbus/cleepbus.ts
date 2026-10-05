@@ -118,6 +118,10 @@ export class Cleepbus {
       const uuid = appSettings.get<string>('cleep.uuid');
 
       this.pyre = new Pyre({ name: BUS_NAME, verbose: debug });
+      const forcedInterface = appSettings.get<string>('cleep.networkinterface')?.trim();
+      if (forcedInterface) {
+        this.pyre.setInterface(forcedInterface);
+      }
       for (const [key, value] of Object.entries(this.getHeaders(uuid))) {
         this.pyre.setHeader(key, value);
       }
@@ -150,7 +154,16 @@ export class Cleepbus {
     }
   }
 
+  public async restart(): Promise<void> {
+    await this.shutdown();
+    await this.start();
+  }
+
   public stop(): void {
+    void this.shutdown();
+  }
+
+  private async shutdown(): Promise<void> {
     this.forcedStop = true;
     this.clearRestartTimer();
     this.stopMetricsTimer();
@@ -158,7 +171,7 @@ export class Cleepbus {
     this.pyre = null;
     this.peers.clear();
     if (node) {
-      void node.stop().catch((error: Error) => {
+      await node.stop().catch((error: Error) => {
         appLogger.error('Error stopping cleepbus', { error: getError(error) });
       });
     }

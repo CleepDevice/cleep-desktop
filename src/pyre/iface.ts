@@ -166,12 +166,22 @@ export function getDefaultInterfaceNames(): string[] {
 
 type IPv4Candidate = IfaceInfo & { sortKey: number };
 
+export type ListedNetworkInterface = {
+  name: string;
+  address: string | null;
+  /** Can be used for ZRE beacons (private IPv4 with broadcast). */
+  usableForBus: boolean;
+  onDefaultRoute: boolean;
+};
+
 function collectCandidates(
   interfaceName: string | undefined,
   defaultNames: string[],
+  options?: { allInterfaces?: boolean },
 ): IPv4Candidate[] {
   const nets = networkInterfaces();
-  const restrictToDefault = !interfaceName && defaultNames.length > 0;
+  const restrictToDefault =
+    !interfaceName && !options?.allInterfaces && defaultNames.length > 0;
   const candidates: IPv4Candidate[] = [];
 
   const orderedNames = interfaceName
@@ -236,6 +246,57 @@ function loopbackFallback(): IfaceInfo {
  * Pick the LAN interface for ZRE beacons and advertised TCP endpoint.
  * Mirrors pyre-gevent zbeacon._prepare_socket when no interface is forced.
  */
+/**
+ * All local network interfaces (for manual bus binding in Preferences).
+ */
+export function listNetworkInterfaces(): ListedNetworkInterface[] {
+  const defaultNames = getDefaultInterfaceNames();
+  const defaultSet = new Set(defaultNames);
+  const usableCandidates = collectCandidates(undefined, defaultNames, { allInterfaces: true });
+  const bestUsableByName = new Map<string, IPv4Candidate>();
+  for (const candidate of usableCandidates) {
+    const existing = bestUsableByName.get(candidate.name);
+    if (!existing || candidate.sortKey < existing.sortKey) {
+      bestUsableByName.set(candidate.name, candidate);
+    }
+  }
+
+  const nets = networkInterfaces();
+  const listed: ListedNetworkInterface[] = [];
+
+  for (const name of Object.keys(nets).sort()) {
+    const usable = bestUsableByName.get(name);
+    if (usable) {
+      listed.push({
+        name,
+        address: usable.address,
+        usableForBus: true,
+        onDefaultRoute: defaultSet.has(name),
+      });
+      continue;
+    }
+
+    const addrs = nets[name] ?? [];
+    let fallbackAddress: string | null = null;
+    for (const addr of addrs) {
+      const family = String(addr.family);
+      if ((family === "IPv4" || family === "4") && !addr.internal && addr.address) {
+        fallbackAddress = addr.address;
+        break;
+      }
+    }
+
+    listed.push({
+      name,
+      address: fallbackAddress,
+      usableForBus: false,
+      onDefaultRoute: defaultSet.has(name),
+    });
+  }
+
+  return listed;
+}
+
 export function selectInterface(interfaceName?: string): IfaceInfo {
   const defaultNames = getDefaultInterfaceNames();
   const candidates = collectCandidates(interfaceName, defaultNames);

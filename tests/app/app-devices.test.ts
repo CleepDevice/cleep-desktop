@@ -29,6 +29,8 @@ vi.mock('../../src/cleepbus/cleepbus', () => ({
     },
     start: vi.fn(),
     stop: vi.fn(),
+    restart: vi.fn(async () => undefined),
+    getBusStats: vi.fn(() => ({ peers: 2, queuedEvents: 0, droppedMessages: 0, processedEvents: 0 })),
   },
 }));
 
@@ -82,6 +84,25 @@ describe('AppDevices', () => {
     expect(ipcHandleHandlers.get('devices-delete-device')).toBeTypeOf('function');
   });
 
+  it('marks devices offline when message bus disconnects', () => {
+    send.mockClear();
+    busCallbacks.peerConnected?.({
+      uuid: 'device-offline-test',
+      hostname: 'pi',
+      ip: '192.168.1.20',
+      macs: [],
+      cleepdesktop: false,
+      online: true,
+    });
+    send.mockClear();
+
+    busCallbacks.connected?.(false);
+
+    expect(send).toHaveBeenCalledWith('devices-updated', expect.any(Array));
+    const devices = send.mock.calls.find((call) => call[0] === 'devices-updated')?.[1] as Array<{ uuid: string; online: boolean }>;
+    expect(devices?.find((device) => device.uuid === 'device-offline-test')?.online).toBe(false);
+  });
+
   it('forwards message-bus error/connected/updating/message events', () => {
     send.mockClear();
     busCallbacks.error?.('bus down');
@@ -125,5 +146,27 @@ describe('AppDevices', () => {
     const { cleepbus } = await import('../../src/cleepbus/cleepbus');
     appDevices.stop();
     expect(cleepbus.stop).toHaveBeenCalled();
+  });
+
+  it('exposes network interface ipc handlers', async () => {
+    const { cleepbus } = await import('../../src/cleepbus/cleepbus');
+    const getConfig = ipcHandleHandlers.get('bus-get-network-config');
+    expect(getConfig).toBeTypeOf('function');
+
+    const config = await getConfig!({});
+    expect(config).toEqual(
+      expect.objectContaining({
+        selectedInterface: expect.any(String),
+        activeInterface: expect.objectContaining({ name: expect.any(String), address: expect.any(String) }),
+        interfaces: expect.any(Array),
+        peerCount: 2,
+        busConnected: expect.any(Boolean),
+      }),
+    );
+
+    const setInterface = ipcHandleHandlers.get('bus-set-network-interface');
+    const updated = await setInterface!({}, '');
+    expect(cleepbus.restart).toHaveBeenCalled();
+    expect(updated.selectedInterface).toBe('');
   });
 });

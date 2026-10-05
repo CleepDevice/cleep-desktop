@@ -78,6 +78,58 @@ describe('pyre iface', () => {
     expect(iface.multicast).toBe(false);
   });
 
+  it('lists all interfaces with bus usability flags', async () => {
+    const fs = await import('node:fs');
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      'Iface\tDestination\tGateway\neth0\t00000000\t0101A8C0\ndocker0\t00000000\t00000000\n',
+    );
+
+    const os = await import('node:os');
+    vi.mocked(os.networkInterfaces).mockReturnValue({
+      eth0: [
+        {
+          address: '192.168.1.50',
+          netmask: '255.255.255.0',
+          family: 'IPv4',
+          mac: 'aa:bb:cc:dd:ee:01',
+          internal: false,
+          cidr: '192.168.1.50/24',
+        },
+      ],
+      docker0: [
+        {
+          address: '172.17.0.1',
+          netmask: '255.255.0.0',
+          family: 'IPv4',
+          mac: 'aa:bb:cc:dd:ee:02',
+          internal: false,
+          cidr: '172.17.0.1/16',
+        },
+      ],
+      veth0: [
+        {
+          address: '169.254.0.1',
+          netmask: '255.255.0.0',
+          family: 'IPv4',
+          mac: 'aa:bb:cc:dd:ee:03',
+          internal: false,
+          cidr: '169.254.0.1/16',
+        },
+      ],
+    });
+
+    const { listNetworkInterfaces } = await import('../../src/pyre/iface');
+    const listed = listNetworkInterfaces();
+    expect(listed.map((item) => item.name)).toEqual(['docker0', 'eth0', 'veth0']);
+    expect(listed.find((item) => item.name === 'eth0')).toMatchObject({
+      address: '192.168.1.50',
+      usableForBus: true,
+      onDefaultRoute: true,
+    });
+    expect(listed.find((item) => item.name === 'docker0')?.usableForBus).toBe(true);
+    expect(listed.find((item) => item.name === 'veth0')?.usableForBus).toBe(false);
+  });
+
   it('falls back to multicast loopback when no candidate exists', async () => {
     const fs = await import('node:fs');
     vi.mocked(fs.readFileSync).mockReturnValue('Iface\tDestination\n');

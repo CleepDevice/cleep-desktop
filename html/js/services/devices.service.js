@@ -53,9 +53,6 @@ function(electron, logger) {
             device.url = (device.ssl ? 'https://' : 'http://') + device.ip + ':' + device.port;
         })
 
-        // workaround: sometimes ui doesn't catch connected event and bus stays in connecting state
-        self.busStatus = 'CONNECTED';
-
         // remove obsolete devices
         var devicesUuids = devices.map((device) => device.uuid);
         const deviceIndexesToDelete = self.devices.map(

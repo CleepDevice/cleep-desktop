@@ -2,6 +2,7 @@ import { BrowserWindow, ipcMain } from 'electron';
 import { appLogger } from './app-logger';
 import { appSettings, SettingsObject } from './app-settings';
 import { cleepbus } from './cleepbus/cleepbus';
+import { listNetworkInterfaces, selectInterface } from './pyre/iface';
 import { CleebusMessageResponse, CleepbusPeerInfos, TEST_DEVICE } from './cleepbus/cleepbus.types';
 import { sendDataToAngularJs } from './utils/ui.helpers';
 import { appContext } from './app-context';
@@ -22,6 +23,7 @@ class AppDevices {
     );
 
     this.loadDevicesFromSettings();
+    this.addIpcs();
   }
 
   private loadDevicesFromSettings(): void {
@@ -40,7 +42,6 @@ class AppDevices {
 
   public configure(window: BrowserWindow): void {
     this.window = window;
-    this.addIpcs();
     cleepbus.start();
   }
 
@@ -51,13 +52,27 @@ class AppDevices {
   private onMessageBusError(error: string): void {
     appLogger.error('Message bus error', { error });
     this.busConnected = false;
+    this.markAllDevicesOffline();
     sendDataToAngularJs(this.window, 'devices-message-bus-error', error);
   }
 
   private onMessageBusConnected(connected: boolean): void {
     appLogger.info('Message bus connected', { connected });
     this.busConnected = connected;
+    if (!connected) {
+      this.markAllDevicesOffline();
+    }
     sendDataToAngularJs(this.window, 'devices-message-bus-connected', connected);
+  }
+
+  private markAllDevicesOffline(): void {
+    for (const device of Object.values(this.devices)) {
+      device.online = false;
+    }
+    appSettings.set('devices', this.devices as unknown as SettingsObject);
+    if (this.window) {
+      sendDataToAngularJs(this.window, 'devices-updated', this.devicesObjectToArray());
+    }
   }
 
   private onMessageBusUpdating(updating: boolean): void {
@@ -109,12 +124,44 @@ class AppDevices {
     return true;
   }
 
+  private getNetworkConfigState() {
+    const selectedInterface = appSettings.get<string>('cleep.networkinterface') || '';
+    const forcedName = selectedInterface.trim() || undefined;
+    let activeInterface: { name: string; address: string } | null = null;
+    try {
+      const active = selectInterface(forcedName);
+      activeInterface = { name: active.name, address: active.address };
+    } catch (error) {
+      appLogger.warn('Unable to resolve active network interface for UI', { error, forcedName });
+    }
+    return {
+      selectedInterface,
+      activeInterface,
+      interfaces: listNetworkInterfaces(),
+      peerCount: cleepbus.getBusStats().peers,
+      busConnected: this.busConnected,
+    };
+  }
+
   private addIpcs(): void {
     ipcMain.handle('devices-get-ui-state', async () => {
       return {
         devices: this.devicesObjectToArray(),
         busConnected: this.busConnected,
       };
+    });
+
+    ipcMain.handle('bus-get-network-config', async () => {
+      return this.getNetworkConfigState();
+    });
+
+    ipcMain.handle('bus-set-network-interface', async (_event, interfaceName: unknown) => {
+      const name = typeof interfaceName === 'string' ? interfaceName.trim() : '';
+      appSettings.set('cleep.networkinterface', name);
+      appLogger.info('Network interface preference updated, restarting message bus', { interfaceName: name || '(automatic)' });
+      this.markAllDevicesOffline();
+      await cleepbus.restart();
+      return this.getNetworkConfigState();
     });
 
     ipcMain.handle('devices-delete-device', async (_event, deviceUuid: string) => {

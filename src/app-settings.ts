@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS: {
   proxyPort: 8080,
   crashReport: true,
   firstRun: true,
+  networkInterface: '',
   uuid: null,
   devices: {},
 };
@@ -143,6 +144,9 @@ export class AppSettings {
     }
     if (!settings.hasSync('cleep.autoupdate')) {
       settings.setSync('cleep.autoupdate', true);
+    }
+    if (!settings.hasSync('cleep.networkinterface')) {
+      settings.setSync('cleep.networkinterface', DEFAULT_SETTINGS.networkInterface);
     }
 
     // flashtool section

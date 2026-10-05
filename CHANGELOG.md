@@ -14,6 +14,7 @@
 
 - Unit tests (~93% coverage)
 - Implements hot-reload for developments
+- Add way to choose network interface in case of exotic network
 
 ## [0.3.0] - 2024-02-28
 

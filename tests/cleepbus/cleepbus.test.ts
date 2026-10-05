@@ -33,6 +33,7 @@ const { MockPyre, pyreInstances, mockState } = vi.hoisted(() => {
 
   class MockPyreClass extends MiniEmitter {
     setHeader = vi.fn();
+    setInterface = vi.fn();
     join = vi.fn(async () => undefined);
     start = vi.fn(async () => state.startImpl());
     stop = vi.fn(async () => undefined);
@@ -113,6 +114,17 @@ describe('Cleepbus', () => {
     expect(pyre.setHeader).toHaveBeenCalledWith('cleepdesktop', '1');
     expect(pyre.setHeader).toHaveBeenCalledWith('macs', JSON.stringify(['AA:BB:CC:DD:EE:FF']));
     expect(connected).toHaveBeenCalledWith(true);
+  });
+
+  it('applies forced network interface from settings on start', async () => {
+    const settings = await import('electron-settings');
+    settings.default.setSync('cleep.networkinterface', 'wlan0');
+    cleepbus.setCleepbusCallbacks(vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn());
+
+    await cleepbus.start();
+
+    const pyre = pyreInstances[0] as MockPyreInstance & { setInterface: ReturnType<typeof vi.fn> };
+    expect(pyre.setInterface).toHaveBeenCalledWith('wlan0');
   });
 
   it('dispatches peer connected/disconnected and message events', async () => {
@@ -213,6 +225,27 @@ describe('Cleepbus', () => {
     expect(peerConnected).not.toHaveBeenCalled();
   });
 
+  it('restart awaits pyre shutdown before starting again', async () => {
+    let stopResolve: (() => void) | undefined;
+    const stopGate = new Promise<void>((resolve) => {
+      stopResolve = resolve;
+    });
+    cleepbus.setCleepbusCallbacks(vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn());
+    await cleepbus.start();
+    const firstPyre = pyreInstances[0] as MockPyreInstance;
+    firstPyre.stop.mockImplementation(async () => {
+      await stopGate;
+    });
+
+    const restartPromise = cleepbus.restart();
+    await Promise.resolve();
+    expect(pyreInstances.length).toBe(1);
+
+    stopResolve?.();
+    await restartPromise;
+    expect(pyreInstances.length).toBe(2);
+  });
+
   it('sendMessage shouts when running and stop tears down pyre', async () => {
     const connected = vi.fn();
     cleepbus.setCleepbusCallbacks(vi.fn(), connected, vi.fn(), vi.fn(), vi.fn(), vi.fn());
@@ -224,7 +257,9 @@ describe('Cleepbus', () => {
 
     cleepbus.stop();
     expect(pyre.stop).toHaveBeenCalled();
-    expect(connected).toHaveBeenCalledWith(false);
+    await vi.waitFor(() => {
+      expect(connected).toHaveBeenCalledWith(false);
+    });
   });
 
   it('reports startup errors through callback and schedules restart', async () => {
