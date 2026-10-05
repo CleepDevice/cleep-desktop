@@ -45,7 +45,7 @@
             <md-list-item ng-repeat="drive in ctl.installService.drives" ng-click="ctl.selectDrive(drive)" class="md-2-line">
                 <md-icon md-svg-icon="usb-flash-drive"></md-icon>
                 <div class="md-list-item-text">
-                    <h3>{{ drive.description | limitTo: 40 }}</h3>
+                    <h3>{{ drive.description | limitTo: 50 }}</h3>
                     <p>Size {{ drive.size | hrBytes }}</p>
                 </div>
                 <span class="md-secondary">

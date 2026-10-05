@@ -5,7 +5,7 @@ export const HEADERS = { 'user-agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Ge
 
 export type ReleaseCategory = 'raspios' | 'cleepos';
 
-export interface ReleaseInfo {
+export interface IIsoReleaseInfo {
   url: string;
   sha256: string;
   date: Date;
@@ -13,6 +13,7 @@ export interface ReleaseInfo {
   label: string;
   category: ReleaseCategory;
   size?: number;
+  error?: string;
 }
 
 export async function getChecksumFromUrl(url: string): Promise<string> {

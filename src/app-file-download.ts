@@ -1,8 +1,8 @@
 import { BrowserWindow, DownloadItem, ipcMain } from 'electron';
-import electronDl, { download } from 'electron-dl';
 import { sendDataToAngularJs } from './utils/ui.helpers';
-import uuid4 from 'uuid4';
 import { appLogger } from './app-logger';
+import { v4 as uuidv4 } from 'uuid';
+import { electronDownload, IDownloadFileProgress } from './utils/electron-dl';
 
 interface Download {
   downloadId: string;
@@ -38,21 +38,22 @@ export class AppFileDownload {
       }
     });
 
-    ipcMain.on('download-file', async (_event, url: string) => {
-      const downloadId = uuid4();
-      appLogger.info(`Downloading file from ${url} with id ${downloadId}`);
-      this.downloadUrl(downloadId, url);
+    ipcMain.on('download-file', async (_event, options: { url: string; title?: string }) => {
+      const downloadId = uuidv4();
+      appLogger.info(`Downloading file from ${options.url} with id ${downloadId}`);
+      this.downloadUrl(downloadId, options.url, options.title);
     });
   }
 
-  private async downloadUrl(downloadId: string, url: string): Promise<void> {
+  private async downloadUrl(downloadId: string, url: string, dialogTitle = 'Download'): Promise<void> {
     try {
-      await download(this.window, url, {
+      await electronDownload(this.window, url, {
         saveAs: true,
+        dialogOptions: { title: dialogTitle },
         onStarted: (item: DownloadItem) => {
           this.onDownloadStarted(downloadId, url, item);
         },
-        onProgress: (progress: electronDl.Progress) => {
+        onProgress: (progress: IDownloadFileProgress) => {
           this.onDownloadProgress(downloadId, progress);
         },
         onCancel: (item: DownloadItem) => {
@@ -63,6 +64,7 @@ export class AppFileDownload {
         },
       });
     } catch (error) {
+      appLogger.error('Error occured during download', error);
       const download = this.getDownload(downloadId);
       if (download) {
         this.deleteDownload(downloadId);
@@ -86,7 +88,7 @@ export class AppFileDownload {
     });
   }
 
-  private onDownloadProgress(downloadId: string, progress: electronDl.Progress): void {
+  private onDownloadProgress(downloadId: string, progress: IDownloadFileProgress): void {
     if (typeof progress?.percent !== 'number' || !Object.keys(this.downloads).length) return;
 
     const download = this.getDownload(downloadId);

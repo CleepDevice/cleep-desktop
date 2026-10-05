@@ -1,7 +1,9 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
-.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope',
-function($state, devicesService, toastService, confirmService, $rootScope) {
+.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope', 'loggerService',
+function($state, devicesService, toastService, confirmService, $rootScope, logger) {
     var self = this;
     self.devicesService = devicesService;
 
@@ -11,18 +13,28 @@ function($state, devicesService, toastService, confirmService, $rootScope) {
         }
 
         if (device.online) {
-            var url = self.__getDeviceUrl(device);
-            $state.go('device', { url, hostname: device.hostname });
+            logger.debug('Open device page', device);
+            if (!device.auth || device.hasAuthStored) {
+                var paramsDevice = {
+                    url: device.url,
+                    hostname: device.hostname,
+                    auth: device.auth,
+                    deviceUuid: device.uuid,
+                };
+                $state.go('device', paramsDevice);
+            } else {
+                var paramsDeviceAuth = {
+                    url: device.url,
+                    hostname: device.hostname,
+                    deviceUuid: device.uuid,
+                };
+                $state.go('deviceAuth', paramsDeviceAuth);
+            }
             devicesService.selectDevice(device.uuid);
         } else {
             toastService.info('You can\'t connect to offline device');
         }
     };
-
-    self.__getDeviceUrl = function(device) {
-        var url = device.ip + ':' + device.port;
-        return (device.ssl ? 'https://' : 'http://') + url;
-    }
 
     self.openDeviceMenu = function($mdMenu, ev) {
         $mdMenu.open(ev);

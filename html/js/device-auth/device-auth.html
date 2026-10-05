@@ -1,0 +1,46 @@
+<div>
+
+    <div style="width:100%; height:80%;">
+        <md-toolbar flex="initial">
+            <div class="md-toolbar-tools">
+                <h2>
+                    Auth requested by {{ ctl.hostname }}
+                </h2>
+                <span flex></span>
+            </div>
+        </md-toolbar>
+        <md-progress-linear md-mode="determinate" value="100"></md-progress-linear>
+
+        <md-content layout-padding>
+            <div layout="column" layout-sm="column" layout-align="center center" layout-fill>
+                <form>
+                    <md-card>
+                        <img ng-src="images/device-auth.png" class="md-card-image">
+                        <md-card-title>
+                            <md-card-title-text ng-if="ctl.errorCode === 'INVALID_AUTH'">
+                                <div>
+                                    <md-icon md-svg-icon="alert-circle-outline"></md-icon>
+                                    Invalid credentials specified
+                                </div>
+                            </md-card-title-text>
+                        </md-card-title>
+                        <md-card-content layout="column" layout-sm="column">
+                            <md-input-container>
+                                <label>Account</label>
+                                <input ng-model="ctl.account" required>
+                            </md-input-container>
+                            <md-input-container>
+                                <label>Password</label>
+                                <input ng-model="ctl.password" type="password" required>
+                            </md-input-container>
+                        </md-card-content>
+                        <md-card-actions layout="row" layout-align="end center">
+                            <md-button class="md-raised md-primary" ng-click="ctl.login()" type="submit">Login</md-button>
+                        </md-card-actions>
+                    </md-card>
+                </form>
+            </div>
+        </md-content>
+    </div>
+
+</div>

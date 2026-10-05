@@ -3,18 +3,22 @@ import { BrowserWindow, ipcMain } from 'electron';
 import { autoUpdater, ProgressInfo, UpdateCheckResult, UpdateInfo } from 'electron-updater';
 import { appLogger } from './app-logger';
 import { appContext } from './app-context';
-import { balena, Balena } from './flash-tool/balena';
 import { getError } from './utils/app.helpers';
 import { appSettings } from './app-settings';
-import isDev from 'electron-is-dev';
 import { cleepbus, Cleepbus } from './cleepbus/cleepbus';
 import { sendDataToAngularJs } from './utils/ui.helpers';
+import { RpiImager, rpiImager } from './flash-tool/rpi-imager';
+
+export interface IToolUpdateStatus {
+  updateAvailable: boolean;
+  error?: string;
+}
 
 export interface UpdateStatus {
   lastUpdateCheck: number;
-  cleepDesktop: boolean;
-  flashTool: boolean;
-  cleepbus: boolean;
+  cleepDesktop: IToolUpdateStatus;
+  flashTool: IToolUpdateStatus;
+  cleepbus: IToolUpdateStatus;
 }
 
 export type OnUpdateAvailableCallback = (updateData: UpdateData) => void;
@@ -25,13 +29,14 @@ export interface UpdateData {
   percent?: number;
   error?: string;
   installed?: boolean;
+  terminated: boolean;
 }
 
 type CheckForUpdateMode = 'auto' | 'manual';
 
 export class AppUpdater {
   private window: BrowserWindow;
-  private flashTool: Balena;
+  private flashTool: RpiImager;
   private messageBus: Cleepbus;
 
   constructor() {
@@ -39,7 +44,7 @@ export class AppUpdater {
     // autoUpdater.allowPrerelease = true;
     autoUpdater.logger = appLogger;
 
-    this.flashTool = balena;
+    this.flashTool = rpiImager;
     this.flashTool.setUpdateCallbacks(
       this.onFlashToolUpdateAvailable.bind(this),
       this.onFlashToolDownloadProgress.bind(this),
@@ -82,22 +87,37 @@ export class AppUpdater {
 
   public async checkForUpdates(updateMode: CheckForUpdateMode): Promise<UpdateStatus> {
     const lastUpdateCheck = Math.round(new Date().getTime() / 1000);
-    if (isDev && updateMode === 'auto') {
+    if (appContext.isDev && updateMode === 'auto') {
       appLogger.debug('Auto update is disabled during dev');
       return {
         lastUpdateCheck,
-        cleepDesktop: false,
-        flashTool: false,
-        cleepbus: false,
+        cleepDesktop: { updateAvailable: false },
+        flashTool: { updateAvailable: false },
+        cleepbus: { updateAvailable: false },
       };
     }
 
     const cleepDesktopUpdateCheckResult = await this.checkForCleepDesktopUpdates();
-    const cleepDesktopUpdate = cleepDesktopUpdateCheckResult?.updateInfo?.version
+    const hasCleepDesktopUpdate = cleepDesktopUpdateCheckResult?.updateInfo?.version
       ? cleepDesktopUpdateCheckResult?.updateInfo?.version !== appContext.version
       : false;
+    const cleepDesktopUpdate = { updateAvailable: hasCleepDesktopUpdate };
     const flashToolUpdate = await this.flashTool.checkForUpdates();
+    if (flashToolUpdate.error) {
+      sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', {
+        terminated: true,
+        percent: 100,
+        error: flashToolUpdate.error,
+      });
+    }
     const cleepbusUpdate = await this.messageBus.checkForUpdates();
+    if (cleepbusUpdate.error) {
+      sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', {
+        terminated: true,
+        percent: 100,
+        error: cleepbusUpdate.error,
+      });
+    }
     appLogger.debug('Update results', { cleepDesktopUpdate, flashToolUpdate, cleepbusUpdate });
 
     appSettings.set('cleep.lastupdatecheck', lastUpdateCheck);
@@ -125,6 +145,7 @@ export class AppUpdater {
 
     // dummy content when autoupdate disabled
     return {
+      isUpdateAvailable: false,
       updateInfo: {
         version: appContext.version,
         releaseNotes: '',
@@ -164,6 +185,7 @@ export class AppUpdater {
   private addListeners() {
     autoUpdater.addListener('error', (error: Error) => {
       const data: UpdateData = {
+        terminated: true,
         percent: 100,
         error: getError(error),
       };
@@ -178,6 +200,7 @@ export class AppUpdater {
         version: info.version,
         changelog: changelog,
         percent: 0,
+        terminated: false,
       };
       sendDataToAngularJs(this.window, 'updater-cleepdesktop-update-available', data);
     });
@@ -185,6 +208,7 @@ export class AppUpdater {
     autoUpdater.addListener('download-progress', (progress: ProgressInfo) => {
       const data: UpdateData = {
         percent: progress.percent,
+        terminated: false,
       };
       sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', data);
     });
@@ -196,6 +220,7 @@ export class AppUpdater {
       const data: UpdateData = {
         percent: 100,
         installed: true,
+        terminated: true,
       };
       sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', data);
     });

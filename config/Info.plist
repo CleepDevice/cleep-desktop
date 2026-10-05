@@ -4,32 +4,44 @@
 <dict>
     <key>CFBundleAllowMixedLocalizations</key>
     <true/>
+
     <key>CFBundleDevelopmentRegion</key>
     <string>France</string>
+
     <key>CFBundleExecutable</key>
     <string>CleepDesktop</string>
+
     <key>CFBundleIconFile</key>
     <string>resources/icon.icns</string>
+
     <key>CFBundleIdentifier</key>
     <string>com.cleep.cleepdesktop</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
+
     <key>CFBundleName</key>
     <string>CleepDesktop</string>
+
     <key>CFBundlePackageType</key>
     <string>APPL</string>
+
     <key>CFBundleShortVersionString</key>
     <string>0.0</string>
+
     <key>CFBundleSignature</key>
     <string>cleep</string>
-    <key>LSMinimumSystemVersionByArchitecture</key>
-    <dict>
-        <key>x86_64</key>
-        <string>10.6</string>
-    </dict>
+
     <key>LSRequiresCarbon</key>
     <true/>
+
     <key>LSUIElement</key>
+    <false/>
+
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.utilities</string>
+
+    <key>NSHighResolutionCapable</key>
+    <true/>
+
+    <key>NSRequiresAquaSystemAppearance</key>
     <false/>
 </dict>
 </plist>

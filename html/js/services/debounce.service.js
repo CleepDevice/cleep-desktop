@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-this-alias */
 /**
  * Debounce service
  * Used to execute callback after an amount of time. If debounce is called before callback is executed, the call is delayed.

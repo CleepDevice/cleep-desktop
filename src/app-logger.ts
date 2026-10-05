@@ -1,6 +1,5 @@
 import { app, ipcMain, shell } from 'electron';
-import logger from 'electron-log';
-import isDev from 'electron-is-dev';
+import logger from 'electron-log/node';
 import { CommandLineArgs } from './utils/app.helpers';
 import { appSettings } from './app-settings';
 import path from 'path';
@@ -31,8 +30,10 @@ export class AppLogger {
   }
 
   public setLogLevel(args: CommandLineArgs): void {
-    if (isDev) {
-      // config already set during init, do not overwrite
+    if (!app.isPackaged) {
+      // force debug during developments
+      logger.transports.console.level = 'debug';
+      logger.transports.file.level = 'debug';
       return;
     }
     if (args.consoleLogLevel === 'no') {
@@ -84,7 +85,11 @@ export class AppLogger {
     }
 
     const messageStr = `[${from}] ${message}`;
-    extra ? loggerCall(messageStr, extra) : loggerCall(messageStr);
+    if (extra) {
+      loggerCall(messageStr, extra);
+    } else {
+      loggerCall(messageStr);
+    }
   }
 
   private addIpcs() {
@@ -93,25 +98,26 @@ export class AppLogger {
     });
 
     ipcMain.on('open-electron-logs', async () => {
-      const logPath = await logger.transports.file.getFile();
+      const logPath = logger.transports.file.getFile();
       shell.openPath(logPath.path);
     });
 
     ipcMain.handle('get-electron-log-path', async () => {
-      const logPath = await logger.transports.file.getFile();
+      const logPath = logger.transports.file.getFile();
       return logPath.path;
     });
   }
 
   private initConsoleLogging(debugEnabled: boolean): void {
-    logger.transports.console.level = isDev || debugEnabled ? 'debug' : 'info';
+    logger.transports.console.level = !app.isPackaged || debugEnabled ? 'debug' : 'info';
+    logger.transports.console.format = '%c[{h}:{i}:{s}.{ms} - {level}]%c {text}';
   }
 
   private initFileLogging(debugEnabled: boolean): void {
-    logger.transports.file.level = isDev || debugEnabled ? 'debug' : 'info';
+    logger.transports.file.level = !app.isPackaged || debugEnabled ? 'debug' : 'info';
     logger.transports.file.maxSize = 1 * 1024 * 1024;
     const logFilepath = path.join(app.getPath('userData'), 'cleepdesktop.log');
-    logger.transports.file.resolvePath = () => logFilepath;
+    logger.transports.file.resolvePathFn = () => logFilepath;
   }
 }
 

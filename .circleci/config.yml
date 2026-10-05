@@ -1,7 +1,7 @@
 version: 2.1
 orbs:
-  win: circleci/windows@4.1.1
-  slack: circleci/slack@4.9.3
+  win: circleci/windows@5.1.0
+  slack: circleci/slack@5.1.1
 jobs:
   build-windows:
     executor:
@@ -9,8 +9,12 @@ jobs:
       shell: powershell.exe
     steps:
       - run:
-          name: Preparing node
-          command: node --version
+          name: Installing node
+          command: |
+            choco install nvm
+            nvm install 22
+            nvm use 22
+            node --version
       - checkout
       - run:
           name: Building
@@ -21,8 +25,12 @@ jobs:
       shell: powershell.exe
     steps:
       - run:
-          name: Preparing node
-          command: node --version
+          name: Installing node
+          command: |
+            choco install nvm
+            nvm install 22
+            nvm use 22
+            node --version
       - checkout
       - run:
           name: Publishing
@@ -30,14 +38,14 @@ jobs:
 
   build-linux:
     docker:
-      - image: cimg/base:edge
+      - image: cimg/base:current
     steps:
       - run:
-          name: Installing node sources
-          command: curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-      - run:
           name: Installing node
-          command: sudo apt-get install -y nodejs && node --version
+          command: |
+            curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            node --version
       - checkout
       - run:
           name: Building
@@ -50,14 +58,14 @@ jobs:
           template: basic_success_1
   publish-linux:
     docker:
-      - image: cimg/base:edge
+      - image: cimg/base:current
     steps:
       - run:
-          name: Installing node sources
-          command: curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-      - run:
           name: Installing node
-          command: sudo apt-get install -y nodejs && node --version
+          command: |
+            curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            node --version
       - checkout
       - run:
           name: Publishing
@@ -66,6 +74,7 @@ jobs:
   build-macos:
     macos:
       xcode: 16.3.0
+    resource_class: macos.m1.medium.gen1
     steps:
       - run:
           name: Installing node
@@ -83,6 +92,7 @@ jobs:
   publish-macos:
     macos:
       xcode: 16.3.0
+    resource_class: macos.m1.medium.gen1
     steps:
       - run:
           name: Installing node

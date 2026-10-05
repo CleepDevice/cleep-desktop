@@ -124,7 +124,7 @@ class AppCache {
       try {
         const filepath = path.join(this.cacheDir, filename);
         cachedFiles.push(this.getFileInfos(filepath));
-      } catch (error) {
+      } catch {
         appLogger.warn(`Invalid file "${filename}" in cache directory`);
       }
     }
@@ -139,7 +139,13 @@ class AppCache {
     const newFilepath = path.join(this.cacheDir, newFilename);
     appLogger.debug(`Cache file "${filepath}" to "${newFilepath}"`);
 
-    fs.renameSync(filepath, newFilepath);
+    try {
+      fs.copyFileSync(filepath, newFilepath);
+      fs.unlinkSync(filepath);
+    } catch (error) {
+      appLogger.error(`Error occured while moving file to cache: ${error}`);
+      throw new Error('Unable to move file to cache folder');
+    }
 
     return newFilepath;
   }
@@ -159,7 +165,7 @@ class AppCache {
     for (const filename of filenames) {
       try {
         this.deleteCachedFile(filename);
-      } catch (error) {
+      } catch {
         appLogger.warn(`Invalid file "${filename}" in cache directory`);
       }
     }

@@ -1,4 +1,3 @@
-import { Octokit } from '@octokit/rest';
 import { appSettings } from '../app-settings';
 import { appLogger } from '../app-logger';
 import fs from 'fs';
@@ -6,10 +5,11 @@ import path from 'path';
 import extract from 'extract-zip';
 import { DriveUnit, findMatches, getError } from '../utils/app.helpers';
 import { exec } from 'child_process';
-import { OnUpdateAvailableCallback } from '../app-updater';
+import { IToolUpdateStatus, OnUpdateAvailableCallback } from '../app-updater';
 import { FlashOutput, FLASHTOOL_DIR } from '../app-iso';
 import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
-import { GithubRelease } from '../utils/github.types';
+import { getLatestGithubRelease, IGithubRepo, IRelease } from '../utils/github';
+import { Drive } from './flashtool.interface';
 
 const FILENAME_DARWIN = '-darwin-';
 const FILENAME_LINUX = '-linux-';
@@ -26,39 +26,28 @@ const UNITS: DriveUnit[] = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'];
 const BALENA_FLASH_PATTERN = /.*(Flashing|Validating)\s\[.*\]\s(\d+)%\seta\s(.*)/gmu;
 const BALENA_ETA_PATTERN = /(\d+)([hms])/gmu;
 
-export interface Drive {
-  size: number;
-  description: string;
-  device: string;
-}
-
 export class Balena {
-  private readonly BALENA_REPO = { owner: 'tangb', repo: 'cleep-desktop-flashtool' };
-  private github: Octokit;
+  private readonly BALENA_REPO: IGithubRepo = { owner: 'CleepDevice', repo: 'cleep-desktop-flashtool' };
   private updateAvailableCallback: OnUpdateAvailableCallback;
   private downloadProgressCallback: OnDownloadProgressCallback;
 
-  constructor() {
-    this.github = new Octokit();
-  }
-
-  public async checkForUpdates(force = false): Promise<boolean> {
+  public async checkForUpdates(force = false): Promise<IToolUpdateStatus> {
     const latestBalenaRelease = await this.getLatestRelease();
     appLogger.debug('Latest Flash-tool release', { release: latestBalenaRelease });
     const currentBalenaVersion = this.getInstalledVersion();
     const balenaBinPath = this.getBalenaBinPath();
 
+    if (latestBalenaRelease.error) {
+      return { updateAvailable: false, error: latestBalenaRelease.error };
+    }
+
     if (latestBalenaRelease.version !== currentBalenaVersion || force || !fs.existsSync(balenaBinPath)) {
       appLogger.info('Flash-tool update available');
-      this.updateAvailableCallback({
-        version: latestBalenaRelease.version,
-        percent: 0,
-      });
       this.install(latestBalenaRelease);
-      return true;
+      return { updateAvailable: true };
     } else {
       appLogger.info('No flash-tool update available');
-      return false;
+      return { updateAvailable: false };
     }
   }
 
@@ -70,7 +59,7 @@ export class Balena {
     this.downloadProgressCallback = downloadProgressCallback;
   }
 
-  public async install(release: GithubRelease): Promise<boolean> {
+  public async install(release: IRelease): Promise<boolean> {
     const platform = String(process.platform);
     if (Object.keys(release).findIndex((key) => key === platform) === -1) {
       appLogger.error(`No flash-tool version for platform ${platform}`);
@@ -78,15 +67,21 @@ export class Balena {
     }
 
     try {
+      this.updateAvailableCallback({
+        version: release.version,
+        percent: 0,
+        terminated: false,
+      });
+
       const downloadUrl = release[platform as keyof typeof release as 'darwin' | 'linux' | 'win32'].downloadUrl;
       const archivePath = await downloadFile(downloadUrl, this.downloadProgressCallback);
       await this.unzipArchive(archivePath);
 
       appSettings.set('flashtool.version', release.version);
-      this.downloadProgressCallback({ terminated: true });
+      this.downloadProgressCallback({ terminated: true, percent: 100 });
     } catch (error) {
       appLogger.error(`Error installing flash-tool: ${error}`);
-      this.downloadProgressCallback({ percent: 100, error: getError(error) });
+      this.downloadProgressCallback({ percent: 100, terminated: true, error: getError(error) });
     }
   }
 
@@ -99,16 +94,15 @@ export class Balena {
     appLogger.info('Flash-tool extracted successfully');
   }
 
-  public async getLatestRelease(): Promise<GithubRelease> {
-    const latestRelease = await this.github.rest.repos.getLatestRelease(this.BALENA_REPO);
-    appLogger.debug(JSON.stringify(latestRelease.data));
+  public async getLatestRelease(): Promise<IRelease> {
+    const latestRelease = await getLatestGithubRelease(this.BALENA_REPO);
 
-    const darwinAsset = latestRelease.data.assets.find((asset) => asset.name.indexOf(FILENAME_DARWIN) >= 0);
-    const linuxAsset = latestRelease.data.assets.find((asset) => asset.name.indexOf(FILENAME_LINUX) >= 0);
-    const windowsAsset = latestRelease.data.assets.find((asset) => asset.name.indexOf(FILENAME_WINDOWS) >= 0);
+    const darwinAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf(FILENAME_DARWIN) >= 0);
+    const linuxAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf(FILENAME_LINUX) >= 0);
+    const windowsAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf(FILENAME_WINDOWS) >= 0);
 
-    const release: GithubRelease = {
-      version: latestRelease.data.tag_name.replace('v', ''),
+    const release: IRelease = {
+      version: latestRelease?.tag?.replace('v', ''),
       darwin: {
         downloadUrl: darwinAsset?.browser_download_url,
         filename: darwinAsset?.name,
@@ -124,6 +118,7 @@ export class Balena {
         filename: windowsAsset?.name,
         size: windowsAsset?.size,
       },
+      error: latestRelease.error,
     };
     return release;
   }
@@ -147,12 +142,17 @@ export class Balena {
     }
   }
 
+  /**
+   * @deprecated prefer using drivelist.list()
+   */
   public async getDriveList(): Promise<Drive[]> {
     return new Promise((resolve, reject) => {
       const drives: Drive[] = [];
 
       const path = this.getBalenaBinPath();
-      exec(`"${path}" util available-drives`, (error, stdout, stderr) => {
+      const cmd = `"${path}" util available-drives`;
+      appLogger.debug(`Run Balena command: ${cmd}`);
+      exec(cmd, (error, stdout, stderr) => {
         if (error) {
           appLogger.error('Unable to get drives', { error });
           reject(error);

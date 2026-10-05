@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
 .controller('isoDialogController', ['closeModal', 'installService', 'electronService',
@@ -8,6 +10,14 @@ function(closeModal, installService, electron) {
     self.loading = false;
 
     self.$onInit = function () {
+        self.refreshIsos();
+    };
+
+    self.selectRemoteIso = function(item) {
+        self.closeModal(item);
+    };
+
+    self.refreshIsos = function() {
         self.loading = true;
         self.installService.getIsoSettings()
             .then(() => {
@@ -16,10 +26,6 @@ function(closeModal, installService, electron) {
             .finally(() => {
                 self.loading = false;
             });
-    };
-
-    self.selectRemoteIso = function(item) {
-        self.closeModal(item);
     };
 
     self.selectLocalIso = function() {

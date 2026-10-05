@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
 .service('installService', ['$state', 'loggerService', 'tasksPanelService', 'settingsService', 'electronService', 'toastService',
@@ -45,7 +47,11 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
 
     self.onHandleInstallProgress = function(_event, installProgress) {
         Object.assign(self.installProgress, installProgress);
-        self.installing = !self.installProgress.terminated;
+        if(self.installProgress.terminated || self.installProgress.error) {
+            self.installing = false;
+        } else {
+            self.installing = true;
+        }
 
         if (!self.installing) {
             self.terminateInstall();

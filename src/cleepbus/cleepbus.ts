@@ -1,5 +1,4 @@
-import { Octokit } from '@octokit/rest';
-import { OnUpdateAvailableCallback } from '../app-updater';
+import { IToolUpdateStatus, OnUpdateAvailableCallback } from '../app-updater';
 import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
 import { appLogger } from '../app-logger';
 import path from 'path';
@@ -8,7 +7,6 @@ import { ChildProcessByStdio, spawn, SpawnOptionsWithStdioTuple, StdioNull, Stdi
 import { Readable } from 'stream';
 import fs from 'fs';
 import extract from 'extract-zip';
-import { GithubRelease } from '../utils/github.types';
 import { appSettings } from '../app-settings';
 import { getError, getWsPort } from '../utils/app.helpers';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -23,6 +21,9 @@ import {
   OnMessageBusPeerDisconnectedCallback,
   OnMessageBusUpdatingCallback,
 } from './message-bus.types';
+import find from 'find-process';
+import terminate from 'terminate';
+import { IGithubRepo, IRelease, getLatestGithubRelease } from '../utils/github';
 
 export const CLEEPBUS_DIR = path.join(app.getPath('userData'), 'cleepbus');
 const FILENAME_DARWIN = '-macos-';
@@ -31,11 +32,9 @@ const FILENAME_WINDOWS = '-windows-';
 const CLEEPBUS_DARWIN_BIN = 'cleepbus';
 const CLEEPBUS_LINUX_BIN = 'cleepbus';
 const CLEEPBUS_WINDOWS_BIN = 'cleepbus.exe';
-const CLEEPBUS_STOP_MESSAGE = '$$STOP$$';
 
 export class Cleepbus {
-  private readonly CLEEPBUS_REPO = { owner: 'tangb', repo: 'cleep-desktop-cleepbus' };
-  private github: Octokit;
+  private readonly CLEEPBUS_REPO: IGithubRepo = { owner: 'CleepDevice', repo: 'cleep-desktop-cleepbus' };
   private updateAvailableCallback: OnUpdateAvailableCallback;
   private downloadProgressCallback: OnDownloadProgressCallback;
   private messageBusErrorCallback: OnMessageBusErrorCallback;
@@ -48,48 +47,50 @@ export class Cleepbus {
   private cleepbusWs: WebSocket;
   private cleepbusProcess: ChildProcessByStdio<null, Readable, Readable>;
   private cleepbusStartupError: string;
-
-  constructor() {
-    this.github = new Octokit();
-  }
+  private wsPort: number;
+  private forcedStop = false;
 
   public async start(): Promise<void> {
-    const wsPort = await getWsPort();
+    this.wsPort = await getWsPort();
 
-    this.launchWebsocketServer(wsPort);
-    this.launchCleepbus(wsPort);
+    this.launchWebsocketServer();
+    this.launchCleepbus();
   }
 
-  public stop(gentleStop = false): void {
+  public stop(): void {
+    // mark as forced stopped to avoid watchdog to relaunch cleepbus
+    this.forcedStop = true;
+
     if (this.cleepbusProcess) {
-      if (gentleStop) {
-        this.sendMessage(CLEEPBUS_STOP_MESSAGE);
-      } else {
-        this.cleepbusProcess.kill('SIGTERM');
-      }
+      this.cleepbusProcess.kill('SIGTERM');
     }
     if (this.wsServer) {
       this.wsServer.close();
     }
   }
 
-  public async checkForUpdates(force = false): Promise<boolean> {
-    const latestBalenaRelease = await this.getLatestRelease();
-    appLogger.debug('Latest Cleepbus release', { release: latestBalenaRelease });
-    const currentBalenaVersion = this.getInstalledVersion();
-    const balenaBinPath = this.getCleepbusBinPath();
+  public async checkForUpdates(force = false): Promise<IToolUpdateStatus> {
+    const latestCleepbusRelease = await this.getLatestRelease();
+    const currentCleepbusVersion = this.getInstalledVersion();
+    const cleepbusBinPath = this.getCleepbusBinPath();
 
-    if (latestBalenaRelease.version !== currentBalenaVersion || force || !fs.existsSync(balenaBinPath)) {
-      appLogger.info('Cleepbus update available');
+    if (latestCleepbusRelease.error) {
       this.updateAvailableCallback({
-        version: latestBalenaRelease.version,
+        version: latestCleepbusRelease.version,
         percent: 0,
+        error: latestCleepbusRelease.error,
+        terminated: true,
       });
-      this.install(latestBalenaRelease);
-      return true;
+      return { updateAvailable: false, error: latestCleepbusRelease.error };
+    }
+
+    if (latestCleepbusRelease.version !== currentCleepbusVersion || force || !fs.existsSync(cleepbusBinPath)) {
+      appLogger.info('Cleepbus update available');
+      this.install(latestCleepbusRelease);
+      return { updateAvailable: true };
     } else {
       appLogger.info('No Cleepbus update available');
-      return false;
+      return { updateAvailable: false };
     }
   }
 
@@ -117,16 +118,21 @@ export class Cleepbus {
     this.messageResponseCallback = messageResponseCallback;
   }
 
-  private async launchCleepbus(wsPort: number): Promise<void> {
+  private async launchCleepbus(): Promise<void> {
+    this.forcedStop = false;
+
     const cleepbusPath = this.getCleepbusPath();
     if (!this.checkCleepbusInstallation(cleepbusPath)) {
       return;
     }
 
+    // make sure previous install does not running
+    await this.killCleepbusInstances();
+
     try {
       const debug = appSettings.get<boolean>('cleep.debug');
       const uuid = appSettings.get<string>('cleep.uuid');
-      const cleepbusArgs = [`--ws-port=${wsPort}`, `--uuid=${uuid}`];
+      const cleepbusArgs = [`--ws-port=${this.wsPort}`, `--uuid=${uuid}`];
       if (debug) {
         cleepbusArgs.push('--debug');
       }
@@ -143,6 +149,20 @@ export class Cleepbus {
     } catch (error) {
       this.cleepbusStartupError = 'Startup error';
       appLogger.error('Fatal error launching cleepbus', { error });
+    }
+  }
+
+  private async killCleepbusInstances(): Promise<void> {
+    try {
+      const processes = await find('name', 'cleepbus');
+      for (const process of processes) {
+        if (process.cmd.search('ws-port') < 0) {
+          continue;
+        }
+        terminate(process.pid);
+      }
+    } catch (error) {
+      appLogger.error('Unable to kill Cleepbus instance', { error: error.message });
     }
   }
 
@@ -171,15 +191,24 @@ export class Cleepbus {
   }
 
   private handleCleepbusProcessClosed(code: number) {
-    if (!appContext.closingApplication) {
-      appLogger.debug('Cleepbus stopped');
-      if (code !== 0) {
-        appLogger.error(`Cleepbus exited with code "${code}"`);
-        // error occured, display error to user before terminates application
-        const error = this.cleepbusStartupError || 'Unable to launch cleepbus';
-        this.messageBusErrorCallback(error);
-      }
+    if (appContext.closingApplication || this.forcedStop) {
+      appLogger.debug('Cleepbus voluntary stopped. Do not relaunch it');
+      return;
     }
+
+    appLogger.debug('Cleepbus stopped');
+    if (code !== 0) {
+      appLogger.error(`Cleepbus exited with code "${code}"`);
+      // error occured, display error to user before terminates application
+      const error = this.cleepbusStartupError || 'Cleepbus stopped';
+      this.messageBusErrorCallback(error);
+    }
+
+    // relaunch cleepbus after 1 second to avoid useless log flood
+    setTimeout(() => {
+      appLogger.info('Relaunching cleepbus');
+      this.launchCleepbus();
+    }, 1000);
   }
 
   private handleCleepbusStdoutData(data: Readable): void {
@@ -218,9 +247,9 @@ export class Cleepbus {
     appLogger.error(message, null, 'cleepbus');
   }
 
-  private launchWebsocketServer(wsPort: number): void {
-    appLogger.info(`Launching websocket server on port ${wsPort}`);
-    this.wsServer = new WebSocketServer({ host: '127.0.0.1', port: wsPort });
+  private launchWebsocketServer(): void {
+    appLogger.info(`Launching websocket server on port ${this.wsPort}`);
+    this.wsServer = new WebSocketServer({ host: '127.0.0.1', port: this.wsPort });
     this.wsServer.on('connection', (ws: WebSocket) => {
       appLogger.debug('WebsocketServer received new connection');
       this.initCleepbusWebsocket(ws);
@@ -283,7 +312,7 @@ export class Cleepbus {
     }
   }
 
-  public async install(release: GithubRelease): Promise<boolean> {
+  public async install(release: IRelease): Promise<boolean> {
     const platform = String(process.platform);
     if (Object.keys(release).findIndex((key) => key === platform) === -1) {
       appLogger.error(`No Cleepbus version for platform ${platform}`);
@@ -291,20 +320,28 @@ export class Cleepbus {
     }
 
     try {
-      this.messageBusUpdatingCallback(true);
-      this.stop(true);
+      this.updateAvailableCallback({
+        version: release.version,
+        percent: 0,
+        terminated: false,
+      });
 
       const downloadUrl = release[platform as keyof typeof release as 'darwin' | 'linux' | 'win32'].downloadUrl;
       const archivePath = await downloadFile(downloadUrl, this.downloadProgressCallback);
+
+      // stop before unzipping to avoid error with running process
+      this.messageBusUpdatingCallback(true);
+      this.stop();
       await this.unzipArchive(archivePath);
 
       appSettings.set('cleepbus.version', release.version);
-      this.downloadProgressCallback({ terminated: true });
+      this.downloadProgressCallback({ terminated: true, percent: 100 });
 
+      appLogger.info(`Cleepbus v${release.version}updated successfully`);
       this.start();
     } catch (error) {
       appLogger.error(`Error installing Cleepbus: ${error}`);
-      this.downloadProgressCallback({ percent: 100, error: getError(error) });
+      this.downloadProgressCallback({ percent: 100, terminated: true, error: getError(error) });
     } finally {
       this.messageBusUpdatingCallback(false);
     }
@@ -337,16 +374,15 @@ export class Cleepbus {
     appLogger.info('Cleepbus extracted successfully');
   }
 
-  public async getLatestRelease(): Promise<GithubRelease> {
-    const latestRelease = await this.github.rest.repos.getLatestRelease(this.CLEEPBUS_REPO);
-    appLogger.debug(JSON.stringify(latestRelease.data));
+  public async getLatestRelease(): Promise<IRelease> {
+    const latestRelease = await getLatestGithubRelease(this.CLEEPBUS_REPO);
 
-    const darwinAsset = latestRelease.data.assets.find((asset) => asset.name.indexOf(FILENAME_DARWIN) >= 0);
-    const linuxAsset = latestRelease.data.assets.find((asset) => asset.name.indexOf(FILENAME_LINUX) >= 0);
-    const windowsAsset = latestRelease.data.assets.find((asset) => asset.name.indexOf(FILENAME_WINDOWS) >= 0);
+    const darwinAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf(FILENAME_DARWIN) >= 0);
+    const linuxAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf(FILENAME_LINUX) >= 0);
+    const windowsAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf(FILENAME_WINDOWS) >= 0);
 
-    const release: GithubRelease = {
-      version: latestRelease.data.tag_name.replace('v', ''),
+    const release: IRelease = {
+      version: latestRelease?.tag?.replace('v', ''),
       darwin: {
         downloadUrl: darwinAsset?.browser_download_url,
         filename: darwinAsset?.name,
@@ -362,6 +398,7 @@ export class Cleepbus {
         filename: windowsAsset?.name,
         size: windowsAsset?.size,
       },
+      error: latestRelease.error,
     };
     return release;
   }

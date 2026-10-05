@@ -3,7 +3,6 @@ import url from 'url';
 import { appContext } from './app-context';
 import path from 'path';
 import { appLogger } from './app-logger';
-import isDev from 'electron-is-dev';
 
 // create application main window
 export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindow {
@@ -13,6 +12,7 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
       webviewTag: true,
       nodeIntegration: true,
       contextIsolation: false,
+      allowRunningInsecureContent: true,
     },
     width: 1024,
     height: 600,
@@ -23,8 +23,12 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     title: 'CleepDesktop',
   });
 
-  mainWindow.webContents.on('did-attach-webview', (_event, _webContents) => {
+  mainWindow.webContents.on('did-attach-webview', (_event, webContents: Electron.WebContents) => {
     appLogger.debug('webview attached');
+    webContents.setWindowOpenHandler((details) => {
+      mainWindow.webContents.send('webview-new-window', webContents.id, details);
+      return { action: 'deny' };
+    });
   });
 
   mainWindow.webContents.setWindowOpenHandler((details: Electron.HandlerDetails) => {
@@ -59,7 +63,7 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
   });
 
   // Open the DevTools in dev mode only
-  if (isDev || process.env.CLEEPDESKTOP_DEBUG) {
+  if (appContext.isDev || process.env.CLEEPDESKTOP_DEBUG) {
     // open devtool in dev mode
     mainWindow.webContents.openDevTools();
 
