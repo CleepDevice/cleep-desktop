@@ -42,6 +42,11 @@ vi.mock('../../src/utils/github', () => ({
       },
     ],
   })),
+  getGithubReleaseByTag: vi.fn(async () => ({
+    tag: '',
+    assets: [],
+    error: 'unused in iso tests',
+  })),
 }));
 
 vi.mock('../../src/iso/utils', async (importOriginal) => {

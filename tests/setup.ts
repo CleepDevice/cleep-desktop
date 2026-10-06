@@ -47,6 +47,7 @@ vi.mock('electron', () => {
       isPackaged: true,
       name: 'CleepDesktop',
       getVersion: () => '0.0.0-test',
+      getAppPath: () => path.join(USER_DATA_DIR, '..'),
       getPath: (name: string) => {
         if (name === 'temp') {
           return os.tmpdir();
@@ -129,7 +130,7 @@ vi.mock('electron-settings', () => {
   const store: Record<string, unknown> = {
     remote: { wsport: 5610 },
     cleep: { debug: false, uuid: 'test-uuid', crashreport: false },
-    flashtool: { version: null },
+    rpiimager: { version: null },
     devices: {},
   };
 

@@ -10,6 +10,11 @@ vi.mock('../../src/utils/github', () => ({
     assets: [],
     error: 'no update in tests',
   })),
+  getGithubReleaseByTag: vi.fn(async () => ({
+    tag: '',
+    assets: [],
+    error: 'no update in tests',
+  })),
 }));
 
 describe('AppUpdater', () => {
@@ -123,8 +128,8 @@ describe('AppUpdater', () => {
     internal.onCleepbusUpdateAvailable({ version: '2', terminated: false });
     internal.onCleepbusDownloadProgress({ percent: 20, terminated: false });
 
-    expect(send).toHaveBeenCalledWith('updater-flashtool-update-available', expect.any(Object));
-    expect(send).toHaveBeenCalledWith('updater-flashtool-download-progress', expect.any(Object));
+    expect(send).toHaveBeenCalledWith('updater-rpi-imager-update-available', expect.any(Object));
+    expect(send).toHaveBeenCalledWith('updater-rpi-imager-download-progress', expect.any(Object));
     expect(send).toHaveBeenCalledWith('updater-cleepbus-update-available', expect.any(Object));
     expect(send).toHaveBeenCalledWith('updater-cleepbus-download-progress', expect.any(Object));
 

@@ -21,6 +21,8 @@ export interface SudoOptions {
 }
 
 const BINARIES_LINUX = {
+  // Prefer run0 (polkit via systemd): works when Electron sets NoNewPrivs (pkexec/sudo setuid fail).
+  run0: ['--description==APPNAME='],
   gksudo: ['--preserve-env', '--sudo-mode', '--description="=APPNAME="'],
   pkexec: ['--disable-internal-agent'],
 };

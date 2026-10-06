@@ -89,14 +89,14 @@
                         </md-button>
                     </md-list-item>
 
-                    <!-- flash-tool -->
+                    <!-- raspberry pi imager -->
                     <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
                         <p ng-if="ctl.updateService.softwareVersions.flashTool">
-                            Flash tool version v{{ ctl.updateService.softwareVersions.flashTool }} is installed
+                            Raspberry Pi Imager v{{ ctl.updateService.softwareVersions.flashTool }} is installed
                         </p>
                         <p ng-if="!ctl.updateService.softwareVersions.flashTool">
-                            Flash tool is not installed. Click on "Check updates" button to install.
+                            Raspberry Pi Imager is not installed. Click on "Check updates" button to install.
                         </p>
                         <div class="md-secondary" ng-if="ctl.updateService.flashToolUpdate.error">
                             Error: {{ ctl.updateService.flashToolUpdate.error }}

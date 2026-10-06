@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getLatestGithubRelease } from '../../src/utils/github';
+import { getGithubReleaseByTag, getLatestGithubRelease } from '../../src/utils/github';
 
 vi.mock('axios');
 
@@ -57,5 +57,35 @@ describe('getLatestGithubRelease', () => {
     const release = await getLatestGithubRelease({ owner: 'CleepDevice', repo: 'cleep-os' });
 
     expect(release.error).toContain('network down');
+  });
+});
+
+describe('getGithubReleaseByTag', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('returns release for a specific tag', async () => {
+    vi.mocked(axios.get).mockResolvedValue({
+      data: {
+        tag_name: 'rpi-imager-v2.0.11',
+        assets: [{ name: 'rpi-imager-linux-x64.zip', browser_download_url: 'https://x', size: 1 }],
+      },
+    });
+
+    const release = await getGithubReleaseByTag(
+      { owner: 'CleepDevice', repo: 'cleep-desktop' },
+      'rpi-imager-v2.0.11',
+    );
+
+    expect(release.tag).toBe('rpi-imager-v2.0.11');
+    expect(release.assets[0].name).toBe('rpi-imager-linux-x64.zip');
+    expect(axios.get).toHaveBeenCalledWith(
+      'https://api.github.com/repos/CleepDevice/cleep-desktop/releases/tags/rpi-imager-v2.0.11',
+      expect.objectContaining({
+        headers: { accept: 'application/vnd.github+json' },
+        timeout: 10000.0,
+      }),
+    );
   });
 });

@@ -1,6 +1,7 @@
 __pycache__
 **/*.swp
 etcher-cli/
+.rpi-imager-build/
 dist/
 build/
 packaging/

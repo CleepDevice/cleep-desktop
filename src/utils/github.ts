@@ -64,13 +64,31 @@ interface IRealGithubRelease {
 }
 
 const LATEST_RELEASE_URL = 'https://api.github.com/repos/$OWNER$/$REPO$/releases?page=1&per_page=1';
+const RELEASE_BY_TAG_URL = 'https://api.github.com/repos/$OWNER$/$REPO$/releases/tags/$TAG$';
 const GIHHUB_HEADERS = {
   accept: 'application/vnd.github+json',
 };
 
+function getGithubStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') {
+    return undefined;
+  }
+  if ('status' in error && typeof error.status === 'number') {
+    return error.status;
+  }
+  if (axios.isAxiosError(error)) {
+    return error.response?.status;
+  }
+  return undefined;
+}
+
 function getGithubErrorMessage(error: unknown): string {
   if (isGithubRateLimitError(error)) {
     return 'Too many requests. Retry in few minutes.';
+  }
+  const status = getGithubStatus(error);
+  if (status === 404) {
+    return 'Release not found (404)';
   }
   if (error instanceof Error) {
     return error.message || 'Unknown error';
@@ -79,17 +97,7 @@ function getGithubErrorMessage(error: unknown): string {
 }
 
 function isGithubRateLimitError(error: unknown): boolean {
-  if (!error || typeof error !== 'object') {
-    return false;
-  }
-
-  const status =
-    'status' in error && typeof error.status === 'number'
-      ? error.status
-      : axios.isAxiosError(error)
-        ? error.response?.status
-        : undefined;
-
+  const status = getGithubStatus(error);
   return status === 403 || status === 429;
 }
 
@@ -107,6 +115,28 @@ export async function getLatestGithubRelease(repo: IGithubRepo): Promise<IGithub
     };
   } catch (error) {
     appLogger.error('Unable to call github api', error);
+    const errorMessage = getGithubErrorMessage(error);
+    return {
+      assets: [],
+      tag: '',
+      error: `Unable to request Github (${errorMessage})`,
+    };
+  }
+}
+
+export async function getGithubReleaseByTag(repo: IGithubRepo, tag: string): Promise<IGithubRelease> {
+  try {
+    appLogger.debug(`Getting release ${tag} for repo ${repo.owner}:${repo.repo}`);
+    const url = RELEASE_BY_TAG_URL.replace('$OWNER$', repo.owner)
+      .replace('$REPO$', repo.repo)
+      .replace('$TAG$', encodeURIComponent(tag));
+    const release = await axios.get<IRealGithubRelease>(url, { headers: GIHHUB_HEADERS, timeout: 10000.0 });
+    return {
+      assets: release.data.assets ?? [],
+      tag: release.data.tag_name,
+    };
+  } catch (error) {
+    appLogger.error('Unable to call github api for release tag', { error, tag });
     const errorMessage = getGithubErrorMessage(error);
     return {
       assets: [],

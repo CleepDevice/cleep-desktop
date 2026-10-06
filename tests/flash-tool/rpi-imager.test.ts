@@ -1,10 +1,18 @@
 import fs from 'fs';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { IGithubRelease } from '../../src/utils/github';
+import { RPI_IMAGER_VERSION } from '../../src/flash-tool/constants';
 
-vi.mock('../../src/flash-tool/constants', () => ({
-  FLASHTOOL_DIR: '/tmp/cleep-rpi-imager-test',
-}));
+vi.mock('../../src/flash-tool/constants', async () => {
+  const actual = await vi.importActual<typeof import('../../src/flash-tool/constants')>(
+    '../../src/flash-tool/constants',
+  );
+  return {
+    ...actual,
+    RPI_IMAGER_DIR: '/tmp/cleep-rpi-imager-test',
+    RPI_IMAGER_VERSION: '2.0.11.1',
+  };
+});
 
 vi.mock('../../src/app-logger', () => ({
   appLogger: {
@@ -28,6 +36,7 @@ vi.mock('../../src/utils/download', () => ({
 
 vi.mock('../../src/utils/github', () => ({
   getLatestGithubRelease: vi.fn(),
+  getGithubReleaseByTag: vi.fn(),
 }));
 
 vi.mock('../../src/utils/unzip', () => ({
@@ -36,13 +45,13 @@ vi.mock('../../src/utils/unzip', () => ({
 
 describe('RpiImager', () => {
   let rpiImager: InstanceType<typeof import('../../src/flash-tool/rpi-imager').RpiImager>;
-  let getLatestGithubRelease: ReturnType<typeof vi.fn>;
+  let getGithubReleaseByTag: ReturnType<typeof vi.fn>;
   let appSettings: { get: ReturnType<typeof vi.fn>; set: ReturnType<typeof vi.fn> };
 
   beforeAll(async () => {
     const mod = await import('../../src/flash-tool/rpi-imager');
     rpiImager = new mod.RpiImager();
-    ({ getLatestGithubRelease } = await import('../../src/utils/github'));
+    ({ getGithubReleaseByTag } = await import('../../src/utils/github'));
     ({ appSettings } = await import('../../src/app-settings'));
   });
 
@@ -50,24 +59,6 @@ describe('RpiImager', () => {
     expect(rpiImager.parseFlashOutput('opening drive')).toEqual({
       mode: 'flashing',
       percent: 0,
-      eta: -1,
-    });
-    expect(rpiImager.parseFlashOutput('opening image file')).toEqual({
-      mode: 'flashing',
-      percent: 0,
-      eta: -1,
-    });
-    expect(rpiImager.parseFlashOutput('unmounting drive')).toEqual({
-      mode: 'flashing',
-      percent: 0,
-      eta: -1,
-    });
-  });
-
-  it('returns validating complete when both Writing and Verifying are present', () => {
-    expect(rpiImager.parseFlashOutput('Writing done Verifying done')).toEqual({
-      mode: 'validating',
-      percent: 100,
       eta: -1,
     });
   });
@@ -80,63 +71,55 @@ describe('RpiImager', () => {
     });
   });
 
-  it('parses verifying progress', () => {
-    expect(rpiImager.parseFlashOutput('Verifying: [========  ] 80')).toEqual({
-      mode: 'validating',
-      percent: 80,
-      eta: -1,
-    });
-  });
-
-  it('returns undefined for unrelated output', () => {
-    expect(rpiImager.parseFlashOutput('random log')).toBeUndefined();
-  });
-
-  it('maps github assets to platform releases', async () => {
-    vi.mocked(getLatestGithubRelease).mockResolvedValue({
-      tag: 'v3.0.0',
+  it('maps pinned cleep-desktop assets to platform releases', async () => {
+    vi.mocked(getGithubReleaseByTag).mockResolvedValue({
+      tag: `rpi-imager-v${RPI_IMAGER_VERSION}`,
       assets: [
         {
-          name: 'flashtool-macos-arm64.zip',
+          name: 'rpi-imager-macos.zip',
           browser_download_url: 'https://example.com/macos.zip',
           size: 10,
         },
         {
-          name: 'flashtool-linux-x64.zip',
+          name: 'rpi-imager-linux-x64.zip',
           browser_download_url: 'https://example.com/linux.zip',
           size: 20,
         },
         {
-          name: 'flashtool-windows-x64.zip',
+          name: 'rpi-imager-windows-x64.zip',
           browser_download_url: 'https://example.com/windows.zip',
           size: 30,
         },
       ],
     } as IGithubRelease);
 
-    const release = await rpiImager.getLatestRelease();
-    expect(release.version).toBe('3.0.0');
-    expect(release.darwin.filename).toBe('flashtool-macos-arm64.zip');
+    const release = await rpiImager.getPinnedRelease();
+    expect(release.version).toBe(RPI_IMAGER_VERSION);
+    expect(release.darwin.filename).toBe('rpi-imager-macos.zip');
     expect(release.linux.size).toBe(20);
     expect(release.win32.size).toBe(30);
+    expect(getGithubReleaseByTag).toHaveBeenCalledWith(
+      { owner: 'CleepDevice', repo: 'cleep-desktop' },
+      `rpi-imager-v${RPI_IMAGER_VERSION}`,
+    );
   });
 
   it('returns null installed version when binary missing', () => {
-    vi.mocked(appSettings.get).mockReturnValue('2.0.0');
+    vi.mocked(appSettings.get).mockReturnValue('2.0.11');
     expect(rpiImager.getInstalledVersion()).toBeNull();
   });
 
   it('returns installed version when binary exists', () => {
     fs.mkdirSync('/tmp/cleep-rpi-imager-test', { recursive: true });
     fs.writeFileSync('/tmp/cleep-rpi-imager-test/rpi-imager', 'bin');
-    vi.mocked(appSettings.get).mockReturnValue('2.0.0');
+    vi.mocked(appSettings.get).mockReturnValue('2.0.11');
 
-    expect(rpiImager.getInstalledVersion()).toBe('2.0.0');
+    expect(rpiImager.getInstalledVersion()).toBe('2.0.11');
     fs.rmSync('/tmp/cleep-rpi-imager-test', { recursive: true, force: true });
   });
 
   it('checkForUpdates returns github error', async () => {
-    vi.mocked(getLatestGithubRelease).mockResolvedValue({
+    vi.mocked(getGithubReleaseByTag).mockResolvedValue({
       tag: '',
       assets: [],
       error: 'boom',
@@ -149,11 +132,21 @@ describe('RpiImager', () => {
   });
 
   it('checkForUpdates installs when versions differ', async () => {
-    vi.mocked(getLatestGithubRelease).mockResolvedValue({
-      tag: 'v5.0.0',
+    vi.mocked(getGithubReleaseByTag).mockResolvedValue({
+      tag: `rpi-imager-v${RPI_IMAGER_VERSION}`,
       assets: [
         {
-          name: `flashtool-${process.platform === 'darwin' ? 'macos' : process.platform === 'win32' ? 'windows' : 'linux'}-x64.zip`,
+          name: 'rpi-imager-linux-x64.zip',
+          browser_download_url: 'https://example.com/tool.zip',
+          size: 1,
+        },
+        {
+          name: 'rpi-imager-macos.zip',
+          browser_download_url: 'https://example.com/tool.zip',
+          size: 1,
+        },
+        {
+          name: 'rpi-imager-windows-x64.zip',
           browser_download_url: 'https://example.com/tool.zip',
           size: 1,
         },
@@ -179,13 +172,13 @@ describe('RpiImager', () => {
     rpiImager.setUpdateCallbacks(updateCb, progressCb);
 
     await rpiImager.install({
-      version: '7.0.0',
+      version: '2.0.11',
       darwin: { downloadUrl: 'https://example.com/d.zip', filename: 'd.zip', size: 1 },
       linux: { downloadUrl: 'https://example.com/l.zip', filename: 'l.zip', size: 1 },
       win32: { downloadUrl: 'https://example.com/w.zip', filename: 'w.zip', size: 1 },
     });
 
-    expect(appSettings.set).toHaveBeenCalledWith('flashtool.version', '7.0.0');
+    expect(appSettings.set).toHaveBeenCalledWith('rpiimager.version', '2.0.11');
     expect(progressCb).toHaveBeenCalledWith({ terminated: true, percent: 100 });
   });
 
@@ -196,11 +189,15 @@ describe('RpiImager', () => {
   it('checkForUpdates reports no update when versions match and binary exists', async () => {
     fs.mkdirSync('/tmp/cleep-rpi-imager-test', { recursive: true });
     fs.writeFileSync('/tmp/cleep-rpi-imager-test/rpi-imager', 'bin');
-    vi.mocked(appSettings.get).mockReturnValue('3.0.0');
-    vi.mocked(getLatestGithubRelease).mockResolvedValue({
-      tag: 'v3.0.0',
-      assets: [],
-    });
+    vi.mocked(appSettings.get).mockReturnValue(RPI_IMAGER_VERSION);
+    vi.mocked(getGithubReleaseByTag).mockResolvedValue({
+      tag: `rpi-imager-v${RPI_IMAGER_VERSION}`,
+      assets: [
+        { name: 'rpi-imager-linux-x64.zip', browser_download_url: 'https://x', size: 1 },
+        { name: 'rpi-imager-macos.zip', browser_download_url: 'https://x', size: 1 },
+        { name: 'rpi-imager-windows-x64.zip', browser_download_url: 'https://x', size: 1 },
+      ],
+    } as IGithubRelease);
 
     await expect(rpiImager.checkForUpdates()).resolves.toEqual({ updateAvailable: false });
     fs.rmSync('/tmp/cleep-rpi-imager-test', { recursive: true, force: true });

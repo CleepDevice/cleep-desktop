@@ -4,9 +4,10 @@
     "description": "Desktop application to manage your Cleep devices",
     "main": "main.js",
     "scripts": {
-        "copyfiles": "copyfiles \"html/**/*\" build/ && copyfiles \"core/**/*\" build/ && copyfiles cleepdesktopcore.py build/ && copyfiles dev-app-update.yml build/ && copyfiles package.json build/",
+        "copyfiles": "copyfiles \"html/**/*\" build/ && copyfiles \"core/**/*\" build/ && copyfiles cleepdesktopcore.py build/ && copyfiles dev-app-update.yml build/ && copyfiles package.json build/ && copyfiles \"resources/flashtool/**/*\" build/resources/",
         "copy:elevate-exe": "copyfiles --flat \"src/sudo/elevate.exe\" \"build/sudo/\"",
         "build": "rimraf build && tsc && npm run copy:elevate-exe && npm run copyfiles",
+        "package:rpi-imager": "scripts/package-rpi-imager.sh",
         "start": "npm run build && electron ./build/main.js",
         "start:dev": "npm run build && concurrently -k \"tsc -w --preserveWatchOutput\" \"electron ./build/main.js\"",
         "postinstall": "node scripts/ensure-electron.js",
@@ -117,7 +118,14 @@
             "owner": "CleepDevice",
             "releaseType": "release",
             "repo": "cleep-desktop"
-        }
+        },
+        "extraResources": [
+            {
+                "from": "resources/flashtool",
+                "to": "flashtool",
+                "filter": ["**/*"]
+            }
+        ]
     },
     "allowScripts": {
         "electron@41.0.2": true,

@@ -24,8 +24,9 @@ Application main window is separated in 2 parts:
 
 ### SD card burning
 
-CleepDesktop embeds a flashing SD card tool (Raspberry Pi Imager) and searches automatically available latest Cleep release. So user can install Cleep distribution in 3 clicks.
-There is also a simple way to pre-configure wifi access in case of device uses wireless connection.
+CleepDesktop downloads Raspberry Pi Imager on first launch (not bundled in the installer) and searches for the latest Cleep OS release, so users can install Cleep in a few clicks. Optional Wi‑Fi pre-configuration is supported for wireless devices.
+
+Raspberry Pi Imager binaries are packaged separately as release assets (`rpi-imager-*.zip`) via `npm run package:rpi-imager` / `scripts/package-rpi-imager.sh`, then published under a `rpi-imager-vX.Y.Z` tag on this repository. Per-platform official source versions are set in `src/flash-tool/rpi-imager-versions.json` (e.g. Linux can stay on an older release when AppImage is missing). Flash wrappers live in `resources/flashtool/` and ship with the app.
 
 ### Auto update
 

@@ -149,9 +149,9 @@ export class AppSettings {
       settings.setSync('cleep.networkinterface', DEFAULT_SETTINGS.networkInterface);
     }
 
-    // flashtool section
-    if (!settings.hasSync('flashtool.version')) {
-      settings.setSync('flashtool.version', '');
+    // rpi-imager section
+    if (!settings.hasSync('rpiimager.version')) {
+      settings.setSync('rpiimager.version', '');
     }
 
     // remote section

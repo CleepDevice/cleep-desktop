@@ -104,7 +104,7 @@ export class AppUpdater {
     const cleepDesktopUpdate = { updateAvailable: hasCleepDesktopUpdate };
     const flashToolUpdate = await this.flashTool.checkForUpdates();
     if (flashToolUpdate.error) {
-      sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', {
+      sendDataToAngularJs(this.window, 'updater-rpi-imager-download-progress', {
         terminated: true,
         percent: 100,
         error: flashToolUpdate.error,
@@ -112,7 +112,7 @@ export class AppUpdater {
     }
     const cleepbusUpdate = await this.messageBus.checkForUpdates();
     if (cleepbusUpdate.error) {
-      sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', {
+      sendDataToAngularJs(this.window, 'updater-cleepbus-download-progress', {
         terminated: true,
         percent: 100,
         error: cleepbusUpdate.error,
@@ -227,11 +227,11 @@ export class AppUpdater {
   }
 
   private onFlashToolUpdateAvailable(updateData: UpdateData): void {
-    sendDataToAngularJs(this.window, 'updater-flashtool-update-available', updateData);
+    sendDataToAngularJs(this.window, 'updater-rpi-imager-update-available', updateData);
   }
 
   private onFlashToolDownloadProgress(updateData: UpdateData): void {
-    sendDataToAngularJs(this.window, 'updater-flashtool-download-progress', updateData);
+    sendDataToAngularJs(this.window, 'updater-rpi-imager-download-progress', updateData);
   }
 
   private onCleepbusUpdateAvailable(updateData: UpdateData): void {

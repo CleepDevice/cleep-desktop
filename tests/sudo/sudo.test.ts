@@ -20,6 +20,42 @@ describe('Sudo', () => {
     vi.unstubAllGlobals();
   });
 
+  it('prefers run0 on linux when available', async () => {
+    const { spawn, spawnSync } = await import('child_process');
+    vi.mocked(spawnSync).mockImplementation((cmd: string, args?: readonly string[]) => {
+      if (cmd === 'which' && args?.[0] === 'run0') {
+        return { status: 0, stdout: '/usr/bin/run0\n', stderr: '', pid: 1, output: [], signal: null } as never;
+      }
+      return { status: 1, stdout: '', stderr: '', pid: 1, output: [], signal: null } as never;
+    });
+
+    const child = new EventEmitter() as EventEmitter & {
+      stdout: EventEmitter;
+      stderr: EventEmitter;
+      kill: ReturnType<typeof vi.fn>;
+      pid?: number;
+    };
+    child.stdout = new EventEmitter();
+    child.stderr = new EventEmitter();
+    child.kill = vi.fn();
+    child.pid = 1;
+    vi.mocked(spawn).mockReturnValue(child as never);
+
+    const sudo = new Sudo({
+      appName: 'CleepDesktop',
+      terminatedCallback: vi.fn(),
+      stdoutCallback: vi.fn(),
+      stderrCallback: vi.fn(),
+    });
+    sudo.run('/bin/echo', ['hello']);
+
+    expect(spawn).toHaveBeenCalledWith(
+      '/usr/bin/run0',
+      ['--description=CleepDesktop', '/bin/echo', 'hello'],
+      expect.any(Object),
+    );
+  });
+
   it('runs command with linux sudo binary when available', async () => {
     const { spawn, spawnSync } = await import('child_process');
     vi.mocked(spawnSync).mockImplementation((cmd: string, args?: readonly string[]) => {

@@ -19,7 +19,7 @@ import { sendDataToAngularJs } from './utils/ui.helpers';
 import * as drivelist from 'drivelist';
 import { rpiImager } from './flash-tool/rpi-imager';
 import { Drive } from './flash-tool/flashtool.interface';
-import { FLASHTOOL_DIR } from './flash-tool/constants';
+import { getFlashWrapperPath, RPI_IMAGER_DIR } from './flash-tool/constants';
 
 export interface WifiData {
   network: string;
@@ -38,8 +38,8 @@ export interface InstallData {
   wifiFilePath?: string;
 }
 
+export { RPI_IMAGER_DIR } from './flash-tool/constants';
 export type { FlashOutput } from './flash-tool/flashtool.interface';
-export { FLASHTOOL_DIR } from './flash-tool/constants';
 
 type InstallStep = 'idle' | 'downloading' | 'privileges' | 'flashing' | 'validating' | 'canceled';
 
@@ -51,7 +51,8 @@ interface InstallProgress {
   terminated?: boolean;
 }
 
-const FLASH_STDERR_ERROR_PATTERN = /\b(error|failed|fatal|exception)\b/i;
+const FLASH_STDERR_ERROR_PATTERN =
+  /\b(error|failed|fatal|exception|permission denied|setuid|no new privileges|access denied|unknown option)\b/i;
 
 class AppIso {
   private wifiNetworks: WifiNetwork[] = [];
@@ -330,9 +331,8 @@ class AppIso {
   }
 
   private flashDrive(installData: InstallData): void {
-    const extension = process.platform === 'win32' ? '.bat' : '.sh';
-    const command = path.join(FLASHTOOL_DIR, 'flash' + extension);
-    const args = [FLASHTOOL_DIR, installData.drivePath, installData.isoPath];
+    const command = getFlashWrapperPath();
+    const args = [RPI_IMAGER_DIR, installData.drivePath, installData.isoPath];
     if (installData.wifiFilePath) {
       args.push(installData.wifiFilePath);
     }
