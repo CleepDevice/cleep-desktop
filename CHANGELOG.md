@@ -10,6 +10,7 @@
 - Replace extract-zip by unzipper (outdated since 2020)
 - Replace python cleepbus by pyre-ts
 - Improve sdcard flash (and remove legacy lib)
+- Improve flash card tool
 
 ### Added
 

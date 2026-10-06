@@ -26,7 +26,7 @@ Application main window is separated in 2 parts:
 
 CleepDesktop downloads Raspberry Pi Imager on first launch (not bundled in the installer) and searches for the latest Cleep OS release, so users can install Cleep in a few clicks. Optional Wi‑Fi pre-configuration is supported for wireless devices.
 
-Raspberry Pi Imager binaries are packaged separately as release assets (`rpi-imager-*.zip`) via `npm run package:rpi-imager` / `scripts/package-rpi-imager.sh`, then published under a `rpi-imager-vX.Y.Z` tag on this repository. Per-platform official source versions are set in `src/flash-tool/rpi-imager-versions.json` (e.g. Linux can stay on an older release when AppImage is missing). Flash wrappers live in `resources/flashtool/` and ship with the app.
+Raspberry Pi Imager binaries are packaged separately as release assets (`rpi-imager-*.zip`) via `npm run package:rpi-imager` / `scripts/package-rpi-imager.sh`, then published under a `rpi-imager-vX.Y.Z` tag on this repository. Per-platform official source versions are set in `src/flash-tool/rpi-imager-versions.json` (e.g. Linux can stay on an older release when AppImage is missing). Flash wrappers live in `resources/flashtool/` and ship with the app. Wi-Fi (and future `cleep-*.json` payloads) are injected via rpi-imager `--first-run-script` — no post-flash mount/patch of the card.
 
 ### Auto update
 

@@ -204,9 +204,16 @@ describe('AppIso', () => {
     await appIso.startInstall(installData);
 
     expect(installData.isoPath).toBe('/tmp/local.img');
-    expect(installData.wifiFilePath).toBeTruthy();
-    expect(fs.existsSync(installData.wifiFilePath)).toBe(true);
-    expect(sudoRun).toHaveBeenCalled();
+    expect(installData.firstRunScriptPath).toBeTruthy();
+    expect(fs.existsSync(installData.firstRunScriptPath)).toBe(true);
+    const script = fs.readFileSync(installData.firstRunScriptPath, 'utf8');
+    expect(script).toContain('cleep-network.json');
+    expect(script).toContain('"network":"Home"');
+    expect(script).toContain('"encryption":"wpa2"');
+    expect(sudoRun).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.arrayContaining([installData.firstRunScriptPath]),
+    );
     expect(send).toHaveBeenCalledWith(
       'iso-install-progress',
       expect.objectContaining({ step: 'privileges' }),

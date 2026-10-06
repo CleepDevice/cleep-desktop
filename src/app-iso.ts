@@ -20,6 +20,7 @@ import * as drivelist from 'drivelist';
 import { rpiImager } from './flash-tool/rpi-imager';
 import { Drive } from './flash-tool/flashtool.interface';
 import { getFlashWrapperPath, RPI_IMAGER_DIR } from './flash-tool/constants';
+import { buildFirstRunScript, FirstRunPayloadFile } from './iso/first-run-script';
 
 export interface WifiData {
   network: string;
@@ -35,7 +36,8 @@ export interface InstallData {
   isoPath?: string;
   drivePath: string;
   wifiData: WifiData;
-  wifiFilePath?: string;
+  /** Temp path to firstrun.sh passed as rpi-imager --first-run-script */
+  firstRunScriptPath?: string;
 }
 
 export { RPI_IMAGER_DIR } from './flash-tool/constants';
@@ -69,10 +71,10 @@ class AppIso {
   private currentInstall: {
     isoUrl: string;
     sudo: Sudo;
-    wifiFilePath: string;
+    firstRunScriptPath: string;
     flashError: string;
     canceled: boolean;
-  } = { isoUrl: '', sudo: null, wifiFilePath: '', flashError: '', canceled: false };
+  } = { isoUrl: '', sudo: null, firstRunScriptPath: '', flashError: '', canceled: false };
   private installRunning = false;
 
   constructor() {
@@ -227,7 +229,7 @@ class AppIso {
     this.installRunning = true;
     this.currentInstall.canceled = false;
     this.currentInstall.flashError = '';
-    this.currentInstall.wifiFilePath = '';
+    this.currentInstall.firstRunScriptPath = '';
 
     try {
       appContext.allowAppClosing = false;
@@ -246,7 +248,7 @@ class AppIso {
         return;
       }
 
-      await this.writeWifiFile(installData);
+      await this.writeFirstRunScript(installData);
       this.flashDrive(installData);
     } catch (error) {
       appContext.allowAppClosing = true;
@@ -260,7 +262,7 @@ class AppIso {
         terminated: true,
         error: message,
       });
-      await this.cleanupWifiFile();
+      await this.cleanupFirstRunScript();
     }
   }
 
@@ -280,7 +282,7 @@ class AppIso {
       this.currentInstall.sudo = null;
     }
 
-    void this.cleanupWifiFile();
+    void this.cleanupFirstRunScript();
     this.installRunning = false;
     appContext.allowAppClosing = true;
     sendDataToAngularJs(this.window, 'iso-install-progress', {
@@ -292,49 +294,67 @@ class AppIso {
     });
   }
 
-  private async cleanupWifiFile(wifiFilePath?: string): Promise<void> {
-    const filePath = wifiFilePath || this.currentInstall.wifiFilePath;
+  private async cleanupFirstRunScript(scriptPath?: string): Promise<void> {
+    const filePath = scriptPath || this.currentInstall.firstRunScriptPath;
     if (!filePath) {
       return;
     }
     try {
       await unlink(filePath);
-      appLogger.debug(`Wifi config file removed ${filePath}`);
+      appLogger.debug(`First-run script removed ${filePath}`);
     } catch {
       // ignore missing file
     }
-    if (this.currentInstall.wifiFilePath === filePath) {
-      this.currentInstall.wifiFilePath = '';
+    if (this.currentInstall.firstRunScriptPath === filePath) {
+      this.currentInstall.firstRunScriptPath = '';
     }
   }
 
-  private async writeWifiFile(installData: InstallData): Promise<void> {
-    if (!installData.wifiData) {
+  /**
+   * Build a firstrun.sh that drops cleep-*.json payloads on the boot partition.
+   * Extra consumer files can be appended to `payloads` later without changing the flash path.
+   */
+  private async writeFirstRunScript(installData: InstallData): Promise<void> {
+    const payloads: FirstRunPayloadFile[] = [];
+
+    if (installData.wifiData) {
+      payloads.push({
+        filename: 'cleep-network.json',
+        content: {
+          network: installData.wifiData.network,
+          password: installData.wifiData.password,
+          encryption: String(installData.wifiData.security || '').toLowerCase(),
+          hidden: installData.wifiData.hidden,
+        },
+      });
+    }
+
+    if (!payloads.length) {
       return;
     }
 
-    installData.wifiFilePath = path.join(app.getPath('temp'), 'cleep-network.conf');
-    this.currentInstall.wifiFilePath = installData.wifiFilePath;
+    installData.firstRunScriptPath = path.join(app.getPath('temp'), 'cleep-firstrun.sh');
+    this.currentInstall.firstRunScriptPath = installData.firstRunScriptPath;
 
-    const config = {
-      network: installData.wifiData.network,
-      password: installData.wifiData.password,
-      encryption: String(installData.wifiData.security || '').toLowerCase(),
-      hidden: installData.wifiData.hidden,
-    };
     try {
-      await writeFile(installData.wifiFilePath, JSON.stringify(config));
-      appLogger.debug(`Wifi config written to ${installData.wifiFilePath}`);
+      const script = buildFirstRunScript(payloads);
+      // LF-only: script runs on the Linux device, not the host.
+      await writeFile(installData.firstRunScriptPath, script, { encoding: 'utf8', mode: 0o755 });
+      appLogger.debug(`First-run script written to ${installData.firstRunScriptPath}`, {
+        payloads: payloads.map((p) => p.filename),
+      });
     } catch (error) {
-      throw new Error(`Error writing wifi file ${(error as Error)?.message || 'unknown error'}`);
+      throw new Error(
+        `Error writing first-run script ${(error as Error)?.message || 'unknown error'}`,
+      );
     }
   }
 
   private flashDrive(installData: InstallData): void {
     const command = getFlashWrapperPath();
     const args = [RPI_IMAGER_DIR, installData.drivePath, installData.isoPath];
-    if (installData.wifiFilePath) {
-      args.push(installData.wifiFilePath);
+    if (installData.firstRunScriptPath) {
+      args.push(installData.firstRunScriptPath);
     }
 
     const installProgress: InstallProgress = {
@@ -357,12 +377,12 @@ class AppIso {
 
   private flashTerminatedCallback(exitCode: number): void {
     appLogger.info(`Flash drive terminated (exit code: ${exitCode})`);
-    const wifiFilePath = this.currentInstall.wifiFilePath;
+    const firstRunScriptPath = this.currentInstall.firstRunScriptPath;
     this.currentInstall.sudo = null;
     this.installRunning = false;
 
     if (this.currentInstall.canceled) {
-      void this.cleanupWifiFile(wifiFilePath);
+      void this.cleanupFirstRunScript(firstRunScriptPath);
       appContext.allowAppClosing = true;
       return;
     }
@@ -385,7 +405,7 @@ class AppIso {
       appLogger.error('Flash drive failed', { exitCode, error });
     }
 
-    void this.cleanupWifiFile(wifiFilePath);
+    void this.cleanupFirstRunScript(firstRunScriptPath);
     appContext.allowAppClosing = true;
   }
 
