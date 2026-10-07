@@ -10,8 +10,23 @@ function(tasksPanelService, toast, electron) {
     var self = this;
     self.downloadPanels = {};
 
+    self._ipcReady = false;
+    self._unsubscribers = [];
+
     self.init = function() {
+        if (self._ipcReady) {
+            return;
+        }
         self.addIpcs();
+        self._ipcReady = true;
+    };
+
+    self.destroy = function() {
+        self._unsubscribers.forEach(function(unsubscribe) {
+            unsubscribe();
+        });
+        self._unsubscribers = [];
+        self._ipcReady = false;
     };
 
     self.downloadUrl = function(url) {
@@ -41,9 +56,11 @@ function(tasksPanelService, toast, electron) {
     };
 
     self.addIpcs = function() {
-        electron.on('download-file-status', self.onHandleDownloadStatus.bind(self));
-        electron.on('download-file-started', self.onHandleDownloadStarted.bind(self));
-    }
+        self._unsubscribers.push(
+            electron.on('download-file-status', self.onHandleDownloadStatus.bind(self)),
+            electron.on('download-file-started', self.onHandleDownloadStarted.bind(self)),
+        );
+    };
 
     self.onHandleDownloadStarted = function(_event, downloadData) {
         if (self.downloadPanels[downloadData.downloadId]) {

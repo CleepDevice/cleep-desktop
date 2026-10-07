@@ -8,6 +8,9 @@
  * sendReturn unwraps the uniform invoke envelope:
  *   { ok: true, data }  → resolves with data
  *   { ok: false, error } → rejects with { code, message }
+ *
+ * on() / registerWebview() return an unsubscribe function — call it on destroy
+ * to avoid duplicate listeners (e.g. re-entering a device page).
  */
 angular
 .module('Cleep')
@@ -26,11 +29,11 @@ angular
     }
 
     /**
-     * Register webview
-     * Replace webview new-window event deprecated in electron22 https://www.electronjs.org/docs/latest/breaking-changes#removed-webview-new-window-event
+     * Register webview new-window bridge.
+     * @returns {function} unsubscribe
      */
     self.registerWebview = function(webviewDomElement) {
-        ipc.on('webview-new-window', function(_event, _webContentsId, details) {
+        return ipc.on('webview-new-window', function(_event, _webContentsId, details) {
             const customEvent = new CustomEvent('new-window');
             customEvent.details = details;
             webviewDomElement.dispatchEvent(customEvent);
@@ -38,10 +41,11 @@ angular
     };
 
     /**
-     * Handle call from electron application
+     * Subscribe to a main→renderer channel.
+     * @returns {function} unsubscribe
      */
     self.on = function(event, callback) {
-        ipc.on(event, function() {
+        return ipc.on(event, function() {
             callback.apply(null, arguments);
             triggerDigest();
         });

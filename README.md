@@ -34,6 +34,8 @@ IPC channels and payloads are defined in `src/ipc/ipc-contract.ts` (typed reques
 
 Every `invoke` response uses a uniform envelope (`src/ipc/ipc-result.ts`): `{ ok: true, data }` or `{ ok: false, error: { code, message } }`. The Angular `electronService.sendReturn` unwraps it (resolves `data`, rejects `error`). Push events (main → renderer) stay channel + payload as before.
 
+`electronService.on` / `registerWebview` return an **unsubscribe** function. Services keep those refs, expose `destroy()`, and guard `init()` so listeners are not registered twice. Controllers unsubscribe on `$scope.$destroy` (important when leaving a device page).
+
 The preload is bundled with esbuild (`npm run build:preload`) because a sandboxed preload cannot `require()` local modules.
 
 ### Auto update

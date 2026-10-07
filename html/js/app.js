@@ -3,24 +3,50 @@
 var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router', 'ngSanitize', 'ngWebSocket']);
 
 Cleep
-.controller('cleepController', ['$rootScope', '$state', 'tasksPanelService', 'modalService',
+.controller('cleepController', ['$scope', '$rootScope', '$state', 'tasksPanelService', 'modalService',
                                 '$timeout', '$transitions', 'settingsService', 'devicesService',
                                 'updateService', 'installService', 'monitoringService', 'downloadService',
                                 'electronService',
-function($rootScope, $state, tasksPanelService, modalService, $timeout, $transitions, settings,
+function($scope, $rootScope, $state, tasksPanelService, modalService, $timeout, $transitions, settings,
         devicesService, updateService, installService, monitoringService, downloadService, electron) {
     var self = this;
     self.taskRestartRequiredPanelId = null;
     self.selectedToolbarItem = null;
     self.toolbarCollapsed = true;
+    self._unsubscribers = [];
 
     self.$onInit = function() {
-        // init services
+        // init services (idempotent — safe if called again)
         downloadService.init();
         monitoringService.init();
         updateService.init();
         installService.init();
         devicesService.init();
+
+        self._unsubscribers.push(
+            electron.on('open-page', function(_event, data) {
+                const { page, ...params } = data;
+                self.openPage(page, params);
+            }),
+            electron.on('auth-error', function(_event, data) {
+                const foundDevice = devicesService.getSelectedDevice() || devicesService.findDevice(null, data.ip);
+
+                if (foundDevice) {
+                    const params = {
+                        url: foundDevice.url,
+                        hostname: foundDevice.hostname,
+                        deviceUuid: foundDevice.uuid,
+                        errorCode: data.errorCode || 'UNKNOWN_ERROR',
+                    };
+                    $state.go('deviceAuth', params);
+                } else {
+                    $state.go('deviceError', { hostname: data.ip });
+                }
+            }),
+            electron.on('open-modal', function(_event, args) {
+                self.openModal(args.controller, args.template, args.data);
+            }),
+        );
 
         // first run? open application help
         settings.get('cleep.firstrun')
@@ -33,47 +59,33 @@ function($rootScope, $state, tasksPanelService, modalService, $timeout, $transit
             });
     };
 
+    $scope.$on('$destroy', function() {
+        self._unsubscribers.forEach(function(unsubscribe) {
+            unsubscribe();
+        });
+        self._unsubscribers = [];
+        downloadService.destroy();
+        monitoringService.destroy();
+        updateService.destroy();
+        installService.destroy();
+        devicesService.destroy();
+    });
+
     // open page
     self.openPage = function(page, params) {
         devicesService.selectDevice(null);
         $state.go(page, params || {});
     };
 
-    electron.on('open-page', function(_event, data) {
-        const { page, ...params } = data;
-        self.openPage(page, params);
-    });
-
     $rootScope.$on('open-page', (_event, data) => {
         const { page, ...params } = data;
         self.openPage(page, params);
-    })
-
-    // auth
-    electron.on('auth-error', function(_event, data) {
-        const foundDevice = devicesService.getSelectedDevice() || devicesService.findDevice(null, data.ip);
-
-        if (foundDevice) {
-            const params = {
-                url: foundDevice.url,
-                hostname: foundDevice.hostname,
-                deviceUuid: foundDevice.uuid,
-                errorCode: data.errorCode || 'UNKNOWN_ERROR',
-            }
-            $state.go('deviceAuth', params);
-        } else {
-            $state.go('deviceError', params);
-        }
     });
 
     // open modal
     self.openModal = function(controllerName, templateUrl, data) {
         modalService.open(controllerName, templateUrl, data || {});
     };
-
-    electron.on('open-modal', function(_event, args) {
-        self.openModal(args.controller, args.template, args.data);
-    });
 
     // toolbar
     $transitions.onEnter({}, (_trans, state) => {

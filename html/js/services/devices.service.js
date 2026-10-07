@@ -17,8 +17,15 @@ function(electron, logger) {
     // connected at startup to not display loader
     self.busStatus = 'CONNECTED';
 
+    self._ipcReady = false;
+    self._unsubscribers = [];
+
     self.init = function() {
+        if (self._ipcReady) {
+            return;
+        }
         self.addIpcs();
+        self._ipcReady = true;
         // Pull current state after listeners are registered (covers startup + html hot-reload).
         electron.sendReturn('devices-get-ui-state')
             .then((state) => {
@@ -29,13 +36,23 @@ function(electron, logger) {
                 logger.error('Unable to load devices ui state', error);
             });
     };
+
+    self.destroy = function() {
+        self._unsubscribers.forEach(function(unsubscribe) {
+            unsubscribe();
+        });
+        self._unsubscribers = [];
+        self._ipcReady = false;
+    };
  
     self.addIpcs = function() {
-        electron.on('devices-updated', self.onDevicesUpdated.bind(self));
-        electron.on('device-auth-updated', self.onDevicesAuthUpdated.bind(self));
-        electron.on('devices-message-bus-connected', self.onMessageBusConnected.bind(self));
-        electron.on('devices-message-bus-error', self.onMessageBusError.bind(self));
-        electron.on('devices-message-bus-updating', self.onMessageBusUpdating.bind(self));
+        self._unsubscribers.push(
+            electron.on('devices-updated', self.onDevicesUpdated.bind(self)),
+            electron.on('device-auth-updated', self.onDevicesAuthUpdated.bind(self)),
+            electron.on('devices-message-bus-connected', self.onMessageBusConnected.bind(self)),
+            electron.on('devices-message-bus-error', self.onMessageBusError.bind(self)),
+            electron.on('devices-message-bus-updating', self.onMessageBusUpdating.bind(self)),
+        );
     };
 
     self.onDevicesUpdated = function(_event, devices) {

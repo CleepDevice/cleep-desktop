@@ -37,13 +37,30 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
     self.taskInstallPanelId = null;
     self.flashToolInstalled = false;
 
+    self._ipcReady = false;
+    self._unsubscribers = [];
+
     self.init = function() {
+        if (self._ipcReady) {
+            return;
+        }
         self.addIpcs();
+        self._ipcReady = true;
         self.getIsoSettings();
     };
 
+    self.destroy = function() {
+        self._unsubscribers.forEach(function(unsubscribe) {
+            unsubscribe();
+        });
+        self._unsubscribers = [];
+        self._ipcReady = false;
+    };
+
     self.addIpcs = function() {
-        electron.on('iso-install-progress', self.onHandleInstallProgress.bind(self));
+        self._unsubscribers.push(
+            electron.on('iso-install-progress', self.onHandleInstallProgress.bind(self)),
+        );
     };
 
     self.onHandleInstallProgress = function(_event, installProgress) {

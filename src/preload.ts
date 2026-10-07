@@ -20,6 +20,8 @@ type InvokeArgs<C extends InvokeChannel> = InvokeRequest<C> extends void
 
 type SendArgs<C extends SendChannel> = SendPayload<C> extends void ? [] : [SendPayload<C>];
 
+export type IpcUnsubscribe = () => void;
+
 /**
  * Thin bridge exposed to the AngularJS renderer.
  * No Node/Electron APIs leak into window except this allowlisted surface.
@@ -43,17 +45,21 @@ const cleepBridge = {
 
     /**
      * Subscribe to a main→renderer channel.
-     * Listener signature matches the old electron.service helper: (_event, ...args).
-     * The real IpcRendererEvent is not forwarded (not cloneable across the bridge).
+     * Returns an unsubscribe function (remove this listener only).
+     * Listener signature: (_event, ...args) — IpcRendererEvent is not forwarded.
      */
     on<C extends ReceiveChannel>(
       channel: C,
       listener: (event: null, ...args: ReceiveArgs<C>) => void,
-    ): void {
+    ): IpcUnsubscribe {
       assertReceiveChannel(channel);
-      ipcRenderer.on(channel, (_event, ...args: unknown[]) => {
+      const wrapped = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => {
         listener(null, ...(args as ReceiveArgs<C>));
-      });
+      };
+      ipcRenderer.on(channel, wrapped);
+      return () => {
+        ipcRenderer.removeListener(channel, wrapped);
+      };
     },
   },
 };

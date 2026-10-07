@@ -8,12 +8,29 @@ angular
     self.messages = [];
     var paramsSummary = $filter('messageParamsSummary');
 
+    self._ipcReady = false;
+    self._unsubscribers = [];
+
     self.init = function() {
+        if (self._ipcReady) {
+            return;
+        }
         self.addIpcs();
+        self._ipcReady = true;
+    };
+
+    self.destroy = function() {
+        self._unsubscribers.forEach(function(unsubscribe) {
+            unsubscribe();
+        });
+        self._unsubscribers = [];
+        self._ipcReady = false;
     };
  
     self.addIpcs = function() {
-        electron.on('devices-message', self.onDevicesMessage.bind(self));
+        self._unsubscribers.push(
+            electron.on('devices-message', self.onDevicesMessage.bind(self)),
+        );
     };
 
     self.onDevicesMessage = function(_event, message) {

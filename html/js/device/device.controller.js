@@ -2,17 +2,25 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
-.controller('deviceController', ['$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'electronService', '$state', 'downloadService',
-function($rootScope, $stateParams, logger, $document, $timeout, electron, $state, downloadService) {
+.controller('deviceController', ['$scope', '$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'electronService', '$state', 'downloadService',
+function($scope, $rootScope, $stateParams, logger, $document, $timeout, electron, $state, downloadService) {
     var self = this;
     logger.debug("deviceController stateParams", $stateParams);
     self.hostname = $stateParams.hostname;
     self.webview = document.getElementById('deviceWebview');
     self.loading = true;
+    self._unsubscribeWebview = null;
 
     
-    // handle external link
-    electron.registerWebview(self.webview);
+    // handle external link (unsubscribe when leaving the device page)
+    self._unsubscribeWebview = electron.registerWebview(self.webview);
+    $scope.$on('$destroy', function() {
+        if (self._unsubscribeWebview) {
+            self._unsubscribeWebview();
+            self._unsubscribeWebview = null;
+        }
+    });
+
     self.webview.addEventListener('new-window', (event) => {
         const url = event.details.url;
         logger.debug('new-window event triggered', url);

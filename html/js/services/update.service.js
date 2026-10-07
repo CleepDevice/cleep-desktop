@@ -19,18 +19,35 @@ function($rootScope, logger, tasksPanelService, electron) {
     self.changelog = '';
     self.loading = false;
  
+    self._ipcReady = false;
+    self._unsubscribers = [];
+
     self.init = function() {
+        if (self._ipcReady) {
+            return;
+        }
         self.addIpcs();
+        self._ipcReady = true;
         self.updateSofwareVersions();
+    };
+
+    self.destroy = function() {
+        self._unsubscribers.forEach(function(unsubscribe) {
+            unsubscribe();
+        });
+        self._unsubscribers = [];
+        self._ipcReady = false;
     };
  
     self.addIpcs = function() {
-        electron.on('updater-cleepdesktop-update-available', self.onCleepDesktopUpdateCallback.bind(self));
-        electron.on('updater-cleepdesktop-download-progress', self.onCleepDesktopUpdateCallback.bind(self));
-        electron.on('updater-rpi-imager-update-available', self.onFlashToolUpdateCallback.bind(self));
-        electron.on('updater-rpi-imager-download-progress', self.onFlashToolUpdateCallback.bind(self));
-        electron.on('updater-cleepbus-update-available', self.onCleepbusUpdateCallback.bind(self));
-        electron.on('updater-cleepbus-download-progress', self.onCleepbusUpdateCallback.bind(self));
+        self._unsubscribers.push(
+            electron.on('updater-cleepdesktop-update-available', self.onCleepDesktopUpdateCallback.bind(self)),
+            electron.on('updater-cleepdesktop-download-progress', self.onCleepDesktopUpdateCallback.bind(self)),
+            electron.on('updater-rpi-imager-update-available', self.onFlashToolUpdateCallback.bind(self)),
+            electron.on('updater-rpi-imager-download-progress', self.onFlashToolUpdateCallback.bind(self)),
+            electron.on('updater-cleepbus-update-available', self.onCleepbusUpdateCallback.bind(self)),
+            electron.on('updater-cleepbus-download-progress', self.onCleepbusUpdateCallback.bind(self)),
+        );
     };
 
     self.updateSofwareVersions = function() {
