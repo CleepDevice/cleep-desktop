@@ -35,7 +35,7 @@ export interface InstallData {
   isoFilename: string;
   isoPath?: string;
   drivePath: string;
-  wifiData: WifiData;
+  wifiData: WifiData | null;
   /** Temp path to firstrun.sh passed as rpi-imager --first-run-script */
   firstRunScriptPath?: string;
 }

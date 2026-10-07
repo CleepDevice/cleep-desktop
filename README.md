@@ -38,6 +38,8 @@ Every `invoke` response uses a uniform envelope (`src/ipc/ipc-result.ts`): `{ ok
 
 High-frequency channels use `electronService.onCoalesced` (one digest per animation frame): `latest` mode for progress bars, `batch` mode for the monitoring message feed.
 
+Renderer → main payloads are validated with Zod in `src/ipc/ipc-validate.ts` inside `handleInvoke` / `onRendererSend`. Invalid invokes return `{ ok: false, error: { code: 'INVALID_IPC_REQUEST', … } }`; invalid sends are logged and dropped. Sensitive checks include basenames (no path traversal) for cache/install filenames, http(s) URLs for browser/download opens, and `iso-start-install` install data.
+
 The preload is bundled with esbuild (`npm run build:preload`) because a sandboxed preload cannot `require()` local modules.
 
 ### Auto update

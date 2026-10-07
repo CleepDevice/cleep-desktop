@@ -3,7 +3,7 @@ import settings from 'electron-settings';
 import { appLogger } from './app-logger';
 import { v4 as uuidv4 } from 'uuid';
 import { appContext } from './app-context';
-import { handleInvoke, ipcErr, ipcOk, onRendererSend } from './ipc/ipc-main';
+import { handleInvoke, ipcOk, onRendererSend } from './ipc/ipc-main';
 
 const DEFAULT_SETTINGS: {
   [k: string]: string | number | boolean | { [k: string]: string };
@@ -75,12 +75,6 @@ export class AppSettings {
     handleInvoke('settings-get-all', () => ipcOk(this.getAll()));
 
     handleInvoke('settings-set-all', (_event, arg) => {
-      if (typeof arg !== 'object' || Array.isArray(arg) || arg === null) {
-        appLogger.error('Specified settings have invalid format', arg);
-        return ipcErr('INVALID_SETTINGS', 'Specified settings have invalid format');
-      }
-      // TODO check values
-
       this.setAll(arg);
       return ipcOk(true as const);
     });
