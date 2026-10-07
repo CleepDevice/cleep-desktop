@@ -10,6 +10,14 @@ describe('app-window', () => {
     const window = createAppWindow(splash);
 
     expect(BrowserWindow).toHaveBeenCalled();
+    const windowOptions = vi.mocked(BrowserWindow).mock.calls[0][0];
+    expect(windowOptions?.webPreferences).toMatchObject({
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webviewTag: true,
+    });
+    expect(windowOptions?.webPreferences?.preload).toMatch(/preload\.js$/);
     expect(window.loadURL).toHaveBeenCalled();
     expect(window.webContents.setWindowOpenHandler).toHaveBeenCalled();
 

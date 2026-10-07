@@ -1,17 +1,26 @@
 import { BrowserWindow, dialog, shell } from 'electron';
+import path from 'path';
 import url from 'url';
 import { appContext } from './app-context';
 import { appLogger } from './app-logger';
 import { getHtmlFilePath, getResourceFilePath } from './utils/paths';
+
+function getPreloadPath(): string {
+  return path.join(__dirname, 'preload.js');
+}
 
 // create application main window
 export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindow {
   // create the browser window.
   const mainWindow = new BrowserWindow({
     webPreferences: {
+      preload: getPreloadPath(),
       webviewTag: true,
-      nodeIntegration: true,
-      contextIsolation: false,
+      // Renderer talks to main only through window.cleep (see preload.ts).
+      // Preload is esbuild-bundled (sandbox cannot require("./ipc-channels")).
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
       allowRunningInsecureContent: true,
     },
     width: 1024,
