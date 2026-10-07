@@ -28,15 +28,15 @@ CleepDesktop downloads Raspberry Pi Imager on first launch (not bundled in the i
 
 Raspberry Pi Imager binaries are packaged separately as release assets (`rpi-imager-*.zip`) via `npm run package:rpi-imager` / `scripts/package-rpi-imager.sh`, then published under a `rpi-imager-vX.Y.Z` tag on this repository. Per-platform official source versions are set in `src/flash-tool/rpi-imager-versions.json` (e.g. Linux can stay on an older release when AppImage is missing). Flash wrappers live in `resources/flashtool/` and ship with the app. Wi-Fi (and future `cleep-*.json` payloads) are injected via rpi-imager `--first-run-script` — no post-flash mount/patch of the card.
 
-The AngularJS UI runs with `nodeIntegration: false`, `contextIsolation: true`, and a sandboxed preload. It talks to the main process only through `window.cleep.ipc` exposed by `src/preload.ts`.
+The AngularJS UI runs with `nodeIntegration: false`, `contextIsolation: true`, and a sandboxed preload. It talks to the main process through `window.cleep.api` (semantic domain methods from `src/ipc/ipc-api.ts`); low-level `window.cleep.ipc` remains available but Angular uses `electronService.devices` / `.install` / etc.
 
 IPC channels and payloads are defined in `src/ipc/ipc-contract.ts` (typed request/response maps). Runtime allowlists live in `src/ipc/ipc-channels.ts` and are checked for exhaustiveness against that contract. Main-process helpers `handleInvoke` / `onRendererSend` / `sendToRenderer` in `src/ipc/ipc-main.ts` enforce those types at compile time.
 
-Every `invoke` response uses a uniform envelope (`src/ipc/ipc-result.ts`): `{ ok: true, data }` or `{ ok: false, error: { code, message } }`. The Angular `electronService.sendReturn` unwraps it (resolves `data`, rejects `error`). Push events (main → renderer) stay channel + payload as before.
+Every `invoke` response uses a uniform envelope (`src/ipc/ipc-result.ts`): `{ ok: true, data }` or `{ ok: false, error: { code, message } }`. `electronService` unwraps it (resolves `data`, rejects `error`). Push events stay channel + payload under the hood; the UI subscribes via semantic `on*` methods.
 
-`electronService.on` / `registerWebview` return an **unsubscribe** function. Services keep those refs, expose `destroy()`, and guard `init()` so listeners are not registered twice. Controllers unsubscribe on `$scope.$destroy` (important when leaving a device page).
+Semantic subscriptions return an **unsubscribe** function. Services keep those refs, expose `destroy()`, and guard `init()` so listeners are not registered twice. Controllers unsubscribe on `$scope.$destroy` (important when leaving a device page).
 
-High-frequency channels use `electronService.onCoalesced` (one digest per animation frame): `latest` mode for progress bars, `batch` mode for the monitoring message feed.
+High-frequency subscriptions bake in coalescing (one digest per animation frame): `latest` for progress bars, `batch` for the monitoring message feed (`devices.onMessage`, `install.onProgress`, download/updater progress).
 
 Renderer → main payloads are validated with Zod in `src/ipc/ipc-validate.ts` inside `handleInvoke` / `onRendererSend`. Invalid invokes return `{ ok: false, error: { code: 'INVALID_IPC_REQUEST', … } }`; invalid sends are logged and dropped. Sensitive checks include basenames (no path traversal) for cache/install filenames, http(s) URLs for browser/download opens, and `iso-start-install` install data.
 

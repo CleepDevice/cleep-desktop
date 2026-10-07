@@ -22,7 +22,7 @@ function(logger, electron, $stateParams, $state) {
             deviceUuid: self.deviceUuid
         };
 
-        electron.sendReturn('update-device-auth', params)
+        electron.devices.updateAuth(params)
             .then(() => {
                 const paramsDevice = {
                     url: self.url,

@@ -30,7 +30,7 @@ angular
     self.addIpcs = function() {
         // Batch bus messages: many events → one digest per frame.
         self._unsubscribers.push(
-            electron.onCoalesced('devices-message', self.onDevicesMessage.bind(self), { mode: 'batch' }),
+            electron.devices.onMessage(self.onDevicesMessage.bind(self)),
         );
     };
 

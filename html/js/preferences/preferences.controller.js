@@ -23,7 +23,7 @@ function($scope, debounce, toast, settingsService, electron, closeModal) {
     };
 
     self.loadNetworkConfig = function() {
-        return electron.sendReturn('bus-get-network-config')
+        return electron.bus.getNetworkConfig()
             .then((config) => {
                 self.networkConfig = config;
                 self.networkInterfaces = config.interfaces || [];
@@ -38,7 +38,7 @@ function($scope, debounce, toast, settingsService, electron, closeModal) {
 
     self.applyNetworkInterface = function() {
         self.networkApplying = true;
-        electron.sendReturn('bus-set-network-interface', self.selectedNetworkInterface)
+        electron.bus.setNetworkInterface(self.selectedNetworkInterface)
             .then((config) => {
                 self.networkConfig = config;
                 self.networkInterfaces = config.interfaces || [];
@@ -63,7 +63,7 @@ function($scope, debounce, toast, settingsService, electron, closeModal) {
         var ticks = 0;
         self.networkPollTimer = setInterval(function() {
             ticks += 1;
-            electron.sendReturn('bus-get-network-config')
+            electron.bus.getNetworkConfig()
                 .then((config) => {
                     self.networkConfig.peerCount = config.peerCount;
                     self.networkConfig.busConnected = config.busConnected;
@@ -89,7 +89,7 @@ function($scope, debounce, toast, settingsService, electron, closeModal) {
     }
 
     self.getCacheInfos = function() {
-        electron.sendReturn('cache-get-infos')
+        electron.cache.getInfos()
             .then((data) => {
                 self.fillArray(self.cachedFiles, data.files);
                 self.cacheDir = data.dir;
@@ -108,7 +108,7 @@ function($scope, debounce, toast, settingsService, electron, closeModal) {
     }, true);
 
     self.saveSettings = function() {
-        electron.sendReturn('settings-set-all', self.settings)
+        electron.settings.setAll(self.settings)
             .then(() => {
                 self.getSettings();
             })
@@ -118,18 +118,18 @@ function($scope, debounce, toast, settingsService, electron, closeModal) {
     };
 
     self.openElectronLogs = function() {
-        electron.send('open-electron-logs');
+        electron.logger.openLogs();
     };
 
     self.deleteCachedFile = function(filename) {
-        electron.sendReturn('cache-delete-file', filename)
+        electron.cache.deleteFile(filename)
             .then(() => {
                 self.getCacheInfos();
             });
     };
 
     self.purgeCachedFiles = function() {
-        electron.sendReturn('cache-purge-files')
+        electron.cache.purgeFiles()
             .then(() => {
                 self.getCacheInfos();
             });

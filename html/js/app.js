@@ -24,11 +24,11 @@ function($scope, $rootScope, $state, tasksPanelService, modalService, $timeout, 
         devicesService.init();
 
         self._unsubscribers.push(
-            electron.on('open-page', function(_event, data) {
+            electron.app.onOpenPage(function(_event, data) {
                 const { page, ...params } = data;
                 self.openPage(page, params);
             }),
-            electron.on('auth-error', function(_event, data) {
+            electron.app.onAuthError(function(_event, data) {
                 const foundDevice = devicesService.getSelectedDevice() || devicesService.findDevice(null, data.ip);
 
                 if (foundDevice) {
@@ -43,7 +43,7 @@ function($scope, $rootScope, $state, tasksPanelService, modalService, $timeout, 
                     $state.go('deviceError', { hostname: data.ip });
                 }
             }),
-            electron.on('open-modal', function(_event, args) {
+            electron.app.onOpenModal(function(_event, args) {
                 self.openModal(args.controller, args.template, args.data);
             }),
         );
@@ -125,6 +125,6 @@ function($scope, $rootScope, $state, tasksPanelService, modalService, $timeout, 
     };
 
     self.restartApplication = function() {
-        electron.send('updater-quit-and-install');
+        electron.updater.quitAndInstall();
     };
 }]);

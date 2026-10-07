@@ -60,9 +60,7 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
     self.addIpcs = function() {
         // Latest progress wins — flash % can spam faster than the UI can paint.
         self._unsubscribers.push(
-            electron.onCoalesced('iso-install-progress', self.onHandleInstallProgress.bind(self), {
-                mode: 'latest',
-            }),
+            electron.install.onProgress(self.onHandleInstallProgress.bind(self)),
         );
     };
 
@@ -100,7 +98,7 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
     };
 
     self.hasWifi = function() {
-        return electron.sendReturn('iso-has-wifi')
+        return electron.install.hasWifi()
             .then((hasWifi) => {
                 self.wifiInfo.hasWifi = hasWifi;
                 return self.wifiInfo.hasWifi;
@@ -116,7 +114,7 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
             return Promise.resolve();
         }
 
-        return electron.sendReturn('iso-refresh-wifi-networks')
+        return electron.install.refreshWifiNetworks()
             .then((networks) => {
                 self.wifiInfo.retrieved = true;
                 self.fillArray(self.wifiInfo.networks, networks);
@@ -131,7 +129,7 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
             return Promise.resolve();
         }
 
-        return electron.sendReturn('iso-get-isos', Boolean(force))
+        return electron.install.getIsos(Boolean(force))
             .then((data) => {
                 self.isosInfo.retrieved = true;
                 self.isosInfo.raspios = data.raspios || {};
@@ -143,7 +141,7 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
     };
 
     self.refreshDriveList = function() {
-        return electron.sendReturn('iso-get-drives')
+        return electron.install.getDrives()
             .then((result) => {
                 self.flashToolInstalled = result.flashToolInstalled;
                 self.fillArray(self.drives, result.drives);
@@ -184,12 +182,12 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
             wifiData: useWifi ? self.installConfig.wifi : null,
         };
         logger.debug('Install data', installData);
-        electron.send('iso-start-install', installData);
+        electron.install.start(installData);
     };
 
     self.cancelInstall = function() {
         if (!self.installing) return;
-        electron.send('iso-cancel-install');
+        electron.install.cancel();
     };
 
     self.onCloseInstallTaskPanel = function() {

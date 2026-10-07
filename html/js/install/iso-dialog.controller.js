@@ -43,7 +43,7 @@ function(closeModal, installService, electron) {
             ]
         };
 
-        electron.sendReturn('open-dialog', options)
+        electron.shell.openDialog(options)
             .then((result) => {
                 if (result.length) {
                     var filename = result[0].split('\\').pop().split('/').pop()

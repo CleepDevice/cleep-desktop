@@ -27,7 +27,7 @@ function(electron, logger) {
         self.addIpcs();
         self._ipcReady = true;
         // Pull current state after listeners are registered (covers startup + html hot-reload).
-        electron.sendReturn('devices-get-ui-state')
+        electron.devices.getUiState()
             .then((state) => {
                 self.onDevicesUpdated(null, state.devices || []);
                 self.onMessageBusConnected(null, Boolean(state.busConnected));
@@ -47,11 +47,11 @@ function(electron, logger) {
  
     self.addIpcs = function() {
         self._unsubscribers.push(
-            electron.on('devices-updated', self.onDevicesUpdated.bind(self)),
-            electron.on('device-auth-updated', self.onDevicesAuthUpdated.bind(self)),
-            electron.on('devices-message-bus-connected', self.onMessageBusConnected.bind(self)),
-            electron.on('devices-message-bus-error', self.onMessageBusError.bind(self)),
-            electron.on('devices-message-bus-updating', self.onMessageBusUpdating.bind(self)),
+            electron.devices.onUpdated(self.onDevicesUpdated.bind(self)),
+            electron.devices.onAuthUpdated(self.onDevicesAuthUpdated.bind(self)),
+            electron.devices.onBusConnected(self.onMessageBusConnected.bind(self)),
+            electron.devices.onBusError(self.onMessageBusError.bind(self)),
+            electron.devices.onBusUpdating(self.onMessageBusUpdating.bind(self)),
         );
     };
 
@@ -116,7 +116,7 @@ function(electron, logger) {
     }
 
     self.deleteDevice = function(device) {
-        return electron.sendReturn('devices-delete-device', device.uuid);
+        return electron.devices.deleteDevice(device.uuid);
     };
 
     self.findDevice = function(deviceUuid, deviceIp) {

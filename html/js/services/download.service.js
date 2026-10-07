@@ -34,7 +34,7 @@ function(tasksPanelService, toast, electron) {
             toast.warning('File is already downloading');
             return;
         }
-        electron.send('download-file', { url, title: 'Download file from device' });
+        electron.download.start({ url, title: 'Download file from device' });
     }
 
     self.isDownloadWithUrl = function(url) {
@@ -52,20 +52,13 @@ function(tasksPanelService, toast, electron) {
             tasksPanelService.removePanel(panel.panelId);
             delete self.downloadPanels[downloadId];
         }
-        electron.send('download-file-cancel', downloadId);
+        electron.download.cancel(downloadId);
     };
 
     self.addIpcs = function() {
         self._unsubscribers.push(
-            electron.on('download-file-started', self.onHandleDownloadStarted.bind(self)),
-            electron.onCoalesced('download-file-status', self.onHandleDownloadStatus.bind(self), {
-                mode: 'latest',
-                // Concurrent downloads: keep latest status per downloadId.
-                keyFromArgs: function(args) {
-                    var payload = args[1] || {};
-                    return payload.downloadId || 'unknown';
-                },
-            }),
+            electron.download.onStarted(self.onHandleDownloadStarted.bind(self)),
+            electron.download.onStatus(self.onHandleDownloadStatus.bind(self)),
         );
     };
 

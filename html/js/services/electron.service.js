@@ -2,24 +2,19 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 
 /**
- * Handle electron features to easily use it in angularjs application.
- * Uses the preload contextBridge (window.cleep) — no Node/Electron in the renderer.
+ * Angular façade over window.cleep.api (semantic preload bridge).
  *
- * sendReturn unwraps the uniform invoke envelope:
- *   { ok: true, data }  → resolves with data
- *   { ok: false, error } → rejects with { code, message }
- *
- * on() / registerWebview() / onCoalesced() return an unsubscribe function.
- * onCoalesced() batches high-frequency events into one digest (rAF).
+ * Invoke helpers unwrap { ok, data } / { ok, error } and trigger a digest.
+ * Hot subscriptions bake in onCoalesced (rAF) where progress/message spam would hurt.
  */
 angular
 .module('Cleep')
 .service('electronService', ['$rootScope', '$timeout', function($rootScope, $timeout) {
     var self = this;
-    var ipc = window.cleep && window.cleep.ipc;
+    var api = window.cleep && window.cleep.api;
 
-    if (!ipc) {
-        throw new Error('Cleep preload bridge unavailable (window.cleep.ipc). Check BrowserWindow preload.');
+    if (!api) {
+        throw new Error('Cleep preload bridge unavailable (window.cleep.api). Check BrowserWindow preload.');
     }
 
     function triggerDigest() {
@@ -28,141 +23,221 @@ angular
         }, 0);
     }
 
+    function unwrapInvoke(promise) {
+        return promise.then(function(response) {
+            triggerDigest();
+            if (!response || typeof response.ok !== 'boolean') {
+                return Promise.reject({
+                    code: 'INVALID_IPC_ENVELOPE',
+                    message: 'Main process returned an invalid IPC response',
+                });
+            }
+            if (!response.ok) {
+                return Promise.reject(response.error || {
+                    code: 'UNKNOWN_IPC_ERROR',
+                    message: 'Unknown IPC error',
+                });
+            }
+            return response.data;
+        });
+    }
+
+    function bindInvoke(fn) {
+        return function() {
+            return unwrapInvoke(fn.apply(null, arguments));
+        };
+    }
+
+    function bindSend(fn) {
+        return function() {
+            return fn.apply(null, arguments);
+        };
+    }
+
     /**
-     * Register webview new-window bridge.
-     * @returns {function} unsubscribe
+     * Immediate subscribe + digest (rare events).
+     * @param {function(Function): function} subscribe  api.*.onX(listener) → unsubscribe
      */
+    function bindOn(subscribe) {
+        return function(callback) {
+            return subscribe(function() {
+                callback.apply(null, arguments);
+                triggerDigest();
+            });
+        };
+    }
+
+    /**
+     * Coalesced subscribe — one digest per animation frame.
+     * @param {function(Function): function} subscribe
+     * @param {{ mode?: 'latest'|'batch', keyFromArgs?: function(Array): string }} [defaultOptions]
+     */
+    function bindOnCoalesced(subscribe, defaultOptions) {
+        return function(callback, options) {
+            options = Object.assign({}, defaultOptions || {}, options || {});
+            var mode = options.mode === 'batch' ? 'batch' : 'latest';
+            var keyFromArgs = typeof options.keyFromArgs === 'function' ? options.keyFromArgs : null;
+            var pendingLatest = null;
+            var pendingByKey = Object.create(null);
+            var pendingBatch = [];
+            var scheduled = false;
+            var cancelled = false;
+
+            function flush() {
+                scheduled = false;
+                if (cancelled) {
+                    return;
+                }
+
+                if (mode === 'batch') {
+                    var batch = pendingBatch;
+                    pendingBatch = [];
+                    for (var i = 0; i < batch.length; i++) {
+                        callback.apply(null, batch[i]);
+                    }
+                } else if (keyFromArgs) {
+                    var keys = Object.keys(pendingByKey);
+                    for (var k = 0; k < keys.length; k++) {
+                        callback.apply(null, pendingByKey[keys[k]]);
+                    }
+                    pendingByKey = Object.create(null);
+                } else if (pendingLatest) {
+                    var args = pendingLatest;
+                    pendingLatest = null;
+                    callback.apply(null, args);
+                }
+
+                triggerDigest();
+            }
+
+            function schedule() {
+                if (scheduled || cancelled) {
+                    return;
+                }
+                scheduled = true;
+                if (typeof requestAnimationFrame === 'function') {
+                    requestAnimationFrame(function() {
+                        $timeout(flush, 0, false);
+                    });
+                } else {
+                    $timeout(flush, 32, false);
+                }
+            }
+
+            var unsubscribe = subscribe(function() {
+                var listenerArgs = Array.prototype.slice.call(arguments);
+                if (mode === 'batch') {
+                    pendingBatch.push(listenerArgs);
+                } else if (keyFromArgs) {
+                    pendingByKey[String(keyFromArgs(listenerArgs))] = listenerArgs;
+                } else {
+                    pendingLatest = listenerArgs;
+                }
+                schedule();
+            });
+
+            return function() {
+                cancelled = true;
+                pendingLatest = null;
+                pendingByKey = Object.create(null);
+                pendingBatch = [];
+                unsubscribe();
+            };
+        };
+    }
+
     self.registerWebview = function(webviewDomElement) {
-        return ipc.on('webview-new-window', function(_event, _webContentsId, details) {
+        return api.webview.onNewWindow(function(_event, _webContentsId, details) {
             const customEvent = new CustomEvent('new-window');
             customEvent.details = details;
             webviewDomElement.dispatchEvent(customEvent);
         });
     };
 
-    /**
-     * Subscribe to a main→renderer channel (immediate callback + digest).
-     * @returns {function} unsubscribe
-     */
-    self.on = function(event, callback) {
-        return ipc.on(event, function() {
-            callback.apply(null, arguments);
-            triggerDigest();
-        });
+    self.app = {
+        getChangelog: bindInvoke(api.app.getChangelog),
+        onOpenPage: bindOn(api.app.onOpenPage),
+        onOpenModal: bindOn(api.app.onOpenModal),
+        onAuthError: bindOn(api.app.onAuthError),
     };
 
-    /**
-     * Subscribe with coalesced UI updates — one digest per animation frame.
-     *
-     * @param {string} event
-     * @param {function} callback  same signature as on()
-     * @param {{
-     *   mode?: 'latest'|'batch',
-     *   keyFromArgs?: function(Array): string
-     * }} [options]
-     *   - latest (default): keep newest args until flush (optional keyFromArgs for fan-out)
-     *   - batch: deliver every event in order on flush
-     * @returns {function} unsubscribe
-     */
-    self.onCoalesced = function(event, callback, options) {
-        options = options || {};
-        var mode = options.mode === 'batch' ? 'batch' : 'latest';
-        var keyFromArgs = typeof options.keyFromArgs === 'function' ? options.keyFromArgs : null;
-        var pendingLatest = null;
-        var pendingByKey = Object.create(null);
-        var pendingBatch = [];
-        var scheduled = false;
-        var cancelled = false;
-
-        function flush() {
-            scheduled = false;
-            if (cancelled) {
-                return;
-            }
-
-            if (mode === 'batch') {
-                var batch = pendingBatch;
-                pendingBatch = [];
-                for (var i = 0; i < batch.length; i++) {
-                    callback.apply(null, batch[i]);
-                }
-            } else if (keyFromArgs) {
-                var keys = Object.keys(pendingByKey);
-                for (var k = 0; k < keys.length; k++) {
-                    callback.apply(null, pendingByKey[keys[k]]);
-                }
-                pendingByKey = Object.create(null);
-            } else if (pendingLatest) {
-                var args = pendingLatest;
-                pendingLatest = null;
-                callback.apply(null, args);
-            }
-
-            triggerDigest();
-        }
-
-        function schedule() {
-            if (scheduled || cancelled) {
-                return;
-            }
-            scheduled = true;
-            if (typeof requestAnimationFrame === 'function') {
-                requestAnimationFrame(function() {
-                    $timeout(flush, 0, false);
-                });
-            } else {
-                $timeout(flush, 32, false);
-            }
-        }
-
-        var unsubscribe = ipc.on(event, function() {
-            var args = Array.prototype.slice.call(arguments);
-            if (mode === 'batch') {
-                pendingBatch.push(args);
-            } else if (keyFromArgs) {
-                pendingByKey[String(keyFromArgs(args))] = args;
-            } else {
-                pendingLatest = args;
-            }
-            schedule();
-        });
-
-        return function() {
-            cancelled = true;
-            pendingLatest = null;
-            pendingByKey = Object.create(null);
-            pendingBatch = [];
-            unsubscribe();
-        };
-    };
-    
-    /**
-     * Send event to electron
-     */
-    self.send = function(event, data) {
-        ipc.send(event, data);
+    self.bus = {
+        getNetworkConfig: bindInvoke(api.bus.getNetworkConfig),
+        setNetworkInterface: bindInvoke(api.bus.setNetworkInterface),
     };
 
-    /**
-     * Invoke main and unwrap { ok, data } / { ok, error }.
-     */
-    self.sendReturn = function(event, data) {
-        return ipc.invoke(event, data)
-            .then(function(response) {
-                triggerDigest();
-                if (!response || typeof response.ok !== 'boolean') {
-                    return Promise.reject({
-                        code: 'INVALID_IPC_ENVELOPE',
-                        message: 'Main process returned an invalid IPC response',
-                    });
-                }
-                if (!response.ok) {
-                    return Promise.reject(response.error || {
-                        code: 'UNKNOWN_IPC_ERROR',
-                        message: 'Unknown IPC error',
-                    });
-                }
-                return response.data;
-            });
+    self.cache = {
+        getInfos: bindInvoke(api.cache.getInfos),
+        deleteFile: bindInvoke(api.cache.deleteFile),
+        purgeFiles: bindInvoke(api.cache.purgeFiles),
+    };
+
+    self.devices = {
+        getUiState: bindInvoke(api.devices.getUiState),
+        deleteDevice: bindInvoke(api.devices.deleteDevice),
+        updateAuth: bindInvoke(api.devices.updateAuth),
+        onUpdated: bindOn(api.devices.onUpdated),
+        onAuthUpdated: bindOn(api.devices.onAuthUpdated),
+        onBusConnected: bindOn(api.devices.onBusConnected),
+        onBusError: bindOn(api.devices.onBusError),
+        onBusUpdating: bindOn(api.devices.onBusUpdating),
+        onMessage: bindOnCoalesced(api.devices.onMessage, { mode: 'batch' }),
+    };
+
+    self.download = {
+        start: bindSend(api.download.start),
+        cancel: bindSend(api.download.cancel),
+        onStarted: bindOn(api.download.onStarted),
+        onStatus: bindOnCoalesced(api.download.onStatus, {
+            mode: 'latest',
+            keyFromArgs: function(args) {
+                var payload = args[1] || {};
+                return payload.downloadId || 'unknown';
+            },
+        }),
+    };
+
+    self.install = {
+        getIsos: bindInvoke(api.install.getIsos),
+        getDrives: bindInvoke(api.install.getDrives),
+        hasWifi: bindInvoke(api.install.hasWifi),
+        getWifiNetworks: bindInvoke(api.install.getWifiNetworks),
+        refreshWifiNetworks: bindInvoke(api.install.refreshWifiNetworks),
+        start: bindSend(api.install.start),
+        cancel: bindSend(api.install.cancel),
+        onProgress: bindOnCoalesced(api.install.onProgress, { mode: 'latest' }),
+    };
+
+    self.logger = {
+        log: bindSend(api.logger.log),
+        openLogs: bindSend(api.logger.openLogs),
+        getLogPath: bindInvoke(api.logger.getLogPath),
+    };
+
+    self.settings = {
+        get: bindInvoke(api.settings.get),
+        getAll: bindInvoke(api.settings.getAll),
+        getSelected: bindInvoke(api.settings.getSelected),
+        set: bindSend(api.settings.set),
+        setAll: bindInvoke(api.settings.setAll),
+        filepath: bindInvoke(api.settings.filepath),
+        has: bindInvoke(api.settings.has),
+    };
+
+    self.shell = {
+        openUrl: bindSend(api.shell.openUrl),
+        openDialog: bindInvoke(api.shell.openDialog),
+    };
+
+    self.updater = {
+        checkForUpdates: bindInvoke(api.updater.checkForUpdates),
+        getSoftwareVersions: bindInvoke(api.updater.getSoftwareVersions),
+        quitAndInstall: bindSend(api.updater.quitAndInstall),
+        onCleepDesktopAvailable: bindOn(api.updater.onCleepDesktopAvailable),
+        onCleepDesktopProgress: bindOnCoalesced(api.updater.onCleepDesktopProgress, { mode: 'latest' }),
+        onFlashToolAvailable: bindOn(api.updater.onFlashToolAvailable),
+        onFlashToolProgress: bindOnCoalesced(api.updater.onFlashToolProgress, { mode: 'latest' }),
+        onCleepbusAvailable: bindOn(api.updater.onCleepbusAvailable),
+        onCleepbusProgress: bindOnCoalesced(api.updater.onCleepbusProgress, { mode: 'latest' }),
     };
 }]);

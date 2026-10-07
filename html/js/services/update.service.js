@@ -42,29 +42,17 @@ function($rootScope, logger, tasksPanelService, electron) {
     self.addIpcs = function() {
         // Rare “available” events stay immediate; progress is coalesced (latest %).
         self._unsubscribers.push(
-            electron.on('updater-cleepdesktop-update-available', self.onCleepDesktopUpdateCallback.bind(self)),
-            electron.onCoalesced(
-                'updater-cleepdesktop-download-progress',
-                self.onCleepDesktopUpdateCallback.bind(self),
-                { mode: 'latest' },
-            ),
-            electron.on('updater-rpi-imager-update-available', self.onFlashToolUpdateCallback.bind(self)),
-            electron.onCoalesced(
-                'updater-rpi-imager-download-progress',
-                self.onFlashToolUpdateCallback.bind(self),
-                { mode: 'latest' },
-            ),
-            electron.on('updater-cleepbus-update-available', self.onCleepbusUpdateCallback.bind(self)),
-            electron.onCoalesced(
-                'updater-cleepbus-download-progress',
-                self.onCleepbusUpdateCallback.bind(self),
-                { mode: 'latest' },
-            ),
+            electron.updater.onCleepDesktopAvailable(self.onCleepDesktopUpdateCallback.bind(self)),
+            electron.updater.onCleepDesktopProgress(self.onCleepDesktopUpdateCallback.bind(self)),
+            electron.updater.onFlashToolAvailable(self.onFlashToolUpdateCallback.bind(self)),
+            electron.updater.onFlashToolProgress(self.onFlashToolUpdateCallback.bind(self)),
+            electron.updater.onCleepbusAvailable(self.onCleepbusUpdateCallback.bind(self)),
+            electron.updater.onCleepbusProgress(self.onCleepbusUpdateCallback.bind(self)),
         );
     };
 
     self.updateSofwareVersions = function() {
-        electron.sendReturn('updater-get-software-versions')
+        electron.updater.getSoftwareVersions()
             .then((softwareVersions) => {
                 logger.debug('Software versions', softwareVersions);
                 self.lastUpdateCheck = softwareVersions.lastUpdateCheck;
@@ -152,7 +140,7 @@ function($rootScope, logger, tasksPanelService, electron) {
         }
 
         self.loading = true;
-        return electron.sendReturn('updater-check-for-updates')
+        return electron.updater.checkForUpdates()
             .then((updateStatus) => {
                 logger.info('Check for software updates', updateStatus);
                 self.lastUpdateCheck = updateStatus.lastUpdateCheck;

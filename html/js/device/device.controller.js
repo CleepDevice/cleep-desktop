@@ -39,7 +39,7 @@ function($scope, $rootScope, $stateParams, logger, $document, $timeout, electron
         }
 
         // open external link
-        electron.send('open-url-in-browser', url);
+        electron.shell.openUrl(url);
     });
 
     // disable pre-loading to avoid blank page
