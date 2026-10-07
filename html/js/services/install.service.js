@@ -58,8 +58,11 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
     };
 
     self.addIpcs = function() {
+        // Latest progress wins — flash % can spam faster than the UI can paint.
         self._unsubscribers.push(
-            electron.on('iso-install-progress', self.onHandleInstallProgress.bind(self)),
+            electron.onCoalesced('iso-install-progress', self.onHandleInstallProgress.bind(self), {
+                mode: 'latest',
+            }),
         );
     };
 

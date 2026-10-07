@@ -40,13 +40,26 @@ function($rootScope, logger, tasksPanelService, electron) {
     };
  
     self.addIpcs = function() {
+        // Rare “available” events stay immediate; progress is coalesced (latest %).
         self._unsubscribers.push(
             electron.on('updater-cleepdesktop-update-available', self.onCleepDesktopUpdateCallback.bind(self)),
-            electron.on('updater-cleepdesktop-download-progress', self.onCleepDesktopUpdateCallback.bind(self)),
+            electron.onCoalesced(
+                'updater-cleepdesktop-download-progress',
+                self.onCleepDesktopUpdateCallback.bind(self),
+                { mode: 'latest' },
+            ),
             electron.on('updater-rpi-imager-update-available', self.onFlashToolUpdateCallback.bind(self)),
-            electron.on('updater-rpi-imager-download-progress', self.onFlashToolUpdateCallback.bind(self)),
+            electron.onCoalesced(
+                'updater-rpi-imager-download-progress',
+                self.onFlashToolUpdateCallback.bind(self),
+                { mode: 'latest' },
+            ),
             electron.on('updater-cleepbus-update-available', self.onCleepbusUpdateCallback.bind(self)),
-            electron.on('updater-cleepbus-download-progress', self.onCleepbusUpdateCallback.bind(self)),
+            electron.onCoalesced(
+                'updater-cleepbus-download-progress',
+                self.onCleepbusUpdateCallback.bind(self),
+                { mode: 'latest' },
+            ),
         );
     };
 

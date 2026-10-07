@@ -28,8 +28,9 @@ angular
     };
  
     self.addIpcs = function() {
+        // Batch bus messages: many events → one digest per frame.
         self._unsubscribers.push(
-            electron.on('devices-message', self.onDevicesMessage.bind(self)),
+            electron.onCoalesced('devices-message', self.onDevicesMessage.bind(self), { mode: 'batch' }),
         );
     };
 

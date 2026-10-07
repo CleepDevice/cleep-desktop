@@ -36,6 +36,8 @@ Every `invoke` response uses a uniform envelope (`src/ipc/ipc-result.ts`): `{ ok
 
 `electronService.on` / `registerWebview` return an **unsubscribe** function. Services keep those refs, expose `destroy()`, and guard `init()` so listeners are not registered twice. Controllers unsubscribe on `$scope.$destroy` (important when leaving a device page).
 
+High-frequency channels use `electronService.onCoalesced` (one digest per animation frame): `latest` mode for progress bars, `batch` mode for the monitoring message feed.
+
 The preload is bundled with esbuild (`npm run build:preload`) because a sandboxed preload cannot `require()` local modules.
 
 ### Auto update

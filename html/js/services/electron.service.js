@@ -9,8 +9,8 @@
  *   { ok: true, data }  → resolves with data
  *   { ok: false, error } → rejects with { code, message }
  *
- * on() / registerWebview() return an unsubscribe function — call it on destroy
- * to avoid duplicate listeners (e.g. re-entering a device page).
+ * on() / registerWebview() / onCoalesced() return an unsubscribe function.
+ * onCoalesced() batches high-frequency events into one digest (rAF).
  */
 angular
 .module('Cleep')
@@ -41,7 +41,7 @@ angular
     };
 
     /**
-     * Subscribe to a main→renderer channel.
+     * Subscribe to a main→renderer channel (immediate callback + digest).
      * @returns {function} unsubscribe
      */
     self.on = function(event, callback) {
@@ -49,6 +49,91 @@ angular
             callback.apply(null, arguments);
             triggerDigest();
         });
+    };
+
+    /**
+     * Subscribe with coalesced UI updates — one digest per animation frame.
+     *
+     * @param {string} event
+     * @param {function} callback  same signature as on()
+     * @param {{
+     *   mode?: 'latest'|'batch',
+     *   keyFromArgs?: function(Array): string
+     * }} [options]
+     *   - latest (default): keep newest args until flush (optional keyFromArgs for fan-out)
+     *   - batch: deliver every event in order on flush
+     * @returns {function} unsubscribe
+     */
+    self.onCoalesced = function(event, callback, options) {
+        options = options || {};
+        var mode = options.mode === 'batch' ? 'batch' : 'latest';
+        var keyFromArgs = typeof options.keyFromArgs === 'function' ? options.keyFromArgs : null;
+        var pendingLatest = null;
+        var pendingByKey = Object.create(null);
+        var pendingBatch = [];
+        var scheduled = false;
+        var cancelled = false;
+
+        function flush() {
+            scheduled = false;
+            if (cancelled) {
+                return;
+            }
+
+            if (mode === 'batch') {
+                var batch = pendingBatch;
+                pendingBatch = [];
+                for (var i = 0; i < batch.length; i++) {
+                    callback.apply(null, batch[i]);
+                }
+            } else if (keyFromArgs) {
+                var keys = Object.keys(pendingByKey);
+                for (var k = 0; k < keys.length; k++) {
+                    callback.apply(null, pendingByKey[keys[k]]);
+                }
+                pendingByKey = Object.create(null);
+            } else if (pendingLatest) {
+                var args = pendingLatest;
+                pendingLatest = null;
+                callback.apply(null, args);
+            }
+
+            triggerDigest();
+        }
+
+        function schedule() {
+            if (scheduled || cancelled) {
+                return;
+            }
+            scheduled = true;
+            if (typeof requestAnimationFrame === 'function') {
+                requestAnimationFrame(function() {
+                    $timeout(flush, 0, false);
+                });
+            } else {
+                $timeout(flush, 32, false);
+            }
+        }
+
+        var unsubscribe = ipc.on(event, function() {
+            var args = Array.prototype.slice.call(arguments);
+            if (mode === 'batch') {
+                pendingBatch.push(args);
+            } else if (keyFromArgs) {
+                pendingByKey[String(keyFromArgs(args))] = args;
+            } else {
+                pendingLatest = args;
+            }
+            schedule();
+        });
+
+        return function() {
+            cancelled = true;
+            pendingLatest = null;
+            pendingByKey = Object.create(null);
+            pendingBatch = [];
+            unsubscribe();
+        };
     };
     
     /**

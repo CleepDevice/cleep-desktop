@@ -57,8 +57,15 @@ function(tasksPanelService, toast, electron) {
 
     self.addIpcs = function() {
         self._unsubscribers.push(
-            electron.on('download-file-status', self.onHandleDownloadStatus.bind(self)),
             electron.on('download-file-started', self.onHandleDownloadStarted.bind(self)),
+            electron.onCoalesced('download-file-status', self.onHandleDownloadStatus.bind(self), {
+                mode: 'latest',
+                // Concurrent downloads: keep latest status per downloadId.
+                keyFromArgs: function(args) {
+                    var payload = args[1] || {};
+                    return payload.downloadId || 'unknown';
+                },
+            }),
         );
     };
 
