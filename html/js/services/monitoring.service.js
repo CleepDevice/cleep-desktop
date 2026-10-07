@@ -2,10 +2,11 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
-.service('monitoringService', ['loggerService', 'electronService', function(logger, electron) {
+.service('monitoringService', ['loggerService', 'electronService', '$filter', function(logger, electron, $filter) {
     var self = this;
     self.maxMessages = 100;
     self.messages = [];
+    var paramsSummary = $filter('messageParamsSummary');
 
     self.init = function() {
         self.addIpcs();
@@ -20,7 +21,7 @@ angular
             return;
         }
 
-        // append new message at list beginning
+        message.summary = paramsSummary(message.message && message.message.params);
         logger.debug('Monitoring message received:', message);
         self.messages.unshift(message);
 

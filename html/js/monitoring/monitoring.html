@@ -5,7 +5,7 @@
         <div class="md-toolbar-tools">
             <h2>
                 <md-icon md-svg-icon="message-text-outline"></md-icon>
-                Devices messages monitoring
+                Monitoring
             </h2>
             <span flex></span>
         </div>
@@ -18,9 +18,17 @@
         <md-card>
             <md-card-title>
                 <md-card-title-text>
-                    <span class="md-headline">
+                    <span class="md-headline" layout="row" layout-align="start center">
                         <md-icon class="rounded-icon" md-svg-icon="message-text"></md-icon>
-                        Messages received from devices
+                        <span flex>Messages received from devices</span>
+                        <md-button
+                            class="md-primary"
+                            ng-if="ctl.monitoring.messages.length>0"
+                            ng-click="ctl.monitoring.clearMessages()"
+                        >
+                            <md-icon md-svg-icon="delete-outline"></md-icon>
+                            Clear messages
+                        </md-button>
                     </span>
                 </md-card-title-text>
             </md-card-title>
@@ -35,24 +43,49 @@
                     </span>
                 </div>
 
-                <!-- messages list -->
-                <md-list ng-if="ctl.monitoring.messages.length>0">
-                    <md-list-item>
-                        <p></p>
-                        <md-button class="md-secondary md-primary" ng-click="ctl.monitoring.clearMessages()">
-                            <md-icon md-svg-icon="delete-outline"></md-icon>
-                            Clear messages
-                        </md-button>
-                    </md-list-item>
-                    <md-list-item ng-repeat="message in ctl.monitoring.messages" class="md-2-line" ng-click="ctl.toggleEventDetails(message)">
-                        <md-icon md-svg-icon="message-text"></md-icon>
-                        <div class="md-list-item-text">
-                            <h3><b>{{message.message.event}}</b> <i>from {{message.peerInfos.hostname}} ({{message.peerInfos.ip}})</i></h3>
-                            <p ng-if="message.message.params" ng-bind="message.message.params"></p>
+                <!-- messages feed -->
+                <div class="monitoring-feed" ng-if="ctl.monitoring.messages.length>0">
+                    <div
+                        class="monitoring-event"
+                        ng-repeat="message in ctl.monitoring.messages"
+                        ng-click="ctl.toggleEventDetails(message)"
+                        role="button"
+                        tabindex="0"
+                    >
+                        <div class="monitoring-event-header" layout="row" layout-align="start center">
+                            <md-icon class="monitoring-event-icon" md-svg-icon="message-text"></md-icon>
+                            <div class="monitoring-event-title" flex>
+                                <span class="monitoring-event-name">{{message.message.event || 'unknown event'}}</span>
+                                <span class="monitoring-event-device">
+                                    {{message.peerInfos.hostname}}
+                                    <span class="monitoring-event-ip" ng-if="message.peerInfos.ip">({{message.peerInfos.ip}})</span>
+                                </span>
+                            </div>
+                            <time
+                                class="monitoring-event-time"
+                                title="{{message.timestamp | hrDatetime}}"
+                            >{{message.timestamp | hrTimestamp}}</time>
                         </div>
-                        <div class="md-secondary">{{message.timestamp | hrDatetime}}</div>
-                    </md-list-item>
-                </md-list>
+                        <div
+                            class="monitoring-event-summary"
+                            ng-if="message.summary.length"
+                        >
+                            <span
+                                class="monitoring-event-chip"
+                                ng-repeat="field in message.summary"
+                            >
+                                <span class="monitoring-event-chip-key">{{field.key}}</span>
+                                <span class="monitoring-event-chip-value">{{field.value}}</span>
+                            </span>
+                        </div>
+                        <div
+                            class="monitoring-event-summary monitoring-event-summary-empty"
+                            ng-if="!message.summary.length"
+                        >
+                            No scalar fields to preview — click for full message
+                        </div>
+                    </div>
+                </div>
 
             </md-card-content>
         </md-card>
@@ -60,22 +93,47 @@
     </md-content>
 
     <!-- message content -->
-    <md-sidenav class="md-sidenav-right md-whiteframe-4dp" md-component-id="right">
-        <md-toolbar flex="initial">
+    <md-sidenav class="md-sidenav-right md-whiteframe-4dp monitoring-sidenav" md-component-id="right">
+        <md-toolbar flex="initial" class="monitoring-sidenav-toolbar">
             <div class="md-toolbar-tools">
-                <h2>
-                    Message content
-                </h2>
+                <h2>Message details</h2>
                 <span flex></span>
                 <md-button ng-click="ctl.closeEventDetails()" class="md-icon-button">
                     <md-icon md-svg-icon="close"></md-icon>
                 </md-button>
             </div>
         </md-toolbar>
-        <md-content layout-padding>
-            <pre>{{ctl.selectedMessage | json}}</pre>
+        <md-content class="monitoring-sidenav-content" layout-padding ng-if="ctl.selectedMessage">
+            <div class="monitoring-detail-meta">
+                <div class="monitoring-detail-row">
+                    <span class="monitoring-detail-label">Event</span>
+                    <span class="monitoring-detail-value">{{ctl.selectedMessage.message.event || 'unknown'}}</span>
+                </div>
+                <div class="monitoring-detail-row">
+                    <span class="monitoring-detail-label">Device</span>
+                    <span class="monitoring-detail-value">
+                        {{ctl.selectedMessage.peerInfos.hostname}}
+                        <span ng-if="ctl.selectedMessage.peerInfos.ip">({{ctl.selectedMessage.peerInfos.ip}})</span>
+                    </span>
+                </div>
+                <div class="monitoring-detail-row">
+                    <span class="monitoring-detail-label">Time</span>
+                    <span class="monitoring-detail-value">{{ctl.selectedMessage.timestamp | hrDatetime}}</span>
+                </div>
+            </div>
+
+            <h3 class="monitoring-detail-section-title">Params</h3>
+            <pre
+                class="monitoring-event-json"
+                ng-bind-html="ctl.selectedMessage.message.params | prettyJsonHtml"
+            ></pre>
+
+            <h3 class="monitoring-detail-section-title">Raw message</h3>
+            <pre
+                class="monitoring-event-json monitoring-event-json-raw"
+                ng-bind-html="ctl.selectedRawMessage | prettyJsonHtml"
+            ></pre>
         </md-content>
     </md-sidenav>
 
 </div>
-
