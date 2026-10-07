@@ -305,7 +305,7 @@ describe('AppIso', () => {
     lastSudoOptions?.terminatedCallback(0);
   });
 
-  it('cancelInstall aborts sudo flash when running', async () => {
+  it('cancelInstall is ignored once SD flash has started', async () => {
     const installData: InstallData = {
       isoUrl: 'file:///tmp/local2.img',
       isoSha256: 'abc',
@@ -315,17 +315,23 @@ describe('AppIso', () => {
     };
     await appIso.startInstall(installData);
     appIso.cancelInstall();
-    expect(sudoKill).toHaveBeenCalled();
-    expect(send).toHaveBeenCalledWith(
+    expect(sudoKill).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalledWith(
       'iso-install-progress',
       expect.objectContaining({ step: 'canceled', terminated: true }),
     );
+    lastSudoOptions?.terminatedCallback(0);
   });
 
   it('cancelInstall cancels download when isoUrl is active', async () => {
     const { cancelDownload } = await import('../../src/utils/download');
-    (appIso as unknown as { currentInstall: { isoUrl: string } }).currentInstall.isoUrl =
-      'https://example.com/iso.zip';
+    const currentInstall = (
+      appIso as unknown as {
+        currentInstall: { isoUrl: string; flashStarted: boolean };
+      }
+    ).currentInstall;
+    currentInstall.flashStarted = false;
+    currentInstall.isoUrl = 'https://example.com/iso.zip';
     appIso.cancelInstall();
     expect(cancelDownload).toHaveBeenCalledWith('https://example.com/iso.zip');
   });
@@ -339,7 +345,7 @@ describe('AppIso', () => {
       ok: true,
       data: expect.any(Array),
     });
-    expect(ipcHandleHandlers.get('iso-get-wifi-networks')({})).toMatchObject({
+    await expect(ipcHandleHandlers.get('iso-get-wifi-networks')({})).resolves.toMatchObject({
       ok: true,
       data: expect.any(Array),
     });

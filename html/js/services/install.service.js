@@ -185,8 +185,22 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
         electron.install.start(installData);
     };
 
+    /**
+     * Cancel is only safe during ISO download (or before write starts).
+     * Once privileges/flashing/validating begins, aborting can brick the SD card.
+     */
+    self.canCancelInstall = function() {
+        if (!self.installing) {
+            return false;
+        }
+        var step = self.installProgress.step;
+        return step === 'idle' || step === 'downloading';
+    };
+
     self.cancelInstall = function() {
-        if (!self.installing) return;
+        if (!self.canCancelInstall()) {
+            return;
+        }
         electron.install.cancel();
     };
 

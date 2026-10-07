@@ -74,7 +74,16 @@ class AppIso {
     firstRunScriptPath: string;
     flashError: string;
     canceled: boolean;
-  } = { isoUrl: '', sudo: null, firstRunScriptPath: '', flashError: '', canceled: false };
+    /** True once SD write phase starts — cancel is refused (unsafe for the card). */
+    flashStarted: boolean;
+  } = {
+    isoUrl: '',
+    sudo: null,
+    firstRunScriptPath: '',
+    flashError: '',
+    canceled: false,
+    flashStarted: false,
+  };
   private installRunning = false;
 
   constructor() {
@@ -230,6 +239,7 @@ class AppIso {
     this.currentInstall.canceled = false;
     this.currentInstall.flashError = '';
     this.currentInstall.firstRunScriptPath = '';
+    this.currentInstall.flashStarted = false;
 
     try {
       appContext.allowAppClosing = false;
@@ -268,18 +278,19 @@ class AppIso {
 
   public cancelInstall(): void {
     appLogger.debug('cancel request', this.currentInstall);
+
+    // Killing rpi-imager mid-write can leave the SD card unbootable / partially written.
+    if (this.currentInstall.flashStarted) {
+      appLogger.warn('Cancel ignored: SD flash already started');
+      return;
+    }
+
     this.currentInstall.canceled = true;
 
     if (this.currentInstall.isoUrl) {
       appLogger.info('Download canceled by user');
       cancelDownload(this.currentInstall.isoUrl);
       this.currentInstall.isoUrl = '';
-    }
-
-    if (this.currentInstall.sudo) {
-      appLogger.info('SDCard flash canceled by user');
-      this.currentInstall.sudo.kill();
-      this.currentInstall.sudo = null;
     }
 
     void this.cleanupFirstRunScript();
@@ -356,6 +367,8 @@ class AppIso {
     if (installData.firstRunScriptPath) {
       args.push(installData.firstRunScriptPath);
     }
+
+    this.currentInstall.flashStarted = true;
 
     const installProgress: InstallProgress = {
       percent: 0,

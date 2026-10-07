@@ -153,8 +153,11 @@
                             class="md-raised"
                             ng-click="ctl.cancelInstall()"
                             ng-if="ctl.installService.installing"
-                            ng-disabled="!ctl.installService.installing">
+                            ng-disabled="!ctl.installService.canCancelInstall()">
                             Cancel
+                            <md-tooltip ng-if="!ctl.installService.canCancelInstall()">
+                                Cancel is disabled once the SD card write has started
+                            </md-tooltip>
                         </md-button>
                     </div>
                     <div ng-if="ctl.installService.installProgress.error.length > 0">
