@@ -10,7 +10,7 @@
         "build": "rimraf build && tsc && npm run build:preload && npm run copy:elevate-exe && npm run copyfiles",
         "package:rpi-imager": "scripts/package-rpi-imager.sh",
         "start": "npm run build && electron ./build/main.js",
-        "start:dev": "npm run build && concurrently -k \"tsc -w --preserveWatchOutput\" \"npm run build:preload -- --watch\" \"electron ./build/main.js\"",
+        "start:dev": "npm run build && concurrently \"tsc -w --preserveWatchOutput\" \"npm run build:preload -- --watch\" \"electron ./build/main.js\"",
         "postinstall": "node scripts/ensure-electron.js",
         "ensure-electron": "node scripts/ensure-electron.js",
         "lint": "oxlint ./src",
