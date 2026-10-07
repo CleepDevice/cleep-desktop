@@ -20,17 +20,14 @@
                     <p>No wifi adapter detected. You can still fill wifi parameters manually.</p>
                 </md-list-item>
 
-                <!-- network name (hidden network or no adapter) -->
-                <md-list-item ng-if="(!ctl.installService.wifiInfo.hasWifi && ctl.network === 1) || ctl.network === 2">
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    <p>Wifi network name</p>
-                    <md-input-container class="md-secondary no-error-spacer">
-                        <input type="text" ng-model="ctl.wifiNetworkName"/>
-                    </md-input-container>
+                <!-- empty scan: keep manual entry available -->
+                <md-list-item ng-if="ctl.installService.wifiInfo.hasWifi && ctl.network === 1 && ctl.installService.wifiInfo.retrieved && ctl.installService.wifiInfo.networks.length === 0">
+                    <md-icon md-svg-icon="alert"></md-icon>
+                    <p>No wifi network found nearby. Enter SSID and password manually.</p>
                 </md-list-item>
 
                 <!-- network selector (adapter available) -->
-                <md-list-item ng-if="ctl.installService.wifiInfo.hasWifi && ctl.network === 1">
+                <md-list-item ng-if="ctl.useNetworkSelector()">
                     <md-icon md-svg-icon="chevron-right"></md-icon>
                     <p>Wifi network</p>
                     <md-select ng-model="ctl.selectedWifi" md-on-open="ctl.installService.refreshWifiNetworks()" placeholder="Wifi network" class="md-no-underline no-error-spacer">
@@ -42,8 +39,17 @@
                     </md-select>
                 </md-list-item>
 
-                <!-- security (hidden network or no adapter) -->
-                <md-list-item ng-if="(!ctl.installService.wifiInfo.hasWifi && ctl.network === 1) || ctl.network === 2">
+                <!-- network name (hidden network, no adapter, or empty scan) -->
+                <md-list-item ng-if="ctl.useManualWifiFields()">
+                    <md-icon md-svg-icon="chevron-right"></md-icon>
+                    <p>Wifi network name</p>
+                    <md-input-container class="md-secondary no-error-spacer">
+                        <input type="text" ng-model="ctl.wifiNetworkName"/>
+                    </md-input-container>
+                </md-list-item>
+
+                <!-- security (hidden network, no adapter, or empty scan) -->
+                <md-list-item ng-if="ctl.useManualWifiFields()">
                     <md-icon md-svg-icon="chevron-right"></md-icon>
                     <p>Network security</p>
                     <md-select ng-model="ctl.wifiNetworkSecurity" class="md-secondary md-no-underline no-error-spacer">

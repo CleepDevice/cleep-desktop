@@ -1,3 +1,4 @@
+import fs from 'fs';
 import * as NodeWifi from 'node-wifi';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Wifi } from '../../src/iso/wifi';
@@ -97,18 +98,23 @@ describe('Wifi', () => {
     await expect(wifi.refreshNetworks()).rejects.toThrow('no wifi adapter');
   });
 
-  it('detects wifi adapter when scan succeeds', async () => {
-    vi.mocked(NodeWifi.scan).mockImplementation((callback) => {
-      callback(null, []);
+  it('detects linux wifi adapter via /sys wireless marker', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux');
+    vi.spyOn(fs.promises, 'readdir').mockResolvedValue(['enp3s0', 'wlp2s0'] as never);
+    vi.spyOn(fs.promises, 'access').mockImplementation(async (target) => {
+      if (String(target).includes('wlp2s0/wireless')) {
+        return;
+      }
+      throw new Error('missing');
     });
 
     await expect(new Wifi().hasWifi()).resolves.toBe(true);
   });
 
-  it('returns false when scan fails (no adapter)', async () => {
-    vi.mocked(NodeWifi.scan).mockImplementation((callback) => {
-      callback(new Error('wifi error'), []);
-    });
+  it('returns false on linux desktop without wifi adapter', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux');
+    vi.spyOn(fs.promises, 'readdir').mockResolvedValue(['enp3s0', 'lo', 'docker0'] as never);
+    vi.spyOn(fs.promises, 'access').mockRejectedValue(new Error('missing'));
 
     await expect(new Wifi().hasWifi()).resolves.toBe(false);
   });

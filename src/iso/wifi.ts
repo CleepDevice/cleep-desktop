@@ -1,5 +1,11 @@
+import { execFile } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { promisify } from 'util';
 import { appLogger } from '../app-logger';
 import * as NodeWifi from 'node-wifi';
+
+const execFileAsync = promisify(execFile);
 
 export type WifiNetworkSecurity = 'WPA' | 'WPA2' | 'WPA3' | 'WEP' | 'UNSECURED' | 'UNKNOWN';
 
@@ -34,19 +40,85 @@ export class Wifi {
     });
   }
 
-  public hasWifi(): Promise<boolean> {
-    // Successful scan means a WiFi adapter is available (even with zero networks).
-    // getCurrentConnections only reflects an active association and is too strict.
+  /**
+   * True when a WiFi radio/adapter exists on the host.
+   * Do not use "scan succeeded" alone: on many desktops without WiFi, nmcli scan
+   * returns an empty list without error, which previously blocked manual SSID entry.
+   */
+  public async hasWifi(): Promise<boolean> {
+    try {
+      const present = await this.detectWifiAdapter();
+      appLogger.debug('Wifi adapter detection', { present, platform: process.platform });
+      return present;
+    } catch (error) {
+      appLogger.debug('Wifi adapter detection failed', { error });
+      return false;
+    }
+  }
+
+  /**
+   * OS-level adapter check (independent of association / nearby APs).
+   * Exported logic kept on the class for tests.
+   */
+  public async detectWifiAdapter(): Promise<boolean> {
+    if (process.platform === 'linux') {
+      return this.detectLinuxWifiAdapter();
+    }
+    if (process.platform === 'win32') {
+      return this.detectWindowsWifiAdapter();
+    }
+    if (process.platform === 'darwin') {
+      return this.detectDarwinWifiAdapter();
+    }
+    // Unknown platform: fall back to scan (error ⇒ no adapter).
     return new Promise((resolve) => {
       NodeWifi.scan((error: Error | null) => {
-        appLogger.debug('node-wifi.scan (hasWifi) result', { error });
-        if (error) {
-          resolve(false);
-          return;
-        }
-        resolve(true);
+        resolve(!error);
       });
     });
+  }
+
+  private async detectLinuxWifiAdapter(): Promise<boolean> {
+    const nets = await fs.promises.readdir('/sys/class/net');
+    for (const name of nets) {
+      const base = path.join('/sys/class/net', name);
+      for (const marker of ['wireless', 'phy80211']) {
+        try {
+          await fs.promises.access(path.join(base, marker));
+          return true;
+        } catch {
+          // try next marker / iface
+        }
+      }
+    }
+    return false;
+  }
+
+  private async detectWindowsWifiAdapter(): Promise<boolean> {
+    try {
+      const { stdout } = await execFileAsync('netsh', ['wlan', 'show', 'interfaces'], {
+        windowsHide: true,
+        timeout: 5000,
+      });
+      const lower = stdout.toLowerCase();
+      if (lower.includes('no wireless interface') || lower.includes('not running')) {
+        return false;
+      }
+      return /\bname\s*:/i.test(stdout);
+    } catch {
+      return false;
+    }
+  }
+
+  private async detectDarwinWifiAdapter(): Promise<boolean> {
+    try {
+      const { stdout } = await execFileAsync('networksetup', ['-listallhardwareports'], {
+        timeout: 5000,
+      });
+      return /hardware port:\s*(wi-?fi|airport)/i.test(stdout);
+    } catch {
+      return false;
+    }
   }
 
   private parseNetworks(networks: NodeWifi.WiFiNetwork[]): void {
