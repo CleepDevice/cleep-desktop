@@ -11,7 +11,7 @@ import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
 import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
 import { setupDevReloader } from './utils/dev-reloader';
-import { handleInvoke, onRendererSend, sendToRenderer } from './ipc/ipc-main';
+import { handleInvoke, ipcOk, onRendererSend, sendToRenderer } from './ipc/ipc-main';
 
 setupDevReloader();
 
@@ -128,5 +128,5 @@ onRendererSend('open-url-in-browser', (_event, url) => {
 
 handleInvoke('open-dialog', (_event, dialogOptions) => {
   const result = dialog.showOpenDialogSync(dialogOptions);
-  return result || [];
+  return ipcOk(result || []);
 });

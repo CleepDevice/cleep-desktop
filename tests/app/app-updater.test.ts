@@ -65,11 +65,12 @@ describe('AppUpdater', () => {
     const handler = ipcHandleHandlers.get('updater-check-for-updates');
     expect(handler).toBeTypeOf('function');
     const result = await handler({});
-    expect(result).toMatchObject({ lastUpdateCheck: expect.any(Number) });
+    expect(result).toMatchObject({ ok: true, data: { lastUpdateCheck: expect.any(Number) } });
 
     const versions = ipcHandleHandlers.get('updater-get-software-versions')({});
     expect(versions).toMatchObject({
-      cleepDesktop: expect.any(String),
+      ok: true,
+      data: { cleepDesktop: expect.any(String) },
     });
 
     ipcOnHandlers.get('updater-quit-and-install')({});

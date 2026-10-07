@@ -332,20 +332,23 @@ describe('AppIso', () => {
 
   it('exposes iso ipc handlers', async () => {
     await expect(ipcHandleHandlers.get('iso-get-isos')({})).resolves.toMatchObject({
+      ok: true,
       data: expect.objectContaining({ cleepos: expect.any(Object) }),
     });
     await expect(ipcHandleHandlers.get('iso-refresh-wifi-networks')({})).resolves.toMatchObject({
+      ok: true,
       data: expect.any(Array),
-      error: false,
     });
     expect(ipcHandleHandlers.get('iso-get-wifi-networks')({})).toMatchObject({
+      ok: true,
       data: expect.any(Array),
-      error: false,
     });
     await expect(ipcHandleHandlers.get('iso-get-drives')({})).resolves.toMatchObject({
-      flashToolInstalled: true,
+      ok: true,
+      data: { flashToolInstalled: true, drives: expect.any(Array) },
     });
     await expect(ipcHandleHandlers.get('iso-has-wifi')({})).resolves.toMatchObject({
+      ok: true,
       data: expect.any(Boolean),
     });
 
@@ -363,9 +366,8 @@ describe('AppIso', () => {
     const { appUpdater } = await import('../../src/app-updater');
     vi.mocked(appUpdater.isFlashToolInstalled).mockReturnValueOnce(false);
     await expect(ipcHandleHandlers.get('iso-get-drives')({})).resolves.toEqual({
-      data: [],
-      error: true,
-      flashToolInstalled: false,
+      ok: true,
+      data: { drives: [], flashToolInstalled: false },
     });
   });
 
@@ -374,8 +376,8 @@ describe('AppIso', () => {
       callback(new Error('no adapter'), []);
     });
     await expect(ipcHandleHandlers.get('iso-has-wifi')({})).resolves.toEqual({
+      ok: true,
       data: false,
-      error: false,
     });
   });
 

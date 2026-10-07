@@ -3,7 +3,7 @@ import logger from 'electron-log/node';
 import { CommandLineArgs } from './utils/app.helpers';
 import { appSettings } from './app-settings';
 import path from 'path';
-import { handleInvoke, onRendererSend } from './ipc/ipc-main';
+import { handleInvoke, ipcOk, onRendererSend } from './ipc/ipc-main';
 
 export enum LoggerLevelEnum {
   'no' = 'no',
@@ -96,7 +96,7 @@ export class AppLogger {
 
     handleInvoke('get-electron-log-path', async () => {
       const logPath = logger.transports.file.getFile();
-      return logPath.path;
+      return ipcOk(logPath.path);
     });
   }
 

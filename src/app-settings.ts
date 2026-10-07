@@ -3,7 +3,7 @@ import settings from 'electron-settings';
 import { appLogger } from './app-logger';
 import { v4 as uuidv4 } from 'uuid';
 import { appContext } from './app-context';
-import { handleInvoke, onRendererSend } from './ipc/ipc-main';
+import { handleInvoke, ipcErr, ipcOk, onRendererSend } from './ipc/ipc-main';
 
 const DEFAULT_SETTINGS: {
   [k: string]: string | number | boolean | { [k: string]: string };
@@ -72,36 +72,36 @@ export class AppSettings {
   }
 
   private addIpcs() {
-    handleInvoke('settings-get-all', () => this.getAll());
+    handleInvoke('settings-get-all', () => ipcOk(this.getAll()));
 
     handleInvoke('settings-set-all', (_event, arg) => {
       if (typeof arg !== 'object' || Array.isArray(arg) || arg === null) {
         appLogger.error('Specified settings have invalid format', arg);
-        return false;
+        return ipcErr('INVALID_SETTINGS', 'Specified settings have invalid format');
       }
       // TODO check values
 
       this.setAll(arg);
-      return true;
+      return ipcOk(true as const);
     });
 
-    handleInvoke('settings-get', (_event, arg) => this.get(arg));
+    handleInvoke('settings-get', (_event, arg) => ipcOk(this.get(arg)));
 
     handleInvoke('settings-get-selected', (_event, arg) => {
       const result: Record<string, unknown> = {};
       for (const keyPath of arg) {
         result[keyPath] = this.get(keyPath);
       }
-      return result;
+      return ipcOk(result);
     });
 
     onRendererSend('settings-set', (_event, arg) => {
       this.set(arg.key, arg.value);
     });
 
-    handleInvoke('settings-filepath', () => this.filepath());
+    handleInvoke('settings-filepath', () => ipcOk(this.filepath()));
 
-    handleInvoke('settings.has', (_event, arg) => this.has(arg));
+    handleInvoke('settings.has', (_event, arg) => ipcOk(this.has(arg)));
   }
 
   private checkAndFixConfig(version: string) {

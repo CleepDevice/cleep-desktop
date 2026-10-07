@@ -4,6 +4,10 @@
 /**
  * Handle electron features to easily use it in angularjs application.
  * Uses the preload contextBridge (window.cleep) — no Node/Electron in the renderer.
+ *
+ * sendReturn unwraps the uniform invoke envelope:
+ *   { ok: true, data }  → resolves with data
+ *   { ok: false, error } → rejects with { code, message }
  */
 angular
 .module('Cleep')
@@ -13,6 +17,12 @@ angular
 
     if (!ipc) {
         throw new Error('Cleep preload bridge unavailable (window.cleep.ipc). Check BrowserWindow preload.');
+    }
+
+    function triggerDigest() {
+        $timeout(function() {
+            $rootScope.$digest();
+        }, 0);
     }
 
     /**
@@ -33,9 +43,7 @@ angular
     self.on = function(event, callback) {
         ipc.on(event, function() {
             callback.apply(null, arguments);
-            $timeout(function() {
-                $rootScope.$digest();
-            }, 0);
+            triggerDigest();
         });
     };
     
@@ -47,15 +55,25 @@ angular
     };
 
     /**
-     * Send event to electron and return promise
+     * Invoke main and unwrap { ok, data } / { ok, error }.
      */
     self.sendReturn = function(event, data) {
         return ipc.invoke(event, data)
             .then(function(response) {
-                $timeout(function() {
-                    $rootScope.$digest();
-                }, 0);
-                return response;
+                triggerDigest();
+                if (!response || typeof response.ok !== 'boolean') {
+                    return Promise.reject({
+                        code: 'INVALID_IPC_ENVELOPE',
+                        message: 'Main process returned an invalid IPC response',
+                    });
+                }
+                if (!response.ok) {
+                    return Promise.reject(response.error || {
+                        code: 'UNKNOWN_IPC_ERROR',
+                        message: 'Unknown IPC error',
+                    });
+                }
+                return response.data;
             });
     };
 }]);

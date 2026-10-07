@@ -4,7 +4,7 @@ import { appSettings, SettingsObject } from './app-settings';
 import { cleepbus } from './cleepbus/cleepbus';
 import { listNetworkInterfaces, selectInterface } from './pyre/iface';
 import { CleebusMessageResponse, CleepbusPeerInfos, TEST_DEVICE } from './cleepbus/cleepbus.types';
-import { handleInvoke, sendToRenderer } from './ipc/ipc-main';
+import { handleInvoke, ipcErr, ipcOk, sendToRenderer } from './ipc/ipc-main';
 import { appContext } from './app-context';
 
 class AppDevices {
@@ -144,14 +144,14 @@ class AppDevices {
   }
 
   private addIpcs(): void {
-    handleInvoke('devices-get-ui-state', async () => {
-      return {
+    handleInvoke('devices-get-ui-state', async () =>
+      ipcOk({
         devices: this.devicesObjectToArray(),
         busConnected: this.busConnected,
-      };
-    });
+      }),
+    );
 
-    handleInvoke('bus-get-network-config', async () => this.getNetworkConfigState());
+    handleInvoke('bus-get-network-config', async () => ipcOk(this.getNetworkConfigState()));
 
     handleInvoke('bus-set-network-interface', async (_event, interfaceName) => {
       const name = typeof interfaceName === 'string' ? interfaceName.trim() : '';
@@ -159,14 +159,17 @@ class AppDevices {
       appLogger.info('Network interface preference updated, restarting message bus', { interfaceName: name || '(automatic)' });
       this.markAllDevicesOffline();
       await cleepbus.restart();
-      return this.getNetworkConfigState();
+      return ipcOk(this.getNetworkConfigState());
     });
 
     handleInvoke('devices-delete-device', async (_event, deviceUuid) => {
       appLogger.info(`Deleting device ${deviceUuid}`);
       const deviceDeleted = this.deleteDevice(deviceUuid);
       appLogger.info('Device deleted result', { deleted: deviceDeleted });
-      return { data: null, error: !deviceDeleted };
+      if (!deviceDeleted) {
+        return ipcErr('DEVICE_NOT_FOUND', `Device ${deviceUuid} was not found`);
+      }
+      return ipcOk(null);
     });
   }
 }

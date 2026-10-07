@@ -22,9 +22,6 @@ function(electron, logger) {
         // Pull current state after listeners are registered (covers startup + html hot-reload).
         electron.sendReturn('devices-get-ui-state')
             .then((state) => {
-                if (!state) {
-                    return;
-                }
                 self.onDevicesUpdated(null, state.devices || []);
                 self.onMessageBusConnected(null, Boolean(state.busConnected));
             })
@@ -102,12 +99,7 @@ function(electron, logger) {
     }
 
     self.deleteDevice = function(device) {
-        return electron.sendReturn('devices-delete-device', device.uuid)
-            .then((response) => {
-                if (response.error) {
-                    return Promise.reject(response.error);
-                }
-            });
+        return electron.sendReturn('devices-delete-device', device.uuid);
     };
 
     self.findDevice = function(deviceUuid, deviceIp) {

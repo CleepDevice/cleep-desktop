@@ -27,7 +27,7 @@ describe('AppAuth', () => {
       password: 'secret',
     });
 
-    expect(result).toBe(true);
+    expect(result).toEqual({ ok: true, data: true });
     expect(send).toHaveBeenCalledWith('device-auth-updated', {
       deviceUuid: 'uuid-1',
       hasAuthStored: true,

@@ -43,19 +43,34 @@ describe('AppSettings', () => {
   it('ipc handlers read and write settings', () => {
     appSettings.configure({ getVersion: () => '9.9.9' } as Electron.App);
 
-    expect(ipcHandleHandlers.get('settings-get-all')()).toMatchObject({ cleep: expect.any(Object) });
-    expect(ipcHandleHandlers.get('settings-set-all')({}, null)).toBe(false);
-    expect(ipcHandleHandlers.get('settings-set-all')({}, [])).toBe(false);
-    expect(ipcHandleHandlers.get('settings-set-all')({}, { foo: 'bar' })).toBe(true);
+    expect(ipcHandleHandlers.get('settings-get-all')()).toMatchObject({
+      ok: true,
+      data: { cleep: expect.any(Object) },
+    });
+    expect(ipcHandleHandlers.get('settings-set-all')({}, null)).toMatchObject({
+      ok: false,
+      error: { code: 'INVALID_SETTINGS' },
+    });
+    expect(ipcHandleHandlers.get('settings-set-all')({}, [])).toMatchObject({
+      ok: false,
+      error: { code: 'INVALID_SETTINGS' },
+    });
+    expect(ipcHandleHandlers.get('settings-set-all')({}, { foo: 'bar' })).toEqual({ ok: true, data: true });
     expect(appSettings.get<string>('foo')).toBe('bar');
 
-    expect(ipcHandleHandlers.get('settings-get')({}, 'foo')).toBe('bar');
+    expect(ipcHandleHandlers.get('settings-get')({}, 'foo')).toEqual({ ok: true, data: 'bar' });
     expect(ipcHandleHandlers.get('settings-get-selected')({}, ['foo', 'cleep.locale'])).toEqual({
-      foo: 'bar',
-      'cleep.locale': 'en',
+      ok: true,
+      data: {
+        foo: 'bar',
+        'cleep.locale': 'en',
+      },
     });
-    expect(ipcHandleHandlers.get('settings-filepath')()).toContain('settings.json');
-    expect(ipcHandleHandlers.get('settings.has')({}, 'foo')).toBe(true);
+    expect(ipcHandleHandlers.get('settings-filepath')()).toMatchObject({
+      ok: true,
+      data: expect.stringContaining('settings.json'),
+    });
+    expect(ipcHandleHandlers.get('settings.has')({}, 'foo')).toEqual({ ok: true, data: true });
 
     ipcOnHandlers.get('settings-set')({}, { key: 'proxy.port', value: 9999 });
     expect(appSettings.get<number>('proxy.port')).toBe(9999);

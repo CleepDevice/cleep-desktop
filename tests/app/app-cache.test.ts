@@ -186,19 +186,20 @@ describe('AppCache', () => {
     appCache.cacheFile(source, 'ipcsum', 'ipc.zip');
 
     await expect(ipcHandleHandlers.get('cache-get-infos')({})).resolves.toMatchObject({
+      ok: true,
       data: {
         dir: cacheDir,
         files: [expect.objectContaining({ filename: 'ipc.zip', checksum: 'ipcsum' })],
       },
     });
 
-    expect(ipcHandleHandlers.get('cache-delete-file')({}, 'ipc.zip')).toEqual({ data: true });
-    expect(ipcHandleHandlers.get('cache-delete-file')({}, 'missing.zip')).toEqual({ data: false });
+    expect(ipcHandleHandlers.get('cache-delete-file')({}, 'ipc.zip')).toEqual({ ok: true, data: true });
+    expect(ipcHandleHandlers.get('cache-delete-file')({}, 'missing.zip')).toEqual({ ok: true, data: false });
 
     const source2 = path.join(os.tmpdir(), `cleep-cache-ipc2-${Date.now()}.zip`);
     fs.writeFileSync(source2, 'ipc2');
     appCache.cacheFile(source2, 'p', 'purge-ipc.zip');
-    expect(ipcHandleHandlers.get('cache-purge-files')({})).toEqual({ data: true });
+    expect(ipcHandleHandlers.get('cache-purge-files')({})).toEqual({ ok: true, data: true });
     expect(appCache.getCachedFiles()).toHaveLength(0);
   });
 
@@ -207,13 +208,13 @@ describe('AppCache', () => {
       throw new Error('readdir failed');
     });
 
-    await expect(ipcHandleHandlers.get('cache-get-infos')({})).resolves.toEqual({
-      data: {},
-      error: true,
+    await expect(ipcHandleHandlers.get('cache-get-infos')({})).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'CACHE_LIST_FAILED' },
     });
-    expect(ipcHandleHandlers.get('cache-purge-files')({})).toEqual({
-      data: false,
-      error: true,
+    expect(ipcHandleHandlers.get('cache-purge-files')({})).toMatchObject({
+      ok: false,
+      error: { code: 'CACHE_PURGE_FAILED' },
     });
   });
 
@@ -226,9 +227,9 @@ describe('AppCache', () => {
       throw new Error('locked');
     });
 
-    expect(ipcHandleHandlers.get('cache-delete-file')({}, 'del-err.zip')).toEqual({
-      data: false,
-      error: true,
+    expect(ipcHandleHandlers.get('cache-delete-file')({}, 'del-err.zip')).toMatchObject({
+      ok: false,
+      error: { code: 'CACHE_DELETE_FAILED' },
     });
   });
 });

@@ -6,7 +6,7 @@ import { appContext } from './app-context';
 import { getError } from './utils/app.helpers';
 import { appSettings } from './app-settings';
 import { cleepbus, Cleepbus } from './cleepbus/cleepbus';
-import { handleInvoke, onRendererSend, sendToRenderer } from './ipc/ipc-main';
+import { handleInvoke, ipcOk, onRendererSend, sendToRenderer } from './ipc/ipc-main';
 import { RpiImager, rpiImager } from './flash-tool/rpi-imager';
 
 export interface IToolUpdateStatus {
@@ -164,7 +164,7 @@ export class AppUpdater {
     });
 
     handleInvoke('updater-check-for-updates', async () => {
-      return this.checkForUpdates('manual');
+      return ipcOk(await this.checkForUpdates('manual'));
     });
 
     handleInvoke('updater-get-software-versions', () => {
@@ -172,12 +172,12 @@ export class AppUpdater {
       const cleepbusVersion = this.messageBus.getInstalledVersion();
       const lastUpdateCheck = appSettings.get<number>('cleep.lastupdatecheck');
 
-      return {
+      return ipcOk({
         lastUpdateCheck,
         cleepDesktop: appContext.version,
         flashTool: flashToolVersion,
         cleepbus: cleepbusVersion,
-      };
+      });
     });
   }
 

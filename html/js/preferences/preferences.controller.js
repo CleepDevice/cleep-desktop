@@ -90,11 +90,12 @@ function($scope, debounce, toast, settingsService, electron, closeModal) {
 
     self.getCacheInfos = function() {
         electron.sendReturn('cache-get-infos')
-            .then((resp) => {
-                if (!resp.error) {
-                    self.fillArray(self.cachedFiles, resp.data.files);
-                    self.cacheDir = resp.data.dir;
-                }
+            .then((data) => {
+                self.fillArray(self.cachedFiles, data.files);
+                self.cacheDir = data.dir;
+            })
+            .catch(() => {
+                toast.warning('Unable to load cache infos');
             });
     };
 
@@ -108,13 +109,12 @@ function($scope, debounce, toast, settingsService, electron, closeModal) {
 
     self.saveSettings = function() {
         electron.sendReturn('settings-set-all', self.settings)
-            .then((success) => {
-                if (!success) {
-                    toast.warning('Invalid settings, please check it');
-                }
+            .then(() => {
                 self.getSettings();
             })
-            .catch(() => { /* handle rejection */ });
+            .catch(() => {
+                toast.warning('Invalid settings, please check it');
+            });
     };
 
     self.openElectronLogs = function() {

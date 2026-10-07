@@ -49,7 +49,7 @@ describe('AppLogger', () => {
     expect(shell.openPath).toHaveBeenCalled();
 
     const logPath = await ipcHandleHandlers.get('get-electron-log-path')({});
-    expect(logPath).toContain('cleepdesktop.log');
+    expect(logPath).toMatchObject({ ok: true, data: expect.stringContaining('cleepdesktop.log') });
   });
 
   it('falls back to info for unknown log level', () => {

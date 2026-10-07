@@ -40,7 +40,7 @@ describe('AppContext', () => {
 
     expect(appContext.getChangelog()).toBe('notes');
     expect(appContext.crashReportEnabled).toBe(false);
-    expect(ipcHandleHandlers.get('get-changelog')()).toBe('notes');
+    expect(ipcHandleHandlers.get('get-changelog')()).toEqual({ ok: true, data: 'notes' });
   });
 
   it('enables crash report when setting is true in packaged mode', async () => {

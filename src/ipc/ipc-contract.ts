@@ -21,13 +21,7 @@ import type { RaspiosLatestRelease } from '../iso/raspios';
 import type { IIsoReleaseInfo } from '../iso/utils';
 import type { WifiNetwork } from '../iso/wifi';
 import type { ListedNetworkInterface } from '../pyre/iface';
-
-/** Common `{ data, error }` envelope used by several handlers (not universal yet). */
-export type IpcDataResult<T> = {
-  data: T;
-  error?: boolean | string;
-  flashToolInstalled?: boolean;
-};
+import type { IpcResult } from './ipc-result';
 
 export type DevicesUiState = {
   devices: CleepbusPeerInfos[];
@@ -110,38 +104,41 @@ export type CacheInfosPayload = {
   dir?: string;
 };
 
+export type IsoDrivesPayload = {
+  drives: Drive[];
+  flashToolInstalled: boolean;
+};
+
 /**
- * invoke(channel, request?) → Promise<response>
+ * invoke(channel, request?) → Promise<IpcResult<data>>
  * Use `request: void` when the renderer calls invoke with no payload.
+ * Every response uses the uniform envelope from ipc-result.ts.
  */
 export type InvokeContract = {
-  'bus-get-network-config': { request: void; response: NetworkConfigState };
-  'bus-set-network-interface': { request: string; response: NetworkConfigState };
-  'cache-delete-file': { request: string; response: IpcDataResult<boolean> };
-  'cache-get-infos': { request: void; response: IpcDataResult<CacheInfosPayload> };
-  'cache-purge-files': { request: void; response: IpcDataResult<boolean> };
-  'devices-delete-device': { request: string; response: IpcDataResult<null> };
-  'devices-get-ui-state': { request: void; response: DevicesUiState };
-  'get-changelog': { request: void; response: string };
-  'get-electron-log-path': { request: void; response: string };
-  'iso-get-drives': {
-    request: void;
-    response: IpcDataResult<Drive[]> & { flashToolInstalled?: boolean };
-  };
-  'iso-get-isos': { request: boolean | void; response: IpcDataResult<IsoReleasesPayload> };
-  'iso-get-wifi-networks': { request: void; response: IpcDataResult<WifiNetwork[]> };
-  'iso-has-wifi': { request: void; response: IpcDataResult<boolean> };
-  'iso-refresh-wifi-networks': { request: void; response: IpcDataResult<WifiNetwork[]> };
-  'open-dialog': { request: OpenDialogSyncOptions; response: string[] | undefined };
-  'settings-filepath': { request: void; response: string };
-  'settings-get': { request: KeyPath; response: SettingsValue };
-  'settings-get-all': { request: void; response: SettingsObject };
-  'settings-get-selected': { request: KeyPath[]; response: Record<string, unknown> };
-  'settings-set-all': { request: SettingsObject; response: boolean };
-  'settings.has': { request: KeyPath; response: boolean };
-  'update-device-auth': { request: IAuthEvent; response: boolean };
-  'updater-check-for-updates': { request: void; response: UpdateStatus };
-  'updater-get-software-versions': { request: void; response: SoftwareVersions };
+  'bus-get-network-config': { request: void; response: IpcResult<NetworkConfigState> };
+  'bus-set-network-interface': { request: string; response: IpcResult<NetworkConfigState> };
+  'cache-delete-file': { request: string; response: IpcResult<boolean> };
+  'cache-get-infos': { request: void; response: IpcResult<CacheInfosPayload> };
+  'cache-purge-files': { request: void; response: IpcResult<boolean> };
+  'devices-delete-device': { request: string; response: IpcResult<null> };
+  'devices-get-ui-state': { request: void; response: IpcResult<DevicesUiState> };
+  'get-changelog': { request: void; response: IpcResult<string> };
+  'get-electron-log-path': { request: void; response: IpcResult<string> };
+  'iso-get-drives': { request: void; response: IpcResult<IsoDrivesPayload> };
+  'iso-get-isos': { request: boolean | void; response: IpcResult<IsoReleasesPayload> };
+  'iso-get-wifi-networks': { request: void; response: IpcResult<WifiNetwork[]> };
+  'iso-has-wifi': { request: void; response: IpcResult<boolean> };
+  'iso-refresh-wifi-networks': { request: void; response: IpcResult<WifiNetwork[]> };
+  'open-dialog': { request: OpenDialogSyncOptions; response: IpcResult<string[]> };
+  'settings-filepath': { request: void; response: IpcResult<string> };
+  'settings-get': { request: KeyPath; response: IpcResult<SettingsValue> };
+  'settings-get-all': { request: void; response: IpcResult<SettingsObject> };
+  'settings-get-selected': { request: KeyPath[]; response: IpcResult<Record<string, unknown>> };
+  'settings-set-all': { request: SettingsObject; response: IpcResult<true> };
+  'settings.has': { request: KeyPath; response: IpcResult<boolean> };
+  'update-device-auth': { request: IAuthEvent; response: IpcResult<true> };
+  'updater-check-for-updates': { request: void; response: IpcResult<UpdateStatus> };
+  'updater-get-software-versions': { request: void; response: IpcResult<SoftwareVersions> };
 };
 
 /** send(channel, payload?) — fire-and-forget renderer → main */

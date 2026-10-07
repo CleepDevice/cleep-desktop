@@ -9,6 +9,7 @@ import type {
   SendChannel,
   SendPayload,
 } from './ipc-contract';
+export { ipcErr, ipcOk, isIpcOk, type IpcErr, type IpcOk, type IpcResult } from './ipc-result';
 
 type InvokeHandler<C extends InvokeChannel> = InvokeRequest<C> extends void
   ? (event: IpcMainInvokeEvent) => InvokeResponse<C> | Promise<InvokeResponse<C>>

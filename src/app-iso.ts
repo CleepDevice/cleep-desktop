@@ -15,7 +15,7 @@ import { appUpdater } from './app-updater';
 import { NotInstalledException } from './exceptions/not-installed.exception';
 import { appCache } from './app-cache';
 import { appContext } from './app-context';
-import { handleInvoke, onRendererSend, sendToRenderer } from './ipc/ipc-main';
+import { handleInvoke, ipcErr, ipcOk, onRendererSend, sendToRenderer } from './ipc/ipc-main';
 import * as drivelist from 'drivelist';
 import { rpiImager } from './flash-tool/rpi-imager';
 import { Drive } from './flash-tool/flashtool.interface';
@@ -453,55 +453,52 @@ class AppIso {
           this.getLatestCleepos(Boolean(force)),
         ]);
         const [raspios, cleepos] = releases;
-        const error = raspios?.error || cleepos?.error;
-        return { data: { raspios, cleepos }, error };
+        return ipcOk({ raspios, cleepos });
       } catch (error) {
         appLogger.error('Unable to get isos', { error });
-        return { data: {}, error: true };
+        return ipcErr('ISO_LIST_FAILED', 'Unable to get OS images');
       }
     });
 
     handleInvoke('iso-refresh-wifi-networks', async () => {
       try {
         await this.refreshWifiNetworks();
-        const networks = this.getWifiNetworks();
-        return { data: networks, error: false };
+        return ipcOk(this.getWifiNetworks());
       } catch (error) {
         appLogger.error('Unable to refresh wifi networks', { error });
-        return { data: [], error: true };
+        return ipcErr('WIFI_SCAN_FAILED', 'Unable to refresh wifi networks');
       }
     });
 
     handleInvoke('iso-get-wifi-networks', () => {
       try {
-        const networks = this.getWifiNetworks();
-        return { data: networks, error: false };
+        return ipcOk(this.getWifiNetworks());
       } catch (error) {
         appLogger.error('Unable to get wifi networks', { error });
-        return { data: [], error: true };
+        return ipcErr('WIFI_LIST_FAILED', 'Unable to get wifi networks');
       }
     });
 
     handleInvoke('iso-get-drives', async () => {
       try {
         const drives = await this.getDriveList();
-        return { data: drives, error: false, flashToolInstalled: true };
+        return ipcOk({ drives, flashToolInstalled: true });
       } catch (error) {
         if (error instanceof NotInstalledException) {
-          return { data: [], error: true, flashToolInstalled: false };
+          // Soft state: UI shows “install flash tool”, not a hard failure.
+          return ipcOk({ drives: [], flashToolInstalled: false });
         }
         appLogger.error('Unable to get drives', { error });
-        return { data: [], error: true, flashToolInstalled: true };
+        return ipcErr('DRIVE_LIST_FAILED', 'Unable to get drives');
       }
     });
 
     handleInvoke('iso-has-wifi', async () => {
       try {
-        const hasWifi = await this.wifi.hasWifi();
-        return { data: hasWifi, error: false };
+        return ipcOk(await this.wifi.hasWifi());
       } catch {
         appLogger.error('Unable to know if wifi adapter exists');
-        return { data: false, error: true };
+        return ipcErr('WIFI_ADAPTER_CHECK_FAILED', 'Unable to detect wifi adapter');
       }
     });
 

@@ -1,6 +1,6 @@
 import { BrowserWindow } from 'electron';
 import { appLogger } from './app-logger';
-import { handleInvoke, sendToRenderer } from './ipc/ipc-main';
+import { handleInvoke, ipcOk, sendToRenderer } from './ipc/ipc-main';
 
 export interface IAuth {
   deviceUuid: string;
@@ -85,7 +85,7 @@ class AppAuth {
         hasAuthStored: true,
       });
 
-      return true;
+      return ipcOk(true as const);
     });
   }
 }

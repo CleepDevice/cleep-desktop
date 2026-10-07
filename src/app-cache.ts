@@ -2,7 +2,7 @@ import { app } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import { appLogger } from './app-logger';
-import { handleInvoke } from './ipc/ipc-main';
+import { handleInvoke, ipcErr, ipcOk } from './ipc/ipc-main';
 
 export interface CachedFileInfos {
   filename: string;
@@ -33,35 +33,32 @@ export class AppCache {
   private addIpcs(): void {
     handleInvoke('cache-get-infos', async () => {
       try {
-        return {
-          data: {
-            files: this.getCachedFiles(),
-            dir: this.cacheDir,
-          },
-        };
+        return ipcOk({
+          files: this.getCachedFiles(),
+          dir: this.cacheDir,
+        });
       } catch (error) {
         appLogger.error('Unable to get cached files', { error });
-        return { data: {}, error: true };
+        return ipcErr('CACHE_LIST_FAILED', 'Unable to get cached files');
       }
     });
 
     handleInvoke('cache-delete-file', (_event, filename) => {
       try {
-        const deleted = this.deleteCachedFile(filename);
-        return { data: deleted };
+        return ipcOk(this.deleteCachedFile(filename));
       } catch (error) {
         appLogger.error(`Unable to delete cached file ${filename}`, error);
-        return { data: false, error: true };
+        return ipcErr('CACHE_DELETE_FAILED', `Unable to delete cached file ${filename}`);
       }
     });
 
     handleInvoke('cache-purge-files', () => {
       try {
         this.purgeCachedFiles();
-        return { data: true };
+        return ipcOk(true);
       } catch (error) {
         appLogger.error(`Unable to purge cached files`, error);
-        return { data: false, error: true };
+        return ipcErr('CACHE_PURGE_FAILED', 'Unable to purge cached files');
       }
     });
   }

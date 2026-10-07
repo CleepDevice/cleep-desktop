@@ -30,7 +30,11 @@ Raspberry Pi Imager binaries are packaged separately as release assets (`rpi-ima
 
 The AngularJS UI runs with `nodeIntegration: false`, `contextIsolation: true`, and a sandboxed preload. It talks to the main process only through `window.cleep.ipc` exposed by `src/preload.ts`.
 
-IPC channels and payloads are defined in `src/ipc/ipc-contract.ts` (typed request/response maps). Runtime allowlists live in `src/ipc/ipc-channels.ts` and are checked for exhaustiveness against that contract. Main-process helpers `handleInvoke` / `onRendererSend` / `sendToRenderer` in `src/ipc/ipc-main.ts` enforce those types at compile time. The preload is bundled with esbuild (`npm run build:preload`) because a sandboxed preload cannot `require()` local modules.
+IPC channels and payloads are defined in `src/ipc/ipc-contract.ts` (typed request/response maps). Runtime allowlists live in `src/ipc/ipc-channels.ts` and are checked for exhaustiveness against that contract. Main-process helpers `handleInvoke` / `onRendererSend` / `sendToRenderer` in `src/ipc/ipc-main.ts` enforce those types at compile time.
+
+Every `invoke` response uses a uniform envelope (`src/ipc/ipc-result.ts`): `{ ok: true, data }` or `{ ok: false, error: { code, message } }`. The Angular `electronService.sendReturn` unwraps it (resolves `data`, rejects `error`). Push events (main → renderer) stay channel + payload as before.
+
+The preload is bundled with esbuild (`npm run build:preload`) because a sandboxed preload cannot `require()` local modules.
 
 ### Auto update
 

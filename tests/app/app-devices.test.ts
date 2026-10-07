@@ -69,8 +69,9 @@ describe('AppDevices', () => {
     expect(deviceUpdates.some((devices) => devices.some((device) => device.uuid === 'device-1'))).toBe(true);
 
     const state = await ipcHandleHandlers.get('devices-get-ui-state')({});
-    expect(state.busConnected).toBe(true);
-    expect(state.devices.some((device: { uuid: string }) => device.uuid === 'device-1')).toBe(true);
+    expect(state).toMatchObject({ ok: true });
+    expect(state.data.busConnected).toBe(true);
+    expect(state.data.devices.some((device: { uuid: string }) => device.uuid === 'device-1')).toBe(true);
 
     busCallbacks.peerDisconnected?.({
       uuid: 'device-1',
@@ -136,10 +137,13 @@ describe('AppDevices', () => {
     });
 
     const result = await ipcHandleHandlers.get('devices-delete-device')({}, 'device-to-delete');
-    expect(result).toEqual({ data: null, error: false });
+    expect(result).toEqual({ ok: true, data: null });
 
     const missing = await ipcHandleHandlers.get('devices-delete-device')({}, 'missing-device');
-    expect(missing).toEqual({ data: null, error: true });
+    expect(missing).toMatchObject({
+      ok: false,
+      error: { code: 'DEVICE_NOT_FOUND' },
+    });
   });
 
   it('stop delegates to cleepbus', async () => {
@@ -156,17 +160,21 @@ describe('AppDevices', () => {
     const config = await getConfig!({});
     expect(config).toEqual(
       expect.objectContaining({
-        selectedInterface: expect.any(String),
-        activeInterface: expect.objectContaining({ name: expect.any(String), address: expect.any(String) }),
-        interfaces: expect.any(Array),
-        peerCount: 2,
-        busConnected: expect.any(Boolean),
+        ok: true,
+        data: expect.objectContaining({
+          selectedInterface: expect.any(String),
+          activeInterface: expect.objectContaining({ name: expect.any(String), address: expect.any(String) }),
+          interfaces: expect.any(Array),
+          peerCount: 2,
+          busConnected: expect.any(Boolean),
+        }),
       }),
     );
 
     const setInterface = ipcHandleHandlers.get('bus-set-network-interface');
     const updated = await setInterface!({}, '');
     expect(cleepbus.restart).toHaveBeenCalled();
-    expect(updated.selectedInterface).toBe('');
+    expect(updated.ok).toBe(true);
+    expect(updated.data.selectedInterface).toBe('');
   });
 });

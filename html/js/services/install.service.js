@@ -81,9 +81,13 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
 
     self.hasWifi = function() {
         return electron.sendReturn('iso-has-wifi')
-            .then((response) => {
-                self.wifiInfo.hasWifi = response.data;
+            .then((hasWifi) => {
+                self.wifiInfo.hasWifi = hasWifi;
                 return self.wifiInfo.hasWifi;
+            })
+            .catch(() => {
+                self.wifiInfo.hasWifi = false;
+                return false;
             });
     }
 
@@ -93,13 +97,12 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
         }
 
         return electron.sendReturn('iso-refresh-wifi-networks')
-            .then((response) => {
-                if (response.error) {
-                    toast.error('Unable to refresh wifi networks');
-                    return;
-                }
+            .then((networks) => {
                 self.wifiInfo.retrieved = true;
-                self.fillArray(self.wifiInfo.networks, response.data);
+                self.fillArray(self.wifiInfo.networks, networks);
+            })
+            .catch(() => {
+                toast.error('Unable to refresh wifi networks');
             });
     };
 
@@ -109,27 +112,24 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
         }
 
         return electron.sendReturn('iso-get-isos', Boolean(force))
-            .then((response) => {
-                if (response.error) {
-                    toast.error('Unable to get files');
-                    return;
-                }
+            .then((data) => {
                 self.isosInfo.retrieved = true;
-                self.isosInfo.raspios = response.data.raspios || {};
-                self.isosInfo.cleepos = response.data.cleepos || {};
+                self.isosInfo.raspios = data.raspios || {};
+                self.isosInfo.cleepos = data.cleepos || {};
+            })
+            .catch(() => {
+                toast.error('Unable to get files');
             });
     };
 
     self.refreshDriveList = function() {
         return electron.sendReturn('iso-get-drives')
-            .then((response) => {
-                self.flashToolInstalled = response.flashToolInstalled;
-
-                if (response.error) {
-                    toast.error('Unable to get drives');
-                    return;
-                }
-                self.fillArray(self.drives, response.data);
+            .then((result) => {
+                self.flashToolInstalled = result.flashToolInstalled;
+                self.fillArray(self.drives, result.drives);
+            })
+            .catch(() => {
+                toast.error('Unable to get drives');
             });
     };
 

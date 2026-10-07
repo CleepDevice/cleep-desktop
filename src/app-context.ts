@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { init as sentryInit } from '@sentry/electron/main';
 import { appSettings } from './app-settings';
-import { handleInvoke } from './ipc/ipc-main';
+import { handleInvoke, ipcOk } from './ipc/ipc-main';
 
 const SENTRY_DSN = 'https://8e703f88899c42c18b8466c44b612472@o97410.ingest.sentry.io/213385';
 
@@ -30,7 +30,7 @@ class AppContext {
   }
 
   private addIpcs(): void {
-    handleInvoke('get-changelog', () => this.changelog);
+    handleInvoke('get-changelog', () => ipcOk(this.changelog));
   }
 
   public saveChangelog(changelog: string): void {
