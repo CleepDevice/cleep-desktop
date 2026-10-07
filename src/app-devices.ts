@@ -1,10 +1,10 @@
-import { BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow } from 'electron';
 import { appLogger } from './app-logger';
 import { appSettings, SettingsObject } from './app-settings';
 import { cleepbus } from './cleepbus/cleepbus';
 import { listNetworkInterfaces, selectInterface } from './pyre/iface';
 import { CleebusMessageResponse, CleepbusPeerInfos, TEST_DEVICE } from './cleepbus/cleepbus.types';
-import { sendDataToAngularJs } from './utils/ui.helpers';
+import { handleInvoke, sendToRenderer } from './ipc/ipc-main';
 import { appContext } from './app-context';
 
 class AppDevices {
@@ -53,7 +53,7 @@ class AppDevices {
     appLogger.error('Message bus error', { error });
     this.busConnected = false;
     this.markAllDevicesOffline();
-    sendDataToAngularJs(this.window, 'devices-message-bus-error', error);
+    sendToRenderer(this.window, 'devices-message-bus-error', error);
   }
 
   private onMessageBusConnected(connected: boolean): void {
@@ -62,7 +62,7 @@ class AppDevices {
     if (!connected) {
       this.markAllDevicesOffline();
     }
-    sendDataToAngularJs(this.window, 'devices-message-bus-connected', connected);
+    sendToRenderer(this.window, 'devices-message-bus-connected', connected);
   }
 
   private markAllDevicesOffline(): void {
@@ -71,31 +71,31 @@ class AppDevices {
     }
     appSettings.set('devices', this.devices as unknown as SettingsObject);
     if (this.window) {
-      sendDataToAngularJs(this.window, 'devices-updated', this.devicesObjectToArray());
+      sendToRenderer(this.window, 'devices-updated', this.devicesObjectToArray());
     }
   }
 
   private onMessageBusUpdating(updating: boolean): void {
     appLogger.info('Message bus updating', { updating });
-    sendDataToAngularJs(this.window, 'devices-message-bus-updating', updating);
+    sendToRenderer(this.window, 'devices-message-bus-updating', updating);
   }
 
   private onMessageResponse(peerInfos: CleepbusPeerInfos, messageResponse: CleebusMessageResponse): void {
     appLogger.debug('Received message response from Cleepbus', { peerInfos, messageResponse });
     const timestamp = Math.round(new Date().getTime() / 1000);
-    sendDataToAngularJs(this.window, 'devices-message', { timestamp, peerInfos, message: messageResponse });
+    sendToRenderer(this.window, 'devices-message', { timestamp, peerInfos, message: messageResponse });
   }
 
   private onPeerDisconnected(peerInfos: CleepbusPeerInfos): void {
     appLogger.info('Peer disconnected', { peerInfos });
     this.updateDevices(peerInfos);
-    sendDataToAngularJs(this.window, 'devices-updated', this.devicesObjectToArray());
+    sendToRenderer(this.window, 'devices-updated', this.devicesObjectToArray());
   }
 
   private onPeerConnected(peerInfos: CleepbusPeerInfos): void {
     appLogger.info('Peer connected', { uuid: peerInfos.uuid });
     this.updateDevices(peerInfos);
-    sendDataToAngularJs(this.window, 'devices-updated', this.devicesObjectToArray());
+    sendToRenderer(this.window, 'devices-updated', this.devicesObjectToArray());
   }
 
   private updateDevices(peerInfos: CleepbusPeerInfos): void {
@@ -119,7 +119,7 @@ class AppDevices {
     delete this.devices[deviceUuid];
     appSettings.set('devices', this.devices as unknown as SettingsObject);
 
-    sendDataToAngularJs(this.window, 'devices-updated', this.devicesObjectToArray());
+    sendToRenderer(this.window, 'devices-updated', this.devicesObjectToArray());
 
     return true;
   }
@@ -144,18 +144,16 @@ class AppDevices {
   }
 
   private addIpcs(): void {
-    ipcMain.handle('devices-get-ui-state', async () => {
+    handleInvoke('devices-get-ui-state', async () => {
       return {
         devices: this.devicesObjectToArray(),
         busConnected: this.busConnected,
       };
     });
 
-    ipcMain.handle('bus-get-network-config', async () => {
-      return this.getNetworkConfigState();
-    });
+    handleInvoke('bus-get-network-config', async () => this.getNetworkConfigState());
 
-    ipcMain.handle('bus-set-network-interface', async (_event, interfaceName: unknown) => {
+    handleInvoke('bus-set-network-interface', async (_event, interfaceName) => {
       const name = typeof interfaceName === 'string' ? interfaceName.trim() : '';
       appSettings.set('cleep.networkinterface', name);
       appLogger.info('Network interface preference updated, restarting message bus', { interfaceName: name || '(automatic)' });
@@ -164,7 +162,7 @@ class AppDevices {
       return this.getNetworkConfigState();
     });
 
-    ipcMain.handle('devices-delete-device', async (_event, deviceUuid: string) => {
+    handleInvoke('devices-delete-device', async (_event, deviceUuid) => {
       appLogger.info(`Deleting device ${deviceUuid}`);
       const deviceDeleted = this.deleteDevice(deviceUuid);
       appLogger.info('Device deleted result', { deleted: deviceDeleted });

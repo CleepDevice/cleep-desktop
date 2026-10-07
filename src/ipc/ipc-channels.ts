@@ -1,6 +1,8 @@
+import type { InvokeChannel, ReceiveChannel, SendChannel } from './ipc-contract';
+
 /**
- * IPC channel allowlists for the preload bridge.
- * Renderer code may only invoke/send/listen on these names.
+ * Runtime allowlists for the preload bridge.
+ * Kept in sync with InvokeContract / SendContract / ReceiveContract via satisfies + exhaustiveness checks.
  */
 
 export const INVOKE_CHANNELS = [
@@ -28,7 +30,7 @@ export const INVOKE_CHANNELS = [
   'update-device-auth',
   'updater-check-for-updates',
   'updater-get-software-versions',
-] as const;
+] as const satisfies readonly InvokeChannel[];
 
 export const SEND_CHANNELS = [
   'download-file',
@@ -40,9 +42,8 @@ export const SEND_CHANNELS = [
   'open-url-in-browser',
   'settings-set',
   'updater-quit-and-install',
-] as const;
+] as const satisfies readonly SendChannel[];
 
-/** Main → renderer push channels the UI may subscribe to. */
 export const RECEIVE_CHANNELS = [
   'auth-error',
   'device-auth-updated',
@@ -63,11 +64,26 @@ export const RECEIVE_CHANNELS = [
   'updater-rpi-imager-download-progress',
   'updater-rpi-imager-update-available',
   'webview-new-window',
-] as const;
+] as const satisfies readonly ReceiveChannel[];
 
-export type InvokeChannel = (typeof INVOKE_CHANNELS)[number];
-export type SendChannel = (typeof SEND_CHANNELS)[number];
-export type ReceiveChannel = (typeof RECEIVE_CHANNELS)[number];
+/** Fail compilation if a contract key is missing from the runtime allowlist. */
+type AssertExhaustive<Contract, List extends readonly string[]> =
+  Exclude<keyof Contract, List[number]> extends never ? true : Exclude<keyof Contract, List[number]>;
+
+const _invokeExhaustive: AssertExhaustive<
+  import('./ipc-contract').InvokeContract,
+  typeof INVOKE_CHANNELS
+> = true;
+const _sendExhaustive: AssertExhaustive<import('./ipc-contract').SendContract, typeof SEND_CHANNELS> =
+  true;
+const _receiveExhaustive: AssertExhaustive<
+  import('./ipc-contract').ReceiveContract,
+  typeof RECEIVE_CHANNELS
+> = true;
+
+void _invokeExhaustive;
+void _sendExhaustive;
+void _receiveExhaustive;
 
 function includesChannel(channels: readonly string[], channel: string): boolean {
   return channels.includes(channel);
@@ -90,3 +106,5 @@ export function assertReceiveChannel(channel: string): asserts channel is Receiv
     throw new Error(`Blocked IPC receive channel: ${channel}`);
   }
 }
+
+export type { InvokeChannel, ReceiveChannel, SendChannel } from './ipc-contract';

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen, ipcMain, shell, dialog, OpenDialogSyncOptions } from 'electron';
+import { app, BrowserWindow, screen, shell, dialog } from 'electron';
 import { appContext } from './app-context';
 import { createAppMenu } from './app-menu';
 import { createAppWindow, createSplashscreenWindow } from './app-window';
@@ -11,6 +11,7 @@ import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
 import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
 import { setupDevReloader } from './utils/dev-reloader';
+import { handleInvoke, onRendererSend, sendToRenderer } from './ipc/ipc-main';
 
 setupDevReloader();
 
@@ -53,7 +54,7 @@ app.on('login', (event, _webContents, _request, authInfo, callback) => {
   } else if (auth?.attempts >= MAX_AUTH_ATTEMPTS) {
     appLogger.debug('Max auth attempts reached');
     appAuth.resetAuthAttempts(url);
-    mainWindow.webContents.send('auth-error', { ip: authInfo.host, errorCode: 'INVALID_AUTH' });
+    sendToRenderer(mainWindow, 'auth-error', { ip: authInfo.host, errorCode: 'INVALID_AUTH' });
   } else {
     appLogger.debug('Found auth', { url: authInfo.host, account: auth.account });
     event.preventDefault();
@@ -120,12 +121,12 @@ app.on('ready', async function () {
   }
 });
 
-ipcMain.on('open-url-in-browser', (_event, url: string) => {
+onRendererSend('open-url-in-browser', (_event, url) => {
   appLogger.info('Opening external url', { url });
   shell.openExternal(url);
 });
 
-ipcMain.handle('open-dialog', (_event, dialogOptions: OpenDialogSyncOptions) => {
+handleInvoke('open-dialog', (_event, dialogOptions) => {
   const result = dialog.showOpenDialogSync(dialogOptions);
   return result || [];
 });

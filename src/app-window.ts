@@ -3,6 +3,7 @@ import path from 'path';
 import url from 'url';
 import { appContext } from './app-context';
 import { appLogger } from './app-logger';
+import { sendToRenderer } from './ipc/ipc-main';
 import { getHtmlFilePath, getResourceFilePath } from './utils/paths';
 
 function getPreloadPath(): string {
@@ -35,7 +36,7 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
   mainWindow.webContents.on('did-attach-webview', (_event, webContents: Electron.WebContents) => {
     appLogger.debug('webview attached');
     webContents.setWindowOpenHandler((details) => {
-      mainWindow.webContents.send('webview-new-window', webContents.id, details);
+      sendToRenderer(mainWindow, 'webview-new-window', webContents.id, { url: details.url });
       return { action: 'deny' };
     });
   });

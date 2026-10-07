@@ -1,6 +1,6 @@
-import { BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow } from 'electron';
 import { appLogger } from './app-logger';
-import { sendDataToAngularJs } from './utils/ui.helpers';
+import { handleInvoke, sendToRenderer } from './ipc/ipc-main';
 
 export interface IAuth {
   deviceUuid: string;
@@ -57,7 +57,7 @@ class AppAuth {
     for (const url of authUrlToDelete) {
       appLogger.debug(`Purging auth for url ${url}`);
 
-      sendDataToAngularJs(this.window, 'device-auth-updated', {
+      sendToRenderer(this.window, 'device-auth-updated', {
         deviceUuid: this.auths[url].deviceUuid,
         hasAuthStored: false,
       });
@@ -67,7 +67,7 @@ class AppAuth {
   }
 
   private addIpcs(): void {
-    ipcMain.handle('update-device-auth', (_event, auth: IAuthEvent) => {
+    handleInvoke('update-device-auth', (_event, auth) => {
       appLogger.debug('Add new auth data', auth);
 
       const url = new URL(auth.url);
@@ -80,7 +80,7 @@ class AppAuth {
       };
 
       // return back device has auth to angular
-      sendDataToAngularJs(this.window, 'device-auth-updated', {
+      sendToRenderer(this.window, 'device-auth-updated', {
         deviceUuid: auth.deviceUuid,
         hasAuthStored: true,
       });

@@ -28,7 +28,9 @@ CleepDesktop downloads Raspberry Pi Imager on first launch (not bundled in the i
 
 Raspberry Pi Imager binaries are packaged separately as release assets (`rpi-imager-*.zip`) via `npm run package:rpi-imager` / `scripts/package-rpi-imager.sh`, then published under a `rpi-imager-vX.Y.Z` tag on this repository. Per-platform official source versions are set in `src/flash-tool/rpi-imager-versions.json` (e.g. Linux can stay on an older release when AppImage is missing). Flash wrappers live in `resources/flashtool/` and ship with the app. Wi-Fi (and future `cleep-*.json` payloads) are injected via rpi-imager `--first-run-script` — no post-flash mount/patch of the card.
 
-The AngularJS UI runs with `nodeIntegration: false`, `contextIsolation: true`, and a sandboxed preload. It talks to the main process only through `window.cleep.ipc` exposed by `src/preload.ts` (allowlisted channels in `src/ipc-channels.ts`). The preload is bundled with esbuild (`npm run build:preload`) because a sandboxed preload cannot `require()` local modules.
+The AngularJS UI runs with `nodeIntegration: false`, `contextIsolation: true`, and a sandboxed preload. It talks to the main process only through `window.cleep.ipc` exposed by `src/preload.ts`.
+
+IPC channels and payloads are defined in `src/ipc/ipc-contract.ts` (typed request/response maps). Runtime allowlists live in `src/ipc/ipc-channels.ts` and are checked for exhaustiveness against that contract. Main-process helpers `handleInvoke` / `onRendererSend` / `sendToRenderer` in `src/ipc/ipc-main.ts` enforce those types at compile time. The preload is bundled with esbuild (`npm run build:preload`) because a sandboxed preload cannot `require()` local modules.
 
 ### Auto update
 

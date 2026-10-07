@@ -1,8 +1,9 @@
-import { app, ipcMain, shell } from 'electron';
+import { app, shell } from 'electron';
 import logger from 'electron-log/node';
 import { CommandLineArgs } from './utils/app.helpers';
 import { appSettings } from './app-settings';
 import path from 'path';
+import { handleInvoke, onRendererSend } from './ipc/ipc-main';
 
 export enum LoggerLevelEnum {
   'no' = 'no',
@@ -84,16 +85,16 @@ export class AppLogger {
   }
 
   private addIpcs() {
-    ipcMain.on('logger-log', (_event, arg: LoggerMessage) => {
+    onRendererSend('logger-log', (_event, arg) => {
       this.log(arg.level, 'renderer', arg.message, arg.extra);
     });
 
-    ipcMain.on('open-electron-logs', async () => {
+    onRendererSend('open-electron-logs', async () => {
       const logPath = logger.transports.file.getFile();
       shell.openPath(logPath.path);
     });
 
-    ipcMain.handle('get-electron-log-path', async () => {
+    handleInvoke('get-electron-log-path', async () => {
       const logPath = logger.transports.file.getFile();
       return logPath.path;
     });

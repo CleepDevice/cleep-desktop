@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { appLogger } from './app-logger';
 import { appSettings } from './app-settings';
 import { CleepOs } from './iso/cleepos';
@@ -15,7 +15,7 @@ import { appUpdater } from './app-updater';
 import { NotInstalledException } from './exceptions/not-installed.exception';
 import { appCache } from './app-cache';
 import { appContext } from './app-context';
-import { sendDataToAngularJs } from './utils/ui.helpers';
+import { handleInvoke, onRendererSend, sendToRenderer } from './ipc/ipc-main';
 import * as drivelist from 'drivelist';
 import { rpiImager } from './flash-tool/rpi-imager';
 import { Drive } from './flash-tool/flashtool.interface';
@@ -208,7 +208,7 @@ class AppIso {
       step: 'downloading',
       error: downloadProgress?.error || '',
     };
-    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
+    sendToRenderer(this.window, 'iso-install-progress', installProgress);
   }
 
   private resolveLocalIsoPath(isoUrl: string): string {
@@ -255,7 +255,7 @@ class AppIso {
       this.installRunning = false;
       const message = getError(error as Error);
       appLogger.error(`Iso install failed ${message}`);
-      sendDataToAngularJs(this.window, 'iso-install-progress', {
+      sendToRenderer(this.window, 'iso-install-progress', {
         percent: 100,
         eta: 0,
         step: 'idle',
@@ -285,7 +285,7 @@ class AppIso {
     void this.cleanupFirstRunScript();
     this.installRunning = false;
     appContext.allowAppClosing = true;
-    sendDataToAngularJs(this.window, 'iso-install-progress', {
+    sendToRenderer(this.window, 'iso-install-progress', {
       percent: 0,
       eta: 0,
       step: 'canceled',
@@ -362,7 +362,7 @@ class AppIso {
       eta: 0,
       step: 'privileges',
     };
-    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
+    sendToRenderer(this.window, 'iso-install-progress', installProgress);
 
     const options: SudoOptions = {
       appName: app.name,
@@ -399,7 +399,7 @@ class AppIso {
       terminated: true,
       error,
     };
-    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
+    sendToRenderer(this.window, 'iso-install-progress', installProgress);
 
     if (failed) {
       appLogger.error('Flash drive failed', { exitCode, error });
@@ -424,7 +424,7 @@ class AppIso {
         step: flashOutput.mode,
         error: '',
       };
-      sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
+      sendToRenderer(this.window, 'iso-install-progress', installProgress);
       return;
     }
 
@@ -436,7 +436,7 @@ class AppIso {
     if (FLASH_STDERR_ERROR_PATTERN.test(trimmed)) {
       appLogger.error('Drive flash failed', { error: trimmed });
       this.currentInstall.flashError = trimmed;
-      sendDataToAngularJs(this.window, 'iso-install-progress', {
+      sendToRenderer(this.window, 'iso-install-progress', {
         error: trimmed,
       });
       return;
@@ -446,9 +446,12 @@ class AppIso {
   }
 
   private addIpcs(): void {
-    ipcMain.handle('iso-get-isos', async (_event, force = false) => {
+    handleInvoke('iso-get-isos', async (_event, force = false) => {
       try {
-        const releases = await Promise.all([this.getLatestRaspios(Boolean(force)), this.getLatestCleepos(Boolean(force))]);
+        const releases = await Promise.all([
+          this.getLatestRaspios(Boolean(force)),
+          this.getLatestCleepos(Boolean(force)),
+        ]);
         const [raspios, cleepos] = releases;
         const error = raspios?.error || cleepos?.error;
         return { data: { raspios, cleepos }, error };
@@ -458,7 +461,7 @@ class AppIso {
       }
     });
 
-    ipcMain.handle('iso-refresh-wifi-networks', async () => {
+    handleInvoke('iso-refresh-wifi-networks', async () => {
       try {
         await this.refreshWifiNetworks();
         const networks = this.getWifiNetworks();
@@ -469,7 +472,7 @@ class AppIso {
       }
     });
 
-    ipcMain.handle('iso-get-wifi-networks', () => {
+    handleInvoke('iso-get-wifi-networks', () => {
       try {
         const networks = this.getWifiNetworks();
         return { data: networks, error: false };
@@ -479,7 +482,7 @@ class AppIso {
       }
     });
 
-    ipcMain.handle('iso-get-drives', async () => {
+    handleInvoke('iso-get-drives', async () => {
       try {
         const drives = await this.getDriveList();
         return { data: drives, error: false, flashToolInstalled: true };
@@ -492,7 +495,7 @@ class AppIso {
       }
     });
 
-    ipcMain.handle('iso-has-wifi', async () => {
+    handleInvoke('iso-has-wifi', async () => {
       try {
         const hasWifi = await this.wifi.hasWifi();
         return { data: hasWifi, error: false };
@@ -502,12 +505,12 @@ class AppIso {
       }
     });
 
-    ipcMain.on('iso-start-install', (_event, installData: InstallData) => {
+    onRendererSend('iso-start-install', (_event, installData) => {
       appLogger.debug('Start iso install', installData);
       void this.startInstall(installData);
     });
 
-    ipcMain.on('iso-cancel-install', () => {
+    onRendererSend('iso-cancel-install', () => {
       appLogger.debug('Cancel iso install');
       this.cancelInstall();
     });

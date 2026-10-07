@@ -1,7 +1,8 @@
-import { app, ipcMain } from 'electron';
+import { app } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import { appLogger } from './app-logger';
+import { handleInvoke } from './ipc/ipc-main';
 
 export interface CachedFileInfos {
   filename: string;
@@ -30,7 +31,7 @@ export class AppCache {
   }
 
   private addIpcs(): void {
-    ipcMain.handle('cache-get-infos', async () => {
+    handleInvoke('cache-get-infos', async () => {
       try {
         return {
           data: {
@@ -44,7 +45,7 @@ export class AppCache {
       }
     });
 
-    ipcMain.handle('cache-delete-file', (_event, filename: string) => {
+    handleInvoke('cache-delete-file', (_event, filename) => {
       try {
         const deleted = this.deleteCachedFile(filename);
         return { data: deleted };
@@ -54,7 +55,7 @@ export class AppCache {
       }
     });
 
-    ipcMain.handle('cache-purge-files', () => {
+    handleInvoke('cache-purge-files', () => {
       try {
         this.purgeCachedFiles();
         return { data: true };

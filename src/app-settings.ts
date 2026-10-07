@@ -1,8 +1,9 @@
-import { App, ipcMain } from 'electron';
+import { App } from 'electron';
 import settings from 'electron-settings';
 import { appLogger } from './app-logger';
 import { v4 as uuidv4 } from 'uuid';
 import { appContext } from './app-context';
+import { handleInvoke, onRendererSend } from './ipc/ipc-main';
 
 const DEFAULT_SETTINGS: {
   [k: string]: string | number | boolean | { [k: string]: string };
@@ -71,11 +72,9 @@ export class AppSettings {
   }
 
   private addIpcs() {
-    ipcMain.handle('settings-get-all', () => {
-      return this.getAll();
-    });
+    handleInvoke('settings-get-all', () => this.getAll());
 
-    ipcMain.handle('settings-set-all', (_event, arg: SettingsObject) => {
+    handleInvoke('settings-set-all', (_event, arg) => {
       if (typeof arg !== 'object' || Array.isArray(arg) || arg === null) {
         appLogger.error('Specified settings have invalid format', arg);
         return false;
@@ -86,11 +85,9 @@ export class AppSettings {
       return true;
     });
 
-    ipcMain.handle('settings-get', (_event, arg: KeyPath) => {
-      return this.get(arg);
-    });
+    handleInvoke('settings-get', (_event, arg) => this.get(arg));
 
-    ipcMain.handle('settings-get-selected', (_event, arg: KeyPath[]) => {
+    handleInvoke('settings-get-selected', (_event, arg) => {
       const result: Record<string, unknown> = {};
       for (const keyPath of arg) {
         result[keyPath] = this.get(keyPath);
@@ -98,17 +95,13 @@ export class AppSettings {
       return result;
     });
 
-    ipcMain.on('settings-set', (_event, arg: KeyValue) => {
+    onRendererSend('settings-set', (_event, arg) => {
       this.set(arg.key, arg.value);
     });
 
-    ipcMain.handle('settings-filepath', () => {
-      return this.filepath();
-    });
+    handleInvoke('settings-filepath', () => this.filepath());
 
-    ipcMain.handle('settings.has', (_event, arg: KeyPath) => {
-      return this.has(arg);
-    });
+    handleInvoke('settings.has', (_event, arg) => this.has(arg));
   }
 
   private checkAndFixConfig(version: string) {

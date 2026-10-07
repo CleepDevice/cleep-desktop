@@ -6,7 +6,7 @@ import {
   INVOKE_CHANNELS,
   RECEIVE_CHANNELS,
   SEND_CHANNELS,
-} from '../../src/ipc-channels';
+} from '../../src/ipc/ipc-channels';
 
 describe('ipc-channels', () => {
   it('allows known invoke/send/receive channels', () => {

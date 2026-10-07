@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu, MenuItemConstructorOptions } from 'electron';
 import { appContext } from './app-context';
+import { sendToRenderer } from './ipc/ipc-main';
 
 export function createAppMenu(window: BrowserWindow): void {
   const subMenuFile: MenuItemConstructorOptions = {
@@ -8,13 +9,13 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'Updates',
         click: () => {
-          window.webContents.send('open-page', { page: 'updates' });
+          sendToRenderer(window, 'open-page', { page: 'updates' });
         },
       },
       {
         label: 'Preferences',
         click: () => {
-          window.webContents.send('open-modal', {
+          sendToRenderer(window, 'open-modal', {
             controller: 'preferencesController',
             template: 'js/preferences/preferences-dialog.html',
           });
@@ -63,7 +64,7 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'Application help',
         click: () => {
-          window.webContents.send('open-page', { page: 'help' });
+          sendToRenderer(window, 'open-page', { page: 'help' });
         },
       },
       {
@@ -72,7 +73,7 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'Get support',
         click: () => {
-          window.webContents.send('open-page', { page: 'support' });
+          sendToRenderer(window, 'open-page', { page: 'support' });
         },
       },
       {
@@ -81,7 +82,7 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'About',
         click: () => {
-          window.webContents.send('open-page', { page: 'about' });
+          sendToRenderer(window, 'open-page', { page: 'about' });
         },
       },
     ]),

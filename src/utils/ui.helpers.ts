@@ -1,11 +1,5 @@
-import { BrowserWindow } from 'electron';
-import { appLogger } from '../app-logger';
-
-export function sendDataToAngularJs(window: BrowserWindow, event: string, data: unknown): void {
-  appLogger.debug('Send data to angular', { event, data });
-  try {
-    window.webContents.send(event, data);
-  } catch {
-    appLogger.debug('Error could appear when trying to access window when stopping application');
-  }
-}
+/**
+ * @deprecated Prefer importing sendToRenderer from './ipc/ipc-main'.
+ * Kept as a thin alias so existing call sites keep working during the IPC hardening series.
+ */
+export { sendToRenderer as sendDataToAngularJs } from '../ipc/ipc-main';

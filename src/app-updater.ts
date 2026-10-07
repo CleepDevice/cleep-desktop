@@ -1,12 +1,12 @@
 import { ReleaseNoteInfo } from 'builder-util-runtime';
-import { BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow } from 'electron';
 import { autoUpdater, ProgressInfo, UpdateCheckResult, UpdateInfo } from 'electron-updater';
 import { appLogger } from './app-logger';
 import { appContext } from './app-context';
 import { getError } from './utils/app.helpers';
 import { appSettings } from './app-settings';
 import { cleepbus, Cleepbus } from './cleepbus/cleepbus';
-import { sendDataToAngularJs } from './utils/ui.helpers';
+import { handleInvoke, onRendererSend, sendToRenderer } from './ipc/ipc-main';
 import { RpiImager, rpiImager } from './flash-tool/rpi-imager';
 
 export interface IToolUpdateStatus {
@@ -104,7 +104,7 @@ export class AppUpdater {
     const cleepDesktopUpdate = { updateAvailable: hasCleepDesktopUpdate };
     const flashToolUpdate = await this.flashTool.checkForUpdates();
     if (flashToolUpdate.error) {
-      sendDataToAngularJs(this.window, 'updater-rpi-imager-download-progress', {
+      sendToRenderer(this.window, 'updater-rpi-imager-download-progress', {
         terminated: true,
         percent: 100,
         error: flashToolUpdate.error,
@@ -112,7 +112,7 @@ export class AppUpdater {
     }
     const cleepbusUpdate = await this.messageBus.checkForUpdates();
     if (cleepbusUpdate.error) {
-      sendDataToAngularJs(this.window, 'updater-cleepbus-download-progress', {
+      sendToRenderer(this.window, 'updater-cleepbus-download-progress', {
         terminated: true,
         percent: 100,
         error: cleepbusUpdate.error,
@@ -159,16 +159,15 @@ export class AppUpdater {
   }
 
   private addIpcs(): void {
-    ipcMain.on('updater-quit-and-install', () => {
+    onRendererSend('updater-quit-and-install', () => {
       this.quitAndInstall();
     });
 
-    ipcMain.handle('updater-check-for-updates', async (_event) => {
-      const updates = await this.checkForUpdates('manual');
-      return updates;
+    handleInvoke('updater-check-for-updates', async () => {
+      return this.checkForUpdates('manual');
     });
 
-    ipcMain.handle('updater-get-software-versions', () => {
+    handleInvoke('updater-get-software-versions', () => {
       const flashToolVersion = this.flashTool.getInstalledVersion();
       const cleepbusVersion = this.messageBus.getInstalledVersion();
       const lastUpdateCheck = appSettings.get<number>('cleep.lastupdatecheck');
@@ -189,7 +188,7 @@ export class AppUpdater {
         percent: 100,
         error: getError(error),
       };
-      sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', data);
+      sendToRenderer(this.window, 'updater-cleepdesktop-download-progress', data);
     });
 
     autoUpdater.addListener('update-available', (info: UpdateInfo) => {
@@ -202,7 +201,7 @@ export class AppUpdater {
         percent: 0,
         terminated: false,
       };
-      sendDataToAngularJs(this.window, 'updater-cleepdesktop-update-available', data);
+      sendToRenderer(this.window, 'updater-cleepdesktop-update-available', data);
     });
 
     autoUpdater.addListener('download-progress', (progress: ProgressInfo) => {
@@ -210,7 +209,7 @@ export class AppUpdater {
         percent: progress.percent,
         terminated: false,
       };
-      sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', data);
+      sendToRenderer(this.window, 'updater-cleepdesktop-download-progress', data);
     });
 
     autoUpdater.addListener('update-downloaded', (info: UpdateInfo) => {
@@ -222,24 +221,24 @@ export class AppUpdater {
         installed: true,
         terminated: true,
       };
-      sendDataToAngularJs(this.window, 'updater-cleepdesktop-download-progress', data);
+      sendToRenderer(this.window, 'updater-cleepdesktop-download-progress', data);
     });
   }
 
   private onFlashToolUpdateAvailable(updateData: UpdateData): void {
-    sendDataToAngularJs(this.window, 'updater-rpi-imager-update-available', updateData);
+    sendToRenderer(this.window, 'updater-rpi-imager-update-available', updateData);
   }
 
   private onFlashToolDownloadProgress(updateData: UpdateData): void {
-    sendDataToAngularJs(this.window, 'updater-rpi-imager-download-progress', updateData);
+    sendToRenderer(this.window, 'updater-rpi-imager-download-progress', updateData);
   }
 
   private onCleepbusUpdateAvailable(updateData: UpdateData): void {
-    sendDataToAngularJs(this.window, 'updater-cleepbus-update-available', updateData);
+    sendToRenderer(this.window, 'updater-cleepbus-update-available', updateData);
   }
 
   private onCleepbusDownloadProgress(updateData: UpdateData): void {
-    sendDataToAngularJs(this.window, 'updater-cleepbus-download-progress', updateData);
+    sendToRenderer(this.window, 'updater-cleepbus-download-progress', updateData);
   }
 
   private getChangelog(changelog?: string | ReleaseNoteInfo[]): string {

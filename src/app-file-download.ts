@@ -1,5 +1,5 @@
-import { BrowserWindow, DownloadItem, ipcMain } from 'electron';
-import { sendDataToAngularJs } from './utils/ui.helpers';
+import { BrowserWindow, DownloadItem } from 'electron';
+import { onRendererSend, sendToRenderer } from './ipc/ipc-main';
 import { appLogger } from './app-logger';
 import { v4 as uuidv4 } from 'uuid';
 import { electronDownload, IDownloadFileProgress } from './utils/electron-dl';
@@ -30,7 +30,7 @@ export class AppFileDownload {
   }
 
   private addIpcs() {
-    ipcMain.on('download-file-cancel', (_event, downloadId: string) => {
+    onRendererSend('download-file-cancel', (_event, downloadId) => {
       appLogger.debug(`Received download cancel action for ${downloadId}`);
       const download = this.getDownload(downloadId);
       if (download) {
@@ -38,7 +38,7 @@ export class AppFileDownload {
       }
     });
 
-    ipcMain.on('download-file', async (_event, options: { url: string; title?: string }) => {
+    onRendererSend('download-file', async (_event, options) => {
       const downloadId = uuidv4();
       appLogger.info(`Downloading file from ${options.url} with id ${downloadId}`);
       this.downloadUrl(downloadId, options.url, options.title);
@@ -68,7 +68,7 @@ export class AppFileDownload {
       const download = this.getDownload(downloadId);
       if (download) {
         this.deleteDownload(downloadId);
-        sendDataToAngularJs(this.window, 'download-file-status', {
+        sendToRenderer(this.window, 'download-file-status', {
           downloadId,
           filename: download.downloadItem.getFilename(),
           status: 'failed',
@@ -81,7 +81,7 @@ export class AppFileDownload {
   private onDownloadStarted(downloadId: string, url: string, downloadItem: DownloadItem): void {
     appLogger.debug(`Download ${downloadId} started`);
     this.downloads[downloadId] = { downloadId, downloadItem };
-    sendDataToAngularJs(this.window, 'download-file-started', {
+    sendToRenderer(this.window, 'download-file-started', {
       downloadId,
       filename: downloadItem.getFilename(),
       url,
@@ -93,7 +93,7 @@ export class AppFileDownload {
 
     const download = this.getDownload(downloadId);
     if (download) {
-      sendDataToAngularJs(this.window, 'download-file-status', {
+      sendToRenderer(this.window, 'download-file-status', {
         downloadId,
         filename: download.downloadItem.getFilename(),
         status: 'downloading',
@@ -108,7 +108,7 @@ export class AppFileDownload {
     const download = this.getDownload(downloadId);
     if (download) {
       this.deleteDownload(downloadId);
-      sendDataToAngularJs(this.window, 'download-file-status', {
+      sendToRenderer(this.window, 'download-file-status', {
         downloadId,
         filename: download.downloadItem.getFilename(),
         status: 'canceled',
@@ -122,7 +122,7 @@ export class AppFileDownload {
 
     const download = this.getDownload(downloadId);
     if (download) {
-      sendDataToAngularJs(this.window, 'download-file-status', {
+      sendToRenderer(this.window, 'download-file-status', {
         downloadId,
         filename: download.downloadItem.getFilename(),
         status: 'success',
