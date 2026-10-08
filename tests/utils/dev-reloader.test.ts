@@ -29,9 +29,10 @@ describe('setupDevReloader', () => {
     const { setupDevReloader } = await import('../../src/utils/dev-reloader');
     setupDevReloader();
 
-    expect(watchMock).toHaveBeenCalledTimes(2);
+    expect(watchMock).toHaveBeenCalledTimes(3);
     const watchedPaths = watchMock.mock.calls.map((call) => String(call[0]));
     expect(watchedPaths.some((p) => p.endsWith('html') || p.includes('/html'))).toBe(true);
+    expect(watchedPaths.some((p) => p.includes('preload.js'))).toBe(true);
     expect(watchedPaths.some((p) => p.includes('build') && p.includes('.js'))).toBe(true);
   });
 

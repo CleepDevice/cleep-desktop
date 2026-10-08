@@ -119,7 +119,7 @@
         "publish": {
             "provider": "github",
             "owner": "CleepDevice",
-            "releaseType": "release",
+            "releaseType": "prerelease",
             "repo": "cleep-desktop"
         },
         "extraResources": [

@@ -1,9 +1,18 @@
+import { execFile } from 'child_process';
 import fs from 'fs';
 import * as NodeWifi from 'node-wifi';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Wifi } from '../../src/iso/wifi';
 
 vi.mock('node-wifi');
+
+vi.mock('child_process', async () => {
+  const actual = await vi.importActual<typeof import('child_process')>('child_process');
+  return {
+    ...actual,
+    execFile: vi.fn(),
+  };
+});
 
 describe('Wifi', () => {
   beforeEach(() => {
@@ -115,6 +124,100 @@ describe('Wifi', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux');
     vi.spyOn(fs.promises, 'readdir').mockResolvedValue(['enp3s0', 'lo', 'docker0'] as never);
     vi.spyOn(fs.promises, 'access').mockRejectedValue(new Error('missing'));
+
+    await expect(new Wifi().hasWifi()).resolves.toBe(false);
+  });
+
+  it('detects darwin wifi adapter via networksetup Wi-Fi port', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
+    vi.mocked(execFile).mockImplementation(((
+      _cmd: string,
+      _args: string[],
+      _opts: unknown,
+      callback: (error: Error | null, stdout: string, stderr: string) => void,
+    ) => {
+      callback(
+        null,
+        'Hardware Port: Ethernet\nDevice: en0\n\nHardware Port: Wi-Fi\nDevice: en1\n',
+        '',
+      );
+      return {} as never;
+    }) as never);
+
+    await expect(new Wifi().hasWifi()).resolves.toBe(true);
+  });
+
+  it('detects darwin Airport hardware port name', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
+    vi.mocked(execFile).mockImplementation(((
+      _cmd: string,
+      _args: string[],
+      _opts: unknown,
+      callback: (error: Error | null, stdout: string, stderr: string) => void,
+    ) => {
+      callback(null, 'Hardware Port: AirPort\nDevice: en0\n', '');
+      return {} as never;
+    }) as never);
+
+    await expect(new Wifi().detectWifiAdapter()).resolves.toBe(true);
+  });
+
+  it('returns false on darwin when networksetup finds no wifi port', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
+    vi.mocked(execFile).mockImplementation(((
+      _cmd: string,
+      _args: string[],
+      _opts: unknown,
+      callback: (error: Error | null, stdout: string, stderr: string) => void,
+    ) => {
+      callback(null, 'Hardware Port: Ethernet\nDevice: en0\n', '');
+      return {} as never;
+    }) as never);
+
+    await expect(new Wifi().hasWifi()).resolves.toBe(false);
+  });
+
+  it('returns false on darwin when networksetup fails', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
+    vi.mocked(execFile).mockImplementation(((
+      _cmd: string,
+      _args: string[],
+      _opts: unknown,
+      callback: (error: Error | null, stdout: string, stderr: string) => void,
+    ) => {
+      callback(new Error('networksetup missing'), '', '');
+      return {} as never;
+    }) as never);
+
+    await expect(new Wifi().hasWifi()).resolves.toBe(false);
+  });
+
+  it('detects windows wifi adapter via netsh interfaces', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+    vi.mocked(execFile).mockImplementation(((
+      _cmd: string,
+      _args: string[],
+      _opts: unknown,
+      callback: (error: Error | null, stdout: string, stderr: string) => void,
+    ) => {
+      callback(null, 'Name                   : Wi-Fi\nState                  : connected\n', '');
+      return {} as never;
+    }) as never);
+
+    await expect(new Wifi().hasWifi()).resolves.toBe(true);
+  });
+
+  it('returns false on windows when netsh reports no wireless interface', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+    vi.mocked(execFile).mockImplementation(((
+      _cmd: string,
+      _args: string[],
+      _opts: unknown,
+      callback: (error: Error | null, stdout: string, stderr: string) => void,
+    ) => {
+      callback(null, 'There is no wireless interface on the system.\n', '');
+      return {} as never;
+    }) as never);
 
     await expect(new Wifi().hasWifi()).resolves.toBe(false);
   });

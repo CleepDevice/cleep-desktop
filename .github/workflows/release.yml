@@ -1,0 +1,87 @@
+name: Release
+
+# Publish prerelease artifacts for any tag whose commit is on master.
+on:
+  push:
+    tags:
+      - '**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-tag-on-master:
+    name: Verify tag is on master
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure tagged commit is reachable from master
+        run: |
+          git fetch origin master
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
+            echo "Tagged commit $GITHUB_SHA is not on origin/master."
+            echo "Merge your branch into master before tagging a release."
+            exit 1
+          fi
+          echo "Tag ${{ github.ref_name }} points to a commit on master."
+          echo "Publishing prerelease for tag ${{ github.ref_name }}"
+
+  publish:
+    name: Publish (${{ matrix.os }})
+    needs: verify-tag-on-master
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            script: publish-linux
+          - os: windows-latest
+            script: publish-win
+          - os: macos-latest
+            script: publish-macos
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Optional signing / notarization secrets (leave unset for unsigned builds).
+      CSC_LINK: ${{ secrets.CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+      WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+      APPLEID: ${{ secrets.APPLEID }}
+      APPLEIDPASSWORD: ${{ secrets.APPLEIDPASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Linux packaging dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm
+
+      - name: Disable macOS code signing when no certificate is configured
+        if: runner.os == 'macOS' && env.CSC_LINK == ''
+        run: echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "$GITHUB_ENV"
+
+      - name: Disable Windows code signing when no certificate is configured
+        if: runner.os == 'Windows' && env.WIN_CSC_LINK == ''
+        run: echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Publish application
+        run: npm run ${{ matrix.script }}

@@ -40,37 +40,40 @@ describe('AppSettings', () => {
     expect(ipcOnHandlers.has('settings-set')).toBe(true);
   });
 
-  it('ipc handlers read and write settings', () => {
+  it('ipc handlers read and write settings', async () => {
     appSettings.configure({ getVersion: () => '9.9.9' } as Electron.App);
 
-    expect(ipcHandleHandlers.get('settings-get-all')()).toMatchObject({
+    await expect(ipcHandleHandlers.get('settings-get-all')()).resolves.toMatchObject({
       ok: true,
       data: { cleep: expect.any(Object) },
     });
-    expect(ipcHandleHandlers.get('settings-set-all')({}, null)).toMatchObject({
+    await expect(ipcHandleHandlers.get('settings-set-all')({}, null)).resolves.toMatchObject({
       ok: false,
-      error: { code: 'INVALID_SETTINGS' },
+      error: { code: 'INVALID_IPC_REQUEST' },
     });
-    expect(ipcHandleHandlers.get('settings-set-all')({}, [])).toMatchObject({
+    await expect(ipcHandleHandlers.get('settings-set-all')({}, [])).resolves.toMatchObject({
       ok: false,
-      error: { code: 'INVALID_SETTINGS' },
+      error: { code: 'INVALID_IPC_REQUEST' },
     });
-    expect(ipcHandleHandlers.get('settings-set-all')({}, { foo: 'bar' })).toEqual({ ok: true, data: true });
+    await expect(ipcHandleHandlers.get('settings-set-all')({}, { foo: 'bar' })).resolves.toEqual({
+      ok: true,
+      data: true,
+    });
     expect(appSettings.get<string>('foo')).toBe('bar');
 
-    expect(ipcHandleHandlers.get('settings-get')({}, 'foo')).toEqual({ ok: true, data: 'bar' });
-    expect(ipcHandleHandlers.get('settings-get-selected')({}, ['foo', 'cleep.locale'])).toEqual({
+    await expect(ipcHandleHandlers.get('settings-get')({}, 'foo')).resolves.toEqual({ ok: true, data: 'bar' });
+    await expect(ipcHandleHandlers.get('settings-get-selected')({}, ['foo', 'cleep.locale'])).resolves.toEqual({
       ok: true,
       data: {
         foo: 'bar',
         'cleep.locale': 'en',
       },
     });
-    expect(ipcHandleHandlers.get('settings-filepath')()).toMatchObject({
+    await expect(ipcHandleHandlers.get('settings-filepath')()).resolves.toMatchObject({
       ok: true,
       data: expect.stringContaining('settings.json'),
     });
-    expect(ipcHandleHandlers.get('settings.has')({}, 'foo')).toEqual({ ok: true, data: true });
+    await expect(ipcHandleHandlers.get('settings.has')({}, 'foo')).resolves.toEqual({ ok: true, data: true });
 
     ipcOnHandlers.get('settings-set')({}, { key: 'proxy.port', value: 9999 });
     expect(appSettings.get<number>('proxy.port')).toBe(9999);

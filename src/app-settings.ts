@@ -1,6 +1,5 @@
 import { App } from 'electron';
 import settings from 'electron-settings';
-import { appLogger } from './app-logger';
 import { v4 as uuidv4 } from 'uuid';
 import { appContext } from './app-context';
 import { handleInvoke, ipcOk, onRendererSend } from './ipc/ipc-main';

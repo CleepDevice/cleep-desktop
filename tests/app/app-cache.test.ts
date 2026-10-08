@@ -193,13 +193,19 @@ describe('AppCache', () => {
       },
     });
 
-    expect(ipcHandleHandlers.get('cache-delete-file')({}, 'ipc.zip')).toEqual({ ok: true, data: true });
-    expect(ipcHandleHandlers.get('cache-delete-file')({}, 'missing.zip')).toEqual({ ok: true, data: false });
+    await expect(ipcHandleHandlers.get('cache-delete-file')({}, 'ipc.zip')).resolves.toEqual({
+      ok: true,
+      data: true,
+    });
+    await expect(ipcHandleHandlers.get('cache-delete-file')({}, 'missing.zip')).resolves.toEqual({
+      ok: true,
+      data: false,
+    });
 
     const source2 = path.join(os.tmpdir(), `cleep-cache-ipc2-${Date.now()}.zip`);
     fs.writeFileSync(source2, 'ipc2');
     appCache.cacheFile(source2, 'p', 'purge-ipc.zip');
-    expect(ipcHandleHandlers.get('cache-purge-files')({})).toEqual({ ok: true, data: true });
+    await expect(ipcHandleHandlers.get('cache-purge-files')({})).resolves.toEqual({ ok: true, data: true });
     expect(appCache.getCachedFiles()).toHaveLength(0);
   });
 
@@ -212,13 +218,13 @@ describe('AppCache', () => {
       ok: false,
       error: { code: 'CACHE_LIST_FAILED' },
     });
-    expect(ipcHandleHandlers.get('cache-purge-files')({})).toMatchObject({
+    await expect(ipcHandleHandlers.get('cache-purge-files')({})).resolves.toMatchObject({
       ok: false,
       error: { code: 'CACHE_PURGE_FAILED' },
     });
   });
 
-  it('cache-delete-file ipc returns error when deletion throws', () => {
+  it('cache-delete-file ipc returns error when deletion throws', async () => {
     const source = path.join(os.tmpdir(), `cleep-cache-del-err-${Date.now()}.zip`);
     fs.writeFileSync(source, 'x');
     appCache.cacheFile(source, 'err', 'del-err.zip');
@@ -227,7 +233,7 @@ describe('AppCache', () => {
       throw new Error('locked');
     });
 
-    expect(ipcHandleHandlers.get('cache-delete-file')({}, 'del-err.zip')).toMatchObject({
+    await expect(ipcHandleHandlers.get('cache-delete-file')({}, 'del-err.zip')).resolves.toMatchObject({
       ok: false,
       error: { code: 'CACHE_DELETE_FAILED' },
     });

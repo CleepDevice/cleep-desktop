@@ -67,7 +67,7 @@ describe('AppUpdater', () => {
     const result = await handler({});
     expect(result).toMatchObject({ ok: true, data: { lastUpdateCheck: expect.any(Number) } });
 
-    const versions = ipcHandleHandlers.get('updater-get-software-versions')({});
+    const versions = await ipcHandleHandlers.get('updater-get-software-versions')({});
     expect(versions).toMatchObject({
       ok: true,
       data: { cleepDesktop: expect.any(String) },

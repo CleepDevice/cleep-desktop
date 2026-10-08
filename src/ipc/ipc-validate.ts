@@ -146,7 +146,8 @@ type SendSchemaMap = {
  */
 export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
   'bus-get-network-config': null,
-  'bus-set-network-interface': nonEmptyString,
+  // Empty string means automatic interface selection.
+  'bus-set-network-interface': z.string(),
   'cache-delete-file': safeBasename,
   'cache-get-infos': null,
   'cache-purge-files': null,

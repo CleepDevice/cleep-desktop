@@ -1,38 +1,36 @@
 @echo off
+setlocal EnableExtensions
+
 :: variables
 set "CLEEPDESKTOPPATH=packaging\cleepdesktop_tree"
 
 :: clear previous process files
-rmdir /Q /S dist
-rmdir /Q /S packaging
+if exist dist rmdir /Q /S dist
+if exist packaging rmdir /Q /S packaging
 
 :: create dirs
 mkdir %CLEEPDESKTOPPATH%
 
-:: electron
+:: electron app (tsc + preload + assets)
 echo.
 echo.
 echo Building electron app...
 echo ------------------------
 call npm ci
 if %ERRORLEVEL% NEQ 0 goto :error
-cmd /C "node_modules\.bin\tsc --outDir %CLEEPDESKTOPPATH%"
+call npm run build
 if %ERRORLEVEL% NEQ 0 goto :error
 echo Done
 
-:: copy files and dirs
+:: assemble packaging tree for electron-builder
 echo.
 echo.
 echo Copying release files...
 echo ------------------------
-echo html...
-mkdir %CLEEPDESKTOPPATH%\html
-xcopy /S html %CLEEPDESKTOPPATH%\html
-mkdir %CLEEPDESKTOPPATH%\resources
-xcopy /S resources %CLEEPDESKTOPPATH%\resources
-xcopy LICENSE.txt %CLEEPDESKTOPPATH%\
-xcopy package.json %CLEEPDESKTOPPATH%\
-xcopy README.md %CLEEPDESKTOPPATH%\
+xcopy /E /I /Y /Q build %CLEEPDESKTOPPATH%
+xcopy /E /I /Y /Q resources %CLEEPDESKTOPPATH%\resources
+xcopy /Y /Q LICENSE.txt %CLEEPDESKTOPPATH%\
+xcopy /Y /Q README.md %CLEEPDESKTOPPATH%\
 echo Done
 
 :: electron-builder
@@ -43,7 +41,12 @@ echo.
 if "%1" == "publish" (
     echo Publishing cleepdesktop...
     echo --------------------------
-    set "GH_TOKEN=%GH_TOKEN_CLEEPDESKTOP%"
+    if not defined GH_TOKEN if defined GITHUB_TOKEN set "GH_TOKEN=%GITHUB_TOKEN%"
+    if not defined GH_TOKEN if defined GH_TOKEN_CLEEPDESKTOP set "GH_TOKEN=%GH_TOKEN_CLEEPDESKTOP%"
+    if not defined GH_TOKEN (
+        echo Error occured: GH_TOKEN / GITHUB_TOKEN is required to publish.
+        goto :error
+    )
     cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH% --publish always"
     if %ERRORLEVEL% NEQ 0 goto :error
 ) else (
@@ -64,10 +67,6 @@ xcopy /Q /S %CLEEPDESKTOPPATH%\dist dist
 if "%1" == "publish" (
     rmdir /Q /S packaging
 )
-rmdir /Q /S __pycache__
-rmdir /Q /S core\__pycache__
-rmdir /Q /S core\libs\__pycache__
-rmdir /Q /S core\modules\__pycache__
 echo Done
 
 echo.
@@ -84,3 +83,4 @@ exit /b 1
 
 :done
 echo ===== Success =====
+endlocal

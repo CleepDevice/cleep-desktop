@@ -34,13 +34,13 @@ describe('AppContext', () => {
     expect(appContext.getChangelogFilesize()).toBe(Buffer.byteLength('## 1.0.0\n- first'));
   });
 
-  it('configure loads changelog, disables crash report in packaged mode when disabled, and adds ipc', () => {
+  it('configure loads changelog, disables crash report in packaged mode when disabled, and adds ipc', async () => {
     appContext.saveChangelog('notes');
     appContext.configure();
 
     expect(appContext.getChangelog()).toBe('notes');
     expect(appContext.crashReportEnabled).toBe(false);
-    expect(ipcHandleHandlers.get('get-changelog')()).toEqual({ ok: true, data: 'notes' });
+    await expect(ipcHandleHandlers.get('get-changelog')()).resolves.toEqual({ ok: true, data: 'notes' });
   });
 
   it('enables crash report when setting is true in packaged mode', async () => {

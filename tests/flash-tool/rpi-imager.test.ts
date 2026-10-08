@@ -165,7 +165,15 @@ describe('RpiImager', () => {
     const { downloadFile } = await import('../../src/utils/download');
     const { extractZipArchive } = await import('../../src/utils/unzip');
     vi.mocked(downloadFile).mockResolvedValue('/tmp/rpi.zip');
-    vi.mocked(extractZipArchive).mockResolvedValue(undefined);
+    vi.mocked(extractZipArchive).mockImplementation(async (_source, destination) => {
+      fs.mkdirSync(destination, { recursive: true });
+      const binName = process.platform === 'win32' ? 'rpi-imager.exe' : 'rpi-imager';
+      const binPath = `${destination}/${binName}`;
+      fs.writeFileSync(binPath, 'bin');
+      if (process.platform !== 'win32') {
+        fs.chmodSync(binPath, 0o755);
+      }
+    });
 
     const updateCb = vi.fn();
     const progressCb = vi.fn();
