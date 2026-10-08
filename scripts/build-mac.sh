@@ -60,12 +60,14 @@ then
         echo "Error occured: GITHUB_TOKEN is required to publish."
         exit 1
     fi
-    node_modules/.bin/electron-builder --mac --arm64 --projectDir "$CLEEPDESKTOPPATH" --publish always
+    # arm64 (Apple Silicon) + x64 (Intel); artifactName includes ${arch}.
+    node_modules/.bin/electron-builder --mac --arm64 --x64 --projectDir "$CLEEPDESKTOPPATH" --publish always
     checkResult $? 0 "Failed to publish cleepdesktop"
 else
     echo "Packaging cleepdesktop..."
     echo "-------------------------"
-    node_modules/.bin/electron-builder --mac --arm64 --projectDir "$CLEEPDESKTOPPATH" --publish never
+    # arm64 (Apple Silicon) + x64 (Intel); artifactName includes ${arch}.
+    node_modules/.bin/electron-builder --mac --arm64 --x64 --projectDir "$CLEEPDESKTOPPATH" --publish never
     checkResult $? 0 "Failed to package cleepdesktop"
 fi
 
