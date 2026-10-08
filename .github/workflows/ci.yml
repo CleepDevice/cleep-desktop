@@ -12,6 +12,9 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: '26'
+
 jobs:
   test:
     name: Lint & test (${{ matrix.os }})
@@ -27,7 +30,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install dependencies
@@ -58,7 +61,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install dependencies
@@ -97,10 +100,13 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # Unsigned installers only (no GitHub Release publish). Runs after unit tests,
+  # in parallel with e2e, so packaging is not skipped when Playwright fails.
   package:
-    name: Package (${{ matrix.os }})
-    needs: [test, e2e]
+    name: Package unsigned (${{ matrix.os }})
+    needs: test
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -121,7 +127,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install Linux packaging dependencies
@@ -130,13 +136,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm
 
-      - name: Package application
+      - name: Package application (no publish)
         run: npm run ${{ matrix.script }}
 
-      - name: Upload artifacts
+      - name: Upload package artifacts
         uses: actions/upload-artifact@v4
         with:
           name: cleepdesktop-${{ matrix.os }}
           path: dist/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 7
