@@ -2,8 +2,9 @@ import { EventEmitter } from 'events';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Sudo } from '../../src/sudo/sudo';
+import { mockProcessPlatform } from '../helpers/mock-platform';
 
 vi.mock('child_process', async () => {
   const actual = await vi.importActual<typeof import('child_process')>('child_process');
@@ -15,10 +16,15 @@ vi.mock('child_process', async () => {
 });
 
 describe('Sudo', () => {
+  beforeEach(() => {
+    // Linux-oriented cases are the default; darwin/win32 tests override explicitly.
+    mockProcessPlatform('linux');
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' });
+    mockProcessPlatform('linux');
   });
 
   it('prefers run0 on linux when available', async () => {
@@ -130,7 +136,7 @@ describe('Sudo', () => {
   });
 
   it('builds darwin osascript command with administrator privileges', async () => {
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    mockProcessPlatform('darwin');
     const { spawn, spawnSync } = await import('child_process');
     vi.mocked(spawnSync).mockImplementation((cmd: string, args?: readonly string[]) => {
       if (cmd === 'which' && args?.[0] === 'osascript') {
@@ -162,7 +168,7 @@ describe('Sudo', () => {
   });
 
   it('throws when darwin osascript binary is missing', async () => {
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    mockProcessPlatform('darwin');
     const { spawnSync } = await import('child_process');
     vi.mocked(spawnSync).mockReturnValue({
       status: 1,
@@ -183,7 +189,7 @@ describe('Sudo', () => {
   });
 
   it('escapes double quotes in darwin shell command', async () => {
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    mockProcessPlatform('darwin');
     const { spawn, spawnSync } = await import('child_process');
     vi.mocked(spawnSync).mockReturnValue({
       status: 0,
@@ -211,7 +217,7 @@ describe('Sudo', () => {
   });
 
   it('escapes single quotes in darwin shell args', async () => {
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    mockProcessPlatform('darwin');
     const { spawn, spawnSync } = await import('child_process');
     vi.mocked(spawnSync).mockReturnValue({
       status: 0,
@@ -239,7 +245,7 @@ describe('Sudo', () => {
   });
 
   it('kills darwin elevated process via pkill then SIGTERM', async () => {
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    mockProcessPlatform('darwin');
     const { spawn, spawnSync } = await import('child_process');
     vi.mocked(spawnSync).mockReturnValue({
       status: 0,
@@ -275,7 +281,7 @@ describe('Sudo', () => {
   });
 
   it('builds windows elevate command with batch files', async () => {
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'win32' });
+    mockProcessPlatform('win32');
     const { spawn } = await import('child_process');
     const elevateSrc = path.join(__dirname, '../../src/sudo/elevate.exe');
     // ensure source path exists for copy (create dummy if missing in env)

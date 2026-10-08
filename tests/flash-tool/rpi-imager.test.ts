@@ -2,6 +2,7 @@ import fs from 'fs';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { IGithubRelease } from '../../src/utils/github';
 import { RPI_IMAGER_VERSION } from '../../src/flash-tool/constants';
+import { mockProcessPlatform } from '../helpers/mock-platform';
 
 vi.mock('../../src/flash-tool/constants', async () => {
   const actual = await vi.importActual<typeof import('../../src/flash-tool/constants')>(
@@ -120,14 +121,14 @@ describe('RpiImager', () => {
 
   it('resolves darwin binary path under rpi-imager dir', () => {
     const originalPlatform = process.platform;
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    mockProcessPlatform('darwin');
     fs.mkdirSync('/tmp/cleep-rpi-imager-test', { recursive: true });
     fs.writeFileSync('/tmp/cleep-rpi-imager-test/rpi-imager', 'bin');
     vi.mocked(appSettings.get).mockReturnValue('2.0.11.1');
 
     expect(rpiImager.getInstalledVersion()).toBe('2.0.11.1');
     fs.rmSync('/tmp/cleep-rpi-imager-test', { recursive: true, force: true });
-    Object.defineProperty(process, 'platform', { configurable: true, value: originalPlatform });
+    mockProcessPlatform(originalPlatform);
   });
 
   it('checkForUpdates returns github error', async () => {
@@ -204,29 +205,32 @@ describe('RpiImager', () => {
 
   it('install downloads darwin asset when platform is darwin', async () => {
     const originalPlatform = process.platform;
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
-    const { downloadFile } = await import('../../src/utils/download');
-    const { extractZipArchive } = await import('../../src/utils/unzip');
-    vi.mocked(downloadFile).mockResolvedValue('/tmp/rpi-darwin.zip');
-    vi.mocked(extractZipArchive).mockImplementation(async (_source, destination) => {
-      fs.mkdirSync(destination, { recursive: true });
-      fs.writeFileSync(`${destination}/rpi-imager`, 'bin');
-      fs.chmodSync(`${destination}/rpi-imager`, 0o755);
-    });
+    mockProcessPlatform('darwin');
+    try {
+      const { downloadFile } = await import('../../src/utils/download');
+      const { extractZipArchive } = await import('../../src/utils/unzip');
+      vi.mocked(downloadFile).mockResolvedValue('/tmp/rpi-darwin.zip');
+      vi.mocked(extractZipArchive).mockImplementation(async (_source, destination) => {
+        fs.mkdirSync(destination, { recursive: true });
+        fs.writeFileSync(`${destination}/rpi-imager`, 'bin');
+        fs.chmodSync(`${destination}/rpi-imager`, 0o755);
+      });
 
-    await rpiImager.install({
-      version: '2.0.11.1',
-      darwin: { downloadUrl: 'https://example.com/macos-only.zip', filename: 'macos.zip', size: 9 },
-      linux: { downloadUrl: 'https://example.com/l.zip', filename: 'l.zip', size: 1 },
-      win32: { downloadUrl: 'https://example.com/w.zip', filename: 'w.zip', size: 1 },
-    });
+      await rpiImager.install({
+        version: '2.0.11.1',
+        darwin: { downloadUrl: 'https://example.com/macos-only.zip', filename: 'macos.zip', size: 9 },
+        linux: { downloadUrl: 'https://example.com/l.zip', filename: 'l.zip', size: 1 },
+        win32: { downloadUrl: 'https://example.com/w.zip', filename: 'w.zip', size: 1 },
+      });
 
-    expect(downloadFile).toHaveBeenCalledWith(
-      'https://example.com/macos-only.zip',
-      expect.any(Function),
-    );
-    expect(appSettings.set).toHaveBeenCalledWith('rpiimager.version', '2.0.11.1');
-    Object.defineProperty(process, 'platform', { configurable: true, value: originalPlatform });
+      expect(downloadFile).toHaveBeenCalledWith(
+        'https://example.com/macos-only.zip',
+        expect.any(Function),
+      );
+      expect(appSettings.set).toHaveBeenCalledWith('rpiimager.version', '2.0.11.1');
+    } finally {
+      mockProcessPlatform(originalPlatform);
+    }
   });
 
   it('install returns false when platform missing', async () => {

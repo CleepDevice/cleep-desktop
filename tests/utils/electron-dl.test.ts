@@ -4,6 +4,7 @@ import path from 'path';
 import { app, BrowserWindow, shell } from 'electron';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CancelError, electronDownload } from '../../src/utils/electron-dl';
+import { mockProcessPlatform } from '../helpers/mock-platform';
 import { USER_DATA_DIR } from '../setup';
 
 function createDownloadItem(overrides: Partial<Record<string, unknown>> = {}) {
@@ -34,7 +35,7 @@ describe('electronDownload', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' });
+    mockProcessPlatform('linux');
     if (fs.existsSync(downloadsDir)) {
       for (const file of fs.readdirSync(downloadsDir)) {
         fs.rmSync(path.join(downloadsDir, file), { force: true });
@@ -94,7 +95,7 @@ describe('electronDownload', () => {
   });
 
   it('notifies macOS dock when download completes on darwin', async () => {
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    mockProcessPlatform('darwin');
     fs.mkdirSync(downloadsDir, { recursive: true });
     const window = new BrowserWindow() as unknown as BrowserWindow;
     vi.mocked(BrowserWindow.fromWebContents).mockReturnValue({

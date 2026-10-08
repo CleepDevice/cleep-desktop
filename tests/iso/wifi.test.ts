@@ -1,8 +1,10 @@
 import { execFile } from 'child_process';
 import fs from 'fs';
+import path from 'path';
 import * as NodeWifi from 'node-wifi';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Wifi } from '../../src/iso/wifi';
+import { mockProcessPlatform } from '../helpers/mock-platform';
 
 vi.mock('node-wifi');
 
@@ -22,6 +24,7 @@ describe('Wifi', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    mockProcessPlatform('linux');
   });
 
   it('parses scanned networks and normalizes security', async () => {
@@ -112,10 +115,11 @@ describe('Wifi', () => {
   });
 
   it('detects linux wifi adapter via /sys wireless marker', async () => {
-    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux');
+    mockProcessPlatform('linux');
     vi.spyOn(fs.promises, 'readdir').mockResolvedValue(['enp3s0', 'wlp2s0'] as never);
     vi.spyOn(fs.promises, 'access').mockImplementation(async (target) => {
-      if (String(target).includes('wlp2s0/wireless')) {
+      const wirelessMarker = path.join('wlp2s0', 'wireless');
+      if (String(target).includes(wirelessMarker)) {
         return;
       }
       throw new Error('missing');
@@ -125,7 +129,7 @@ describe('Wifi', () => {
   });
 
   it('returns false on linux desktop without wifi adapter', async () => {
-    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux');
+    mockProcessPlatform('linux');
     vi.spyOn(fs.promises, 'readdir').mockResolvedValue(['enp3s0', 'lo', 'docker0'] as never);
     vi.spyOn(fs.promises, 'access').mockRejectedValue(new Error('missing'));
 
@@ -133,7 +137,7 @@ describe('Wifi', () => {
   });
 
   it('detects darwin wifi adapter via networksetup Wi-Fi port', async () => {
-    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
+    mockProcessPlatform('darwin');
     vi.mocked(execFile).mockImplementation(((
       cmd: string,
       args: string[],
@@ -154,7 +158,7 @@ describe('Wifi', () => {
   });
 
   it('detects darwin Airport hardware port name', async () => {
-    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
+    mockProcessPlatform('darwin');
     vi.mocked(execFile).mockImplementation(((
       _cmd: string,
       _args: string[],
@@ -169,7 +173,7 @@ describe('Wifi', () => {
   });
 
   it('detects darwin WiFi port without hyphen', async () => {
-    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
+    mockProcessPlatform('darwin');
     vi.mocked(execFile).mockImplementation(((
       _cmd: string,
       _args: string[],
@@ -184,7 +188,7 @@ describe('Wifi', () => {
   });
 
   it('returns false on darwin when networksetup finds no wifi port', async () => {
-    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
+    mockProcessPlatform('darwin');
     vi.mocked(execFile).mockImplementation(((
       _cmd: string,
       _args: string[],
@@ -199,7 +203,7 @@ describe('Wifi', () => {
   });
 
   it('returns false on darwin when networksetup fails', async () => {
-    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
+    mockProcessPlatform('darwin');
     vi.mocked(execFile).mockImplementation(((
       _cmd: string,
       _args: string[],
@@ -214,7 +218,7 @@ describe('Wifi', () => {
   });
 
   it('detects windows wifi adapter via netsh interfaces', async () => {
-    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+    mockProcessPlatform('win32');
     vi.mocked(execFile).mockImplementation(((
       _cmd: string,
       _args: string[],
@@ -229,7 +233,7 @@ describe('Wifi', () => {
   });
 
   it('returns false on windows when netsh reports no wireless interface', async () => {
-    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+    mockProcessPlatform('win32');
     vi.mocked(execFile).mockImplementation(((
       _cmd: string,
       _args: string[],

@@ -1,10 +1,11 @@
 import { app, BrowserWindow, Menu } from 'electron';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAppMenu } from '../../src/app-menu';
+import { mockProcessPlatform } from '../helpers/mock-platform';
 
 describe('createAppMenu', () => {
   afterEach(() => {
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' });
+    mockProcessPlatform('linux');
   });
 
   it('builds and applies application menu', () => {
@@ -18,7 +19,7 @@ describe('createAppMenu', () => {
   });
 
   it('includes Edit submenu on darwin for clipboard shortcuts', () => {
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    mockProcessPlatform('darwin');
     const window = { webContents: { send: vi.fn() } } as unknown as BrowserWindow;
     createAppMenu(window);
 
@@ -32,7 +33,7 @@ describe('createAppMenu', () => {
   });
 
   it('omits Edit submenu on non-darwin platforms', () => {
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' });
+    mockProcessPlatform('linux');
     const window = { webContents: { send: vi.fn() } } as unknown as BrowserWindow;
     createAppMenu(window);
 

@@ -10,6 +10,7 @@ import * as NodeWifi from 'node-wifi';
 import { ipcHandleHandlers, ipcOnHandlers } from '../setup';
 import type { InstallData } from '../../src/app-iso';
 import { RPI_IMAGER_DIR } from '../../src/flash-tool/constants';
+import { mockProcessPlatform } from '../helpers/mock-platform';
 
 const sudoRun = vi.fn();
 const sudoKill = vi.fn();
@@ -252,7 +253,7 @@ describe('AppIso', () => {
 
   it('startInstall elevates flash.macos.sh on darwin', async () => {
     const originalPlatform = process.platform;
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    mockProcessPlatform('darwin');
     try {
       const installData: InstallData = {
         isoUrl: 'file:///tmp/local-darwin.img',
@@ -271,7 +272,7 @@ describe('AppIso', () => {
       // Finish the in-flight flash so later tests are not blocked by concurrent-install guard.
       lastSudoOptions?.terminatedCallback(0);
     } finally {
-      Object.defineProperty(process, 'platform', { configurable: true, value: originalPlatform });
+      mockProcessPlatform(originalPlatform);
     }
   });
 

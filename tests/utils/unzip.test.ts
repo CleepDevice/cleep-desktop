@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { extractZipArchive } from '../../src/utils/unzip';
 
@@ -47,10 +48,11 @@ describe('extractZipArchive', () => {
     const existsSpy = vi.spyOn(fs, 'existsSync').mockReturnValue(true);
     const chmodSpy = vi.spyOn(fs, 'chmodSync').mockImplementation(() => undefined);
 
-    await extractZipArchive('/tmp/archive.zip', '/tmp/dest');
+    const dest = path.join('/tmp', 'dest');
+    await extractZipArchive('/tmp/archive.zip', dest);
 
-    expect(chmodSpy).toHaveBeenCalledWith('/tmp/dest/rpi-imager', 0o755);
-    expect(chmodSpy).not.toHaveBeenCalledWith('/tmp/dest/readme.txt', expect.anything());
+    expect(chmodSpy).toHaveBeenCalledWith(path.join(dest, 'rpi-imager'), 0o755);
+    expect(chmodSpy).not.toHaveBeenCalledWith(path.join(dest, 'readme.txt'), expect.anything());
 
     existsSpy.mockRestore();
     chmodSpy.mockRestore();
