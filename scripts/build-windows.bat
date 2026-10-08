@@ -41,10 +41,8 @@ echo.
 if "%1" == "publish" (
     echo Publishing cleepdesktop...
     echo --------------------------
-    if not defined GH_TOKEN if defined GITHUB_TOKEN set "GH_TOKEN=%GITHUB_TOKEN%"
-    if not defined GH_TOKEN if defined GH_TOKEN_CLEEPDESKTOP set "GH_TOKEN=%GH_TOKEN_CLEEPDESKTOP%"
-    if not defined GH_TOKEN (
-        echo Error occured: GH_TOKEN / GITHUB_TOKEN is required to publish.
+    if not defined GITHUB_TOKEN (
+        echo Error occured: GITHUB_TOKEN is required to publish.
         goto :error
     )
     cmd /C "node_modules\.bin\electron-builder --windows --x64 --projectDir %CLEEPDESKTOPPATH% --publish always"

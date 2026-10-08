@@ -17,19 +17,6 @@ checkResult() {
     fi
 }
 
-resolve_gh_token() {
-    if [[ -n "${GH_TOKEN:-}" ]]; then
-        return
-    fi
-    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-        export GH_TOKEN="$GITHUB_TOKEN"
-        return
-    fi
-    if [[ -n "${GH_TOKEN_CLEEPDESKTOP:-}" ]]; then
-        export GH_TOKEN="$GH_TOKEN_CLEEPDESKTOP"
-    fi
-}
-
 # env
 CLEEPDESKTOPPATH=packaging/cleepdesktop_tree
 
@@ -69,9 +56,8 @@ if [ "${1:-}" == "publish" ]
 then
     echo "Publishing cleepdesktop..."
     echo "--------------------------"
-    resolve_gh_token
-    if [[ -z "${GH_TOKEN:-}" ]]; then
-        echo "Error occured: GH_TOKEN / GITHUB_TOKEN is required to publish."
+    if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+        echo "Error occured: GITHUB_TOKEN is required to publish."
         exit 1
     fi
     node_modules/.bin/electron-builder --mac --arm64 --projectDir "$CLEEPDESKTOPPATH" --publish always
