@@ -71,7 +71,7 @@ class ZmtpConnection {
     void this.readyPromise.catch((): undefined => undefined);
     socket.setNoDelay(true);
     socket.setKeepAlive(true);
-    socket.on("data", (chunk) => this.onData(chunk));
+    socket.on("data", (chunk) => this.onData(typeof chunk === "string" ? Buffer.from(chunk) : chunk));
     socket.on("error", (err) => this.fail(err));
     socket.on("close", () => this.handleClose());
   }

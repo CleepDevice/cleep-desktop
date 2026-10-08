@@ -64,11 +64,11 @@ const settingsValue: ZodType<SettingsValueSchema> = z.lazy(() =>
     z.string(),
     z.number(),
     z.array(settingsValue),
-    z.record(settingsValue),
+    z.record(z.string(), settingsValue),
   ]),
 );
 
-const settingsObject = z.record(settingsValue);
+const settingsObject = z.record(z.string(), settingsValue);
 
 const wifiData = z
   .object({

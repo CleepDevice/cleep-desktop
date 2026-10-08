@@ -38,7 +38,11 @@ vi.mock('electron', () => {
     setProgressBar: vi.fn(),
   });
 
-  const BrowserWindowMock = Object.assign(vi.fn(createWindowMock), {
+  // Vitest 5: keep a spy for assertions, but implement a real constructable body.
+  const BrowserWindowMock = vi.fn(function BrowserWindow(this: Record<string, unknown>) {
+    Object.assign(this, createWindowMock());
+  });
+  Object.assign(BrowserWindowMock, {
     fromWebContents: vi.fn(() => createWindowMock()),
   });
 

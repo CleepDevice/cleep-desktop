@@ -87,7 +87,12 @@ function registerListener(
     ...options,
   };
 
-  const listener = (_event: Event, item: DownloadItem, webContents: WebContents) => {
+  const listener = (
+    _event: { preventDefault: () => void },
+    item: DownloadItem,
+    webContents: WebContents,
+    _frame?: unknown,
+  ) => {
     downloadItems.add(item);
     totalBytes += item.getTotalBytes();
 
@@ -154,7 +159,7 @@ function registerListener(
       }
     });
 
-    item.on('done', (_event: Event, state) => {
+    item.on('done', (_event, state) => {
       completedBytes += item.getTotalBytes();
       downloadItems.delete(item);
 

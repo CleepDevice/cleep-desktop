@@ -38,7 +38,7 @@ class AppContext {
     try {
       fs.writeFileSync(changelogPath, changelog);
     } catch (error) {
-      const msg = error?.message || 'unknown error';
+      const msg = error instanceof Error ? error.message : 'unknown error';
       appLogger.error(`Unable to save changelog: ${msg}`);
     }
   }

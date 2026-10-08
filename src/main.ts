@@ -128,7 +128,9 @@ app.on('ready', async function () {
     appIso.configure(mainWindow);
     appDevices.configure(mainWindow);
   } catch (error) {
-    appLogger.error(`Unable to launch application: ${error?.message || 'unknown error'}`);
+    appLogger.error(
+      `Unable to launch application: ${error instanceof Error ? error.message : 'unknown error'}`,
+    );
   }
 });
 
