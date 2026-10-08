@@ -81,8 +81,8 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     },
   );
 
-  // Open the DevTools in dev mode only
-  if (appContext.isDev || process.env.CLEEPDESKTOP_DEBUG) {
+  // Open the DevTools in dev mode only (never during Playwright E2E).
+  if ((appContext.isDev || process.env.CLEEPDESKTOP_DEBUG) && process.env.CLEEPDESKTOP_E2E !== '1') {
     // open devtool in dev mode
     mainWindow.webContents.openDevTools();
 

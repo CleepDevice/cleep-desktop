@@ -143,4 +143,59 @@ describe('pyre iface', () => {
       multicast: true,
     });
   });
+
+  it('selects default-route interface on darwin via route get default', async () => {
+    const os = await import('node:os');
+    const childProcess = await import('node:child_process');
+    vi.mocked(os.platform).mockReturnValue('darwin');
+    vi.mocked(childProcess.execFileSync).mockReturnValue(
+      '   route to: default\ndestination: default\n       interface: en0\n',
+    );
+    vi.mocked(os.networkInterfaces).mockReturnValue({
+      en0: [
+        {
+          address: '192.168.1.20',
+          netmask: '255.255.255.0',
+          family: 'IPv4',
+          mac: 'aa:bb:cc:dd:ee:01',
+          internal: false,
+          cidr: '192.168.1.20/24',
+        },
+      ],
+      en1: [
+        {
+          address: '10.0.0.5',
+          netmask: '255.255.255.0',
+          family: 'IPv4',
+          mac: 'aa:bb:cc:dd:ee:02',
+          internal: false,
+          cidr: '10.0.0.5/24',
+        },
+      ],
+    });
+
+    const { selectInterface, getDefaultInterfaceNames } = await import('../../src/pyre/iface');
+    expect(getDefaultInterfaceNames()).toEqual(['en0']);
+    expect(childProcess.execFileSync).toHaveBeenCalledWith('/sbin/route', ['-n', 'get', 'default'], {
+      encoding: 'utf8',
+      timeout: 3000,
+    });
+    const iface = selectInterface();
+    expect(iface.name).toBe('en0');
+    expect(iface.address).toBe('192.168.1.20');
+    // Darwin does not bind to broadcast (linux-only).
+    expect(iface.bindAddress).toBeUndefined();
+  });
+
+  it('returns empty default interfaces on darwin when route fails', async () => {
+    const os = await import('node:os');
+    const childProcess = await import('node:child_process');
+    vi.mocked(os.platform).mockReturnValue('darwin');
+    vi.mocked(childProcess.execFileSync).mockImplementation(() => {
+      throw new Error('route failed');
+    });
+
+    const { getDefaultInterfaceNames } = await import('../../src/pyre/iface');
+    expect(getDefaultInterfaceNames()).toEqual([]);
+  });
 });

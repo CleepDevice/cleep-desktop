@@ -1,7 +1,7 @@
 import { execFile } from 'child_process';
 import fs from 'fs';
 import * as NodeWifi from 'node-wifi';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Wifi } from '../../src/iso/wifi';
 
 vi.mock('node-wifi');
@@ -18,6 +18,10 @@ describe('Wifi', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(NodeWifi.init).mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('parses scanned networks and normalizes security', async () => {
@@ -131,11 +135,13 @@ describe('Wifi', () => {
   it('detects darwin wifi adapter via networksetup Wi-Fi port', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
     vi.mocked(execFile).mockImplementation(((
-      _cmd: string,
-      _args: string[],
+      cmd: string,
+      args: string[],
       _opts: unknown,
       callback: (error: Error | null, stdout: string, stderr: string) => void,
     ) => {
+      expect(cmd).toBe('networksetup');
+      expect(args).toEqual(['-listallhardwareports']);
       callback(
         null,
         'Hardware Port: Ethernet\nDevice: en0\n\nHardware Port: Wi-Fi\nDevice: en1\n',
@@ -156,6 +162,21 @@ describe('Wifi', () => {
       callback: (error: Error | null, stdout: string, stderr: string) => void,
     ) => {
       callback(null, 'Hardware Port: AirPort\nDevice: en0\n', '');
+      return {} as never;
+    }) as never);
+
+    await expect(new Wifi().detectWifiAdapter()).resolves.toBe(true);
+  });
+
+  it('detects darwin WiFi port without hyphen', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
+    vi.mocked(execFile).mockImplementation(((
+      _cmd: string,
+      _args: string[],
+      _opts: unknown,
+      callback: (error: Error | null, stdout: string, stderr: string) => void,
+    ) => {
+      callback(null, 'Hardware Port: WiFi\nDevice: en0\n', '');
       return {} as never;
     }) as never);
 

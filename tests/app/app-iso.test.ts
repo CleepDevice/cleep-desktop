@@ -9,6 +9,7 @@ import { appSettings } from '../../src/app-settings';
 import * as NodeWifi from 'node-wifi';
 import { ipcHandleHandlers, ipcOnHandlers } from '../setup';
 import type { InstallData } from '../../src/app-iso';
+import { RPI_IMAGER_DIR } from '../../src/flash-tool/constants';
 
 const sudoRun = vi.fn();
 const sudoKill = vi.fn();
@@ -247,6 +248,31 @@ describe('AppIso', () => {
         error: 'fatal flash error',
       }),
     );
+  });
+
+  it('startInstall elevates flash.macos.sh on darwin', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    try {
+      const installData: InstallData = {
+        isoUrl: 'file:///tmp/local-darwin.img',
+        isoSha256: 'abc',
+        isoFilename: 'local-darwin.img',
+        drivePath: '/dev/disk2',
+        wifiData: null as unknown as InstallData['wifiData'],
+      };
+
+      await appIso.startInstall(installData);
+
+      expect(sudoRun).toHaveBeenCalledWith(
+        expect.stringMatching(/flash\.macos\.sh$/),
+        expect.arrayContaining([RPI_IMAGER_DIR, '/dev/disk2', '/tmp/local-darwin.img']),
+      );
+      // Finish the in-flight flash so later tests are not blocked by concurrent-install guard.
+      lastSudoOptions?.terminatedCallback(0);
+    } finally {
+      Object.defineProperty(process, 'platform', { configurable: true, value: originalPlatform });
+    }
   });
 
   it('reports exit code when flash fails without stderr error', async () => {

@@ -1,8 +1,12 @@
 import { app, BrowserWindow, Menu } from 'electron';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAppMenu } from '../../src/app-menu';
 
 describe('createAppMenu', () => {
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' });
+  });
+
   it('builds and applies application menu', () => {
     const send = vi.fn();
     const window = { webContents: { send } } as unknown as BrowserWindow;
@@ -11,6 +15,29 @@ describe('createAppMenu', () => {
 
     expect(Menu.buildFromTemplate).toHaveBeenCalled();
     expect(Menu.setApplicationMenu).toHaveBeenCalled();
+  });
+
+  it('includes Edit submenu on darwin for clipboard shortcuts', () => {
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    const window = { webContents: { send: vi.fn() } } as unknown as BrowserWindow;
+    createAppMenu(window);
+
+    const template = vi.mocked(Menu.buildFromTemplate).mock.calls.at(-1)?.[0] as Array<{
+      label?: string;
+      submenu?: Array<{ role?: string }>;
+    }>;
+    const editMenu = template.find((item) => item.label === 'Edit');
+    expect(editMenu).toBeTruthy();
+    expect(editMenu?.submenu?.map((item) => item.role)).toEqual(['cut', 'copy', 'paste', 'selectAll']);
+  });
+
+  it('omits Edit submenu on non-darwin platforms', () => {
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' });
+    const window = { webContents: { send: vi.fn() } } as unknown as BrowserWindow;
+    createAppMenu(window);
+
+    const template = vi.mocked(Menu.buildFromTemplate).mock.calls.at(-1)?.[0] as Array<{ label?: string }>;
+    expect(template.some((item) => item.label === 'Edit')).toBe(false);
   });
 
   it('wires file and help menu click handlers', () => {

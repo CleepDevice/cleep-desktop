@@ -1,4 +1,6 @@
 import { app, BrowserWindow, screen, shell, dialog } from 'electron';
+import os from 'os';
+import path from 'path';
 import { appContext } from './app-context';
 import { createAppMenu } from './app-menu';
 import { createAppWindow, createSplashscreenWindow } from './app-window';
@@ -13,7 +15,16 @@ import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
 import { setupDevReloader } from './utils/dev-reloader';
 import { handleInvoke, ipcOk, onRendererSend, sendToRenderer } from './ipc/ipc-main';
 
-setupDevReloader();
+const isE2e = process.env.CLEEPDESKTOP_E2E === '1';
+
+if (isE2e) {
+  // Isolate settings/cache from the developer profile during Playwright runs.
+  app.setPath('userData', path.join(os.tmpdir(), `cleep-desktop-e2e-${process.pid}`));
+}
+
+if (!isE2e) {
+  setupDevReloader();
+}
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;

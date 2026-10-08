@@ -18,6 +18,7 @@ describe('Sudo', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' });
   });
 
   it('prefers run0 on linux when available', async () => {
@@ -128,7 +129,60 @@ describe('Sudo', () => {
     expect(() => sudo.run('/bin/true')).toThrow('No sudo binary found');
   });
 
-  it('builds darwin osascript command', async () => {
+  it('builds darwin osascript command with administrator privileges', async () => {
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    const { spawn, spawnSync } = await import('child_process');
+    vi.mocked(spawnSync).mockImplementation((cmd: string, args?: readonly string[]) => {
+      if (cmd === 'which' && args?.[0] === 'osascript') {
+        return { status: 0, stdout: '/usr/bin/osascript\n', stderr: '', pid: 1, output: [], signal: null } as never;
+      }
+      return { status: 1, stdout: '', stderr: '', pid: 1, output: [], signal: null } as never;
+    });
+    const child = new EventEmitter() as EventEmitter & { stdout: EventEmitter; stderr: EventEmitter; kill: ReturnType<typeof vi.fn> };
+    child.stdout = new EventEmitter();
+    child.stderr = new EventEmitter();
+    child.kill = vi.fn();
+    vi.mocked(spawn).mockReturnValue(child as never);
+
+    new Sudo({
+      appName: 'CleepDesktop',
+      terminatedCallback: vi.fn(),
+      stdoutCallback: vi.fn(),
+      stderrCallback: vi.fn(),
+    }).run('/usr/local/bin/rpi-imager', ['--cli', '/tmp/image.img']);
+
+    expect(spawn).toHaveBeenCalledWith(
+      '/usr/bin/osascript',
+      [
+        '-e',
+        'do shell script "\'/usr/local/bin/rpi-imager\' \'--cli\' \'/tmp/image.img\'" with administrator privileges',
+      ],
+      expect.any(Object),
+    );
+  });
+
+  it('throws when darwin osascript binary is missing', async () => {
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    const { spawnSync } = await import('child_process');
+    vi.mocked(spawnSync).mockReturnValue({
+      status: 1,
+      stdout: '',
+      stderr: '',
+      pid: 1,
+      output: [],
+      signal: null,
+    } as never);
+
+    const sudo = new Sudo({
+      appName: 'CleepDesktop',
+      terminatedCallback: vi.fn(),
+      stdoutCallback: vi.fn(),
+      stderrCallback: vi.fn(),
+    });
+    expect(() => sudo.run('/bin/true')).toThrow('No sudo binary found');
+  });
+
+  it('escapes double quotes in darwin shell command', async () => {
     Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
     const { spawn, spawnSync } = await import('child_process');
     vi.mocked(spawnSync).mockReturnValue({
@@ -150,14 +204,74 @@ describe('Sudo', () => {
       terminatedCallback: vi.fn(),
       stdoutCallback: vi.fn(),
       stderrCallback: vi.fn(),
-    }).run('/bin/echo', ['hi']);
+    }).run('/bin/echo', ['say "hello"']);
 
-    expect(spawn).toHaveBeenCalledWith(
-      '/usr/bin/osascript',
-      expect.arrayContaining(['-e']),
-      expect.any(Object),
-    );
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' });
+    const appleScript = vi.mocked(spawn).mock.calls[0][1]?.[1] as string;
+    expect(appleScript).toContain('\\"hello\\"');
+  });
+
+  it('escapes single quotes in darwin shell args', async () => {
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    const { spawn, spawnSync } = await import('child_process');
+    vi.mocked(spawnSync).mockReturnValue({
+      status: 0,
+      stdout: '/usr/bin/osascript\n',
+      stderr: '',
+      pid: 1,
+      output: [],
+      signal: null,
+    } as never);
+    const child = new EventEmitter() as EventEmitter & { stdout: EventEmitter; stderr: EventEmitter; kill: ReturnType<typeof vi.fn> };
+    child.stdout = new EventEmitter();
+    child.stderr = new EventEmitter();
+    child.kill = vi.fn();
+    vi.mocked(spawn).mockReturnValue(child as never);
+
+    new Sudo({
+      appName: 'CleepDesktop',
+      terminatedCallback: vi.fn(),
+      stdoutCallback: vi.fn(),
+      stderrCallback: vi.fn(),
+    }).run('/bin/echo', ["it's"]);
+
+    const appleScript = vi.mocked(spawn).mock.calls[0][1]?.[1] as string;
+    expect(appleScript).toContain(`'it'\\''s'`);
+  });
+
+  it('kills darwin elevated process via pkill then SIGTERM', async () => {
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    const { spawn, spawnSync } = await import('child_process');
+    vi.mocked(spawnSync).mockReturnValue({
+      status: 0,
+      stdout: '/usr/bin/osascript\n',
+      stderr: '',
+      pid: 1,
+      output: [],
+      signal: null,
+    } as never);
+    const child = new EventEmitter() as EventEmitter & {
+      stdout: EventEmitter;
+      stderr: EventEmitter;
+      kill: ReturnType<typeof vi.fn>;
+      pid?: number;
+    };
+    child.stdout = new EventEmitter();
+    child.stderr = new EventEmitter();
+    child.kill = vi.fn();
+    child.pid = 7777;
+    vi.mocked(spawn).mockReturnValue(child as never);
+
+    const sudo = new Sudo({
+      appName: 'CleepDesktop',
+      terminatedCallback: vi.fn(),
+      stdoutCallback: vi.fn(),
+      stderrCallback: vi.fn(),
+    });
+    sudo.run('/bin/true');
+    sudo.kill();
+
+    expect(spawnSync).toHaveBeenCalledWith('pkill', ['-TERM', '-P', '7777']);
+    expect(child.kill).toHaveBeenCalledWith('SIGTERM');
   });
 
   it('builds windows elevate command with batch files', async () => {
@@ -207,6 +321,5 @@ describe('Sudo', () => {
         fs.rmSync(path.join(os.tmpdir(), file), { force: true });
       }
     }
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' });
   });
 });

@@ -1,11 +1,24 @@
 import { execFile } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { promisify } from 'util';
 import { appLogger } from '../app-logger';
 import * as NodeWifi from 'node-wifi';
 
-const execFileAsync = promisify(execFile);
+function execFileAsync(
+  file: string,
+  args: readonly string[],
+  options: { timeout?: number; windowsHide?: boolean },
+): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    execFile(file, [...args], options, (error, stdout, stderr) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve({ stdout: String(stdout), stderr: String(stderr) });
+    });
+  });
+}
 
 export type WifiNetworkSecurity = 'WPA' | 'WPA2' | 'WPA3' | 'WEP' | 'UNSECURED' | 'UNKNOWN';
 

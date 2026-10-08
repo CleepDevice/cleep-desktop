@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import fs from 'fs';
 import path from 'path';
-import { BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, shell } from 'electron';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CancelError, electronDownload } from '../../src/utils/electron-dl';
 import { USER_DATA_DIR } from '../setup';
@@ -34,6 +34,7 @@ describe('electronDownload', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' });
     if (fs.existsSync(downloadsDir)) {
       for (const file of fs.readdirSync(downloadsDir)) {
         fs.rmSync(path.join(downloadsDir, file), { force: true });
@@ -90,6 +91,36 @@ describe('electronDownload', () => {
     );
     expect(shell.showItemInFolder).toHaveBeenCalled();
     expect(progressWindow.setProgressBar).toHaveBeenCalled();
+  });
+
+  it('notifies macOS dock when download completes on darwin', async () => {
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'darwin' });
+    fs.mkdirSync(downloadsDir, { recursive: true });
+    const window = new BrowserWindow() as unknown as BrowserWindow;
+    vi.mocked(BrowserWindow.fromWebContents).mockReturnValue({
+      isDestroyed: () => false,
+      setProgressBar: vi.fn(),
+    } as never);
+
+    const savePath = path.join(downloadsDir, 'archive.zip');
+    const item = createDownloadItem({
+      getSavePath: () => savePath,
+    });
+    let willDownload: ((event: Event, item: unknown, webContents: unknown) => void) | undefined;
+    (window.webContents.session.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, listener: typeof willDownload) => {
+        if (event === 'will-download') {
+          willDownload = listener;
+        }
+      },
+    );
+
+    const promise = electronDownload(window, 'https://example.com/archive.zip');
+    willDownload?.(new Event('will-download'), item, window.webContents);
+    item.emit('done', new Event('done'), 'completed');
+
+    await expect(promise).resolves.toBe(item);
+    expect(app.dock.downloadFinished).toHaveBeenCalledWith(savePath);
   });
 
   it('rejects with CancelError when download is cancelled', async () => {

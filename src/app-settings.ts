@@ -43,6 +43,10 @@ export class AppSettings {
 
   public configure(app: App): void {
     this.checkAndFixConfig(app.getVersion());
+    // Skip first-run welcome modal during Playwright smoke runs.
+    if (process.env.CLEEPDESKTOP_E2E === '1') {
+      settings.setSync('cleep.firstrun', false);
+    }
     this.addIpcs();
   }
 
