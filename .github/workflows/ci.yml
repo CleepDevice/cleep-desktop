@@ -16,13 +16,25 @@ env:
   NODE_VERSION: '26'
 
 jobs:
-  test:
-    name: Lint & test (${{ matrix.os }})
+  # One independent pipeline per OS: a Windows/macOS test failure must not
+  # skip Linux packaging (and the reverse).
+  ci:
+    name: CI (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            package_script: build-linux
+          - os: windows-latest
+            package_script: build-win
+          - os: macos-latest
+            package_script: build-macos
+    env:
+      # Allow unsigned packaging when no signing certs are configured.
+      CSC_IDENTITY_AUTO_DISCOVERY: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,35 +51,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test
+      - name: Unit tests
         run: npm test
 
       - name: Compile
-        run: npm run build
-
-  e2e:
-    name: E2E smoke (${{ matrix.os }})
-    needs: test
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application
         run: npm run build
 
       - name: Install Electron system libraries and xvfb (Linux)
@@ -81,7 +68,23 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
-      - name: Run Playwright E2E smoke
+      - name: Install Linux packaging dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y rpm
+
+      # Package before E2E so unsigned artifacts are produced even if Playwright fails.
+      - name: Package application (unsigned, no publish)
+        run: npm run ${{ matrix.package_script }}
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cleepdesktop-${{ matrix.os }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: E2E smoke (Playwright)
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
@@ -98,51 +101,4 @@ jobs:
           name: playwright-report-${{ matrix.os }}
           path: playwright-report/
           if-no-files-found: ignore
-          retention-days: 7
-
-  # Unsigned installers only (no GitHub Release publish). Runs after unit tests,
-  # in parallel with e2e, so packaging is not skipped when Playwright fails.
-  package:
-    name: Package unsigned (${{ matrix.os }})
-    needs: test
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            script: build-linux
-          - os: windows-latest
-            script: build-win
-          - os: macos-latest
-            script: build-macos
-    env:
-      # Allow unsigned packaging in CI when no signing certs are configured.
-      CSC_IDENTITY_AUTO_DISCOVERY: false
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - name: Install Linux packaging dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y rpm
-
-      - name: Package application (no publish)
-        run: npm run ${{ matrix.script }}
-
-      - name: Upload package artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: cleepdesktop-${{ matrix.os }}
-          path: dist/
-          if-no-files-found: error
           retention-days: 7
