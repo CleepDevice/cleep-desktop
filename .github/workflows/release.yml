@@ -1,42 +1,66 @@
 name: Release
 
-# Publish prerelease artifacts for any tag whose commit is on master.
+# Publish prerelease on merge to master (auto-tag from package.json), or on manual v* tags.
+# Note: a tag pushed with GITHUB_TOKEN does not start a new workflow — publish runs in this same run.
 on:
   push:
+    branches:
+      - master
     tags:
-      - '**'
+      - 'v*'
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-publish
   cancel-in-progress: false
 
 jobs:
-  verify-tag-on-master:
-    name: Verify tag is on master
+  prepare:
+    name: Prepare release tag
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Ensure tagged commit is reachable from master
+      - name: Resolve tag (auto on master, verify on tag push)
+        id: meta
         run: |
+          set -euo pipefail
           git fetch origin master
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
-            echo "Tagged commit $GITHUB_SHA is not on origin/master."
-            echo "Merge your branch into master before tagging a release."
-            exit 1
+
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+            if ! git merge-base --is-ancestor "${GITHUB_SHA}" origin/master; then
+              echo "Tagged commit ${GITHUB_SHA} is not on origin/master."
+              echo "Merge into master before tagging a release."
+              exit 1
+            fi
+            echo "Manual tag ${TAG} is on master — will publish."
+            echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+            exit 0
           fi
-          echo "Tag ${{ github.ref_name }} points to a commit on master."
-          echo "Publishing prerelease for tag ${{ github.ref_name }}"
+
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="v${VERSION}"
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Move tag to this master commit so republishes with the same version
+          # ship the merged code (prerelease / RC workflow).
+          git tag -f -a "${TAG}" "${GITHUB_SHA}" -m "Release ${TAG}"
+          git push origin "refs/tags/${TAG}" --force
+          echo "Tag ${TAG} points at ${GITHUB_SHA}."
 
   publish:
     name: Publish (${{ matrix.os }})
-    needs: verify-tag-on-master
+    needs: prepare
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -50,17 +74,21 @@ jobs:
             script: publish-macos
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Optional signing / notarization secrets (leave unset for unsigned builds).
-      CSC_LINK: ${{ secrets.CSC_LINK }}
-      CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-      WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-      WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-      APPLEID: ${{ secrets.APPLEID }}
-      APPLEIDPASSWORD: ${{ secrets.APPLEIDPASSWORD }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      # Secrets are staged as *_RAW: GitHub injects "" when a secret is missing,
+      # and electron-builder treats empty CSC_LINK as a cert path → "not a file".
+      CSC_LINK_RAW: ${{ secrets.CSC_LINK }}
+      CSC_KEY_PASSWORD_RAW: ${{ secrets.CSC_KEY_PASSWORD }}
+      WIN_CSC_LINK_RAW: ${{ secrets.WIN_CSC_LINK }}
+      WIN_CSC_KEY_PASSWORD_RAW: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+      APPLEID_RAW: ${{ secrets.APPLEID }}
+      APPLEIDPASSWORD_RAW: ${{ secrets.APPLEIDPASSWORD }}
+      APPLE_TEAM_ID_RAW: ${{ secrets.APPLE_TEAM_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # Build the commit that triggered this run (merge commit or tagged SHA).
+          ref: ${{ github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -74,14 +102,38 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm
 
-      - name: Disable macOS code signing when no certificate is configured
-        if: runner.os == 'macOS' && env.CSC_LINK == ''
-        run: echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "$GITHUB_ENV"
-
-      - name: Disable Windows code signing when no certificate is configured
-        if: runner.os == 'Windows' && env.WIN_CSC_LINK == ''
-        run: echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "$GITHUB_ENV"
+      - name: Configure code signing env (skip when secrets are empty)
         shell: bash
+        run: |
+          set -euo pipefail
+          export_if_set() {
+            local name="$1"
+            local value="$2"
+            if [[ -n "${value}" ]]; then
+              echo "${name}=${value}" >> "${GITHUB_ENV}"
+            fi
+          }
 
-      - name: Publish application
+          if [[ "${RUNNER_OS}" == "macOS" ]]; then
+            export_if_set CSC_LINK "${CSC_LINK_RAW:-}"
+            export_if_set CSC_KEY_PASSWORD "${CSC_KEY_PASSWORD_RAW:-}"
+            export_if_set APPLEID "${APPLEID_RAW:-}"
+            export_if_set APPLEIDPASSWORD "${APPLEIDPASSWORD_RAW:-}"
+            export_if_set APPLE_TEAM_ID "${APPLE_TEAM_ID_RAW:-}"
+            if [[ -z "${CSC_LINK_RAW:-}" ]]; then
+              echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "${GITHUB_ENV}"
+              echo "No CSC_LINK — macOS build will be unsigned."
+            fi
+          fi
+
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+            export_if_set WIN_CSC_LINK "${WIN_CSC_LINK_RAW:-}"
+            export_if_set WIN_CSC_KEY_PASSWORD "${WIN_CSC_KEY_PASSWORD_RAW:-}"
+            if [[ -z "${WIN_CSC_LINK_RAW:-}" ]]; then
+              echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "${GITHUB_ENV}"
+              echo "No WIN_CSC_LINK — Windows build will be unsigned."
+            fi
+          fi
+
+      - name: Publish application (${{ needs.prepare.outputs.tag }})
         run: npm run ${{ matrix.script }}
