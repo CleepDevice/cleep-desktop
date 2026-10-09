@@ -184,16 +184,25 @@ export class RpiImager {
     }
 
     const resolveLocal = (filename: string): IReleaseInfos | null => {
-      const candidates = [
-        path.join(process.cwd(), 'dist', filename),
-        path.join(app.getAppPath(), '..', 'dist', filename),
-        path.join(__dirname, '..', '..', 'dist', filename),
+      // Filenames are fixed asset constants (ASSET_*), never user input.
+      const safeName = path.basename(filename);
+      if (safeName !== filename) {
+        return null;
+      }
+      const distRoots = [
+        path.resolve(process.cwd(), 'dist'),
+        path.resolve(app.getAppPath(), '..', 'dist'),
+        path.resolve(__dirname, '..', '..', 'dist'),
       ];
-      for (const candidate of candidates) {
+      for (const distRoot of distRoots) {
+        const candidate = path.resolve(distRoot, safeName);
+        if (!candidate.startsWith(distRoot + path.sep)) {
+          continue;
+        }
         if (fs.existsSync(candidate)) {
           return {
             downloadUrl: pathToFileURL(candidate).href,
-            filename,
+            filename: safeName,
             size: fs.statSync(candidate).size,
           };
         }

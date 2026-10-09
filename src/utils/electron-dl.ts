@@ -15,6 +15,7 @@ import {
 import path from 'path';
 import fs from 'fs';
 import mime from 'mime';
+import { asBasename, resolvePathInside } from './safe-path';
 
 export class CancelError extends Error {}
 
@@ -59,7 +60,10 @@ function getFilenameFromMime(name: string, mimeType: string) {
 
 function unusedFilename(filepath: string): string {
   const extension = path.extname(filepath);
-  const baseFilepath = extension.length ? filepath.replace(new RegExp(`${extension}$`), '') : filepath;
+  const baseFilepath =
+    extension.length && filepath.endsWith(extension)
+      ? filepath.slice(0, -extension.length)
+      : filepath;
   let counter = 1;
   while (fs.existsSync(filepath)) {
     // pattern: /home/something/file (1).txt
@@ -109,12 +113,14 @@ function registerListener(
 
     let filePath;
     if (options.filename) {
-      filePath = path.join(directory, options.filename);
+      filePath = resolvePathInside(directory, asBasename(options.filename));
     } else {
-      const filename = item.getFilename();
+      const filename = asBasename(item.getFilename());
       const name = path.extname(filename) ? filename : getFilenameFromMime(filename, item.getMimeType());
 
-      filePath = options.overwrite ? path.join(directory, name) : unusedFilename(path.join(directory, name));
+      filePath = options.overwrite
+        ? resolvePathInside(directory, asBasename(name))
+        : unusedFilename(resolvePathInside(directory, asBasename(name)));
     }
 
     const errorMessage = options.errorMessage ?? 'The download of {filename} was interrupted';

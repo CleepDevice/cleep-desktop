@@ -1,5 +1,6 @@
 import path from 'path';
 import { app } from 'electron';
+import { resolvePathInside } from './safe-path';
 
 /**
  * Resolve project assets.
@@ -13,9 +14,9 @@ export function getProjectRoot(): string {
 }
 
 export function getHtmlFilePath(...parts: string[]): string {
-  return path.join(getProjectRoot(), 'html', ...parts);
+  return resolvePathInside(path.join(getProjectRoot(), 'html'), ...parts);
 }
 
 export function getResourceFilePath(...parts: string[]): string {
-  return path.join(getProjectRoot(), 'resources', ...parts);
+  return resolvePathInside(path.join(getProjectRoot(), 'resources'), ...parts);
 }

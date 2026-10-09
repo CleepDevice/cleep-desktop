@@ -57,4 +57,22 @@ describe('extractZipArchive', () => {
     existsSpy.mockRestore();
     chmodSpy.mockRestore();
   });
+
+  it('rejects zip-slip entries before extracting', async () => {
+    const { Open } = await import('unzipper');
+    const extract = vi.fn(async () => undefined);
+    vi.mocked(Open.file).mockResolvedValue({
+      extract,
+      files: [
+        {
+          type: 'File',
+          path: '../evil.bin',
+          externalFileAttributes: 0x81ed0000,
+        },
+      ],
+    } as never);
+
+    await expect(extractZipArchive('/tmp/archive.zip', '/tmp/dest')).rejects.toThrow(/escapes/);
+    expect(extract).not.toHaveBeenCalled();
+  });
 });

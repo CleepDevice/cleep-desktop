@@ -150,13 +150,19 @@ vi.mock('electron-settings', () => {
     }, store);
   };
 
+  const isSafeKey = (key: string): boolean =>
+    Boolean(key) && key !== '__proto__' && key !== 'prototype' && key !== 'constructor';
+
   const setByPath = (keyPath: string, value: unknown): void => {
     const parts = keyPath.split('.');
+    if (parts.some((part) => !isSafeKey(part))) {
+      return;
+    }
     let current: Record<string, unknown> = store;
     for (let i = 0; i < parts.length - 1; i++) {
       const part = parts[i];
-      if (!current[part] || typeof current[part] !== 'object') {
-        current[part] = {};
+      if (!Object.prototype.hasOwnProperty.call(current, part) || typeof current[part] !== 'object') {
+        current[part] = Object.create(null);
       }
       current = current[part] as Record<string, unknown>;
     }

@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { appLogger } from './app-logger';
 import { handleInvoke, ipcErr, ipcOk } from './ipc/ipc-main';
+import { asBasename, resolvePathInside } from './utils/safe-path';
 
 export interface CachedFileInfos {
   filename: string;
@@ -97,13 +98,14 @@ export class AppCache {
   }
 
   private filenameToAppFilename(filename: string): AppFilename {
-    const fileExtension = path.extname(filename);
-    const filenameWithoutExt = filename.replace(fileExtension, '');
+    const safeName = asBasename(filename);
+    const fileExtension = path.extname(safeName);
+    const filenameWithoutExt = safeName.slice(0, safeName.length - fileExtension.length);
 
     const filenames = fs.readdirSync(this.cacheDir, { encoding: 'utf8' });
     for (const realFilename of filenames) {
       if (realFilename.startsWith(filenameWithoutExt)) {
-        const filepath = path.join(this.cacheDir, realFilename);
+        const filepath = resolvePathInside(this.cacheDir, asBasename(realFilename));
         return this.realFilepathToAppFilename(filepath);
       }
     }
@@ -117,7 +119,7 @@ export class AppCache {
     const filenames = fs.readdirSync(this.cacheDir, { encoding: 'utf8' });
     for (const filename of filenames) {
       try {
-        const filepath = path.join(this.cacheDir, filename);
+        const filepath = resolvePathInside(this.cacheDir, asBasename(filename));
         cachedFiles.push(this.getFileInfos(filepath));
       } catch {
         appLogger.warn(`Invalid file "${filename}" in cache directory`);
@@ -128,10 +130,20 @@ export class AppCache {
   }
 
   public cacheFile(filepath: string, checksum: string, filename?: string): string {
-    const requestedFilename = filename || path.basename(filepath);
+    const requestedFilename = asBasename(filename || path.basename(filepath));
+    if (
+      typeof checksum !== 'string' ||
+      checksum.length === 0 ||
+      checksum.includes('\0') ||
+      /[\\/]/.test(checksum) ||
+      checksum.includes(this.SEPARATOR)
+    ) {
+      throw new Error('Invalid checksum');
+    }
     const fileExtension = path.extname(requestedFilename);
-    const newFilename = `${requestedFilename.replace(fileExtension, '')}${this.SEPARATOR}${checksum}${fileExtension}`;
-    const newFilepath = path.join(this.cacheDir, newFilename);
+    const stem = requestedFilename.slice(0, requestedFilename.length - fileExtension.length);
+    const newFilename = `${stem}${this.SEPARATOR}${checksum}${fileExtension}`;
+    const newFilepath = resolvePathInside(this.cacheDir, newFilename);
     appLogger.debug(`Cache file "${filepath}" to "${newFilepath}"`);
 
     try {

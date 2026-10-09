@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import fs from 'fs';
 import path from 'path';
+import { resolvePathInside } from '../utils/safe-path';
 import rpiImagerVersions from './rpi-imager-versions.json';
 
 /**
@@ -32,14 +33,19 @@ export function getFlashWrapperPath(): string {
   const filename = getFlashWrapperFilename();
   const candidates: string[] = [];
 
-  const add = (...segments: string[]) => {
-    if (segments.every((segment) => typeof segment === 'string' && segment.length > 0)) {
-      candidates.push(path.join(...segments));
+  const addUnder = (root: string, ...segments: string[]) => {
+    if (!root || segments.some((segment) => typeof segment !== 'string' || segment.length === 0)) {
+      return;
+    }
+    try {
+      candidates.push(resolvePathInside(root, ...segments));
+    } catch {
+      // skip paths that would escape the root
     }
   };
 
   if (typeof process.resourcesPath === 'string') {
-    add(process.resourcesPath, 'flashtool', filename);
+    addUnder(process.resourcesPath, 'flashtool', filename);
   }
 
   let appPath = '';
@@ -49,11 +55,11 @@ export function getFlashWrapperPath(): string {
     appPath = '';
   }
   if (appPath) {
-    add(appPath, 'resources', 'flashtool', filename);
-    add(appPath, '..', 'resources', 'flashtool', filename);
+    addUnder(appPath, 'resources', 'flashtool', filename);
+    addUnder(path.resolve(appPath, '..'), 'resources', 'flashtool', filename);
   }
 
-  add(__dirname, '..', '..', 'resources', 'flashtool', filename);
+  addUnder(path.resolve(__dirname, '..', '..'), 'resources', 'flashtool', filename);
 
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) {
