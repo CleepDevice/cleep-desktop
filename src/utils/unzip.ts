@@ -1,7 +1,7 @@
-import fs from 'fs';
 import path from 'path';
 import { Open } from 'unzipper';
-import { resolvePathInside } from './safe-path';
+import { chmodInside, existsInside } from './safe-fs';
+import { resolvePathInside, toBasePath } from './safe-path';
 
 /**
  * Extract a zip and restore Unix permission bits from the central directory.
@@ -10,9 +10,8 @@ import { resolvePathInside } from './safe-path';
  */
 export async function extractZipArchive(sourcePath: string, destinationPath: string): Promise<void> {
   const destinationRoot = path.normalize(destinationPath);
-  if (!path.isAbsolute(destinationRoot)) {
-    throw new Error('Zip destination must be an absolute path');
-  }
+  // Validate absolute root using Codacy-style base path helper.
+  toBasePath(destinationRoot);
 
   const directory = await Open.file(sourcePath);
 
@@ -35,8 +34,8 @@ export async function extractZipArchive(sourcePath: string, destinationPath: str
 
     const targetPath = resolvePathInside(destinationRoot, entry.path);
     try {
-      if (fs.existsSync(targetPath)) {
-        fs.chmodSync(targetPath, mode);
+      if (existsInside(destinationRoot, targetPath)) {
+        chmodInside(destinationRoot, targetPath, mode);
       }
     } catch {
       // ignore chmod failures on exotic entries

@@ -8,9 +8,11 @@ import {
   StdioPipe,
 } from 'child_process';
 import { app } from 'electron';
-import fs, { createReadStream, unlinkSync, unwatchFile, watchFile } from 'fs';
+import fs, { unlinkSync, unwatchFile, watchFile } from 'fs';
 import path from 'path';
 import { appLogger } from '../app-logger';
+import { createReadStreamInside, existsInside } from '../utils/safe-fs';
+import { resolvePathInside } from '../utils/safe-path';
 import { Readable } from 'stream';
 
 export interface SudoOptions {
@@ -190,13 +192,13 @@ export class Sudo {
     // copy binary to temp path
     const win32Keys = Object.keys(BINARIES_WIN32) as BinaryWin32[];
     const binary = win32Keys[0];
-    const elevateSrc = path.join(__dirname, binary);
-    if (!fs.existsSync(elevateSrc)) {
+    const elevateSrc = resolvePathInside(__dirname, binary);
+    if (!existsInside(__dirname, elevateSrc)) {
       throw new Error(
         `Windows elevation binary missing at ${elevateSrc}. Rebuild with npm run copy:elevate-exe.`,
       );
     }
-    const elevateDst = path.join(app.getPath('temp'), binary);
+    const elevateDst = resolvePathInside(app.getPath('temp'), binary);
     fs.copyFileSync(elevateSrc, elevateDst);
 
     return { binary, path: elevateDst };
@@ -231,7 +233,10 @@ export class Sudo {
   }
 
   private onWatcherChanged(logFileOutput: LogFileOutput): void {
-    const stream = createReadStream(logFileOutput.log, { encoding: 'utf8', start: logFileOutput.readIndex });
+    const stream = createReadStreamInside(app.getPath('temp'), logFileOutput.log, {
+      encoding: 'utf8',
+      start: logFileOutput.readIndex,
+    });
     stream.on('data', (chunk: Buffer) => {
       logFileOutput.readIndex += chunk.length;
       if (this.process) {

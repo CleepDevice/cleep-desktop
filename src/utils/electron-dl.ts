@@ -13,8 +13,8 @@ import {
   WebContentsView,
 } from 'electron';
 import path from 'path';
-import fs from 'fs';
 import mime from 'mime';
+import { existsInside } from './safe-fs';
 import { asBasename, resolvePathInside } from './safe-path';
 
 export class CancelError extends Error {}
@@ -58,19 +58,20 @@ function getFilenameFromMime(name: string, mimeType: string) {
   return extension.length ? `${name}.${extension}` : name;
 }
 
-function unusedFilename(filepath: string): string {
+function unusedFilename(directory: string, filepath: string): string {
   const extension = path.extname(filepath);
   const baseFilepath =
     extension.length && filepath.endsWith(extension)
       ? filepath.slice(0, -extension.length)
       : filepath;
+  let candidate = filepath;
   let counter = 1;
-  while (fs.existsSync(filepath)) {
+  while (existsInside(directory, candidate)) {
     // pattern: /home/something/file (1).txt
-    filepath = `${baseFilepath} (${counter})${extension}`;
+    candidate = `${baseFilepath} (${counter})${extension}`;
     counter++;
   }
-  return filepath;
+  return candidate;
 }
 
 function registerListener(
@@ -120,7 +121,7 @@ function registerListener(
 
       filePath = options.overwrite
         ? resolvePathInside(directory, asBasename(name))
-        : unusedFilename(resolvePathInside(directory, asBasename(name)));
+        : unusedFilename(directory, resolvePathInside(directory, asBasename(name)));
     }
 
     const errorMessage = options.errorMessage ?? 'The download of {filename} was interrupted';

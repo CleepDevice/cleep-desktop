@@ -3,7 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { appLogger } from './app-logger';
 import { handleInvoke, ipcErr, ipcOk } from './ipc/ipc-main';
-import { asBasename, resolvePathInside } from './utils/safe-path';
+import { unlinkInside } from './utils/safe-fs';
+import { asBasename, assertPathInside, resolvePathInside } from './utils/safe-path';
 
 export interface CachedFileInfos {
   filename: string;
@@ -147,8 +148,24 @@ export class AppCache {
     appLogger.debug(`Cache file "${filepath}" to "${newFilepath}"`);
 
     try {
-      fs.copyFileSync(filepath, newFilepath);
-      fs.unlinkSync(filepath);
+      // Source files come from Electron temp/downloads; keep them inside those roots.
+      const sourceRoots = [app.getPath('temp'), app.getPath('downloads'), this.cacheDir];
+      let sourcePath: string | null = null;
+      let sourceRoot: string | null = null;
+      for (const root of sourceRoots) {
+        try {
+          sourcePath = assertPathInside(root, filepath);
+          sourceRoot = root;
+          break;
+        } catch {
+          // try next authorized root
+        }
+      }
+      if (!sourcePath || !sourceRoot) {
+        throw new Error('Invalid path specified!');
+      }
+      fs.copyFileSync(sourcePath, newFilepath);
+      unlinkInside(sourceRoot, sourcePath);
     } catch (error) {
       appLogger.error(`Error occured while moving file to cache: ${error}`);
       throw new Error('Unable to move file to cache folder', { cause: error });

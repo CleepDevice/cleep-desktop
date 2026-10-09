@@ -1,16 +1,17 @@
 name: CI
 
+# PR branches: only pull_request (avoid double run with push → burns minutes).
+# master: push only (no open PR required).
 on:
   push:
     branches:
-      - '**'
-    tags-ignore:
-      - '**'
+      - master
   pull_request:
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
+
 
 env:
   NODE_VERSION: '26'

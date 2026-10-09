@@ -5,7 +5,6 @@ const PROTOTYPE_POLLUTION_KEYS = new Set(['__proto__', 'prototype', 'constructor
 /**
  * Split a relative path into safe basename components.
  * Rejects absolute paths, null bytes, and `..` (zip-slip / traversal).
- * Using path.basename on each part breaks Codacy/Semgrep path-traversal taint.
  */
 function toSafeRelativeParts(segment: string): string[] {
   if (typeof segment !== 'string' || segment.length === 0) {
@@ -35,9 +34,32 @@ function toSafeRelativeParts(segment: string): string[] {
   return parts;
 }
 
+/** Codacy/OWASP style base dir with trailing separator for startsWith checks. */
+export function toBasePath(rootDir: string): string {
+  const root = path.normalize(rootDir);
+  if (!path.isAbsolute(root)) {
+    throw new Error('Root directory must be absolute');
+  }
+  return root.endsWith(path.sep) ? root : root + path.sep;
+}
+
 /**
- * Join path segments under `rootDir` and throw if the result escapes the root
- * (zip-slip / path traversal). `rootDir` must already be absolute.
+ * Ensure `candidate` stays under `rootDir` (normalize + startsWith).
+ * Matches Codacy File Access guidance.
+ */
+export function assertPathInside(rootDir: string, candidate: string): string {
+  const basePath = toBasePath(rootDir);
+  const root = path.normalize(rootDir);
+  const fullPath = path.normalize(candidate);
+  if (fullPath !== root && !fullPath.startsWith(basePath)) {
+    throw new Error('Invalid path specified!');
+  }
+  return fullPath;
+}
+
+/**
+ * Join path segments under `rootDir` and throw if the result escapes the root.
+ * Builds the path via basename-only concatenation (no path.join with user input).
  */
 export function resolvePathInside(rootDir: string, ...segments: string[]): string {
   const root = path.normalize(rootDir);
@@ -45,8 +67,14 @@ export function resolvePathInside(rootDir: string, ...segments: string[]): strin
     throw new Error('Root directory must be absolute');
   }
 
-  const safeParts = segments.flatMap(toSafeRelativeParts);
-  return path.normalize(path.join(root, ...safeParts));
+  let fullPath = root;
+  for (const segment of segments) {
+    for (const part of toSafeRelativeParts(segment)) {
+      fullPath = path.normalize(fullPath + path.sep + part);
+    }
+  }
+
+  return assertPathInside(root, fullPath);
 }
 
 /** Strip directories — only the final name component is kept. */

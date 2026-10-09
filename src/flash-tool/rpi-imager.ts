@@ -3,6 +3,7 @@ import { RPI_IMAGER_DIR, RPI_IMAGER_VERSION } from './constants';
 import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
 import { getGithubReleaseByTag, IGithubRepo, IRelease, IReleaseInfos } from '../utils/github';
 import { extractZipArchive } from '../utils/unzip';
+import { chmodInside, existsInside, mkdirInside, statInside } from '../utils/safe-fs';
 import { resolvePathInside } from '../utils/safe-path';
 import { appSettings } from '../app-settings';
 import { appLogger } from '../app-logger';
@@ -40,7 +41,7 @@ export class RpiImager {
       return { updateAvailable: false, error: pinnedRelease.error };
     }
 
-    if (pinnedRelease.version !== currentVersion || force || !fs.existsSync(rpiImagerBinPath)) {
+    if (pinnedRelease.version !== currentVersion || force || !existsInside(RPI_IMAGER_DIR, rpiImagerBinPath)) {
       appLogger.info('Raspberry Pi Imager update available', {
         pinned: pinnedRelease.version,
         current: currentVersion,
@@ -102,7 +103,7 @@ export class RpiImager {
   private async unzipArchive(sourcePath: string) {
     const destinationPath = RPI_IMAGER_DIR;
     fs.rmSync(destinationPath, { recursive: true, force: true });
-    fs.mkdirSync(destinationPath, { recursive: true });
+    mkdirInside(path.dirname(destinationPath), destinationPath, { recursive: true });
     appLogger.debug(`Unzipping rpi-imager archive "${sourcePath}" to "${destinationPath}"`);
     await extractZipArchive(sourcePath, destinationPath);
     this.ensureRpiImagerExecutable();
@@ -115,7 +116,7 @@ export class RpiImager {
     try {
       fs.accessSync(binPath, fs.constants.X_OK);
     } catch {
-      fs.chmodSync(binPath, 0o755);
+      chmodInside(RPI_IMAGER_DIR, binPath, 0o755);
       appLogger.warn('Restored execute permission on rpi-imager binary', { binPath });
     }
   }
@@ -198,11 +199,11 @@ export class RpiImager {
       for (const distRoot of distRoots) {
         try {
           const candidate = resolvePathInside(distRoot, safeName);
-          if (fs.existsSync(candidate)) {
+          if (existsInside(distRoot, candidate)) {
             return {
               downloadUrl: pathToFileURL(candidate).href,
               filename: safeName,
-              size: fs.statSync(candidate).size,
+              size: statInside(distRoot, candidate).size,
             };
           }
         } catch {
@@ -229,18 +230,18 @@ export class RpiImager {
 
   public getInstalledVersion(): string {
     const version = appSettings.get<string>('rpiimager.version');
-    return (fs.existsSync(this.getRpiImagerBinPath()) && version) || null;
+    return (existsInside(RPI_IMAGER_DIR, this.getRpiImagerBinPath()) && version) || null;
   }
 
   private getRpiImagerBinPath(): string {
     const platform = String(process.platform);
     switch (platform) {
       case 'darwin':
-        return path.join(RPI_IMAGER_DIR, RPIIMAGER_MACOS_BIN);
+        return resolvePathInside(RPI_IMAGER_DIR, RPIIMAGER_MACOS_BIN);
       case 'linux':
-        return path.join(RPI_IMAGER_DIR, RPIIMAGER_LINUX_BIN);
+        return resolvePathInside(RPI_IMAGER_DIR, RPIIMAGER_LINUX_BIN);
       case 'win32':
-        return path.join(RPI_IMAGER_DIR, RPIIMAGER_WINDOWS_BIN);
+        return resolvePathInside(RPI_IMAGER_DIR, RPIIMAGER_WINDOWS_BIN);
       default:
         throw new Error(`Platform ${platform} not supported`);
     }
