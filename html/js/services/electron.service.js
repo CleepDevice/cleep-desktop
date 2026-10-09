@@ -1,5 +1,3 @@
-/* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-this-alias */
 
 /**
  * Angular façade over window.cleep.api (semantic preload bridge).

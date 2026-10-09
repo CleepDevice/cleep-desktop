@@ -1,12 +1,9 @@
 /**
  * Filesystem helpers that enforce directory containment before every access.
  *
- * Codacy/ESLint `detect-non-literal-fs-filename` flags ANY non-literal fs path,
- * including after a startsWith guard (the rule is syntactic, not taint-aware).
- * Path safety is enforced here via assertPathInside; suppress the noisy rule
- * on these validated call sites only.
+ * Codacy/ESLint `detect-non-literal-fs-filename` is disabled for this file in
+ * `.eslintrc.cjs` (syntactic rule; containment is enforced via assertPathInside).
  */
-/* eslint-disable security/detect-non-literal-fs-filename -- paths validated by assertPathInside */
 /* nosemgrep: javascript.lang.security.audit.detect-non-literal-fs-filename */
 
 import fs from 'fs';

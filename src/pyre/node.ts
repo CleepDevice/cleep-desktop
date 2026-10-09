@@ -136,16 +136,7 @@ export class PyreNode {
       clearInterval(this.reaper);
       this.reaper = null;
     }
-    for (const peer of this.peers.values()) {
-      peer.disconnect();
-    }
-    this.peers.clear();
-    try {
-      this.inbox?.close();
-    } catch {
-      // ignore
-    }
-    this.inbox = null;
+    this.teardownPeersAndInbox();
     await this.inboxLoop?.catch((): undefined => undefined);
     this.emitEvent({ type: "STOP", peerUuid: this.uuid, peerName: this.name });
   }
@@ -169,6 +160,11 @@ export class PyreNode {
       }
       this.beacon = null;
     }
+    this.teardownPeersAndInbox();
+    this.emitEvent({ type: "STOP", peerUuid: this.uuid, peerName: this.name });
+  }
+
+  private teardownPeersAndInbox(): void {
     for (const peer of this.peers.values()) {
       peer.disconnect();
     }
@@ -179,7 +175,6 @@ export class PyreNode {
       // ignore
     }
     this.inbox = null;
-    this.emitEvent({ type: "STOP", peerUuid: this.uuid, peerName: this.name });
   }
 
   async join(group: string): Promise<void> {

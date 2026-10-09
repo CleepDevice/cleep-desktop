@@ -18,11 +18,11 @@ import type {
   SendPayload,
 } from './ipc-contract';
 
-type InvokeArgs<C extends InvokeChannel> = InvokeRequest<C> extends void
+export type InvokeArgs<C extends InvokeChannel> = InvokeRequest<C> extends void
   ? []
   : [InvokeRequest<C>];
 
-type SendArgs<C extends SendChannel> = SendPayload<C> extends void ? [] : [SendPayload<C>];
+export type SendArgs<C extends SendChannel> = SendPayload<C> extends void ? [] : [SendPayload<C>];
 
 export type IpcUnsubscribe = () => void;
 

@@ -1,9 +1,7 @@
-/* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
-.service('devicesService', ['electronService', 'loggerService',
-function(electron, logger) {
+.service('devicesService', ['electronService', 'loggerService', 'ipcLifecycle',
+function(electron, logger, ipcLifecycle) {
     var self = this;
     self.devices = [];
     self.messageBusError = '';
@@ -17,34 +15,6 @@ function(electron, logger) {
     // connected at startup to not display loader
     self.busStatus = 'CONNECTED';
 
-    self._ipcReady = false;
-    self._unsubscribers = [];
-
-    self.init = function() {
-        if (self._ipcReady) {
-            return;
-        }
-        self.addIpcs();
-        self._ipcReady = true;
-        // Pull current state after listeners are registered (covers startup + html hot-reload).
-        electron.devices.getUiState()
-            .then((state) => {
-                self.onDevicesUpdated(null, state.devices || []);
-                self.onMessageBusConnected(null, Boolean(state.busConnected));
-            })
-            .catch((error) => {
-                logger.error('Unable to load devices ui state', error);
-            });
-    };
-
-    self.destroy = function() {
-        self._unsubscribers.forEach(function(unsubscribe) {
-            unsubscribe();
-        });
-        self._unsubscribers = [];
-        self._ipcReady = false;
-    };
- 
     self.addIpcs = function() {
         self._unsubscribers.push(
             electron.devices.onUpdated(self.onDevicesUpdated.bind(self)),
@@ -54,6 +24,18 @@ function(electron, logger) {
             electron.devices.onBusUpdating(self.onMessageBusUpdating.bind(self)),
         );
     };
+
+    ipcLifecycle.attach(self, self.addIpcs, function() {
+        // Pull current state after listeners are registered (covers startup + html hot-reload).
+        electron.devices.getUiState()
+            .then((state) => {
+                self.onDevicesUpdated(null, state.devices || []);
+                self.onMessageBusConnected(null, Boolean(state.busConnected));
+            })
+            .catch((error) => {
+                logger.error('Unable to load devices ui state', error);
+            });
+    });
 
     self.onDevicesUpdated = function(_event, devices) {
         // sync all devices

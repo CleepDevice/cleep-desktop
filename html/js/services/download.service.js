@@ -1,33 +1,12 @@
-/* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-this-alias */
 /**
  * Download service handle download from angularjs app handling download panels
  */
 angular
 .module('Cleep')
-.service('downloadService', ['tasksPanelService', 'toastService', 'electronService',
-function(tasksPanelService, toast, electron) {
+.service('downloadService', ['tasksPanelService', 'toastService', 'electronService', 'ipcLifecycle',
+function(tasksPanelService, toast, electron, ipcLifecycle) {
     var self = this;
     self.downloadPanels = {};
-
-    self._ipcReady = false;
-    self._unsubscribers = [];
-
-    self.init = function() {
-        if (self._ipcReady) {
-            return;
-        }
-        self.addIpcs();
-        self._ipcReady = true;
-    };
-
-    self.destroy = function() {
-        self._unsubscribers.forEach(function(unsubscribe) {
-            unsubscribe();
-        });
-        self._unsubscribers = [];
-        self._ipcReady = false;
-    };
 
     self.downloadUrl = function(url) {
         if (this.isDownloadWithUrl(url)) {
@@ -61,6 +40,8 @@ function(tasksPanelService, toast, electron) {
             electron.download.onStatus(self.onHandleDownloadStatus.bind(self)),
         );
     };
+
+    ipcLifecycle.attach(self, self.addIpcs);
 
     self.onHandleDownloadStarted = function(_event, downloadData) {
         if (self.downloadPanels[downloadData.downloadId]) {

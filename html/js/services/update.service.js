@@ -1,9 +1,7 @@
-/* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
-.service('updateService', ['$rootScope', 'loggerService', 'tasksPanelService', 'electronService',
-function($rootScope, logger, tasksPanelService, electron) {
+.service('updateService', ['$rootScope', 'loggerService', 'tasksPanelService', 'electronService', 'ipcLifecycle',
+function($rootScope, logger, tasksPanelService, electron, ipcLifecycle) {
     var self = this;
     self.taskUpdatePanelId = null;
     self.flashToolUpdate = { terminated: true };
@@ -18,27 +16,7 @@ function($rootScope, logger, tasksPanelService, electron) {
     self.lastUpdateCheck = 0;
     self.changelog = '';
     self.loading = false;
- 
-    self._ipcReady = false;
-    self._unsubscribers = [];
 
-    self.init = function() {
-        if (self._ipcReady) {
-            return;
-        }
-        self.addIpcs();
-        self._ipcReady = true;
-        self.updateSofwareVersions();
-    };
-
-    self.destroy = function() {
-        self._unsubscribers.forEach(function(unsubscribe) {
-            unsubscribe();
-        });
-        self._unsubscribers = [];
-        self._ipcReady = false;
-    };
- 
     self.addIpcs = function() {
         // Rare “available” events stay immediate; progress is coalesced (latest %).
         self._unsubscribers.push(
@@ -50,6 +28,10 @@ function($rootScope, logger, tasksPanelService, electron) {
             electron.updater.onCleepbusProgress(self.onCleepbusUpdateCallback.bind(self)),
         );
     };
+
+    ipcLifecycle.attach(self, self.addIpcs, function() {
+        self.updateSofwareVersions();
+    });
 
     self.updateSofwareVersions = function() {
         electron.updater.getSoftwareVersions()

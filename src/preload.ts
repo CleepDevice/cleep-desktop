@@ -7,19 +7,13 @@ import {
   type ReceiveChannel,
   type SendChannel,
 } from './ipc/ipc-channels';
-import type {
-  InvokeRequest,
-  InvokeResponse,
-  ReceiveArgs,
-  SendPayload,
-} from './ipc/ipc-contract';
-import { createCleepApi, type IpcUnsubscribe } from './ipc/ipc-api';
-
-type InvokeArgs<C extends InvokeChannel> = InvokeRequest<C> extends void
-  ? []
-  : [InvokeRequest<C>];
-
-type SendArgs<C extends SendChannel> = SendPayload<C> extends void ? [] : [SendPayload<C>];
+import type { InvokeResponse, ReceiveArgs } from './ipc/ipc-contract';
+import {
+  createCleepApi,
+  type InvokeArgs,
+  type IpcUnsubscribe,
+  type SendArgs,
+} from './ipc/ipc-api';
 
 export type { IpcUnsubscribe };
 

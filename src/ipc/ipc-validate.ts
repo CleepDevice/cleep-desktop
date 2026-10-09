@@ -199,34 +199,29 @@ export function isParseFailure<T>(result: ParseResult<T>): result is { ok: false
   return result.ok === false;
 }
 
-export function parseInvokeRequest<C extends InvokeChannel>(
-  channel: C,
-  raw: unknown,
-): ParseResult<InvokeRequest<C>> {
-  const schema = INVOKE_REQUEST_SCHEMAS[channel];
+function parseWithSchema<T>(schema: ZodTypeAny | null, raw: unknown): ParseResult<T> {
   if (schema === null) {
-    return { ok: true, data: undefined as InvokeRequest<C> };
+    return { ok: true, data: undefined as T };
   }
   const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, message: formatZodError(parsed.error) };
   }
-  return { ok: true, data: parsed.data as InvokeRequest<C> };
+  return { ok: true, data: parsed.data as T };
+}
+
+export function parseInvokeRequest<C extends InvokeChannel>(
+  channel: C,
+  raw: unknown,
+): ParseResult<InvokeRequest<C>> {
+  return parseWithSchema(INVOKE_REQUEST_SCHEMAS[channel], raw);
 }
 
 export function parseSendPayload<C extends SendChannel>(
   channel: C,
   raw: unknown,
 ): ParseResult<SendPayload<C>> {
-  const schema = SEND_PAYLOAD_SCHEMAS[channel];
-  if (schema === null) {
-    return { ok: true, data: undefined as SendPayload<C> };
-  }
-  const parsed = schema.safeParse(raw);
-  if (!parsed.success) {
-    return { ok: false, message: formatZodError(parsed.error) };
-  }
-  return { ok: true, data: parsed.data as SendPayload<C> };
+  return parseWithSchema(SEND_PAYLOAD_SCHEMAS[channel], raw);
 }
 
 export function invokeChannelHasRequest(channel: InvokeChannel): boolean {

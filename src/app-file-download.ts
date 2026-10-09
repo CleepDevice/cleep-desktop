@@ -65,16 +65,7 @@ export class AppFileDownload {
       });
     } catch (error) {
       appLogger.error('Error occured during download', error);
-      const download = this.getDownload(downloadId);
-      if (download) {
-        this.deleteDownload(downloadId);
-        sendToRenderer(this.window, 'download-file-status', {
-          downloadId,
-          filename: download.downloadItem.getFilename(),
-          status: 'failed',
-          percent: 100,
-        });
-      }
+      this.finishDownload(downloadId, 'failed', 100);
     }
   }
 
@@ -104,32 +95,30 @@ export class AppFileDownload {
 
   private onDownloadCancel(downloadId: string, _item: DownloadItem): void {
     appLogger.info(`Download ${downloadId} canceled`);
-
-    const download = this.getDownload(downloadId);
-    if (download) {
-      this.deleteDownload(downloadId);
-      sendToRenderer(this.window, 'download-file-status', {
-        downloadId,
-        filename: download.downloadItem.getFilename(),
-        status: 'canceled',
-        percent: 0,
-      });
-    }
+    this.finishDownload(downloadId, 'canceled', 0);
   }
 
   private onDownloadCompleted(downloadId: string, _item: DownloadComplete): void {
     appLogger.info(`Download ${downloadId} completed`);
+    this.finishDownload(downloadId, 'success', 100);
+  }
 
+  private finishDownload(
+    downloadId: string,
+    status: 'failed' | 'canceled' | 'success',
+    percent: number,
+  ): void {
     const download = this.getDownload(downloadId);
-    if (download) {
-      sendToRenderer(this.window, 'download-file-status', {
-        downloadId,
-        filename: download.downloadItem.getFilename(),
-        status: 'success',
-        percent: 100,
-      });
-      this.deleteDownload(downloadId);
+    if (!download) {
+      return;
     }
+    sendToRenderer(this.window, 'download-file-status', {
+      downloadId,
+      filename: download.downloadItem.getFilename(),
+      status,
+      percent,
+    });
+    this.deleteDownload(downloadId);
   }
 
   private getDownload(downloadId: string): Download {

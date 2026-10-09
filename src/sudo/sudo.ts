@@ -161,30 +161,25 @@ export class Sudo {
   }
 
   private getLinuxBinaryPath(): { binary: BinaryLinux; path: string } {
-    const spawnSyncOptions: SpawnSyncOptionsWithStringEncoding = { encoding: 'utf8' };
-    const linuxKeys = Object.keys(BINARIES_LINUX) as BinaryLinux[];
-    for (const binary of linuxKeys) {
-      const { status, stdout } = spawnSync('which', [binary], spawnSyncOptions);
-      appLogger.debug(`Linux: which result for ${binary}`, { status, stdout });
-      if (status === 0) {
-        return { binary, path: stdout.trim() };
-      }
-    }
-
-    return { binary: null, path: null };
+    return this.findBinaryOnPath(Object.keys(BINARIES_LINUX) as BinaryLinux[], 'Linux');
   }
 
   private getDarwinBinaryPath(): { binary: BinaryDarwin; path: string } {
+    return this.findBinaryOnPath(Object.keys(BINARIES_DARWIN) as BinaryDarwin[], 'Darwin');
+  }
+
+  private findBinaryOnPath<T extends string>(
+    binaries: T[],
+    platformLabel: string,
+  ): { binary: T | null; path: string | null } {
     const spawnSyncOptions: SpawnSyncOptionsWithStringEncoding = { encoding: 'utf8' };
-    const darwinKeys = Object.keys(BINARIES_DARWIN) as BinaryDarwin[];
-    for (const binary of darwinKeys) {
+    for (const binary of binaries) {
       const { status, stdout } = spawnSync('which', [binary], spawnSyncOptions);
-      appLogger.debug(`Darwin: which result for ${binary}`, { status, stdout });
+      appLogger.debug(`${platformLabel}: which result for ${binary}`, { status, stdout });
       if (status === 0) {
         return { binary, path: stdout.trim() };
       }
     }
-
     return { binary: null, path: null };
   }
 

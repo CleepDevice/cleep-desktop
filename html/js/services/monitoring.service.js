@@ -1,38 +1,20 @@
-/* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
-.service('monitoringService', ['loggerService', 'electronService', '$filter', function(logger, electron, $filter) {
+.service('monitoringService', ['loggerService', 'electronService', '$filter', 'ipcLifecycle',
+function(logger, electron, $filter, ipcLifecycle) {
     var self = this;
     self.maxMessages = 100;
     self.messages = [];
     var paramsSummary = $filter('messageParamsSummary');
 
-    self._ipcReady = false;
-    self._unsubscribers = [];
-
-    self.init = function() {
-        if (self._ipcReady) {
-            return;
-        }
-        self.addIpcs();
-        self._ipcReady = true;
-    };
-
-    self.destroy = function() {
-        self._unsubscribers.forEach(function(unsubscribe) {
-            unsubscribe();
-        });
-        self._unsubscribers = [];
-        self._ipcReady = false;
-    };
- 
     self.addIpcs = function() {
         // Batch bus messages: many events → one digest per frame.
         self._unsubscribers.push(
             electron.devices.onMessage(self.onDevicesMessage.bind(self)),
         );
     };
+
+    ipcLifecycle.attach(self, self.addIpcs);
 
     self.onDevicesMessage = function(_event, message) {
         if( !message ) {

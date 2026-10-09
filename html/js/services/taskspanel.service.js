@@ -1,5 +1,3 @@
-/* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-this-alias */
 /**
  * Task panel displays a permanent panel centered on bottom page
  * Panel can display multiple lines

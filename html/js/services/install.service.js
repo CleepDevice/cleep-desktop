@@ -1,9 +1,7 @@
-/* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-this-alias */
 angular
 .module('Cleep')
-.service('installService', ['$state', 'loggerService', 'tasksPanelService', 'settingsService', 'electronService', 'toastService',
-function($state, logger, tasksPanelService, settingsService, electron, toast) {
+.service('installService', ['$state', 'loggerService', 'tasksPanelService', 'settingsService', 'electronService', 'toastService', 'ipcLifecycle',
+function($state, logger, tasksPanelService, settingsService, electron, toast, ipcLifecycle) {
     var self = this;
     self.settings = {
         isolocal: false,
@@ -37,32 +35,16 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
     self.taskInstallPanelId = null;
     self.flashToolInstalled = false;
 
-    self._ipcReady = false;
-    self._unsubscribers = [];
-
-    self.init = function() {
-        if (self._ipcReady) {
-            return;
-        }
-        self.addIpcs();
-        self._ipcReady = true;
-        self.getIsoSettings();
-    };
-
-    self.destroy = function() {
-        self._unsubscribers.forEach(function(unsubscribe) {
-            unsubscribe();
-        });
-        self._unsubscribers = [];
-        self._ipcReady = false;
-    };
-
     self.addIpcs = function() {
         // Latest progress wins — flash % can spam faster than the UI can paint.
         self._unsubscribers.push(
             electron.install.onProgress(self.onHandleInstallProgress.bind(self)),
         );
     };
+
+    ipcLifecycle.attach(self, self.addIpcs, function() {
+        self.getIsoSettings();
+    });
 
     self.onHandleInstallProgress = function(_event, installProgress) {
         Object.assign(self.installProgress, installProgress);
