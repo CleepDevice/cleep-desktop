@@ -34,6 +34,24 @@ vi.mock('../../src/cleepbus/cleepbus', () => ({
   },
 }));
 
+// Avoid real OS probing (Windows PowerShell Get-NetRoute can exceed the 5s test timeout on CI).
+vi.mock('../../src/pyre/iface', () => ({
+  selectInterface: vi.fn(() => ({
+    name: 'eth0',
+    address: '192.168.1.10',
+    broadcast: '192.168.1.255',
+    multicast: true,
+  })),
+  listNetworkInterfaces: vi.fn(() => [
+    {
+      name: 'eth0',
+      address: '192.168.1.10',
+      usableForBus: true,
+      onDefaultRoute: true,
+    },
+  ]),
+}));
+
 describe('AppDevices', () => {
   let appDevices: typeof import('../../src/app-devices').appDevices;
   const send = vi.fn();
