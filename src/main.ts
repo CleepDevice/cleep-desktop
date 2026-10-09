@@ -12,7 +12,6 @@ import { appIso } from './app-iso';
 import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
 import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
-import { setupDevReloader } from './utils/dev-reloader';
 import { handleInvoke, ipcOk, onRendererSend, sendToRenderer } from './ipc/ipc-main';
 
 const isE2e = process.env.CLEEPDESKTOP_E2E === '1';
@@ -22,8 +21,9 @@ if (isE2e) {
   app.setPath('userData', path.join(os.tmpdir(), `cleep-desktop-e2e-${process.pid}`));
 }
 
-if (!isE2e) {
-  setupDevReloader();
+// Dynamic import keeps chokidar (devDependency) out of the packaged app graph.
+if (!isE2e && !app.isPackaged) {
+  void import('./utils/dev-reloader').then(({ setupDevReloader }) => setupDevReloader());
 }
 
 let mainWindow: BrowserWindow;

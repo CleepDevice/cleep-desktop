@@ -1,8 +1,19 @@
 import fs from 'fs';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import os from 'os';
+import path from 'path';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { IGithubRelease } from '../../src/utils/github';
 import { RPI_IMAGER_VERSION } from '../../src/flash-tool/constants';
 import { mockProcessPlatform } from '../helpers/mock-platform';
+
+const { RPI_IMAGER_TEST_DIR } = vi.hoisted(() => {
+  // require() — vi.hoisted runs before ESM imports are bound.
+  const nodePath = require('path') as typeof path;
+  const nodeOs = require('os') as typeof os;
+  return {
+    RPI_IMAGER_TEST_DIR: nodePath.join(nodeOs.tmpdir(), 'cleep-rpi-imager-test'),
+  };
+});
 
 vi.mock('../../src/flash-tool/constants', async () => {
   const actual = await vi.importActual<typeof import('../../src/flash-tool/constants')>(
@@ -10,7 +21,7 @@ vi.mock('../../src/flash-tool/constants', async () => {
   );
   return {
     ...actual,
-    RPI_IMAGER_DIR: '/tmp/cleep-rpi-imager-test',
+    RPI_IMAGER_DIR: RPI_IMAGER_TEST_DIR,
     RPI_IMAGER_VERSION: '2.0.11.1',
   };
 });
@@ -44,6 +55,21 @@ vi.mock('../../src/utils/unzip', () => ({
   extractZipArchive: vi.fn(),
 }));
 
+function binaryNameForPlatform(platform: NodeJS.Platform = process.platform): string {
+  return platform === 'win32' ? 'rpi-imager.exe' : 'rpi-imager';
+}
+
+function writeFakeBinary(platform: NodeJS.Platform = process.platform): string {
+  fs.mkdirSync(RPI_IMAGER_TEST_DIR, { recursive: true });
+  const binPath = path.join(RPI_IMAGER_TEST_DIR, binaryNameForPlatform(platform));
+  fs.writeFileSync(binPath, 'bin');
+  return binPath;
+}
+
+function cleanupTestDir(): void {
+  fs.rmSync(RPI_IMAGER_TEST_DIR, { recursive: true, force: true });
+}
+
 describe('RpiImager', () => {
   let rpiImager: InstanceType<typeof import('../../src/flash-tool/rpi-imager').RpiImager>;
   let getGithubReleaseByTag: ReturnType<typeof vi.fn>;
@@ -54,6 +80,10 @@ describe('RpiImager', () => {
     rpiImager = new mod.RpiImager();
     ({ getGithubReleaseByTag } = await import('../../src/utils/github'));
     ({ appSettings } = await import('../../src/app-settings'));
+  });
+
+  afterEach(() => {
+    cleanupTestDir();
   });
 
   it('returns initial flashing state for preparatory messages', () => {
@@ -106,29 +136,28 @@ describe('RpiImager', () => {
   });
 
   it('returns null installed version when binary missing', () => {
+    cleanupTestDir();
     vi.mocked(appSettings.get).mockReturnValue('2.0.11');
     expect(rpiImager.getInstalledVersion()).toBeNull();
   });
 
   it('returns installed version when binary exists', () => {
-    fs.mkdirSync('/tmp/cleep-rpi-imager-test', { recursive: true });
-    fs.writeFileSync('/tmp/cleep-rpi-imager-test/rpi-imager', 'bin');
+    writeFakeBinary();
     vi.mocked(appSettings.get).mockReturnValue('2.0.11');
 
     expect(rpiImager.getInstalledVersion()).toBe('2.0.11');
-    fs.rmSync('/tmp/cleep-rpi-imager-test', { recursive: true, force: true });
   });
 
   it('resolves darwin binary path under rpi-imager dir', () => {
     const originalPlatform = process.platform;
     mockProcessPlatform('darwin');
-    fs.mkdirSync('/tmp/cleep-rpi-imager-test', { recursive: true });
-    fs.writeFileSync('/tmp/cleep-rpi-imager-test/rpi-imager', 'bin');
-    vi.mocked(appSettings.get).mockReturnValue('2.0.11.1');
-
-    expect(rpiImager.getInstalledVersion()).toBe('2.0.11.1');
-    fs.rmSync('/tmp/cleep-rpi-imager-test', { recursive: true, force: true });
-    mockProcessPlatform(originalPlatform);
+    try {
+      writeFakeBinary('darwin');
+      vi.mocked(appSettings.get).mockReturnValue('2.0.11.1');
+      expect(rpiImager.getInstalledVersion()).toBe('2.0.11.1');
+    } finally {
+      mockProcessPlatform(originalPlatform);
+    }
   });
 
   it('checkForUpdates returns github error', async () => {
@@ -177,11 +206,10 @@ describe('RpiImager', () => {
   it('install succeeds for current platform', async () => {
     const { downloadFile } = await import('../../src/utils/download');
     const { extractZipArchive } = await import('../../src/utils/unzip');
-    vi.mocked(downloadFile).mockResolvedValue('/tmp/rpi.zip');
+    vi.mocked(downloadFile).mockResolvedValue(path.join(os.tmpdir(), 'rpi.zip'));
     vi.mocked(extractZipArchive).mockImplementation(async (_source, destination) => {
       fs.mkdirSync(destination, { recursive: true });
-      const binName = process.platform === 'win32' ? 'rpi-imager.exe' : 'rpi-imager';
-      const binPath = `${destination}/${binName}`;
+      const binPath = path.join(destination, binaryNameForPlatform());
       fs.writeFileSync(binPath, 'bin');
       if (process.platform !== 'win32') {
         fs.chmodSync(binPath, 0o755);
@@ -209,11 +237,12 @@ describe('RpiImager', () => {
     try {
       const { downloadFile } = await import('../../src/utils/download');
       const { extractZipArchive } = await import('../../src/utils/unzip');
-      vi.mocked(downloadFile).mockResolvedValue('/tmp/rpi-darwin.zip');
+      vi.mocked(downloadFile).mockResolvedValue(path.join(os.tmpdir(), 'rpi-darwin.zip'));
       vi.mocked(extractZipArchive).mockImplementation(async (_source, destination) => {
         fs.mkdirSync(destination, { recursive: true });
-        fs.writeFileSync(`${destination}/rpi-imager`, 'bin');
-        fs.chmodSync(`${destination}/rpi-imager`, 0o755);
+        const binPath = path.join(destination, 'rpi-imager');
+        fs.writeFileSync(binPath, 'bin');
+        fs.chmodSync(binPath, 0o755);
       });
 
       await rpiImager.install({
@@ -238,8 +267,7 @@ describe('RpiImager', () => {
   });
 
   it('checkForUpdates reports no update when versions match and binary exists', async () => {
-    fs.mkdirSync('/tmp/cleep-rpi-imager-test', { recursive: true });
-    fs.writeFileSync('/tmp/cleep-rpi-imager-test/rpi-imager', 'bin');
+    writeFakeBinary();
     vi.mocked(appSettings.get).mockReturnValue(RPI_IMAGER_VERSION);
     vi.mocked(getGithubReleaseByTag).mockResolvedValue({
       tag: `rpi-imager-v${RPI_IMAGER_VERSION}`,
@@ -251,6 +279,5 @@ describe('RpiImager', () => {
     } as IGithubRelease);
 
     await expect(rpiImager.checkForUpdates()).resolves.toEqual({ updateAvailable: false });
-    fs.rmSync('/tmp/cleep-rpi-imager-test', { recursive: true, force: true });
   });
 });
