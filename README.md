@@ -6,7 +6,7 @@ CleepDesktop is a cross-platform desktop application that helps user to easily d
 
 ## Quick start
 
-Download latest CleepDesktop release from https://github.com/CleepDevice/CleepDesktop/releases for your desktop environment and install it.
+Download latest CleepDesktop release from <https://github.com/CleepDevice/CleepDesktop/releases> for your desktop environment and install it.
 During first application launch, CleepDesktop will download necessary tools automatically.
 
 > For linux users it is advised of installing [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) to properly handle your AppImages.

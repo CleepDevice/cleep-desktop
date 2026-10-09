@@ -1,28 +1,33 @@
+import os from 'os';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
 import { asBasename, isSafeObjectKey, resolvePathInside } from '../../src/utils/safe-path';
 
 describe('safe-path', () => {
   it('resolves paths that stay inside the root', () => {
-    const root = path.join('/tmp', 'cleep-root');
+    const root = path.join(os.tmpdir(), 'cleep-root');
     expect(resolvePathInside(root, 'a', 'b.txt')).toBe(path.join(root, 'a', 'b.txt'));
   });
 
   it('rejects zip-slip / traversal segments', () => {
-    const root = path.join('/tmp', 'cleep-root');
+    const root = path.join(os.tmpdir(), 'cleep-root');
     expect(() => resolvePathInside(root, '..', 'etc', 'passwd')).toThrow(/escapes/);
     expect(() => resolvePathInside(root, 'ok', '..', '..', 'etc')).toThrow(/escapes/);
   });
 
   it('rejects absolute zip entry paths', () => {
-    const root = path.join('/tmp', 'cleep-root');
-    expect(() => resolvePathInside(root, '/etc/passwd')).toThrow(/escapes/);
+    const root = path.join(os.tmpdir(), 'cleep-root');
+    expect(() => resolvePathInside(root, path.resolve(os.tmpdir(), 'outside'))).toThrow(/escapes/);
+  });
+
+  it('rejects relative roots', () => {
+    expect(() => resolvePathInside('relative-root', 'a.txt')).toThrow(/absolute/);
   });
 
   it('asBasename strips directory components', () => {
     expect(asBasename('archive.zip')).toBe('archive.zip');
     expect(asBasename('../archive.zip')).toBe('archive.zip');
-    expect(asBasename('/tmp/evil/archive.zip')).toBe('archive.zip');
+    expect(asBasename(path.join('tmp', 'evil', 'archive.zip'))).toBe('archive.zip');
   });
 
   it('rejects prototype-pollution object keys', () => {

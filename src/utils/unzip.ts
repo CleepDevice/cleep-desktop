@@ -9,7 +9,11 @@ import { resolvePathInside } from './safe-path';
  * Entry paths are constrained under `destinationPath` (zip-slip safe).
  */
 export async function extractZipArchive(sourcePath: string, destinationPath: string): Promise<void> {
-  const destinationRoot = path.resolve(destinationPath);
+  const destinationRoot = path.normalize(destinationPath);
+  if (!path.isAbsolute(destinationRoot)) {
+    throw new Error('Zip destination must be an absolute path');
+  }
+
   const directory = await Open.file(sourcePath);
 
   // Reject unsafe entries before writing anything to disk.

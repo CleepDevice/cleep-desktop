@@ -153,8 +153,8 @@ function($rootScope, logger, tasksPanelService, electron) {
                 self.applyCheckError('cleepbusUpdate', updateStatus.cleepbus);
 
                 const hasUpdate = updateStatus.cleepDesktop?.updateAvailable
-                    || updateStatus.flashTool?.updateAvailable
-                    || updateStatus.cleepbus?.updateAvailable;
+                  || updateStatus.flashTool?.updateAvailable
+                  || updateStatus.cleepbus?.updateAvailable;
                 if (hasUpdate) {
                     self.openUpdateTaskPanel();
                     // Fast installs (e.g. local dist/) may already be terminated before this returns.
@@ -173,13 +173,22 @@ function($rootScope, logger, tasksPanelService, electron) {
     };
 
     self.applyCheckError = function(field, status) {
-        if (status?.error && !status?.updateAvailable) {
-            self[field] = {
-                terminated: true,
-                percent: 100,
-                error: status.error,
-                message: 'Update failed',
-            };
+        if (!(status?.error && !status?.updateAvailable)) {
+            return;
+        }
+        const payload = {
+            terminated: true,
+            percent: 100,
+            error: status.error,
+            message: 'Update failed',
+        };
+        // Whitelist avoids dynamic property assignment (object injection).
+        if (field === 'cleepDesktopUpdate') {
+            self.cleepDesktopUpdate = payload;
+        } else if (field === 'flashToolUpdate') {
+            self.flashToolUpdate = payload;
+        } else if (field === 'cleepbusUpdate') {
+            self.cleepbusUpdate = payload;
         }
     };
 

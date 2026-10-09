@@ -3,6 +3,7 @@ import { RPI_IMAGER_DIR, RPI_IMAGER_VERSION } from './constants';
 import { downloadFile, OnDownloadProgressCallback } from '../utils/download';
 import { getGithubReleaseByTag, IGithubRepo, IRelease, IReleaseInfos } from '../utils/github';
 import { extractZipArchive } from '../utils/unzip';
+import { resolvePathInside } from '../utils/safe-path';
 import { appSettings } from '../app-settings';
 import { appLogger } from '../app-logger';
 import { app } from 'electron';
@@ -190,21 +191,22 @@ export class RpiImager {
         return null;
       }
       const distRoots = [
-        path.resolve(process.cwd(), 'dist'),
-        path.resolve(app.getAppPath(), '..', 'dist'),
-        path.resolve(__dirname, '..', '..', 'dist'),
+        path.normalize(path.join(process.cwd(), 'dist')),
+        path.normalize(path.join(app.getAppPath(), '..', 'dist')),
+        path.normalize(path.join(__dirname, '..', '..', 'dist')),
       ];
       for (const distRoot of distRoots) {
-        const candidate = path.resolve(distRoot, safeName);
-        if (!candidate.startsWith(distRoot + path.sep)) {
-          continue;
-        }
-        if (fs.existsSync(candidate)) {
-          return {
-            downloadUrl: pathToFileURL(candidate).href,
-            filename: safeName,
-            size: fs.statSync(candidate).size,
-          };
+        try {
+          const candidate = resolvePathInside(distRoot, safeName);
+          if (fs.existsSync(candidate)) {
+            return {
+              downloadUrl: pathToFileURL(candidate).href,
+              filename: safeName,
+              size: fs.statSync(candidate).size,
+            };
+          }
+        } catch {
+          // skip invalid roots / escapes
         }
       }
       return null;

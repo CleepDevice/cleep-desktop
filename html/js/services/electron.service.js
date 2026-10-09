@@ -78,7 +78,7 @@ angular
             var mode = options.mode === 'batch' ? 'batch' : 'latest';
             var keyFromArgs = typeof options.keyFromArgs === 'function' ? options.keyFromArgs : null;
             var pendingLatest = null;
-            var pendingByKey = Object.create(null);
+            var pendingByKey = new Map();
             var pendingBatch = [];
             var scheduled = false;
             var cancelled = false;
@@ -92,19 +92,18 @@ angular
                 if (mode === 'batch') {
                     var batch = pendingBatch;
                     pendingBatch = [];
-                    for (var i = 0; i < batch.length; i++) {
-                        callback.apply(null, batch[i]);
+                    for (const args of batch) {
+                        callback(...args);
                     }
                 } else if (keyFromArgs) {
-                    var keys = Object.keys(pendingByKey);
-                    for (var k = 0; k < keys.length; k++) {
-                        callback.apply(null, pendingByKey[keys[k]]);
+                    for (const args of pendingByKey.values()) {
+                        callback(...args);
                     }
-                    pendingByKey = Object.create(null);
+                    pendingByKey.clear();
                 } else if (pendingLatest) {
                     var args = pendingLatest;
                     pendingLatest = null;
-                    callback.apply(null, args);
+                    callback(...args);
                 }
 
                 triggerDigest();
@@ -129,7 +128,7 @@ angular
                 if (mode === 'batch') {
                     pendingBatch.push(listenerArgs);
                 } else if (keyFromArgs) {
-                    pendingByKey[String(keyFromArgs(listenerArgs))] = listenerArgs;
+                    pendingByKey.set(String(keyFromArgs(listenerArgs)), listenerArgs);
                 } else {
                     pendingLatest = listenerArgs;
                 }
@@ -139,7 +138,7 @@ angular
             return function() {
                 cancelled = true;
                 pendingLatest = null;
-                pendingByKey = Object.create(null);
+                pendingByKey.clear();
                 pendingBatch = [];
                 unsubscribe();
             };

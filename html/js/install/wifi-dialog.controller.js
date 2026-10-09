@@ -31,8 +31,8 @@ function(closeModal, installService, modalData) {
             return true;
         }
         return self.network === 1
-            && installService.wifiInfo.retrieved
-            && installService.wifiInfo.networks.length === 0;
+          && installService.wifiInfo.retrieved
+          && installService.wifiInfo.networks.length === 0;
     };
 
     self.useNetworkSelector = function() {

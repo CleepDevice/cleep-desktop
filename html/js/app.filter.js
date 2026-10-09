@@ -100,26 +100,26 @@ angular.module('Cleep').filter('hrDate', function() {
 angular.module('Cleep').filter('messageParamsSummary', function() {
     var MAX_FIELDS = 4;
     var MAX_STRING_LENGTH = 48;
-    var NOISE_KEYS = {
-        icon: true,
-        image: true,
-        img: true,
-        thumbnail: true,
-        thumb: true,
-        url: true,
-        href: true,
-        link: true,
-        uuid: true,
-        id: true,
-        device_id: true,
-    };
+    var NOISE_KEYS = new Set([
+        'icon',
+        'image',
+        'img',
+        'thumbnail',
+        'thumb',
+        'url',
+        'href',
+        'link',
+        'uuid',
+        'id',
+        'device_id',
+    ]);
 
     function isNoiseKey(key) {
         if (!key || typeof key !== 'string') {
             return true;
         }
         var lower = key.toLowerCase();
-        if (NOISE_KEYS[lower]) {
+        if (NOISE_KEYS.has(lower)) {
             return true;
         }
         if (lower.indexOf('url') >= 0 || lower.indexOf('href') >= 0) {
@@ -177,15 +177,14 @@ angular.module('Cleep').filter('messageParamsSummary', function() {
 
         var limit = typeof maxFields === 'number' && maxFields > 0 ? maxFields : MAX_FIELDS;
         var summary = [];
-        var keys = Object.keys(source);
 
-        for (var i = 0; i < keys.length && summary.length < limit; i++) {
-            var key = keys[i];
+        for (const [key, value] of Object.entries(source)) {
+            if (summary.length >= limit) {
+                break;
+            }
             if (isNoiseKey(key)) {
                 continue;
             }
-
-            var value = source[key];
             if (value == null) {
                 continue;
             }
@@ -215,6 +214,8 @@ angular.module('Cleep').filter('messageParamsSummary', function() {
  * Pretty-print an object as syntax-highlighted JSON HTML for ng-bind-html.
  */
 angular.module('Cleep').filter('prettyJsonHtml', ['$sce', function($sce) {
+    var INDENT = '  ';
+
     function escapeHtml(text) {
         return String(text)
             .replace(/&/g, '&amp;')
@@ -222,21 +223,45 @@ angular.module('Cleep').filter('prettyJsonHtml', ['$sce', function($sce) {
             .replace(/>/g, '&gt;');
     }
 
-    function highlightJson(jsonText) {
-        return escapeHtml(jsonText).replace(
-            /("(?:\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(?:\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
-            function(match) {
-                var cls = 'json-number';
-                if (/^"/.test(match)) {
-                    cls = /:$/.test(match) ? 'json-key' : 'json-string';
-                } else if (/true|false/.test(match)) {
-                    cls = 'json-bool';
-                } else if (/null/.test(match)) {
-                    cls = 'json-null';
-                }
-                return '<span class="' + cls + '">' + match + '</span>';
+    function span(cls, text) {
+        return '<span class="' + cls + '">' + text + '</span>';
+    }
+
+    /** Build highlighted JSON HTML without regex (avoids ReDoS findings). */
+    function highlightValue(value, depth) {
+        if (value === null) {
+            return span('json-null', 'null');
+        }
+        if (typeof value === 'boolean') {
+            return span('json-bool', value ? 'true' : 'false');
+        }
+        if (typeof value === 'number') {
+            return span('json-number', String(value));
+        }
+        if (typeof value === 'string') {
+            return span('json-string', escapeHtml(JSON.stringify(value)));
+        }
+        if (Array.isArray(value)) {
+            if (value.length === 0) {
+                return '[]';
             }
-        );
+            var arrayLines = value.map(function(item) {
+                return INDENT.repeat(depth + 1) + highlightValue(item, depth + 1);
+            });
+            return '[\n' + arrayLines.join(',\n') + '\n' + INDENT.repeat(depth) + ']';
+        }
+        if (typeof value === 'object') {
+            var entries = Object.entries(value);
+            if (entries.length === 0) {
+                return '{}';
+            }
+            var objectLines = entries.map(function(entry) {
+                var keyHtml = span('json-key', escapeHtml(JSON.stringify(entry[0])) + ':');
+                return INDENT.repeat(depth + 1) + keyHtml + ' ' + highlightValue(entry[1], depth + 1);
+            });
+            return '{\n' + objectLines.join(',\n') + '\n' + INDENT.repeat(depth) + '}';
+        }
+        return span('json-string', escapeHtml(JSON.stringify(String(value))));
     }
 
     return function(value) {
@@ -244,11 +269,7 @@ angular.module('Cleep').filter('prettyJsonHtml', ['$sce', function($sce) {
             return $sce.trustAsHtml('<span class="json-empty">No data</span>');
         }
         try {
-            var jsonText = angular.toJson(value, true);
-            if (jsonText === undefined) {
-                return $sce.trustAsHtml('<span class="json-empty">No data</span>');
-            }
-            return $sce.trustAsHtml(highlightJson(jsonText));
+            return $sce.trustAsHtml(highlightValue(value, 0));
         } catch (_error) {
             return $sce.trustAsHtml('<span class="json-empty">Unable to render JSON</span>');
         }

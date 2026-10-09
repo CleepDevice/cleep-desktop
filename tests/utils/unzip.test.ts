@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { extractZipArchive } from '../../src/utils/unzip';
@@ -10,6 +11,9 @@ vi.mock('unzipper', () => ({
 }));
 
 describe('extractZipArchive', () => {
+  const archivePath = path.join(os.tmpdir(), 'cleep-archive.zip');
+  const destPath = path.join(os.tmpdir(), 'cleep-dest');
+
   beforeEach(() => {
     vi.resetAllMocks();
     vi.restoreAllMocks();
@@ -20,10 +24,10 @@ describe('extractZipArchive', () => {
     const extract = vi.fn(async () => undefined);
     vi.mocked(Open.file).mockResolvedValue({ extract, files: [] } as never);
 
-    await extractZipArchive('/tmp/archive.zip', '/tmp/dest');
+    await extractZipArchive(archivePath, destPath);
 
-    expect(Open.file).toHaveBeenCalledWith('/tmp/archive.zip');
-    expect(extract).toHaveBeenCalledWith({ path: '/tmp/dest' });
+    expect(Open.file).toHaveBeenCalledWith(archivePath);
+    expect(extract).toHaveBeenCalledWith({ path: path.normalize(destPath) });
   });
 
   it('restores executable bits from zip metadata after extract', async () => {
@@ -48,11 +52,10 @@ describe('extractZipArchive', () => {
     const existsSpy = vi.spyOn(fs, 'existsSync').mockReturnValue(true);
     const chmodSpy = vi.spyOn(fs, 'chmodSync').mockImplementation(() => undefined);
 
-    const dest = path.join('/tmp', 'dest');
-    await extractZipArchive('/tmp/archive.zip', dest);
+    await extractZipArchive(archivePath, destPath);
 
-    expect(chmodSpy).toHaveBeenCalledWith(path.join(dest, 'rpi-imager'), 0o755);
-    expect(chmodSpy).not.toHaveBeenCalledWith(path.join(dest, 'readme.txt'), expect.anything());
+    expect(chmodSpy).toHaveBeenCalledWith(path.join(destPath, 'rpi-imager'), 0o755);
+    expect(chmodSpy).not.toHaveBeenCalledWith(path.join(destPath, 'readme.txt'), expect.anything());
 
     existsSpy.mockRestore();
     chmodSpy.mockRestore();
@@ -72,7 +75,7 @@ describe('extractZipArchive', () => {
       ],
     } as never);
 
-    await expect(extractZipArchive('/tmp/archive.zip', '/tmp/dest')).rejects.toThrow(/escapes/);
+    await expect(extractZipArchive(archivePath, destPath)).rejects.toThrow(/escapes/);
     expect(extract).not.toHaveBeenCalled();
   });
 });
