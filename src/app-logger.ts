@@ -1,9 +1,9 @@
-import { app, ipcMain, shell } from 'electron';
-import logger from 'electron-log';
-import isDev from 'electron-is-dev';
+import { app, shell } from 'electron';
+import logger from 'electron-log/node';
 import { CommandLineArgs } from './utils/app.helpers';
 import { appSettings } from './app-settings';
 import path from 'path';
+import { handleInvoke, ipcOk, onRendererSend } from './ipc/ipc-main';
 
 export enum LoggerLevelEnum {
   'no' = 'no',
@@ -31,8 +31,10 @@ export class AppLogger {
   }
 
   public setLogLevel(args: CommandLineArgs): void {
-    if (isDev) {
-      // config already set during init, do not overwrite
+    if (!app.isPackaged) {
+      // force debug during developments
+      logger.transports.console.level = 'debug';
+      logger.transports.file.level = 'debug';
       return;
     }
     if (args.consoleLogLevel === 'no') {
@@ -65,53 +67,49 @@ export class AppLogger {
   }
 
   public log(level: LoggerLevel, from: LoggerFrom, message: string, extra?: unknown): void {
-    let loggerCall = null;
-    switch (level) {
-      case 'debug':
-        loggerCall = logger.debug;
-        break;
-      case 'info':
-        loggerCall = logger.info;
-        break;
-      case 'warn':
-        loggerCall = logger.warn;
-        break;
-      case 'error':
-        loggerCall = logger.error;
-        break;
-      default:
-        loggerCall = logger.info;
-    }
+    const loggerByLevel: Record<LoggerLevel, typeof logger.info> = {
+      no: logger.info,
+      debug: logger.debug,
+      info: logger.info,
+      warn: logger.warn,
+      error: logger.error,
+    };
+    const loggerCall = loggerByLevel[level];
 
     const messageStr = `[${from}] ${message}`;
-    extra ? loggerCall(messageStr, extra) : loggerCall(messageStr);
+    if (extra) {
+      loggerCall(messageStr, extra);
+    } else {
+      loggerCall(messageStr);
+    }
   }
 
   private addIpcs() {
-    ipcMain.on('logger-log', (_event, arg: LoggerMessage) => {
+    onRendererSend('logger-log', (_event, arg) => {
       this.log(arg.level, 'renderer', arg.message, arg.extra);
     });
 
-    ipcMain.on('open-electron-logs', async () => {
-      const logPath = await logger.transports.file.getFile();
+    onRendererSend('open-electron-logs', async () => {
+      const logPath = logger.transports.file.getFile();
       shell.openPath(logPath.path);
     });
 
-    ipcMain.handle('get-electron-log-path', async () => {
-      const logPath = await logger.transports.file.getFile();
-      return logPath.path;
+    handleInvoke('get-electron-log-path', async () => {
+      const logPath = logger.transports.file.getFile();
+      return ipcOk(logPath.path);
     });
   }
 
   private initConsoleLogging(debugEnabled: boolean): void {
-    logger.transports.console.level = isDev || debugEnabled ? 'debug' : 'info';
+    logger.transports.console.level = !app.isPackaged || debugEnabled ? 'debug' : 'info';
+    logger.transports.console.format = '%c[{h}:{i}:{s}.{ms} - {level}]%c {text}';
   }
 
   private initFileLogging(debugEnabled: boolean): void {
-    logger.transports.file.level = isDev || debugEnabled ? 'debug' : 'info';
+    logger.transports.file.level = !app.isPackaged || debugEnabled ? 'debug' : 'info';
     logger.transports.file.maxSize = 1 * 1024 * 1024;
     const logFilepath = path.join(app.getPath('userData'), 'cleepdesktop.log');
-    logger.transports.file.resolvePath = () => logFilepath;
+    logger.transports.file.resolvePathFn = () => logFilepath;
   }
 }
 

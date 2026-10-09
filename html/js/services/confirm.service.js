@@ -1,6 +1,3 @@
-/**
- * Confirm dialog service
- */
 angular
 .module('Cleep')
 .service('confirmService', ['$mdDialog', function($mdDialog) {

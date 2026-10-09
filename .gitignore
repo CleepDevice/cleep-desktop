@@ -1,6 +1,7 @@
 __pycache__
 **/*.swp
 etcher-cli/
+.rpi-imager-build/
 dist/
 build/
 packaging/
@@ -12,3 +13,7 @@ tools/cmdlogger-linux
 tools/cmdlogger-mac
 npm-debug.log
 changelog.txt
+coverage/
+playwright-report/
+test-results/
+blob-report/

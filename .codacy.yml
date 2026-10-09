@@ -1,0 +1,31 @@
+---
+# https://docs.codacy.com/repositories-configure/codacy-configuration-file/
+# When present, UI "Ignored files" are ignored — keep exclusions here.
+
+exclude_paths:
+  - "tests/**"
+  - "e2e/**"
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+  - "dist/**"
+  - "build/**"
+  - "packaging/**"
+  - "coverage/**"
+  - "playwright-report/**"
+  - "test-results/**"
+  - "node_modules/**"
+  - "html/js/libs/**"
+
+engines:
+  duplication:
+    exclude_paths:
+      - "tests/**"
+      - "e2e/**"
+  metrics:
+    exclude_paths:
+      - "tests/**"
+      - "e2e/**"
+  # Keep a Changelog repeats ### Added/Changed/Fixed under each version.
+  markdownlint:
+    exclude_paths:
+      - "CHANGELOG.md"

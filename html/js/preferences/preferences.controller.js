@@ -1,17 +1,83 @@
 angular
 .module('Cleep')
-.controller('preferencesController', ['$scope', 'debounceService', 'toastService', 'settingsService', 'electronService',
-function($scope, debounce, toast, settingsService, electron) {
+.controller('preferencesController', ['$scope', 'debounceService', 'toastService', 'settingsService', 'electronService', 'closeModal',
+function($scope, debounce, toast, settingsService, electron, closeModal) {
     var self = this;
     self.pref = 'general';
     self.settings = {};
     self.cacheDir = '';
     self.cachedFiles = [];
+    self.networkInterfaces = [];
+    self.selectedNetworkInterface = '';
+    self.networkConfig = {};
+    self.networkApplying = false;
+    self.networkPollTimer = null;
+
+    self.closeModal = closeModal;
 
     self.$onInit = function() {
         self.getSettings();
         self.getCacheInfos();
     };
+
+    self.loadNetworkConfig = function() {
+        return electron.bus.getNetworkConfig()
+            .then((config) => {
+                self.networkConfig = config;
+                self.networkInterfaces = config.interfaces || [];
+                self.selectedNetworkInterface = config.selectedInterface || '';
+            })
+            .catch(() => {
+                toast.warning('Network settings are unavailable. Restart CleepDesktop (main process update required).');
+                self.networkConfig = { busConnected: false, peerCount: 0, interfaces: [] };
+                self.networkInterfaces = [];
+            });
+    };
+
+    self.applyNetworkInterface = function() {
+        self.networkApplying = true;
+        electron.bus.setNetworkInterface(self.selectedNetworkInterface)
+            .then((config) => {
+                self.networkConfig = config;
+                self.networkInterfaces = config.interfaces || [];
+                self.selectedNetworkInterface = config.selectedInterface || '';
+                if (self.settings.cleep) {
+                    self.settings.cleep.networkinterface = self.selectedNetworkInterface;
+                }
+                self.startNetworkPeerPoll();
+            })
+            .catch(() => {
+                toast.warning('Unable to change network interface');
+            })
+            .finally(() => {
+                self.networkApplying = false;
+            });
+    };
+
+    self.startNetworkPeerPoll = function() {
+        if (self.networkPollTimer) {
+            clearInterval(self.networkPollTimer);
+        }
+        var ticks = 0;
+        self.networkPollTimer = setInterval(function() {
+            ticks += 1;
+            electron.bus.getNetworkConfig()
+                .then((config) => {
+                    self.networkConfig.peerCount = config.peerCount;
+                    self.networkConfig.busConnected = config.busConnected;
+                });
+            if (ticks >= 15) {
+                clearInterval(self.networkPollTimer);
+                self.networkPollTimer = null;
+            }
+        }, 2000);
+    };
+
+    $scope.$on('$destroy', function() {
+        if (self.networkPollTimer) {
+            clearInterval(self.networkPollTimer);
+        }
+    });
 
     self.getSettings = function() {
         settingsService.getAll()
@@ -21,12 +87,13 @@ function($scope, debounce, toast, settingsService, electron) {
     }
 
     self.getCacheInfos = function() {
-        electron.sendReturn('cache-get-infos')
-            .then((resp) => {
-                if (!resp.error) {
-                    self.fillArray(self.cachedFiles, resp.data.files);
-                    self.cacheDir = resp.data.dir;
-                }
+        electron.cache.getInfos()
+            .then((data) => {
+                self.fillArray(self.cachedFiles, data.files);
+                self.cacheDir = data.dir;
+            })
+            .catch(() => {
+                toast.warning('Unable to load cache infos');
             });
     };
 
@@ -39,29 +106,28 @@ function($scope, debounce, toast, settingsService, electron) {
     }, true);
 
     self.saveSettings = function() {
-        electron.sendReturn('settings-set-all', self.settings)
-            .then((success) => {
-                if (!success) {
-                    toast.warning('Invalid settings, please check it');
-                }
+        electron.settings.setAll(self.settings)
+            .then(() => {
                 self.getSettings();
             })
-            .catch(() => { /* handle rejection */ });
+            .catch(() => {
+                toast.warning('Invalid settings, please check it');
+            });
     };
 
     self.openElectronLogs = function() {
-        electron.send('open-electron-logs');
+        electron.logger.openLogs();
     };
 
     self.deleteCachedFile = function(filename) {
-        electron.sendReturn('cache-delete-file', filename)
+        electron.cache.deleteFile(filename)
             .then(() => {
                 self.getCacheInfos();
             });
     };
 
     self.purgeCachedFiles = function() {
-        electron.sendReturn('cache-purge-files')
+        electron.cache.purgeFiles()
             .then(() => {
                 self.getCacheInfos();
             });

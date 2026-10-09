@@ -13,26 +13,54 @@ function(closeModal, installService, modalData) {
     self.network = modalData.network;
 
     self.$onInit = function() {
-        installService.hasWifi();
+        installService.hasWifi().then(function(hasWifi) {
+            if (hasWifi && self.network === 1) {
+                installService.refreshWifiNetworks(true);
+            }
+        });
+    };
+
+    /** Manual SSID/security fields: no adapter, hidden network, or empty scan. */
+    self.useManualWifiFields = function() {
+        if (self.network === 2) {
+            return true;
+        }
+        if (!installService.wifiInfo.hasWifi) {
+            return true;
+        }
+        return self.network === 1
+          && installService.wifiInfo.retrieved
+          && installService.wifiInfo.networks.length === 0;
+    };
+
+    self.useNetworkSelector = function() {
+        return installService.wifiInfo.hasWifi && self.network === 1;
+    };
+
+    self.isUnsecured = function() {
+        if (self.useNetworkSelector() && self.selectedWifi) {
+            return String(self.selectedWifi.security || '').toUpperCase() === 'UNSECURED';
+        }
+        return self.wifiNetworkSecurity === 'unsecured';
     };
 
     self.disableSaveButton = function() {
         if (self.network === 1) {
-            // user wants to connect to available wifi network
-            if (!installService.wifiInfo.hasWifi && !self.wifiNetworkName ) {
+            var hasSelection = self.selectedWifi && self.selectedWifi.ssid;
+            var hasManual = !!self.wifiNetworkName;
+            if (!hasSelection && !hasManual) {
                 return true;
-            } else if (installService.wifiInfo.hasWifi && (!self.selectedWifi || !self.selectedWifi.network)) {
-                return true;
-            } else if(self.wifiNetworkSecurity !== 'unsecured' && !self.wifiPassword) {
+            }
+            if (!self.isUnsecured() && !self.wifiPassword) {
                 return true;
             }
         }
 
         if (self.network === 2) {
-            // user wants to connect to hidden network
             if (!self.wifiNetworkName) {
                 return true;
-            } else if (self.wifiNetworkSecurity !== 'unsecured' && !self.wifiPassword) {
+            }
+            if (!self.isUnsecured() && !self.wifiPassword) {
                 return true;
             }
         }
@@ -41,18 +69,18 @@ function(closeModal, installService, modalData) {
     };
 
     self.selectNetwork = function() {
-        if (self.selectedWifi) {
+        if (self.selectedWifi && self.selectedWifi.ssid) {
             self.closeModal({
                 network: self.selectedWifi.ssid,
-                security: self.selectedWifi.security,
-                password: self.wifiPassword,
+                security: String(self.selectedWifi.security || '').toLowerCase(),
+                password: self.isUnsecured() ? '' : self.wifiPassword,
                 hidden: self.network === 2,
             });
         } else {
             self.closeModal({
                 network: self.wifiNetworkName,
                 security: self.wifiNetworkSecurity,
-                password: self.wifiPassword,
+                password: self.isUnsecured() ? '' : self.wifiPassword,
                 hidden: self.network === 2,
             });
         }

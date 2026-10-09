@@ -1,14 +1,49 @@
 # Changelog
 
-## [x.x.x] - xxxx-xx-xx
+## [Unreleased]
+
+### Changed
+
+- Progress-stream lib replaced by internal code (outdated since 2017)
+- Update Electron from 36 to 41
+- Replace eslint by oxlint
+- Replace extract-zip by unzipper (outdated since 2020)
+- Replace python cleepbus by pyre-ts
+- Improve sdcard flash (and remove legacy lib)
+- Improve flash card tool
+
+### Added
+
+- Unit tests (~93% coverage)
+- Implements hot-reload for developments
+- Add way to choose network interface in case of exotic network
+
+## [0.3.0] - 2024-02-28
 
 ### Changed
 
 - Improve logging
+- Bump dependencies (electron23->33)
+- Handle deprecation error on balena-cli
+- Update balena-cli version
+- Improve Cleepbus UI infos
+- Update github repo urls
 
 ### Fixed
 
+- External link from device does not open browser
 - Issue saving changelog
+- Fix macos CircleCi config
+- Fix bug deleting device in devices panel
+- Fix UI issue when iso download failed
+- Fix issu when wifi file not specified during flash
+
+### Added
+
+- Handle self-sign certificate
+- Handle Cleep device auth
+- Kill Cleepbus previous instances
+- Relaunch Cleepbus when it crashs
 
 ## [0.2.0] - 2022-09-08
 

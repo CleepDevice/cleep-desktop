@@ -1,30 +1,44 @@
 import { BrowserWindow, dialog, shell } from 'electron';
+import path from 'path';
 import url from 'url';
 import { appContext } from './app-context';
-import path from 'path';
 import { appLogger } from './app-logger';
-import isDev from 'electron-is-dev';
+import { sendToRenderer } from './ipc/ipc-main';
+import { getHtmlFilePath, getResourceFilePath } from './utils/paths';
+
+function getPreloadPath(): string {
+  return path.join(__dirname, 'preload.js');
+}
 
 // create application main window
 export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindow {
   // create the browser window.
   const mainWindow = new BrowserWindow({
     webPreferences: {
+      preload: getPreloadPath(),
       webviewTag: true,
-      nodeIntegration: true,
-      contextIsolation: false,
+      // Renderer talks to main only through window.cleep (see preload.ts).
+      // Preload is esbuild-bundled (sandbox cannot require("./ipc-channels")).
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      allowRunningInsecureContent: true,
     },
     width: 1024,
     height: 600,
     minHeight: 640,
     minWidth: 375,
     show: false,
-    icon: __dirname + '/resources/256x256.png',
+    icon: getResourceFilePath('256x256.png'),
     title: 'CleepDesktop',
   });
 
-  mainWindow.webContents.on('did-attach-webview', (_event, _webContents) => {
+  mainWindow.webContents.on('did-attach-webview', (_event, webContents: Electron.WebContents) => {
     appLogger.debug('webview attached');
+    webContents.setWindowOpenHandler((details) => {
+      sendToRenderer(mainWindow, 'webview-new-window', webContents.id, { url: details.url });
+      return { action: 'deny' };
+    });
   });
 
   mainWindow.webContents.setWindowOpenHandler((details: Electron.HandlerDetails) => {
@@ -54,12 +68,21 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
   });
 
   // and load the index.html of the app.
-  mainWindow.loadURL(`file://${__dirname}/html/index.html`, {
-    extraHeaders: 'pragma: no-cache\n',
-  });
+  const indexHtmlPath = getHtmlFilePath('index.html');
+  appLogger.debug('Loading application UI', { indexHtmlPath });
+  mainWindow.loadURL(
+    url.format({
+      pathname: indexHtmlPath,
+      protocol: 'file:',
+      slashes: true,
+    }),
+    {
+      extraHeaders: 'pragma: no-cache\n',
+    },
+  );
 
-  // Open the DevTools in dev mode only
-  if (isDev || process.env.CLEEPDESKTOP_DEBUG) {
+  // Open the DevTools in dev mode only (never during Playwright E2E).
+  if ((appContext.isDev || process.env.CLEEPDESKTOP_DEBUG) && process.env.CLEEPDESKTOP_E2E !== '1') {
     // open devtool in dev mode
     mainWindow.webContents.openDevTools();
 
@@ -105,7 +128,7 @@ export function createSplashscreenWindow(mainWindow: BrowserWindow): BrowserWind
     frame: false,
     parent: mainWindow,
     resizable: false,
-    icon: __dirname + '/resources/256x256.png',
+    icon: getResourceFilePath('256x256.png'),
     webPreferences: {
       webSecurity: false,
     },
@@ -114,7 +137,7 @@ export function createSplashscreenWindow(mainWindow: BrowserWindow): BrowserWind
   // load splashscreen content
   splashScreenWindow.loadURL(
     url.format({
-      pathname: path.join(__dirname, 'html/loading.html'),
+      pathname: getHtmlFilePath('loading.html'),
       protocol: 'file:',
       slashes: true,
     }),

@@ -1,39 +1,35 @@
-import { Octokit } from '@octokit/rest';
-import { appLogger } from '../app-logger';
-import { getChecksumFromUrl, getFilenameFromUrl, ReleaseInfo } from './utils';
+import { getChecksumFromUrl, getFilenameFromUrl, IIsoReleaseInfo } from './utils';
+import { getLatestGithubRelease, IGithubRepo } from '../utils/github';
 
 export class CleepOs {
-  private readonly CLEEPOS_REPO = { owner: 'tangb', repo: 'cleep-os' };
-  private github: Octokit;
+  private readonly CLEEPOS_REPO: IGithubRepo = { owner: 'CleepDevice', repo: 'cleep-os' };
 
-  constructor() {
-    this.github = new Octokit();
-  }
+  public async getLatestRelease(): Promise<IIsoReleaseInfo> {
+    const latestRelease = await getLatestGithubRelease(this.CLEEPOS_REPO);
 
-  public async getLatestRelease(): Promise<ReleaseInfo> {
-    const latestRelease = await this.github.rest.repos.getLatestRelease(this.CLEEPOS_REPO);
-    appLogger.debug('Cleepos Github result', JSON.stringify(latestRelease.data));
-
-    const isoAsset = latestRelease.data.assets.find((asset) => asset.name.indexOf('.zip') >= 0);
-    const checksumAsset = latestRelease.data.assets.find((asset) => asset.name.indexOf('.sha256') >= 0);
-    const sha256 = await getChecksumFromUrl(checksumAsset?.browser_download_url);
+    const isoAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf('.zip') >= 0);
+    const checksumAsset = latestRelease?.assets?.find((asset) => asset.name.indexOf('.sha256') >= 0);
+    const sha256 = checksumAsset?.browser_download_url
+      ? await getChecksumFromUrl(checksumAsset.browser_download_url)
+      : null;
 
     return {
       url: isoAsset?.browser_download_url,
       size: isoAsset?.size,
-      filename: getFilenameFromUrl(isoAsset?.browser_download_url),
+      filename: isoAsset?.browser_download_url ? getFilenameFromUrl(isoAsset.browser_download_url) : '',
       label: this.getCleanFilename(isoAsset?.name),
-      date: new Date(isoAsset?.updated_at),
+      date: isoAsset?.updated_at ? new Date(isoAsset.updated_at) : undefined,
       sha256,
       category: 'cleepos',
+      error: latestRelease.error,
     };
   }
 
   private getCleanFilename(filename: string): string {
-    return this.capitalize(filename.replace('.zip', '').replace('_', ' '));
+    return this.capitalize(filename?.replace('.zip', '').replace('_', ' '));
   }
 
   private capitalize(sentence: string): string {
-    return sentence.toLowerCase().replace(/\w/, (firstLetter) => firstLetter.toUpperCase());
+    return sentence?.toLowerCase().replace(/\w/, (firstLetter) => firstLetter.toUpperCase());
   }
 }

@@ -1,7 +1,7 @@
 /* infos panel */
 .update-panel {
   border-radius: 4px;
-  box-shadow: 0 7px 8px -4px rgba(0, 0, 0, 0.2), 0 13px 19px 2px rgba(0, 0, 0, 0.14), 0 5px 24px 4px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 7px 8px -4px rgb(0 0 0 / 20%), 0 13px 19px 2px rgb(0 0 0 / 14%), 0 5px 24px 4px rgb(0 0 0 / 12%);
   width: 500px;
   min-height: 50px;
 }
@@ -27,7 +27,7 @@ a {
 }
 
 .no-device {
-  color: rgba(189, 189, 189, 0.87);
+  color: rgb(189 189 189 / 87%);
 }
 
 .icon-margin {
@@ -44,7 +44,7 @@ md-icon.bullet {
 /* default source code */
 code {
   padding: 3px;
-  background-color: rgba(205, 205, 205, 0.45);
+  background-color: rgb(205 205 205 / 45%);
   border-radius: 3px;
 }
 
@@ -58,7 +58,7 @@ div.note {
   font-size: 0.95em;
   margin: 10px 5px 10px 5px;
   padding: 15px;
-  background-color: rgba(205, 205, 205, 0.45);
+  background-color: rgb(205 205 205 / 45%);
   border-radius: 5px;
 }
 
@@ -84,22 +84,22 @@ div.note-important {
 /* toast */
 md-toast.error .md-toast-content {
   background: #e53935;
-  color: #ffffff;
+  color: #fff;
 }
 
 md-toast.warning .md-toast-content {
   background: #ef6c00;
-  color: #ffffff;
+  color: #fff;
 }
 
 md-toast.success .md-toast-content {
   background: #43a047;
-  color: #ffffff;
+  color: #fff;
 }
 
 md-toast.info .md-toast-content {
   background: #2196f3;
-  color: #ffffff;
+  color: #fff;
 }
 
 /* remove input text error spacer */
@@ -138,4 +138,220 @@ md-toast.info .md-toast-content {
 /* button */
 .md-button.md-no-text {
   min-width: 1%;
+}
+
+/* monitoring feed */
+.monitoring-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.monitoring-event {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: #fafafa;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.monitoring-event:hover,
+.monitoring-event:focus {
+  background: #f0f4f7;
+  border-color: #b0bec5;
+  outline: none;
+}
+
+.monitoring-event-header {
+  gap: 10px;
+  min-width: 0;
+}
+
+.monitoring-event-icon {
+  flex: none;
+  margin: 0;
+  color: #607d8b;
+}
+
+.monitoring-event-title {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.monitoring-event-name {
+  display: block;
+  font-weight: 600;
+  color: rgb(0 0 0 / 87%);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.monitoring-event-device {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: rgb(0 0 0 / 54%);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.monitoring-event-ip {
+  opacity: 0.8;
+}
+
+.monitoring-event-time {
+  flex: none;
+  margin-left: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: rgb(0 0 0 / 66%);
+  white-space: nowrap;
+}
+
+.monitoring-event-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  margin-left: 34px;
+}
+
+.monitoring-event-summary-empty {
+  font-size: 12px;
+  color: rgb(0 0 0 / 38%);
+  font-style: italic;
+}
+
+.monitoring-event-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  max-width: 100%;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #eceff1;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.monitoring-event-chip-key {
+  color: rgb(0 0 0 / 54%);
+}
+
+.monitoring-event-chip-key::after {
+  content: ':';
+}
+
+.monitoring-event-chip-value {
+  color: rgb(0 0 0 / 87%);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+.monitoring-sidenav {
+  width: 520px;
+  max-width: 92vw;
+}
+
+.monitoring-sidenav-toolbar {
+  background-color: #607d8b;
+}
+
+.monitoring-sidenav-content {
+  background: #f7f9fa;
+}
+
+.monitoring-detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+}
+
+.monitoring-detail-row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.monitoring-detail-label {
+  flex: 0 0 64px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgb(0 0 0 / 45%);
+}
+
+.monitoring-detail-value {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: rgb(0 0 0 / 87%);
+  word-break: break-word;
+}
+
+.monitoring-detail-section-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgb(0 0 0 / 45%);
+}
+
+.monitoring-event-json {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  overflow: auto;
+}
+
+.monitoring-event-json-raw {
+  opacity: 0.92;
+}
+
+.monitoring-event-json .json-key {
+  color: #9cdcfe;
+}
+
+.monitoring-event-json .json-string {
+  color: #ce9178;
+}
+
+.monitoring-event-json .json-number {
+  color: #b5cea8;
+}
+
+.monitoring-event-json .json-bool {
+  color: #569cd6;
+}
+
+.monitoring-event-json .json-null {
+  color: #c586c0;
+}
+
+.monitoring-event-json .json-empty {
+  color: #808080;
+  font-style: italic;
 }

@@ -6,27 +6,27 @@ angular
     self.settings = {};
     
     self.get = function(key) {
-        return electron.sendReturn('settings-get', key);
+        return electron.settings.get(key);
     };
 
     self.getAll = function() {
-        return electron.sendReturn('settings-get-all');
+        return electron.settings.getAll();
     }
 
     self.getSelected = function(keys) {
-        return electron.sendReturn('settings-get-selected', keys);
+        return electron.settings.getSelected(keys);
     }
     
     self.set = function(key, value) {
-        electron.send('settings-set', {key, value});
+        electron.settings.set({key, value});
     };
     
     self.getFilepath = function() {
-        return electron.sendReturn('settings-filepath');
+        return electron.settings.filepath();
     };
     
     self.has = function(key) {
-        return electron.sendReturn('settings.has', key);
+        return electron.settings.has(key);
     };
 
     // load locale here for optimization

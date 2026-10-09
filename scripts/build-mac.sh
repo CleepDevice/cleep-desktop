@@ -1,17 +1,18 @@
 #!/bin/bash
+set -euo pipefail
 
 # Check command result
 # $1: command result (usually $?)
 # $2: awaited command result
 # $3: error message
 checkResult() {
-    if [ $1 -ne $2 ]
+    if [ "$1" -ne "$2" ]
     then
         msg=$3
-        if [[ -z "$1" ]]; then
+        if [[ -z "${3:-}" ]]; then
             msg="see output log"
         fi
-        echo -e "${RED}Error occured: $msg.${NOCOLOR}"
+        echo -e "Error occured: $msg."
         exit 1
     fi
 }
@@ -26,46 +27,51 @@ rm -rf packaging/
 # create dirs
 mkdir -p "$CLEEPDESKTOPPATH"
 
-#update npm
+# electron app (tsc + preload + assets)
 echo
 echo
 echo "Building electron app..."
 echo "------------------------"
 npm ci
 checkResult $? 0 "Failed to run npm"
-node_modules/.bin/tsc --outDir "$CLEEPDESKTOPPATH"
+npm run build
 checkResult $? 0 "Failed to build electron application"
 echo "Done"
 
-# copy files and dirs
+# assemble packaging tree for electron-builder
 echo
 echo
 echo "Copying release files..."
 echo "------------------------"
-cp -a html "$CLEEPDESKTOPPATH"
-cp -a resources "$CLEEPDESKTOPPATH"
-cp -a LICENSE.txt "$CLEEPDESKTOPPATH"
-cp -a package.json "$CLEEPDESKTOPPATH"
-cp -a README.md "$CLEEPDESKTOPPATH"
+cp -a build/. "$CLEEPDESKTOPPATH/"
+cp -a resources "$CLEEPDESKTOPPATH/"
+cp -a LICENSE.txt "$CLEEPDESKTOPPATH/"
+cp -a README.md "$CLEEPDESKTOPPATH/"
 echo "Done"
 
 # electron-builder
 echo
 echo
-if [ "$1" == "publish" ]
+if [ "${1:-}" == "publish" ]
 then
     echo "Publishing cleepdesktop..."
     echo "--------------------------"
-    GH_TOKEN=$GH_TOKEN_CLEEPDESKTOP node_modules/.bin/electron-builder --mac --x64 --projectDir "$CLEEPDESKTOPPATH" --publish always
+    if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+        echo "Error occured: GITHUB_TOKEN is required to publish."
+        exit 1
+    fi
+    # arm64 (Apple Silicon) + x64 (Intel); artifactName includes ${arch}.
+    node_modules/.bin/electron-builder --mac --arm64 --x64 --projectDir "$CLEEPDESKTOPPATH" --publish always
     checkResult $? 0 "Failed to publish cleepdesktop"
 else
     echo "Packaging cleepdesktop..."
     echo "-------------------------"
-    node_modules/.bin/electron-builder --mac --x64 --projectDir "$CLEEPDESKTOPPATH" --publish never
+    # arm64 (Apple Silicon) + x64 (Intel); artifactName includes ${arch}.
+    node_modules/.bin/electron-builder --mac --arm64 --x64 --projectDir "$CLEEPDESKTOPPATH" --publish never
     checkResult $? 0 "Failed to package cleepdesktop"
 fi
 
-#cleaning
+# cleaning
 echo
 echo
 echo "Finalizing..."

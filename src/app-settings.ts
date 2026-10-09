@@ -1,8 +1,8 @@
-import { ipcMain } from 'electron';
+import { App } from 'electron';
 import settings from 'electron-settings';
-import isDev from 'electron-is-dev';
-import { appLogger } from './app-logger';
-import uuid4 from 'uuid4';
+import { v4 as uuidv4 } from 'uuid';
+import { appContext } from './app-context';
+import { handleInvoke, ipcOk, onRendererSend } from './ipc/ipc-main';
 
 const DEFAULT_SETTINGS: {
   [k: string]: string | number | boolean | { [k: string]: string };
@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS: {
   proxyPort: 8080,
   crashReport: true,
   firstRun: true,
+  networkInterface: '',
   uuid: null,
   devices: {},
 };
@@ -40,8 +41,12 @@ export class AppSettings {
     settings.configure({ prettify: true });
   }
 
-  public configure(): void {
-    this.checkAndFixConfig();
+  public configure(app: App): void {
+    this.checkAndFixConfig(app.getVersion());
+    // Skip first-run welcome modal during Playwright smoke runs.
+    if (process.env.CLEEPDESKTOP_E2E === '1') {
+      settings.setSync('cleep.firstrun', false);
+    }
     this.addIpcs();
   }
 
@@ -70,49 +75,38 @@ export class AppSettings {
   }
 
   private addIpcs() {
-    ipcMain.handle('settings-get-all', () => {
-      return this.getAll();
-    });
+    handleInvoke('settings-get-all', () => ipcOk(this.getAll()));
 
-    ipcMain.handle('settings-set-all', (_event, arg: SettingsObject) => {
-      if (typeof arg !== 'object' || Array.isArray(arg) || arg === null) {
-        appLogger.error('Specified settings have invalid format', arg);
-        return false;
-      }
-      // TODO check values
-
+    handleInvoke('settings-set-all', (_event, arg) => {
       this.setAll(arg);
-      return true;
+      return ipcOk(true as const);
     });
 
-    ipcMain.handle('settings-get', (_event, arg: KeyPath) => {
-      return this.get(arg);
-    });
+    handleInvoke('settings-get', (_event, arg) => ipcOk(this.get(arg)));
 
-    ipcMain.handle('settings-get-selected', (_event, arg: KeyPath[]) => {
+    handleInvoke('settings-get-selected', (_event, arg) => {
       const result: Record<string, unknown> = {};
       for (const keyPath of arg) {
         result[keyPath] = this.get(keyPath);
       }
-      return result;
+      return ipcOk(result);
     });
 
-    ipcMain.on('settings-set', (_event, arg: KeyValue) => {
+    onRendererSend('settings-set', (_event, arg) => {
       this.set(arg.key, arg.value);
     });
 
-    ipcMain.handle('settings-filepath', () => {
-      return this.filepath();
-    });
+    handleInvoke('settings-filepath', () => ipcOk(this.filepath()));
 
-    ipcMain.handle('settings.has', (_event, arg: KeyPath) => {
-      return this.has(arg);
-    });
+    handleInvoke('settings.has', (_event, arg) => ipcOk(this.has(arg)));
   }
 
-  private checkAndFixConfig() {
+  private checkAndFixConfig(version: string) {
     // cleep section
-    settings.setSync('cleep.version', require('./package.json').version);
+    if (appContext.isDev) {
+      version += 'dev';
+    }
+    settings.setSync('cleep.version', version);
     if (!settings.hasSync('cleep.isoraspios')) {
       settings.setSync('cleep.isoraspios', DEFAULT_SETTINGS.isoRaspios);
     }
@@ -125,15 +119,15 @@ export class AppSettings {
     if (!settings.hasSync('cleep.debug')) {
       settings.setSync('cleep.debug', DEFAULT_SETTINGS.debug);
     }
-    settings.setSync('cleep.isdev', isDev);
+    settings.setSync('cleep.isdev', appContext.isDev);
     if (!settings.hasSync('cleep.crashreport')) {
       settings.setSync('cleep.crashreport', DEFAULT_SETTINGS.crashReport);
     }
-    if (isDev) {
+    if (appContext.isDev) {
       settings.setSync('cleep.crashreport', false);
     }
     if (!settings.hasSync('cleep.uuid')) {
-      settings.setSync('cleep.uuid', uuid4());
+      settings.setSync('cleep.uuid', uuidv4());
     }
     if (!settings.hasSync('cleep.lastupdatecheck')) {
       settings.setSync('cleep.lastupdatecheck', 0);
@@ -141,10 +135,13 @@ export class AppSettings {
     if (!settings.hasSync('cleep.autoupdate')) {
       settings.setSync('cleep.autoupdate', true);
     }
+    if (!settings.hasSync('cleep.networkinterface')) {
+      settings.setSync('cleep.networkinterface', DEFAULT_SETTINGS.networkInterface);
+    }
 
-    // flashtool section
-    if (!settings.hasSync('flashtool.version')) {
-      settings.setSync('flashtool.version', '');
+    // rpi-imager section
+    if (!settings.hasSync('rpiimager.version')) {
+      settings.setSync('rpiimager.version', '');
     }
 
     // remote section

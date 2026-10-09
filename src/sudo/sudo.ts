@@ -8,9 +8,11 @@ import {
   StdioPipe,
 } from 'child_process';
 import { app } from 'electron';
-import fs, { createReadStream, unlinkSync, unwatchFile, watchFile } from 'fs';
+import fs, { unlinkSync, unwatchFile, watchFile } from 'fs';
 import path from 'path';
 import { appLogger } from '../app-logger';
+import { createReadStreamInside, existsInside } from '../utils/safe-fs';
+import { resolvePathInside } from '../utils/safe-path';
 import { Readable } from 'stream';
 
 export interface SudoOptions {
@@ -21,13 +23,15 @@ export interface SudoOptions {
 }
 
 const BINARIES_LINUX = {
+  // Prefer run0 (polkit via systemd): works when Electron sets NoNewPrivs (pkexec/sudo setuid fail).
+  run0: ['--description==APPNAME='],
   gksudo: ['--preserve-env', '--sudo-mode', '--description="=APPNAME="'],
   pkexec: ['--disable-internal-agent'],
 };
 type BinaryLinux = keyof typeof BINARIES_LINUX;
 
 const BINARIES_DARWIN = {
-  osascript: ['-e', '"do shell script \\"=COMMAND=\\" with administrator privileges"'],
+  osascript: ['-e', 'do shell script "=COMMAND=" with administrator privileges'],
 };
 type BinaryDarwin = keyof typeof BINARIES_DARWIN;
 
@@ -74,8 +78,22 @@ export class Sudo {
   }
 
   public kill(): void {
-    if (this.process) {
+    if (!this.process?.pid) {
+      return;
+    }
+
+    const pid = this.process.pid;
+    if (process.platform === 'win32') {
+      spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { windowsHide: true });
+      return;
+    }
+
+    // Kill child processes first (elevated flash may outlive pkexec/osascript wrapper).
+    spawnSync('pkill', ['-TERM', '-P', String(pid)]);
+    try {
       this.process.kill('SIGTERM');
+    } catch {
+      // process may already be gone
     }
   }
 
@@ -95,7 +113,7 @@ export class Sudo {
     const escapedAppName = this.escapeDoubleQuotes(this.options.appName);
     const binaryArgs = BINARIES_LINUX[binaryCommand].map((arg) => arg.replace('=APPNAME=', escapedAppName));
     binaryArgs.push(command);
-    binaryArgs.push(...args);
+    binaryArgs.push(...(args || []));
 
     return { command: binaryPath, args: binaryArgs };
   }
@@ -112,8 +130,9 @@ export class Sudo {
     const batchPath = path.join(app.getPath('temp'), `sudo-command-${batchId}.bat`);
     const batchOutputPath = path.join(app.getPath('temp'), `sudo-output-${batchId}.log`);
     appLogger.debug('Windows batch paths', { batchPath, batchOutputPath });
-    const batchContent = `${command} ${(args || []).join(' ')} > ${batchOutputPath} 2>&1 `;
-    appLogger.debug('Windows batch content', {batchContent});
+    const quotedArgs = [command, ...(args || [])].map((arg) => this.quoteWindowsArg(arg)).join(' ');
+    const batchContent = `${quotedArgs} > ${this.quoteWindowsArg(batchOutputPath)} 2>&1\r\n`;
+    appLogger.debug('Windows batch content', { batchContent });
     fs.writeFileSync(batchPath, batchContent);
     fs.writeFileSync(batchOutputPath, '');
 
@@ -121,8 +140,7 @@ export class Sudo {
     const logFileOutput = new LogFileOutput(batchPath, batchOutputPath);
     watchFile(batchOutputPath, { persistent: true, interval: 250 }, this.onWatcherChanged.bind(this, logFileOutput));
 
-    const binaryArgs = BINARIES_WIN32[binaryCommand];
-    binaryArgs.push(batchPath);
+    const binaryArgs = [...BINARIES_WIN32[binaryCommand], batchPath];
 
     return { command: binaryPath, args: binaryArgs, logFileOutput };
   }
@@ -134,37 +152,34 @@ export class Sudo {
       throw new Error('No sudo binary found');
     }
 
-    const userCommand = [command, ...args].join(' ');
-    const binaryArgs = BINARIES_DARWIN[binaryCommand].map((arg) => arg.replace('=COMMAND=', userCommand));
+    const userCommand = [command, ...(args || [])].map((arg) => this.quoteShellArg(arg)).join(' ');
+    const binaryArgs = BINARIES_DARWIN[binaryCommand].map((arg) =>
+      arg.replace('=COMMAND=', this.escapeDoubleQuotes(userCommand)),
+    );
 
     return { command: binaryPath, args: binaryArgs };
   }
 
   private getLinuxBinaryPath(): { binary: BinaryLinux; path: string } {
-    const spawnSyncOptions: SpawnSyncOptionsWithStringEncoding = { encoding: 'utf8' };
-    const linuxKeys = Object.keys(BINARIES_LINUX) as BinaryLinux[];
-    for (const binary of linuxKeys) {
-      const { status, stdout } = spawnSync('which', [binary], spawnSyncOptions);
-      appLogger.debug(`Linux: which result for ${binary}`, { status, stdout });
-      if (status === 0) {
-        return { binary, path: stdout.trim() };
-      }
-    }
-
-    return { binary: null, path: null };
+    return this.findBinaryOnPath(Object.keys(BINARIES_LINUX) as BinaryLinux[], 'Linux');
   }
 
   private getDarwinBinaryPath(): { binary: BinaryDarwin; path: string } {
+    return this.findBinaryOnPath(Object.keys(BINARIES_DARWIN) as BinaryDarwin[], 'Darwin');
+  }
+
+  private findBinaryOnPath<T extends string>(
+    binaries: T[],
+    platformLabel: string,
+  ): { binary: T | null; path: string | null } {
     const spawnSyncOptions: SpawnSyncOptionsWithStringEncoding = { encoding: 'utf8' };
-    const darwinKeys = Object.keys(BINARIES_DARWIN) as BinaryDarwin[];
-    for (const binary of darwinKeys) {
+    for (const binary of binaries) {
       const { status, stdout } = spawnSync('which', [binary], spawnSyncOptions);
-      appLogger.debug(`Darwin: which result for ${binary}`, { status, stdout });
+      appLogger.debug(`${platformLabel}: which result for ${binary}`, { status, stdout });
       if (status === 0) {
         return { binary, path: stdout.trim() };
       }
     }
-
     return { binary: null, path: null };
   }
 
@@ -172,8 +187,13 @@ export class Sudo {
     // copy binary to temp path
     const win32Keys = Object.keys(BINARIES_WIN32) as BinaryWin32[];
     const binary = win32Keys[0];
-    const elevateSrc = path.join(__dirname, binary);
-    const elevateDst = path.join(app.getPath('temp'), binary);
+    const elevateSrc = resolvePathInside(__dirname, binary);
+    if (!existsInside(__dirname, elevateSrc)) {
+      throw new Error(
+        `Windows elevation binary missing at ${elevateSrc}. Rebuild with npm run copy:elevate-exe.`,
+      );
+    }
+    const elevateDst = resolvePathInside(app.getPath('temp'), binary);
     fs.copyFileSync(elevateSrc, elevateDst);
 
     return { binary, path: elevateDst };
@@ -191,7 +211,7 @@ export class Sudo {
         unwatchFile(logFileOutput.log);
         unlinkSync(logFileOutput.script);
         unlinkSync(logFileOutput.log);
-      }, 500);     
+      }, 500);
     }
   }
 
@@ -208,7 +228,10 @@ export class Sudo {
   }
 
   private onWatcherChanged(logFileOutput: LogFileOutput): void {
-    const stream = createReadStream(logFileOutput.log, {encoding: 'utf8', start: logFileOutput.readIndex});
+    const stream = createReadStreamInside(app.getPath('temp'), logFileOutput.log, {
+      encoding: 'utf8',
+      start: logFileOutput.readIndex,
+    });
     stream.on('data', (chunk: Buffer) => {
       logFileOutput.readIndex += chunk.length;
       if (this.process) {
@@ -216,7 +239,7 @@ export class Sudo {
       }
     });
     stream.on('error', (error) => {
-      appLogger.error('Error occured during file reading', {error});
+      appLogger.error('Error occured during file reading', { error });
       if (this.process) {
         this.process.stderr.emit('data', error);
       }
@@ -225,5 +248,16 @@ export class Sudo {
 
   private escapeDoubleQuotes(str: string): string {
     return str.replace(/"/g, '\\"');
+  }
+
+  private quoteShellArg(arg: string): string {
+    return `'${arg.replace(/'/g, `'\\''`)}'`;
+  }
+
+  private quoteWindowsArg(arg: string): string {
+    if (!/[ \t"]/g.test(arg)) {
+      return arg;
+    }
+    return `"${arg.replace(/"/g, '""')}"`;
   }
 }

@@ -3,21 +3,17 @@
  */
 angular
 .module('Cleep')
-.service('downloadService', ['tasksPanelService', 'toastService', 'electronService',
-function(tasksPanelService, toast, electron) {
+.service('downloadService', ['tasksPanelService', 'toastService', 'electronService', 'ipcLifecycle',
+function(tasksPanelService, toast, electron, ipcLifecycle) {
     var self = this;
     self.downloadPanels = {};
-
-    self.init = function() {
-        self.addIpcs();
-    };
 
     self.downloadUrl = function(url) {
         if (this.isDownloadWithUrl(url)) {
             toast.warning('File is already downloading');
             return;
         }
-        electron.send('download-file', url);
+        electron.download.start({ url, title: 'Download file from device' });
     }
 
     self.isDownloadWithUrl = function(url) {
@@ -35,13 +31,17 @@ function(tasksPanelService, toast, electron) {
             tasksPanelService.removePanel(panel.panelId);
             delete self.downloadPanels[downloadId];
         }
-        electron.send('download-file-cancel', downloadId);
+        electron.download.cancel(downloadId);
     };
 
     self.addIpcs = function() {
-        electron.on('download-file-status', self.onHandleDownloadStatus.bind(self));
-        electron.on('download-file-started', self.onHandleDownloadStarted.bind(self));
-    }
+        self._unsubscribers.push(
+            electron.download.onStarted(self.onHandleDownloadStarted.bind(self)),
+            electron.download.onStatus(self.onHandleDownloadStatus.bind(self)),
+        );
+    };
+
+    ipcLifecycle.attach(self, self.addIpcs);
 
     self.onHandleDownloadStarted = function(_event, downloadData) {
         if (self.downloadPanels[downloadData.downloadId]) {

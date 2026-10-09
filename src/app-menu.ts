@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu, MenuItemConstructorOptions } from 'electron';
-import isDev from 'electron-is-dev';
+import { appContext } from './app-context';
+import { sendToRenderer } from './ipc/ipc-main';
 
 export function createAppMenu(window: BrowserWindow): void {
   const subMenuFile: MenuItemConstructorOptions = {
@@ -8,13 +9,13 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'Updates',
         click: () => {
-          window.webContents.send('open-page', 'updates');
+          sendToRenderer(window, 'open-page', { page: 'updates' });
         },
       },
       {
         label: 'Preferences',
         click: () => {
-          window.webContents.send('open-modal', {
+          sendToRenderer(window, 'open-modal', {
             controller: 'preferencesController',
             template: 'js/preferences/preferences-dialog.html',
           });
@@ -44,14 +45,14 @@ export function createAppMenu(window: BrowserWindow): void {
   //         {
   //             label: 'Install',
   //             click: () => {
-  //                 window.webContents.send('open-page', 'installAuto');
+  //                 window.webContents.send('open-page', { page: 'installAuto' });
   //             }
   //         }, {
   //             type: 'separator'
   //         }, {
   //             label: 'Monitoring',
   //             click: () => {
-  //                 window.webContents.send('open-page', 'monitoring');
+  //                 window.webContents.send('open-page', { page: 'monitoring' });
   //             }
   //         }
   //     ])
@@ -63,7 +64,7 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'Application help',
         click: () => {
-          window.webContents.send('open-page', 'help');
+          sendToRenderer(window, 'open-page', { page: 'help' });
         },
       },
       {
@@ -72,7 +73,7 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'Get support',
         click: () => {
-          window.webContents.send('open-page', 'support');
+          sendToRenderer(window, 'open-page', { page: 'support' });
         },
       },
       {
@@ -81,7 +82,7 @@ export function createAppMenu(window: BrowserWindow): void {
       {
         label: 'About',
         click: () => {
-          window.webContents.send('open-page', 'about');
+          sendToRenderer(window, 'open-page', { page: 'about' });
         },
       },
     ]),
@@ -107,7 +108,7 @@ export function createAppMenu(window: BrowserWindow): void {
     subMenuFile,
     ...(isMac ? [subMenuEdit] : []),
     subMenuHelp,
-    ...(isDev ? [subMenuView] : []),
+    ...(appContext.isDev ? [subMenuView] : []),
   ];
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);

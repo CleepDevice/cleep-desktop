@@ -1,7 +1,10 @@
-import { app, ipcMain } from 'electron';
+import { app } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import { appLogger } from './app-logger';
+import { handleInvoke, ipcErr, ipcOk } from './ipc/ipc-main';
+import { unlinkInside } from './utils/safe-fs';
+import { asBasename, assertPathInside, resolvePathInside } from './utils/safe-path';
 
 export interface CachedFileInfos {
   filename: string;
@@ -17,7 +20,7 @@ interface AppFilename {
   realFilepath: string;
 }
 
-class AppCache {
+export class AppCache {
   private cacheDir = path.join(app.getPath('userData'), 'file-cache');
   private readonly SEPARATOR = '===';
 
@@ -30,50 +33,44 @@ class AppCache {
   }
 
   private addIpcs(): void {
-    ipcMain.handle('cache-get-infos', async () => {
+    handleInvoke('cache-get-infos', async () => {
       try {
-        return {
-          data: {
-            files: this.getCachedFiles(),
-            dir: this.cacheDir,
-          },
-        };
+        return ipcOk({
+          files: this.getCachedFiles(),
+          dir: this.cacheDir,
+        });
       } catch (error) {
         appLogger.error('Unable to get cached files', { error });
-        return { data: {}, error: true };
+        return ipcErr('CACHE_LIST_FAILED', 'Unable to get cached files');
       }
     });
 
-    ipcMain.handle('cache-delete-file', (_event, filename: string) => {
+    handleInvoke('cache-delete-file', (_event, filename) => {
       try {
-        const deleted = this.deleteCachedFile(filename);
-        return { data: deleted };
+        return ipcOk(this.deleteCachedFile(filename));
       } catch (error) {
         appLogger.error(`Unable to delete cached file ${filename}`, error);
-        return { data: false, error: true };
+        return ipcErr('CACHE_DELETE_FAILED', `Unable to delete cached file ${filename}`);
       }
     });
 
-    ipcMain.handle('cache-purge-files', () => {
+    handleInvoke('cache-purge-files', () => {
       try {
         this.purgeCachedFiles();
-        return { data: true };
+        return ipcOk(true);
       } catch (error) {
         appLogger.error(`Unable to purge cached files`, error);
-        return { data: false, error: true };
+        return ipcErr('CACHE_PURGE_FAILED', 'Unable to purge cached files');
       }
     });
   }
 
   public getCachedFileInfos(filename: string): CachedFileInfos {
-    const files = fs.readdirSync(this.cacheDir, { encoding: 'utf8' });
-    for (const file of files) {
-      const appFilename = this.filenameToAppFilename(filename);
-      if (appFilename) {
-        return this.getFileInfos(path.join(this.cacheDir, file));
-      }
+    const appFilename = this.filenameToAppFilename(filename);
+    if (!appFilename) {
+      return null;
     }
-    return null;
+    return this.getFileInfos(appFilename.realFilepath);
   }
 
   private getFileInfos(realFilepath: string): CachedFileInfos {
@@ -102,13 +99,14 @@ class AppCache {
   }
 
   private filenameToAppFilename(filename: string): AppFilename {
-    const fileExtension = path.extname(filename);
-    const filenameWithoutExt = filename.replace(fileExtension, '');
+    const safeName = asBasename(filename);
+    const fileExtension = path.extname(safeName);
+    const filenameWithoutExt = safeName.slice(0, safeName.length - fileExtension.length);
 
     const filenames = fs.readdirSync(this.cacheDir, { encoding: 'utf8' });
     for (const realFilename of filenames) {
       if (realFilename.startsWith(filenameWithoutExt)) {
-        const filepath = path.join(this.cacheDir, realFilename);
+        const filepath = resolvePathInside(this.cacheDir, asBasename(realFilename));
         return this.realFilepathToAppFilename(filepath);
       }
     }
@@ -122,9 +120,9 @@ class AppCache {
     const filenames = fs.readdirSync(this.cacheDir, { encoding: 'utf8' });
     for (const filename of filenames) {
       try {
-        const filepath = path.join(this.cacheDir, filename);
+        const filepath = resolvePathInside(this.cacheDir, asBasename(filename));
         cachedFiles.push(this.getFileInfos(filepath));
-      } catch (error) {
+      } catch {
         appLogger.warn(`Invalid file "${filename}" in cache directory`);
       }
     }
@@ -133,13 +131,45 @@ class AppCache {
   }
 
   public cacheFile(filepath: string, checksum: string, filename?: string): string {
-    const requestedFilename = filename || path.basename(filepath);
+    const requestedFilename = asBasename(filename || path.basename(filepath));
+    if (
+      typeof checksum !== 'string' ||
+      checksum.length === 0 ||
+      checksum.includes('\0') ||
+      /[\\/]/.test(checksum) ||
+      checksum.includes(this.SEPARATOR)
+    ) {
+      throw new Error('Invalid checksum');
+    }
     const fileExtension = path.extname(requestedFilename);
-    const newFilename = `${requestedFilename.replace(fileExtension, '')}${this.SEPARATOR}${checksum}${fileExtension}`;
-    const newFilepath = path.join(this.cacheDir, newFilename);
+    const stem = requestedFilename.slice(0, requestedFilename.length - fileExtension.length);
+    const newFilename = `${stem}${this.SEPARATOR}${checksum}${fileExtension}`;
+    const newFilepath = resolvePathInside(this.cacheDir, newFilename);
     appLogger.debug(`Cache file "${filepath}" to "${newFilepath}"`);
 
-    fs.renameSync(filepath, newFilepath);
+    try {
+      // Source files come from Electron temp/downloads; keep them inside those roots.
+      const sourceRoots = [app.getPath('temp'), app.getPath('downloads'), this.cacheDir];
+      let sourcePath: string | null = null;
+      let sourceRoot: string | null = null;
+      for (const root of sourceRoots) {
+        try {
+          sourcePath = assertPathInside(root, filepath);
+          sourceRoot = root;
+          break;
+        } catch {
+          // try next authorized root
+        }
+      }
+      if (!sourcePath || !sourceRoot) {
+        throw new Error('Invalid path specified!');
+      }
+      fs.copyFileSync(sourcePath, newFilepath);
+      unlinkInside(sourceRoot, sourcePath);
+    } catch (error) {
+      appLogger.error(`Error occured while moving file to cache: ${error}`);
+      throw new Error('Unable to move file to cache folder', { cause: error });
+    }
 
     return newFilepath;
   }
@@ -159,7 +189,7 @@ class AppCache {
     for (const filename of filenames) {
       try {
         this.deleteCachedFile(filename);
-      } catch (error) {
+      } catch {
         appLogger.warn(`Invalid file "${filename}" in cache directory`);
       }
     }

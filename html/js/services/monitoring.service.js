@@ -1,24 +1,27 @@
 angular
 .module('Cleep')
-.service('monitoringService', ['loggerService', 'electronService', function(logger, electron) {
+.service('monitoringService', ['loggerService', 'electronService', '$filter', 'ipcLifecycle',
+function(logger, electron, $filter, ipcLifecycle) {
     var self = this;
     self.maxMessages = 100;
     self.messages = [];
+    var paramsSummary = $filter('messageParamsSummary');
 
-    self.init = function() {
-        self.addIpcs();
-    };
- 
     self.addIpcs = function() {
-        electron.on('devices-message', self.onDevicesMessage.bind(self));
+        // Batch bus messages: many events → one digest per frame.
+        self._unsubscribers.push(
+            electron.devices.onMessage(self.onDevicesMessage.bind(self)),
+        );
     };
+
+    ipcLifecycle.attach(self, self.addIpcs);
 
     self.onDevicesMessage = function(_event, message) {
         if( !message ) {
             return;
         }
 
-        // append new message at list beginning
+        message.summary = paramsSummary(message.message && message.message.params);
         logger.debug('Monitoring message received:', message);
         self.messages.unshift(message);
 

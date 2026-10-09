@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.service('installService', ['$state', 'loggerService', 'tasksPanelService', 'settingsService', 'electronService', 'toastService',
-function($state, logger, tasksPanelService, settingsService, electron, toast) {
+.service('installService', ['$state', 'loggerService', 'tasksPanelService', 'settingsService', 'electronService', 'toastService', 'ipcLifecycle',
+function($state, logger, tasksPanelService, settingsService, electron, toast, ipcLifecycle) {
     var self = this;
     self.settings = {
         isolocal: false,
@@ -35,17 +35,24 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
     self.taskInstallPanelId = null;
     self.flashToolInstalled = false;
 
-    self.init = function() {
-        self.addIpcs();
+    self.addIpcs = function() {
+        // Latest progress wins — flash % can spam faster than the UI can paint.
+        self._unsubscribers.push(
+            electron.install.onProgress(self.onHandleInstallProgress.bind(self)),
+        );
     };
 
-    self.addIpcs = function() {
-        electron.on('iso-install-progress', self.onHandleInstallProgress.bind(self));
-    };
+    ipcLifecycle.attach(self, self.addIpcs, function() {
+        self.getIsoSettings();
+    });
 
     self.onHandleInstallProgress = function(_event, installProgress) {
         Object.assign(self.installProgress, installProgress);
-        self.installing = !self.installProgress.terminated;
+        if(self.installProgress.terminated || self.installProgress.error || self.installProgress.step === 'canceled') {
+            self.installing = false;
+        } else {
+            self.installing = true;
+        }
 
         if (!self.installing) {
             self.terminateInstall();
@@ -53,7 +60,7 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
     };
 
     self.terminateInstall = function() {
-        if (self.installProgress.error.length === 0) {
+        if (self.installProgress.error.length === 0 && self.installProgress.step !== 'canceled') {
             // install terminated without error, reset only drive field that
             // must be scanned again if user installs another device
             self.installConfig.drive = null;
@@ -73,10 +80,14 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
     };
 
     self.hasWifi = function() {
-        return electron.sendReturn('iso-has-wifi')
-            .then((response) => {
-                self.wifiInfo.hasWifi = response.data;
+        return electron.install.hasWifi()
+            .then((hasWifi) => {
+                self.wifiInfo.hasWifi = hasWifi;
                 return self.wifiInfo.hasWifi;
+            })
+            .catch(() => {
+                self.wifiInfo.hasWifi = false;
+                return false;
             });
     }
 
@@ -85,49 +96,49 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
             return Promise.resolve();
         }
 
-        return electron.sendReturn('iso-refresh-wifi-networks')
-            .then((response) => {
-                if (response.error) {
-                    toast.error('Unable to refresh wifi networks');
-                    return;
-                }
+        return electron.install.refreshWifiNetworks()
+            .then((networks) => {
                 self.wifiInfo.retrieved = true;
-                self.fillArray(self.wifiInfo.networks, response.data);
+                self.fillArray(self.wifiInfo.networks, networks);
+            })
+            .catch(() => {
+                toast.error('Unable to refresh wifi networks');
             });
     };
 
-    self.refreshIsosInfo = function() {
-        if (self.isosInfo.retrieved) {
+    self.refreshIsosInfo = function(force = false) {
+        if (self.isosInfo.retrieved && !force) {
             return Promise.resolve();
         }
 
-        return electron.sendReturn('iso-get-isos')
-            .then((response) => {
-                if (response.error) {
-                    toast.error('Unable to get files');
-                    return;
-                }
+        return electron.install.getIsos(Boolean(force))
+            .then((data) => {
                 self.isosInfo.retrieved = true;
-                Object.assign(self.isosInfo.raspios, response.data.raspios);
-                Object.assign(self.isosInfo.cleepos, response.data.cleepos);
+                self.isosInfo.raspios = data.raspios || {};
+                self.isosInfo.cleepos = data.cleepos || {};
+            })
+            .catch(() => {
+                toast.error('Unable to get files');
             });
     };
 
     self.refreshDriveList = function() {
-        return electron.sendReturn('iso-get-drives')
-            .then((response) => {
-                self.flashToolInstalled = response.flashToolInstalled;
-
-                if (response.error) {
-                    toast.error('Unable to get drives');
-                    return;
-                }
-                self.fillArray(self.drives, response.data);
+        return electron.install.getDrives()
+            .then((result) => {
+                self.flashToolInstalled = result.flashToolInstalled;
+                self.fillArray(self.drives, result.drives);
+            })
+            .catch(() => {
+                toast.error('Unable to get drives');
             });
     };
 
     self.startInstall = function() {
         self.installing = true;
+        self.installProgress.error = '';
+        self.installProgress.terminated = false;
+        self.installProgress.step = 'idle';
+        self.installProgress.percent = 0;
         if (!self.taskInstallPanelId) {
             self.taskInstallPanelId = tasksPanelService.addPanel(
                 'Installing device...', 
@@ -144,20 +155,35 @@ function($state, logger, tasksPanelService, settingsService, electron, toast) {
             );
         }
 
+        var useWifi = self.installConfig.iso.category === 'cleepos' && self.installConfig.network !== 0;
         var installData = {
             isoUrl: self.installConfig.iso.url,
             isoSha256: self.installConfig.iso.sha256,
             isoFilename: self.installConfig.iso.filename,
             drivePath: self.installConfig.drive.device,
-            wifiData: self.installConfig.wifi,
+            wifiData: useWifi ? self.installConfig.wifi : null,
         };
         logger.debug('Install data', installData);
-        electron.send('iso-start-install', installData);
+        electron.install.start(installData);
+    };
+
+    /**
+     * Cancel is only safe during ISO download (or before write starts).
+     * Once privileges/flashing/validating begins, aborting can brick the SD card.
+     */
+    self.canCancelInstall = function() {
+        if (!self.installing) {
+            return false;
+        }
+        var step = self.installProgress.step;
+        return step === 'idle' || step === 'downloading';
     };
 
     self.cancelInstall = function() {
-        if (!self.installing) return;
-        electron.send('iso-cancel-install');
+        if (!self.canCancelInstall()) {
+            return;
+        }
+        electron.install.cancel();
     };
 
     self.onCloseInstallTaskPanel = function() {

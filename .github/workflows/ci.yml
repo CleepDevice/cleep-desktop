@@ -1,0 +1,105 @@
+name: CI
+
+# PR branches: only pull_request (avoid double run with push → burns minutes).
+# master: push only (no open PR required).
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+
+env:
+  NODE_VERSION: '26'
+
+jobs:
+  # One independent pipeline per OS: a Windows/macOS test failure must not
+  # skip Linux packaging (and the reverse).
+  ci:
+    name: CI (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            package_script: build-linux
+          - os: windows-latest
+            package_script: build-win
+          - os: macos-latest
+            package_script: build-macos
+    env:
+      # Allow unsigned packaging when no signing certs are configured.
+      CSC_IDENTITY_AUTO_DISCOVERY: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Compile
+        run: npm run build
+
+      - name: Install Electron system libraries and xvfb (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          npx playwright install-deps chromium
+
+      - name: Allow Electron sandbox on Ubuntu
+        if: runner.os == 'Linux'
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Install Linux packaging dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y rpm
+
+      # Package before E2E so unsigned artifacts are produced even if Playwright fails.
+      - name: Package application (unsigned, no publish)
+        run: npm run ${{ matrix.package_script }}
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: cleepdesktop-${{ matrix.os }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: E2E smoke (Playwright)
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" \
+              npx playwright test
+          else
+            npx playwright test
+          fi
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-${{ matrix.os }}
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7

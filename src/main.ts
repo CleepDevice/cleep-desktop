@@ -1,4 +1,6 @@
-import { app, BrowserWindow, screen, ipcMain, shell, dialog, OpenDialogSyncOptions } from 'electron';
+import { app, BrowserWindow, screen, shell, dialog } from 'electron';
+import os from 'os';
+import path from 'path';
 import { appContext } from './app-context';
 import { createAppMenu } from './app-menu';
 import { createAppWindow, createSplashscreenWindow } from './app-window';
@@ -6,15 +8,28 @@ import { parseArgs } from './utils/app.helpers';
 import { appLogger } from './app-logger';
 import { appUpdater } from './app-updater';
 import { appFileDownload } from './app-file-download';
-import isDev from 'electron-is-dev';
 import { appIso } from './app-iso';
 import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
+import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
+import { handleInvoke, ipcOk, onRendererSend, sendToRenderer } from './ipc/ipc-main';
+
+const isE2e = process.env.CLEEPDESKTOP_E2E === '1';
+
+if (isE2e) {
+  // Isolate settings/cache from the developer profile during Playwright runs.
+  app.setPath('userData', path.join(os.tmpdir(), `cleep-desktop-e2e-${process.pid}`));
+}
+
+// Dynamic import keeps chokidar (devDependency) out of the packaged app graph.
+if (!isE2e && !app.isPackaged) {
+  void import('./utils/dev-reloader').then(({ setupDevReloader }) => setupDevReloader());
+}
 
 let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
 
-appSettings.configure();
+appSettings.configure(app);
 appContext.configure();
 
 app.on('will-quit', function () {
@@ -31,17 +46,44 @@ app.on('window-all-closed', function () {
   }
 });
 
-app.on('web-contents-created', (event: Electron.Event, webContents: Electron.WebContents) => {
+// allow self signed certificate
+app.on('certificate-error', (event, _webContents, _url, _error, certificate, callback) => {
+  // appLogger.debug('Certificate error, always allow', { certificate });
+  event.preventDefault();
+
+  callback(certificate?.subjectName === 'Cleep' && certificate?.issuerName === 'Cleep');
+});
+
+app.on('login', (event, _webContents, _request, authInfo, callback) => {
+  appLogger.debug('Auth requested', { authInfo });
+  const url = authInfo.host;
+  const auth = appAuth.getAuth(authInfo.host);
+
+  if (!auth) {
+    appLogger.warn('No auth found for the device');
+    appAuth.resetAuthAttempts(url);
+  } else if (auth?.attempts >= MAX_AUTH_ATTEMPTS) {
+    appLogger.debug('Max auth attempts reached');
+    appAuth.resetAuthAttempts(url);
+    sendToRenderer(mainWindow, 'auth-error', { ip: authInfo.host, errorCode: 'INVALID_AUTH' });
+  } else {
+    appLogger.debug('Found auth', { url: authInfo.host, account: auth.account });
+    event.preventDefault();
+    callback(auth.account, auth.password);
+  }
+});
+
+app.on('web-contents-created', (_event: Electron.Event, webContents: Electron.WebContents) => {
   appLogger.debug('New Cleep device webview created');
   webContents.setWindowOpenHandler((details: Electron.HandlerDetails) => {
-    appLogger.info('Open modal from webview', { url: details.url });
+    appLogger.debug('Open modal from webview', { url: details.url });
     return {
       action: 'allow',
       overrideBrowserWindowOptions: {
         show: false,
         focusable: true,
         alwaysOnTop: false,
-        title: 'Cleep device popup',
+        title: 'Cleep device dialog',
       },
     };
   });
@@ -56,16 +98,12 @@ app.on('activate', function () {
 });
 
 app.on('ready', async function () {
-  appLogger.info(`========== cleep-desktop started ${isDev ? '[DEV MODE]' : ''}==========`);
+  appLogger.info(`========== cleep-desktop started ${appContext.isDev ? '[DEV MODE]' : ''}==========`);
   appLogger.info('Platform: ' + process.platform);
   const display = screen.getPrimaryDisplay();
   appLogger.info('Display: ' + display.size.width + 'x' + display.size.height);
-  if (isDev) {
-    appLogger.info('Version: ' + require('./package.json').version);
-  } else {
-    appLogger.info('Version: ' + appContext.version);
-  }
-  if (isDev) {
+  appLogger.info('Version: ' + appContext.version);
+  if (appContext.isDev) {
     appLogger.info('App dir: ' + app.getPath('userData'));
     appLogger.info('Logs dir: ' + app.getPath('logs'));
     appLogger.info('Temp dir: ' + app.getPath('temp'));
@@ -84,21 +122,24 @@ app.on('ready', async function () {
     createAppMenu(mainWindow);
 
     // configure modules
+    appAuth.configure(mainWindow);
     appUpdater.configure(mainWindow);
     appFileDownload.configure(mainWindow);
     appIso.configure(mainWindow);
     appDevices.configure(mainWindow);
   } catch (error) {
-    appLogger.error(`Unable to launch application: ${error?.message || 'unknown error'}`);
+    appLogger.error(
+      `Unable to launch application: ${error instanceof Error ? error.message : 'unknown error'}`,
+    );
   }
 });
 
-ipcMain.on('open-url-in-browser', (_event, url: string) => {
+onRendererSend('open-url-in-browser', (_event, url) => {
   appLogger.info('Opening external url', { url });
   shell.openExternal(url);
 });
 
-ipcMain.handle('open-dialog', (_event, dialogOptions: OpenDialogSyncOptions) => {
+handleInvoke('open-dialog', (_event, dialogOptions) => {
   const result = dialog.showOpenDialogSync(dialogOptions);
-  return result || [];
+  return ipcOk(result || []);
 });

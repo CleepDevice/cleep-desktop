@@ -1,3 +1,4 @@
+
 /**
  * Theme configuration
  */
@@ -65,11 +66,36 @@
             url: '/device',
             params: {
                 url: null,
-                hostname: null
+                hostname: null,
+                deviceUuid: null,
+                auth: null,
             },
             controller: 'deviceController',
             controllerAs: 'ctl',
             templateUrl: 'js/device/device.html'
+        })
+        .state('deviceAuth', {
+            url: '/deviceAuth',
+            params: {
+                url: null,
+                hostname: null,
+                deviceUuid: null,
+                errorCode: null,
+            },
+            controller: 'deviceAuthController',
+            controllerAs: 'ctl',
+            templateUrl: 'js/device-auth/device-auth.html'
+        })
+        .state('deviceError', {
+            url: '/deviceError',
+            params: {
+                url: null,
+                hostname: null,
+                deviceUuid: null,
+            },
+            controller: 'deviceErrorController',
+            controllerAs: 'ctl',
+            templateUrl: 'js/device-error/device-error.html'
         })
         .state('monitoring', {
             url: '/monitoring',

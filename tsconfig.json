@@ -1,16 +1,21 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
+        "module": "CommonJS",
         "noImplicitAny": true,
+        "strictNullChecks": false,
+        "strictPropertyInitialization": false,
         "sourceMap": true,
+        "rootDir": "./src",
         "outDir": "build",
-        "baseUrl": ".",
-        "paths": {
-            "*": ["node_modules/*"]
-        },
-        "esModuleInterop": true
+        "target": "ES2023",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true
     },
     "include": [
-        "src/**/*"
+        "src/"
+    ],
+    "exclude": [
+        "src/preload.ts"
     ]
 }

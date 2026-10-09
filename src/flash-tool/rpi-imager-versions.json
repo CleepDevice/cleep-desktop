@@ -1,0 +1,9 @@
+{
+  "bundle": "2.0.11.1",
+  "sources": {
+    "linux": "2.0.11",
+    "macos": "2.0.11.1",
+    "windows": "2.0.11.1"
+  },
+  "notes": "linux stays on 2.0.11 (last release with cli x86_64 AppImage); macos DMG is universal (x86_64+arm64) and windows use 2.0.11.1"
+}

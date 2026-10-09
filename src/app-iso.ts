@@ -1,21 +1,26 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { appLogger } from './app-logger';
 import { appSettings } from './app-settings';
 import { CleepOs } from './iso/cleepos';
 import { RaspiOs, RaspiosLatestRelease } from './iso/raspios';
 import { Wifi, WifiNetwork } from './iso/wifi';
-import { ReleaseInfo } from './iso/utils';
-import { balena, Drive } from './flash-tool/balena';
+import { IIsoReleaseInfo } from './iso/utils';
 import { getError } from './utils/app.helpers';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { Sudo, SudoOptions } from './sudo/sudo';
-import { writeFile } from 'fs';
-import { cancelDownload, downloadFile, DownloadProgress } from './utils/download';
+import { unlink, writeFile } from 'fs/promises';
+import { cancelDownload, downloadFile, IDownloadProgress } from './utils/download';
 import { appUpdater } from './app-updater';
 import { NotInstalledException } from './exceptions/not-installed.exception';
 import { appCache } from './app-cache';
 import { appContext } from './app-context';
-import { sendDataToAngularJs } from './utils/ui.helpers';
+import { handleInvoke, ipcErr, ipcOk, onRendererSend, sendToRenderer } from './ipc/ipc-main';
+import * as drivelist from 'drivelist';
+import { rpiImager } from './flash-tool/rpi-imager';
+import { Drive } from './flash-tool/flashtool.interface';
+import { getFlashWrapperPath, RPI_IMAGER_DIR } from './flash-tool/constants';
+import { buildFirstRunScript, FirstRunPayloadFile } from './iso/first-run-script';
 
 export interface WifiData {
   network: string;
@@ -30,17 +35,13 @@ export interface InstallData {
   isoFilename: string;
   isoPath?: string;
   drivePath: string;
-  wifiData: WifiData;
-  wifiFilePath?: string;
+  wifiData: WifiData | null;
+  /** Temp path to firstrun.sh passed as rpi-imager --first-run-script */
+  firstRunScriptPath?: string;
 }
 
-export interface FlashOutput {
-  mode: 'flashing' | 'validating';
-  percent: number;
-  eta: number;
-}
-
-export const FLASHTOOL_DIR = path.join(app.getPath('userData'), 'flash-tool');
+export { RPI_IMAGER_DIR } from './flash-tool/constants';
+export type { FlashOutput } from './flash-tool/flashtool.interface';
 
 type InstallStep = 'idle' | 'downloading' | 'privileges' | 'flashing' | 'validating' | 'canceled';
 
@@ -52,19 +53,38 @@ interface InstallProgress {
   terminated?: boolean;
 }
 
+const FLASH_STDERR_ERROR_PATTERN =
+  /\b(error|failed|fatal|exception|permission denied|setuid|no new privileges|access denied|unknown option)\b/i;
+
 class AppIso {
   private wifiNetworks: WifiNetwork[] = [];
-  private lastRaspiosUpdate: number;
-  private readonly RASPIOS_CACHE_DURATION = 6 * 60 * 60;
+  private lastRaspiosUpdate = 0;
+  private readonly RASPIOS_CACHE_DURATION_MS = 6 * 60 * 60 * 1000;
   private raspios: RaspiOs;
   private cleepos: CleepOs;
   private wifi: Wifi;
   private isosReleases: {
-    cleepos: ReleaseInfo;
+    cleepos: IIsoReleaseInfo;
     raspios: RaspiosLatestRelease;
   } = { cleepos: null, raspios: null };
   private window: BrowserWindow;
-  private currentInstall: { isoUrl: string; sudo: Sudo } = { isoUrl: '', sudo: null };
+  private currentInstall: {
+    isoUrl: string;
+    sudo: Sudo;
+    firstRunScriptPath: string;
+    flashError: string;
+    canceled: boolean;
+    /** True once SD write phase starts — cancel is refused (unsafe for the card). */
+    flashStarted: boolean;
+  } = {
+    isoUrl: '',
+    sudo: null,
+    firstRunScriptPath: '',
+    flashError: '',
+    canceled: false,
+    flashStarted: false,
+  };
+  private installRunning = false;
 
   constructor() {
     this.raspios = new RaspiOs();
@@ -89,14 +109,20 @@ class AppIso {
     return this.wifiNetworks;
   }
 
-  public async getLatestRaspios(): Promise<RaspiosLatestRelease> {
+  public async getLatestRaspios(force = false): Promise<RaspiosLatestRelease> {
+    appLogger.info('Getting latest RaspiOs release');
     const isoRaspios = appSettings.get<boolean>('cleep.isoraspios');
     if (!isoRaspios) {
+      appLogger.debug('RaspiOs release disabled from config');
       return;
     }
 
-    const now = Math.round(new Date().getTime());
-    if (this.isosReleases.raspios && this.lastRaspiosUpdate + this.RASPIOS_CACHE_DURATION < now) {
+    const now = Date.now();
+    if (
+      !force &&
+      this.isosReleases.raspios &&
+      this.lastRaspiosUpdate + this.RASPIOS_CACHE_DURATION_MS > now
+    ) {
       return this.isosReleases.raspios;
     }
 
@@ -110,8 +136,10 @@ class AppIso {
     }
   }
 
-  public async getLatestCleepos(): Promise<ReleaseInfo> {
-    if (this.isosReleases.cleepos) {
+  public async getLatestCleepos(force = false): Promise<IIsoReleaseInfo> {
+    appLogger.info('Getting latest CleepOs release');
+    if (this.isosReleases.cleepos && !force) {
+      appLogger.debug('CleepOs release already searched');
       return this.isosReleases.cleepos;
     }
 
@@ -124,13 +152,33 @@ class AppIso {
     if (!appUpdater.isFlashToolInstalled()) {
       throw new NotInstalledException('flash-tool');
     }
-    const drives = await balena.getDriveList();
-    appLogger.info('Found drives', drives);
+
+    const rawDrives = await drivelist.list();
+    appLogger.info('Found drives', rawDrives);
+
+    const drives: Drive[] = [];
+    for (const rawDrive of rawDrives) {
+      if (rawDrive.error) {
+        continue;
+      } else if (!rawDrive.isUSB && !rawDrive.isCard) {
+        // try to keep only volatile drive
+        continue;
+      } else if (!rawDrive.size) {
+        // invalid size
+        continue;
+      }
+
+      drives.push({
+        device: rawDrive.device,
+        description: rawDrive.description,
+        size: rawDrive.size,
+      });
+    }
 
     return drives;
   }
 
-  public async downloadIso(installData: InstallData) {
+  public async downloadIso(installData: InstallData): Promise<void> {
     try {
       this.currentInstall.isoUrl = installData.isoUrl;
       const isoPath = await downloadFile(
@@ -140,12 +188,13 @@ class AppIso {
       );
       this.downloadProgressCallback({ percent: 100, terminated: true, eta: 0 });
 
-      // cache file
       installData.isoPath = appCache.cacheFile(isoPath, installData.isoSha256, installData.isoFilename);
+
       appLogger.info(`Iso downloaded to ${installData.isoPath}`);
     } catch (error) {
       appLogger.error(`Error downloading iso: ${error}`);
       this.downloadProgressCallback({ percent: 100, terminated: true, error: getError(error) });
+      throw error;
     } finally {
       this.currentInstall.isoUrl = '';
     }
@@ -161,80 +210,172 @@ class AppIso {
     return cachedFileInfos.checksum === installData.isoSha256 ? cachedFileInfos.filepath : null;
   }
 
-  private downloadProgressCallback(downloadProgress: DownloadProgress) {
+  private downloadProgressCallback(downloadProgress: IDownloadProgress): void {
     const installProgress: InstallProgress = {
       percent: downloadProgress.percent,
       eta: downloadProgress.eta,
       step: 'downloading',
       error: downloadProgress?.error || '',
     };
-    // appLogger.debug('Download progress', installProgress);
-    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
+    sendToRenderer(this.window, 'iso-install-progress', installProgress);
+  }
+
+  private resolveLocalIsoPath(isoUrl: string): string {
+    try {
+      return fileURLToPath(isoUrl);
+    } catch {
+      // Fallback for malformed file URLs
+      return decodeURIComponent(isoUrl.replace(/^file:\/\//i, ''));
+    }
   }
 
   public async startInstall(installData: InstallData): Promise<void> {
-    appContext.allowAppClosing = false;
-
-    const cachedFile = this.getCachedFilepath(installData);
-    appLogger.debug('Cached file', cachedFile);
-    if (!cachedFile) {
-      await this.downloadIso(installData);
-    }
-
-    await this.writeWifiFile(installData);
-
-    this.flashDrive(installData);
-  }
-
-  public cancelInstall(): void {
-    // TODO Does not work :S
-    appLogger.debug('cancel request', this.currentInstall);
-    if (this.currentInstall.isoUrl) {
-      appLogger.info('Download canceled by user');
-      cancelDownload(this.currentInstall.isoUrl);
-    } else if (this.currentInstall.sudo) {
-      appLogger.info('SDCard flash canceled by user');
-      this.currentInstall.sudo.kill();
-    }
-  }
-
-  private writeWifiFile(installData: InstallData): Promise<void> {
-    if (!installData.wifiData) {
+    if (this.installRunning) {
+      appLogger.warn('Install already running, ignoring new start request');
       return;
     }
 
-    installData.wifiFilePath = path.join(app.getPath('temp'), 'cleep-network.conf');
+    this.installRunning = true;
+    this.currentInstall.canceled = false;
+    this.currentInstall.flashError = '';
+    this.currentInstall.firstRunScriptPath = '';
+    this.currentInstall.flashStarted = false;
 
-    return new Promise((resolve, reject) => {
-      const config = {
-        network: installData.wifiData.network,
-        password: installData.wifiData.password,
-        encryption: installData.wifiData.security,
-        hidden: installData.wifiData.hidden,
-      };
-      writeFile(installData.wifiFilePath, JSON.stringify(config), (error: Error) => {
-        if (error) {
-          reject(`Error writing wifi file ${error?.message || 'unknown error'}`);
-          return;
-        }
+    try {
+      appContext.allowAppClosing = false;
 
-        appLogger.debug(`Wifi config written to ${installData.wifiFilePath}`);
-        resolve();
+      const cachedFile = this.getCachedFilepath(installData);
+      appLogger.debug('Cached file', cachedFile);
+      if (installData.isoUrl.startsWith('file://')) {
+        installData.isoPath = this.resolveLocalIsoPath(installData.isoUrl);
+      } else if (cachedFile) {
+        installData.isoPath = cachedFile;
+      } else {
+        await this.downloadIso(installData);
+      }
+
+      if (this.currentInstall.canceled) {
+        return;
+      }
+
+      await this.writeFirstRunScript(installData);
+      this.flashDrive(installData);
+    } catch (error) {
+      appContext.allowAppClosing = true;
+      this.installRunning = false;
+      const message = getError(error as Error);
+      appLogger.error(`Iso install failed ${message}`);
+      sendToRenderer(this.window, 'iso-install-progress', {
+        percent: 100,
+        eta: 0,
+        step: 'idle',
+        terminated: true,
+        error: message,
       });
+      await this.cleanupFirstRunScript();
+    }
+  }
+
+  public cancelInstall(): void {
+    appLogger.debug('cancel request', this.currentInstall);
+
+    // Killing rpi-imager mid-write can leave the SD card unbootable / partially written.
+    if (this.currentInstall.flashStarted) {
+      appLogger.warn('Cancel ignored: SD flash already started');
+      return;
+    }
+
+    this.currentInstall.canceled = true;
+
+    if (this.currentInstall.isoUrl) {
+      appLogger.info('Download canceled by user');
+      cancelDownload(this.currentInstall.isoUrl);
+      this.currentInstall.isoUrl = '';
+    }
+
+    void this.cleanupFirstRunScript();
+    this.installRunning = false;
+    appContext.allowAppClosing = true;
+    sendToRenderer(this.window, 'iso-install-progress', {
+      percent: 0,
+      eta: 0,
+      step: 'canceled',
+      terminated: true,
+      error: '',
     });
   }
 
+  private async cleanupFirstRunScript(scriptPath?: string): Promise<void> {
+    const filePath = scriptPath || this.currentInstall.firstRunScriptPath;
+    if (!filePath) {
+      return;
+    }
+    try {
+      await unlink(filePath);
+      appLogger.debug(`First-run script removed ${filePath}`);
+    } catch {
+      // ignore missing file
+    }
+    if (this.currentInstall.firstRunScriptPath === filePath) {
+      this.currentInstall.firstRunScriptPath = '';
+    }
+  }
+
+  /**
+   * Build a firstrun.sh that drops cleep-*.json payloads on the boot partition.
+   * Extra consumer files can be appended to `payloads` later without changing the flash path.
+   */
+  private async writeFirstRunScript(installData: InstallData): Promise<void> {
+    const payloads: FirstRunPayloadFile[] = [];
+
+    if (installData.wifiData) {
+      payloads.push({
+        filename: 'cleep-network.json',
+        content: {
+          network: installData.wifiData.network,
+          password: installData.wifiData.password,
+          encryption: String(installData.wifiData.security || '').toLowerCase(),
+          hidden: installData.wifiData.hidden,
+        },
+      });
+    }
+
+    if (!payloads.length) {
+      return;
+    }
+
+    installData.firstRunScriptPath = path.join(app.getPath('temp'), 'cleep-firstrun.sh');
+    this.currentInstall.firstRunScriptPath = installData.firstRunScriptPath;
+
+    try {
+      const script = buildFirstRunScript(payloads);
+      // LF-only: script runs on the Linux device, not the host.
+      await writeFile(installData.firstRunScriptPath, script, { encoding: 'utf8', mode: 0o755 });
+      appLogger.debug(`First-run script written to ${installData.firstRunScriptPath}`, {
+        payloads: payloads.map((p) => p.filename),
+      });
+    } catch (error) {
+      throw new Error(
+        `Error writing first-run script ${(error as Error)?.message || 'unknown error'}`,
+      );
+    }
+  }
+
   private flashDrive(installData: InstallData): void {
-    const extension = process.platform === 'win32' ? '.bat' : '.sh';
-    const command = path.join(FLASHTOOL_DIR, 'flash' + extension);
-    const args = [FLASHTOOL_DIR, installData.drivePath, installData.isoPath, installData.wifiFilePath];
+    const command = getFlashWrapperPath();
+    const args = [RPI_IMAGER_DIR, installData.drivePath, installData.isoPath];
+    if (installData.firstRunScriptPath) {
+      args.push(installData.firstRunScriptPath);
+    }
+
+    this.currentInstall.flashStarted = true;
 
     const installProgress: InstallProgress = {
       percent: 0,
       eta: 0,
       step: 'privileges',
     };
-    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
+    sendToRenderer(this.window, 'iso-install-progress', installProgress);
 
     const options: SudoOptions = {
       appName: app.name,
@@ -249,102 +390,137 @@ class AppIso {
 
   private flashTerminatedCallback(exitCode: number): void {
     appLogger.info(`Flash drive terminated (exit code: ${exitCode})`);
+    const firstRunScriptPath = this.currentInstall.firstRunScriptPath;
     this.currentInstall.sudo = null;
+    this.installRunning = false;
+
+    if (this.currentInstall.canceled) {
+      void this.cleanupFirstRunScript(firstRunScriptPath);
+      appContext.allowAppClosing = true;
+      return;
+    }
+
+    const failed = exitCode !== 0 || Boolean(this.currentInstall.flashError);
+    const error =
+      this.currentInstall.flashError ||
+      (exitCode !== 0 ? `Flash failed with exit code ${exitCode}` : '');
 
     const installProgress: InstallProgress = {
       percent: 100,
       eta: 0,
       step: 'idle',
       terminated: true,
+      error,
     };
-    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
+    sendToRenderer(this.window, 'iso-install-progress', installProgress);
 
+    if (failed) {
+      appLogger.error('Flash drive failed', { exitCode, error });
+    }
+
+    void this.cleanupFirstRunScript(firstRunScriptPath);
     appContext.allowAppClosing = true;
   }
 
   private flashStdoutCallback(stdout: string) {
-    const flashOutput = balena.parseFlashOutput(stdout);
-    if (!flashOutput) return;
-
-    const installProgress: InstallProgress = {
-      percent: flashOutput.percent,
-      eta: flashOutput.eta,
-      step: flashOutput.mode,
-    };
-    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
+    appLogger.debug('Drive flash stdout', stdout);
   }
 
   private flashStderrCallback(stderr: string) {
-    appLogger.error('Drive flash failed', { error: stderr });
+    // rpi-imager stdout is displayed on stderr on linux (maybe other platforms)
+    const flashOutput = rpiImager.parseFlashOutput(stderr);
+    appLogger.debug('Flash output parse result', flashOutput);
+    if (flashOutput) {
+      const installProgress: InstallProgress = {
+        percent: flashOutput.percent,
+        eta: flashOutput.eta,
+        step: flashOutput.mode,
+        error: '',
+      };
+      sendToRenderer(this.window, 'iso-install-progress', installProgress);
+      return;
+    }
 
-    const installProgress: InstallProgress = {
-      error: stderr,
-    };
-    sendDataToAngularJs(this.window, 'iso-install-progress', installProgress);
+    const trimmed = stderr.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    if (FLASH_STDERR_ERROR_PATTERN.test(trimmed)) {
+      appLogger.error('Drive flash failed', { error: trimmed });
+      this.currentInstall.flashError = trimmed;
+      sendToRenderer(this.window, 'iso-install-progress', {
+        error: trimmed,
+      });
+      return;
+    }
+
+    appLogger.debug('Ignoring unparsed flash stderr', { stderr: trimmed });
   }
 
   private addIpcs(): void {
-    ipcMain.handle('iso-get-isos', async () => {
+    handleInvoke('iso-get-isos', async (_event, force = false) => {
       try {
-        const releases = await Promise.all([this.getLatestRaspios(), this.getLatestCleepos()]);
+        const releases = await Promise.all([
+          this.getLatestRaspios(Boolean(force)),
+          this.getLatestCleepos(Boolean(force)),
+        ]);
         const [raspios, cleepos] = releases;
-        return { data: { raspios, cleepos }, error: false };
+        return ipcOk({ raspios, cleepos });
       } catch (error) {
         appLogger.error('Unable to get isos', { error });
-        return { data: {}, error: true };
+        return ipcErr('ISO_LIST_FAILED', 'Unable to get OS images');
       }
     });
 
-    ipcMain.handle('iso-refresh-wifi-networks', async () => {
+    handleInvoke('iso-refresh-wifi-networks', async () => {
       try {
         await this.refreshWifiNetworks();
-        const networks = this.getWifiNetworks();
-        return { data: networks, error: false };
+        return ipcOk(this.getWifiNetworks());
       } catch (error) {
         appLogger.error('Unable to refresh wifi networks', { error });
-        return { data: [], error: true };
+        return ipcErr('WIFI_SCAN_FAILED', 'Unable to refresh wifi networks');
       }
     });
 
-    ipcMain.handle('iso-get-wifi-networks', () => {
+    handleInvoke('iso-get-wifi-networks', () => {
       try {
-        const networks = this.getWifiNetworks();
-        return { data: networks, error: false };
+        return ipcOk(this.getWifiNetworks());
       } catch (error) {
         appLogger.error('Unable to get wifi networks', { error });
-        return { data: [], error: true };
+        return ipcErr('WIFI_LIST_FAILED', 'Unable to get wifi networks');
       }
     });
 
-    ipcMain.handle('iso-get-drives', async () => {
+    handleInvoke('iso-get-drives', async () => {
       try {
         const drives = await this.getDriveList();
-        return { data: drives, error: false, flashToolInstalled: true };
+        return ipcOk({ drives, flashToolInstalled: true });
       } catch (error) {
         if (error instanceof NotInstalledException) {
-          return { data: [], error: true, flashToolInstalled: true };
+          // Soft state: UI shows “install flash tool”, not a hard failure.
+          return ipcOk({ drives: [], flashToolInstalled: false });
         }
         appLogger.error('Unable to get drives', { error });
-        return { data: [], error: true, flashToolInstalled: false };
+        return ipcErr('DRIVE_LIST_FAILED', 'Unable to get drives');
       }
     });
 
-    ipcMain.handle('iso-has-wifi', async () => {
+    handleInvoke('iso-has-wifi', async () => {
       try {
-        const hasWifi = await this.wifi.hasWifi();
-        return { data: hasWifi, error: false };
-      } catch (error) {
+        return ipcOk(await this.wifi.hasWifi());
+      } catch {
         appLogger.error('Unable to know if wifi adapter exists');
-        return { data: false, error: true };
+        return ipcErr('WIFI_ADAPTER_CHECK_FAILED', 'Unable to detect wifi adapter');
       }
     });
 
-    ipcMain.on('iso-start-install', (_event, installData: InstallData) => {
+    onRendererSend('iso-start-install', (_event, installData) => {
       appLogger.debug('Start iso install', installData);
-      this.startInstall(installData);
+      void this.startInstall(installData);
     });
 
-    ipcMain.on('iso-cancel-install', () => {
+    onRendererSend('iso-cancel-install', () => {
       appLogger.debug('Cancel iso install');
       this.cancelInstall();
     });

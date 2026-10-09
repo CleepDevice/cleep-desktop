@@ -7,15 +7,19 @@ function(closeModal, installService, electron) {
     self.installService = installService;
     self.loading = false;
 
-    self.$onInit = function () {
+    self.refreshIsos = function(force) {
         self.loading = true;
         self.installService.getIsoSettings()
             .then(() => {
-                return self.installService.refreshIsosInfo();
+                return self.installService.refreshIsosInfo(Boolean(force));
             })
             .finally(() => {
                 self.loading = false;
             });
+    };
+
+    self.$onInit = function () {
+        self.refreshIsos(false);
     };
 
     self.selectRemoteIso = function(item) {
@@ -37,7 +41,7 @@ function(closeModal, installService, electron) {
             ]
         };
 
-        electron.sendReturn('open-dialog', options)
+        electron.shell.openDialog(options)
             .then((result) => {
                 if (result.length) {
                     var filename = result[0].split('\\').pop().split('/').pop()

@@ -1,7 +1,7 @@
 import { LoggerLevel, LoggerLevelEnum } from '../app-logger';
 import detectPort from 'detect-port';
 import { appSettings } from '../app-settings';
-import isDev from 'electron-is-dev';
+import { appContext } from '../app-context';
 
 export interface CommandLineArgs {
   coreDisabled: boolean;
@@ -50,7 +50,7 @@ export function parseArgs(argv: string[]): CommandLineArgs {
 }
 
 export async function getWsPort(): Promise<number> {
-  if (isDev) {
+  if (appContext.isDev) {
     // use static port from config
     return appSettings.get<number>('remote.wsport');
   }
@@ -61,15 +61,27 @@ export async function getWsPort(): Promise<number> {
   return wsPort;
 }
 
-export function getError(error: Error): string {
+export function getError(error: unknown): string {
   if (!error) {
     return 'Unknown error';
   }
-  return `${error?.name || 'Error'}: ${error?.message || 'no message'}`;
+  if (error instanceof Error) {
+    return error.message || 'no error message';
+  }
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') {
+      return message || 'no error message';
+    }
+  }
+  return String(error);
 }
 
 export function findMatches(pattern: RegExp, search: string, matches: string[][]) {
   const res = pattern.exec(search);
-  res && matches.push(res) && findMatches(pattern, search, matches);
+  if (res) {
+    matches.push(res);
+    findMatches(pattern, search, matches);
+  }
   return matches;
 }

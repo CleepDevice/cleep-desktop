@@ -1,8 +1,8 @@
-import { BrowserWindow, DownloadItem, ipcMain } from 'electron';
-import electronDl, { download } from 'electron-dl';
-import { sendDataToAngularJs } from './utils/ui.helpers';
-import uuid4 from 'uuid4';
+import { BrowserWindow, DownloadItem } from 'electron';
+import { onRendererSend, sendToRenderer } from './ipc/ipc-main';
 import { appLogger } from './app-logger';
+import { v4 as uuidv4 } from 'uuid';
+import { electronDownload, IDownloadFileProgress } from './utils/electron-dl';
 
 interface Download {
   downloadId: string;
@@ -30,7 +30,7 @@ export class AppFileDownload {
   }
 
   private addIpcs() {
-    ipcMain.on('download-file-cancel', (_event, downloadId: string) => {
+    onRendererSend('download-file-cancel', (_event, downloadId) => {
       appLogger.debug(`Received download cancel action for ${downloadId}`);
       const download = this.getDownload(downloadId);
       if (download) {
@@ -38,21 +38,22 @@ export class AppFileDownload {
       }
     });
 
-    ipcMain.on('download-file', async (_event, url: string) => {
-      const downloadId = uuid4();
-      appLogger.info(`Downloading file from ${url} with id ${downloadId}`);
-      this.downloadUrl(downloadId, url);
+    onRendererSend('download-file', async (_event, options) => {
+      const downloadId = uuidv4();
+      appLogger.info(`Downloading file from ${options.url} with id ${downloadId}`);
+      this.downloadUrl(downloadId, options.url, options.title);
     });
   }
 
-  private async downloadUrl(downloadId: string, url: string): Promise<void> {
+  private async downloadUrl(downloadId: string, url: string, dialogTitle = 'Download'): Promise<void> {
     try {
-      await download(this.window, url, {
+      await electronDownload(this.window, url, {
         saveAs: true,
+        dialogOptions: { title: dialogTitle },
         onStarted: (item: DownloadItem) => {
           this.onDownloadStarted(downloadId, url, item);
         },
-        onProgress: (progress: electronDl.Progress) => {
+        onProgress: (progress: IDownloadFileProgress) => {
           this.onDownloadProgress(downloadId, progress);
         },
         onCancel: (item: DownloadItem) => {
@@ -63,35 +64,27 @@ export class AppFileDownload {
         },
       });
     } catch (error) {
-      const download = this.getDownload(downloadId);
-      if (download) {
-        this.deleteDownload(downloadId);
-        sendDataToAngularJs(this.window, 'download-file-status', {
-          downloadId,
-          filename: download.downloadItem.getFilename(),
-          status: 'failed',
-          percent: 100,
-        });
-      }
+      appLogger.error('Error occured during download', error);
+      this.finishDownload(downloadId, 'failed', 100);
     }
   }
 
   private onDownloadStarted(downloadId: string, url: string, downloadItem: DownloadItem): void {
     appLogger.debug(`Download ${downloadId} started`);
     this.downloads[downloadId] = { downloadId, downloadItem };
-    sendDataToAngularJs(this.window, 'download-file-started', {
+    sendToRenderer(this.window, 'download-file-started', {
       downloadId,
       filename: downloadItem.getFilename(),
       url,
     });
   }
 
-  private onDownloadProgress(downloadId: string, progress: electronDl.Progress): void {
+  private onDownloadProgress(downloadId: string, progress: IDownloadFileProgress): void {
     if (typeof progress?.percent !== 'number' || !Object.keys(this.downloads).length) return;
 
     const download = this.getDownload(downloadId);
     if (download) {
-      sendDataToAngularJs(this.window, 'download-file-status', {
+      sendToRenderer(this.window, 'download-file-status', {
         downloadId,
         filename: download.downloadItem.getFilename(),
         status: 'downloading',
@@ -102,32 +95,30 @@ export class AppFileDownload {
 
   private onDownloadCancel(downloadId: string, _item: DownloadItem): void {
     appLogger.info(`Download ${downloadId} canceled`);
-
-    const download = this.getDownload(downloadId);
-    if (download) {
-      this.deleteDownload(downloadId);
-      sendDataToAngularJs(this.window, 'download-file-status', {
-        downloadId,
-        filename: download.downloadItem.getFilename(),
-        status: 'canceled',
-        percent: 0,
-      });
-    }
+    this.finishDownload(downloadId, 'canceled', 0);
   }
 
   private onDownloadCompleted(downloadId: string, _item: DownloadComplete): void {
     appLogger.info(`Download ${downloadId} completed`);
+    this.finishDownload(downloadId, 'success', 100);
+  }
 
+  private finishDownload(
+    downloadId: string,
+    status: 'failed' | 'canceled' | 'success',
+    percent: number,
+  ): void {
     const download = this.getDownload(downloadId);
-    if (download) {
-      sendDataToAngularJs(this.window, 'download-file-status', {
-        downloadId,
-        filename: download.downloadItem.getFilename(),
-        status: 'success',
-        percent: 100,
-      });
-      this.deleteDownload(downloadId);
+    if (!download) {
+      return;
     }
+    sendToRenderer(this.window, 'download-file-status', {
+      downloadId,
+      filename: download.downloadItem.getFilename(),
+      status,
+      percent,
+    });
+    this.deleteDownload(downloadId);
   }
 
   private getDownload(downloadId: string): Download {

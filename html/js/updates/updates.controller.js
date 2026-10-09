@@ -12,7 +12,7 @@ function($rootScope, toast, updateService, modalService, electron) {
     };
 
     self.loadChangelog = function() {
-        return electron.sendReturn('get-changelog')
+        return electron.app.getChangelog()
             .then((changelog) => {
                 return changelog;
             });

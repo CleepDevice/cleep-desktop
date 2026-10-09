@@ -29,6 +29,6 @@ function(closeModal, installService, toast, $rootScope) {
     };
 
     self.gotoUpdates = function() {
-        $rootScope.$broadcast('open-page', 'updates');
+        $rootScope.$broadcast('open-page', { page: 'updates' });
     };
 }]);

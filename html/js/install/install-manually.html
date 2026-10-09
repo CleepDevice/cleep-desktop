@@ -24,21 +24,21 @@
                         <p>Please note that with a manual installation you will need to connect your device via the ethernet, the wifi can not be configured</p>
                     </md-list-item>
 
-                    <!-- balena-etcher -->
+                    <!-- raspberry pi imager -->
                     <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <p>Download and install Balena-etcher, free SD card burning tool, from official website</p>
-                        <md-button class="md-secondary md-raised md-primary" ng-href="https://www.balena.io/etcher/" target="_blank">
+                        <p>Download and install Raspberry Pi Imager, free SD card flashing tool, from the official website</p>
+                        <md-button class="md-secondary md-raised md-primary" ng-href="https://www.raspberrypi.com/software/" target="_blank">
                             <md-icon md-svg-icon="open-in-new"></md-icon>
-                            balena.io
+                            raspberrypi.com
                         </md-button>
                     </md-list-item>
 
                     <!-- iso -->
                     <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <p ng-if="!ctl.prefs.isoraspios">Select Cleep version you want to install on your SD card</p>
-                        <p ng-if="ctl.prefs.isoraspios">Select distribution you want to install on your SD card</p>
+                        <p ng-if="!ctl.installService.settings.isoraspios">Select Cleep version you want to install on your SD card</p>
+                        <p ng-if="ctl.installService.settings.isoraspios">Select distribution you want to install on your SD card</p>
                         <span class="md-secondary md-caption">
                             {{ctl.installService.installConfig.iso ? ctl.installService.installConfig.iso.label : 'No version selected'}}
                         </span>
@@ -64,14 +64,10 @@
                     <!-- flash tips -->
                     <md-list-item>
                         <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <p>Now launch and use Balena-etcher software to flash your SD card</p>
+                        <p>Now launch Raspberry Pi Imager, choose "Use custom" for the OS, select the downloaded image, then flash your SD card</p>
                     </md-list-item>
 
                 </md-list>
-
-                <div style="text-align: center;">
-                    <img src="images/etcher.png">
-                </div>
                 
             </md-card-content>
         </md-card>
