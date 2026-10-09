@@ -1,0 +1,4 @@
+# Used by Codacy markdownlint / local markdownlint.
+# Keep a Changelog repeats ### Added / ### Changed / ### Fixed per version.
+MD024:
+  siblings_only: true

@@ -25,3 +25,7 @@ engines:
     exclude_paths:
       - "tests/**"
       - "e2e/**"
+  # Keep a Changelog repeats ### Added/Changed/Fixed under each version.
+  markdownlint:
+    exclude_paths:
+      - "CHANGELOG.md"
