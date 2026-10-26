@@ -448,6 +448,8 @@ export class PyreNode {
   private reap(): void {
     const now = Date.now();
     for (const peer of [...this.peers.values()]) {
+      // expiredAt is forced to 0 when a mailbox send fails, so EXIT follows within
+      // one reap interval after a silent power-off (instead of waiting PEER_EXPIRED_MS).
       if (now > peer.expiredAt) {
         this.logger.debug(`(${this.name}) peer expired name=${peer.name} endpoint=${peer.endpoint}`);
         this.removePeer(peer);

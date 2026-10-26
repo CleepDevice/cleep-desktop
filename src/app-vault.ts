@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
-import { App } from 'electron';
+import { App, BrowserWindow } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,7 +10,7 @@ import {
   VaultSecret,
   VaultStatus,
 } from './app-vault.types';
-import { handleInvoke, ipcErr, ipcOk } from './ipc/ipc-main';
+import { handleInvoke, ipcErr, ipcOk, sendToRenderer } from './ipc/ipc-main';
 import {
   existsInside,
   mkdirInside,
@@ -65,6 +65,11 @@ type VaultIndexFile = {
   entries: VaultIndexEntry[];
 };
 
+type UnlockWaiter = {
+  resolve: () => void;
+  reject: (error: VaultError) => void;
+};
+
 class AppVault {
   private vaultRoot: string | null = null;
   private blobsDir: string | null = null;
@@ -74,6 +79,9 @@ class AppVault {
   private entries = new Map<string, VaultIndexEntry>();
   private dek: Buffer | null = null;
   private configured = false;
+  private window: BrowserWindow | null = null;
+  private unlockWaiters: UnlockWaiter[] = [];
+  private unlockPromptOpen = false;
 
   public configure(app: App): void {
     if (this.configured) {
@@ -124,6 +132,37 @@ class AppVault {
     return this.dek !== null;
   }
 
+  /** Attach the main BrowserWindow so unlock prompts can be shown. */
+  public setWindow(window: BrowserWindow): void {
+    this.window = window;
+  }
+
+  /**
+   * Ensure the vault is unlocked for this session.
+   * If locked, prompts the UI once and waits until unlock / recover / cancel.
+   */
+  public ensureUnlocked(): Promise<void> {
+    this.assertConfigured();
+    if (!this.meta?.enabled) {
+      return Promise.reject(new VaultError('VAULT_DISABLED', 'Vault is not enabled'));
+    }
+    if (this.dek) {
+      return Promise.resolve();
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      this.unlockWaiters.push({ resolve, reject });
+      this.promptUnlock();
+    });
+  }
+
+  /** Called by the unlock modal when the user closes it without unlocking. */
+  public dismissUnlockRequest(): void {
+    this.rejectUnlockWaiters(
+      new VaultError('VAULT_UNLOCK_CANCELLED', 'Vault unlock cancelled'),
+    );
+  }
+
   /** Enable vault with a passphrase. Returns recovery codes (shown once). */
   public enable(passphrase: string): VaultEnableResult {
     this.assertConfigured();
@@ -165,6 +204,7 @@ class AppVault {
     this.persistMeta();
     this.dek = dek;
     appLogger.info('Vault enabled');
+    this.resolveUnlockWaiters();
 
     return {
       status: this.getStatus(),
@@ -178,6 +218,7 @@ class AppVault {
     this.assertEnabled();
     this.unlockWithPassphrase(passphrase);
     this.wipeVaultData();
+    this.rejectUnlockWaiters(new VaultError('VAULT_DISABLED', 'Vault was disabled'));
     appLogger.info('Vault disabled and wiped');
     return this.getStatus();
   }
@@ -187,6 +228,7 @@ class AppVault {
     this.assertEnabled();
     this.unlockWithPassphrase(passphrase);
     appLogger.info('Vault unlocked');
+    this.resolveUnlockWaiters();
     return this.getStatus();
   }
 
@@ -267,6 +309,7 @@ class AppVault {
     this.persistMeta();
     this.dek = unlockedDek;
     appLogger.info('Vault recovered with recovery code');
+    this.resolveUnlockWaiters();
 
     return {
       status: this.getStatus(),
@@ -306,7 +349,7 @@ class AppVault {
     };
   }
 
-  /** Main-process API: store a secret by opaque key. */
+  /** Main-process API: store a secret by opaque key (vault must already be unlocked). */
   public putSecret(key: string, secret: VaultSecret): void {
     this.assertReadyForSecrets();
     const normalizedKey = normalizeSecretKey(key);
@@ -324,7 +367,13 @@ class AppVault {
     appLogger.debug('Vault secret stored', { key: normalizedKey });
   }
 
-  /** Main-process API: read a secret by opaque key. */
+  /** Unlock if needed, then store a secret. */
+  public async putSecretAsync(key: string, secret: VaultSecret): Promise<void> {
+    await this.ensureUnlocked();
+    this.putSecret(key, secret);
+  }
+
+  /** Main-process API: read a secret by opaque key (vault must already be unlocked). */
   public getSecret(key: string): VaultSecret {
     this.assertReadyForSecrets();
     const entry = [...this.entries.values()].find((item) => item.key === normalizeSecretKey(key));
@@ -332,6 +381,12 @@ class AppVault {
       throw new VaultError('VAULT_ENTRY_NOT_FOUND', `Vault secret not found: ${key}`);
     }
     return this.readBlob(entry.id);
+  }
+
+  /** Unlock if needed, then read a secret. */
+  public async getSecretAsync(key: string): Promise<VaultSecret> {
+    await this.ensureUnlocked();
+    return this.getSecret(key);
   }
 
   public hasSecret(key: string): boolean {
@@ -353,6 +408,12 @@ class AppVault {
     this.persistIndex();
     appLogger.debug('Vault secret deleted', { key: entry.key });
     return true;
+  }
+
+  /** Unlock if needed, then delete a secret. */
+  public async deleteSecretAsync(key: string): Promise<boolean> {
+    await this.ensureUnlocked();
+    return this.deleteSecret(key);
   }
 
   public listSecretKeys(): string[] {
@@ -427,6 +488,46 @@ class AppVault {
         return this.toIpcError(error, 'VAULT_REGENERATE_FAILED', 'Unable to regenerate recovery codes');
       }
     });
+
+    handleInvoke('vault-dismiss-unlock', () => {
+      try {
+        this.dismissUnlockRequest();
+        return ipcOk(this.getStatus());
+      } catch (error) {
+        return this.toIpcError(error, 'VAULT_DISMISS_FAILED', 'Unable to dismiss vault unlock');
+      }
+    });
+  }
+
+  private promptUnlock(): void {
+    if (this.unlockPromptOpen) {
+      return;
+    }
+    if (!this.window || this.window.isDestroyed()) {
+      this.rejectUnlockWaiters(
+        new VaultError('VAULT_LOCKED', 'Vault is locked and no UI is available to unlock it'),
+      );
+      return;
+    }
+
+    this.unlockPromptOpen = true;
+    sendToRenderer(this.window, 'vault-unlock-required');
+  }
+
+  private resolveUnlockWaiters(): void {
+    this.unlockPromptOpen = false;
+    const waiters = this.unlockWaiters.splice(0);
+    for (const waiter of waiters) {
+      waiter.resolve();
+    }
+  }
+
+  private rejectUnlockWaiters(error: VaultError): void {
+    this.unlockPromptOpen = false;
+    const waiters = this.unlockWaiters.splice(0);
+    for (const waiter of waiters) {
+      waiter.reject(error);
+    }
   }
 
   private toIpcError(error: unknown, fallbackCode: string, fallbackMessage: string) {

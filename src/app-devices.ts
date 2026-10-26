@@ -70,9 +70,7 @@ class AppDevices {
       device.online = false;
     }
     appSettings.set('devices', this.devices as unknown as SettingsObject);
-    if (this.window) {
-      sendToRenderer(this.window, 'devices-updated', this.devicesObjectToArray());
-    }
+    this.emitDevicesUpdated();
   }
 
   private onMessageBusUpdating(updating: boolean): void {
@@ -88,14 +86,47 @@ class AppDevices {
 
   private onPeerDisconnected(peerInfos: CleepbusPeerInfos): void {
     appLogger.info('Peer disconnected', { peerInfos });
+    peerInfos.online = false;
     this.updateDevices(peerInfos);
-    sendToRenderer(this.window, 'devices-updated', this.devicesObjectToArray());
+    this.emitDevicesUpdated();
+    this.emitPeerLifecycleMessage(peerInfos, 'device.disconnected');
   }
 
   private onPeerConnected(peerInfos: CleepbusPeerInfos): void {
     appLogger.info('Peer connected', { uuid: peerInfos.uuid });
+    peerInfos.online = true;
     this.updateDevices(peerInfos);
+    this.emitDevicesUpdated();
+    this.emitPeerLifecycleMessage(peerInfos, 'device.connected');
+  }
+
+  private emitDevicesUpdated(): void {
+    if (!this.window || this.window.isDestroyed?.()) {
+      return;
+    }
     sendToRenderer(this.window, 'devices-updated', this.devicesObjectToArray());
+  }
+
+  /** Publish connect/disconnect into the monitoring feed (same channel as device events). */
+  private emitPeerLifecycleMessage(
+    peerInfos: CleepbusPeerInfos,
+    event: 'device.connected' | 'device.disconnected',
+  ): void {
+    if (!this.window || this.window.isDestroyed?.()) {
+      return;
+    }
+    const timestamp = Math.round(Date.now() / 1000);
+    const message: CleebusMessageResponse = {
+      event,
+      sender: peerInfos.hostname || 'unknown',
+      startup: false,
+      params: {
+        ip: peerInfos.ip,
+        online: event === 'device.connected',
+        port: peerInfos.port,
+      },
+    };
+    sendToRenderer(this.window, 'devices-message', { timestamp, peerInfos, message });
   }
 
   private updateDevices(peerInfos: CleepbusPeerInfos): void {
@@ -119,7 +150,7 @@ class AppDevices {
     delete this.devices[deviceUuid];
     appSettings.set('devices', this.devices as unknown as SettingsObject);
 
-    sendToRenderer(this.window, 'devices-updated', this.devicesObjectToArray());
+    this.emitDevicesUpdated();
 
     return true;
   }

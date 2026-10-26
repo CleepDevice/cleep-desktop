@@ -142,8 +142,9 @@
                             md-colors="device.uuid === ctl.devicesService.selectedDeviceUuid ? { background: 'accent-100' } : { background: 'background' }"
                         >
                             <md-icon ng-if="device.online && !device.auth" md-svg-icon="cellphone" class="icon-margin"></md-icon>
-                            <md-icon ng-if="!device.online  && !device.auth" md-svg-icon="cellphone-off" class="icon-margin md-accent"></md-icon>
+                            <md-icon ng-if="!device.online && !device.auth" md-svg-icon="cellphone-off" class="icon-margin md-accent"></md-icon>
                             <md-icon ng-if="device.online && device.auth" md-svg-icon="cellphone-lock" class="icon-margin"></md-icon>
+                            <md-icon ng-if="!device.online && device.auth" md-svg-icon="cellphone-lock" class="icon-margin md-accent"></md-icon>
                             <p>
                                 {{ device.hostname }}
                             </p>
@@ -182,8 +183,9 @@
                             md-colors="device.uuid === ctl.devicesService.selectedDeviceUuid ? { background: 'accent-100' } : { background: 'background' }"
                         >
                             <md-icon ng-if="device.online && !device.auth" md-svg-icon="cellphone" class="icon-margin"></md-icon>
-                            <md-icon ng-if="!device.online  && !device.auth" md-svg-icon="cellphone-off" class="icon-margin md-accent"></md-icon>
+                            <md-icon ng-if="!device.online && !device.auth" md-svg-icon="cellphone-off" class="icon-margin md-accent"></md-icon>
                             <md-icon ng-if="device.online && device.auth" md-svg-icon="cellphone-lock" class="icon-margin"></md-icon>
+                            <md-icon ng-if="!device.online && device.auth" md-svg-icon="cellphone-lock" class="icon-margin md-accent"></md-icon>
                             <p>
                                 {{ device.hostname }}
                             </p>
@@ -267,6 +269,7 @@
     <script src="js/services/monitoring.service.js"></script>
     <script src="js/updates/updates.controller.js"></script>
     <script src="js/preferences/preferences.controller.js"></script>
+    <script src="js/vault/vault-unlock.controller.js"></script>
     <script src="js/install/install.controller.js"></script>
     <script src="js/install/iso-dialog.controller.js"></script>
     <script src="js/install/drive-dialog.controller.js"></script>

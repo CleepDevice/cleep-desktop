@@ -44,6 +44,9 @@ function($scope, $rootScope, $state, tasksPanelService, modalService, $timeout, 
             electron.app.onOpenModal(function(_event, args) {
                 self.openModal(args.controller, args.template, args.data);
             }),
+            electron.vault.onUnlockRequired(function() {
+                self.openModal('vaultUnlockController', 'js/vault/vault-unlock-dialog.html');
+            }),
         );
 
         // first run? open application help

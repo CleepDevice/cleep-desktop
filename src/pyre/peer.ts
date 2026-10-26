@@ -77,6 +77,9 @@ export class Peer {
       await this.mailbox.send(framed);
     } catch (err) {
       this.logger.debug(`Error sending to peer ${this.name}:`, err);
+      // Dead mailbox: drop immediately so the node reaper emits EXIT on next tick.
+      this.expiredAt = 0;
+      this.evasiveAt = 0;
       this.disconnect();
     }
   }

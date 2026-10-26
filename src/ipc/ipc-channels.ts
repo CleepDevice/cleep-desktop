@@ -32,6 +32,7 @@ export const INVOKE_CHANNELS = [
   'updater-get-software-versions',
   'vault-change-passphrase',
   'vault-disable',
+  'vault-dismiss-unlock',
   'vault-enable',
   'vault-get-status',
   'vault-lock',
@@ -71,6 +72,7 @@ export const RECEIVE_CHANNELS = [
   'updater-cleepdesktop-update-available',
   'updater-rpi-imager-download-progress',
   'updater-rpi-imager-update-available',
+  'vault-unlock-required',
   'webview-new-window',
 ] as const satisfies readonly ReceiveChannel[];
 

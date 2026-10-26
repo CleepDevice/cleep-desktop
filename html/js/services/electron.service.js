@@ -253,8 +253,10 @@ angular
         disable: bindInvoke(api.vault.disable),
         unlock: bindInvoke(api.vault.unlock),
         lock: bindInvoke(api.vault.lock),
+        dismissUnlock: bindInvoke(api.vault.dismissUnlock),
         changePassphrase: bindInvoke(api.vault.changePassphrase),
         recover: bindInvoke(api.vault.recover),
         regenerateRecoveryCodes: bindInvoke(api.vault.regenerateRecoveryCodes),
+        onUnlockRequired: bindOn(api.vault.onUnlockRequired),
     };
 }]);

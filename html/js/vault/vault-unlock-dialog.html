@@ -1,0 +1,82 @@
+<md-dialog flex="40">
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>Unlock vault</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="ctl.cancel()" aria-label="Close">
+                <md-icon md-svg-icon="close"></md-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+
+    <md-dialog-content layout-padding>
+        <p class="md-body-1">
+            CleepDesktop needs the application vault to continue. Enter your vault passphrase.
+        </p>
+
+        <!-- unlock -->
+        <div ng-if="ctl.panel === 'unlock'" layout="column">
+            <md-input-container class="md-block">
+                <label>Passphrase</label>
+                <input type="password"
+                       ng-model="ctl.passphrase"
+                       ng-keypress="ctl.onPassphraseKeypress($event)"
+                       autocomplete="current-password">
+            </md-input-container>
+            <div layout="row" layout-align="space-between center">
+                <md-button ng-click="ctl.panel = 'recover'" ng-disabled="ctl.busy">Forgot passphrase?</md-button>
+                <div>
+                    <md-button ng-click="ctl.cancel()" ng-disabled="ctl.busy">Cancel</md-button>
+                    <md-button class="md-raised md-primary" ng-click="ctl.unlock()" ng-disabled="ctl.busy">
+                        Unlock
+                    </md-button>
+                </div>
+            </div>
+        </div>
+
+        <!-- recover -->
+        <div ng-if="ctl.panel === 'recover'" layout="column">
+            <p class="md-body-1">
+                Enter a recovery code and choose a new passphrase.
+            </p>
+            <md-input-container class="md-block">
+                <label>Recovery code</label>
+                <input ng-model="ctl.recoveryCode" autocomplete="off">
+            </md-input-container>
+            <md-input-container class="md-block">
+                <label>New passphrase</label>
+                <input type="password" ng-model="ctl.nextPassphrase" autocomplete="new-password">
+            </md-input-container>
+            <md-input-container class="md-block">
+                <label>Confirm new passphrase</label>
+                <input type="password" ng-model="ctl.passphraseConfirm" autocomplete="new-password">
+            </md-input-container>
+            <div layout="row" layout-align="end center">
+                <md-button ng-click="ctl.panel = 'unlock'" ng-disabled="ctl.busy">Back</md-button>
+                <md-button class="md-raised md-primary" ng-click="ctl.recover()" ng-disabled="ctl.busy">
+                    Recover
+                </md-button>
+            </div>
+        </div>
+
+        <!-- recovery codes after recover -->
+        <div ng-if="ctl.panel === 'codes'" layout="column">
+            <p class="md-body-1">
+                Store these new recovery codes in a safe place. They are shown only once.
+            </p>
+            <md-input-container class="md-block">
+                <label>Recovery codes</label>
+                <textarea ng-model="ctl.recoveryCodesText" rows="8" readonly style="font-family: monospace;"></textarea>
+            </md-input-container>
+            <div layout="row" layout-align="end center">
+                <md-button ng-click="ctl.copyRecoveryCodes()">
+                    <md-icon md-svg-icon="content-copy"></md-icon>
+                    Copy
+                </md-button>
+                <md-button class="md-raised md-primary" ng-click="ctl.finish()">
+                    Continue
+                </md-button>
+            </div>
+        </div>
+    </md-dialog-content>
+</md-dialog>

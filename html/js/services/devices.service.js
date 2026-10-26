@@ -22,6 +22,8 @@ function(electron, logger, ipcLifecycle) {
             electron.devices.onBusConnected(self.onMessageBusConnected.bind(self)),
             electron.devices.onBusError(self.onMessageBusError.bind(self)),
             electron.devices.onBusUpdating(self.onMessageBusUpdating.bind(self)),
+            // Lifecycle events also flip online in the list (belt-and-suspenders with devices-updated).
+            electron.devices.onMessage(self.onDevicesLifecycleMessage.bind(self)),
         );
     };
 
@@ -70,6 +72,27 @@ function(electron, logger, ipcLifecycle) {
         logger.debug('Device has auth updated', { foundDevice, hasAuthStored: auth.hasAuthStored });
         foundDevice.hasAuthStored = auth.hasAuthStored;
     }
+
+    self.onDevicesLifecycleMessage = function(_event, payload) {
+        var eventName = payload && payload.message && payload.message.event;
+        if (eventName !== 'device.connected' && eventName !== 'device.disconnected') {
+            return;
+        }
+
+        var peer = payload.peerInfos || {};
+        var foundDevice = self.findDevice(peer.uuid, peer.ip);
+        if (!foundDevice) {
+            logger.debug('Lifecycle event for unknown device', { eventName, peer });
+            return;
+        }
+
+        foundDevice.online = eventName === 'device.connected';
+        logger.debug('Device availability updated from lifecycle event', {
+            uuid: foundDevice.uuid,
+            online: foundDevice.online,
+            eventName: eventName,
+        });
+    };
 
     self.onMessageBusConnected = function(_event, connected) {
         if (self.busStatus === 'ERROR') {

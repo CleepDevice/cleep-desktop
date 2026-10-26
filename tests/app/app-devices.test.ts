@@ -56,6 +56,7 @@ describe('AppDevices', () => {
   let appDevices: typeof import('../../src/app-devices').appDevices;
   const send = vi.fn();
   const window = {
+    isDestroyed: () => false,
     webContents: {
       on: vi.fn((_event: string, cb: () => void) => cb()),
       once: vi.fn((_event: string, cb: () => void) => cb()),
@@ -91,14 +92,27 @@ describe('AppDevices', () => {
     expect(state.data.busConnected).toBe(true);
     expect(state.data.devices.some((device: { uuid: string }) => device.uuid === 'device-1')).toBe(true);
 
+    send.mockClear();
     busCallbacks.peerDisconnected?.({
       uuid: 'device-1',
       hostname: 'pi',
       ip: '192.168.1.10',
       macs: ['aa:bb'],
       cleepdesktop: false,
-      online: false,
+      online: true, // bus may still carry stale online; handler must force offline
     });
+
+    const afterDisconnect = send.mock.calls.find((call) => call[0] === 'devices-updated')?.[1] as Array<{
+      uuid: string;
+      online: boolean;
+    }>;
+    expect(afterDisconnect?.find((device) => device.uuid === 'device-1')?.online).toBe(false);
+    expect(send).toHaveBeenCalledWith(
+      'devices-message',
+      expect.objectContaining({
+        message: expect.objectContaining({ event: 'device.disconnected' }),
+      }),
+    );
 
     expect(ipcHandleHandlers.get('devices-delete-device')).toBeTypeOf('function');
   });
@@ -120,6 +134,44 @@ describe('AppDevices', () => {
     expect(send).toHaveBeenCalledWith('devices-updated', expect.any(Array));
     const devices = send.mock.calls.find((call) => call[0] === 'devices-updated')?.[1] as Array<{ uuid: string; online: boolean }>;
     expect(devices?.find((device) => device.uuid === 'device-offline-test')?.online).toBe(false);
+  });
+
+  it('publishes peer connect/disconnect into the monitoring feed', () => {
+    send.mockClear();
+    const peer = {
+      uuid: 'device-monitor-test',
+      hostname: 'livingroom',
+      ip: '192.168.1.42',
+      port: 80,
+      macs: [],
+      cleepdesktop: false,
+      online: true,
+    };
+
+    busCallbacks.peerConnected?.(peer);
+    expect(send).toHaveBeenCalledWith(
+      'devices-message',
+      expect.objectContaining({
+        peerInfos: expect.objectContaining({ uuid: 'device-monitor-test' }),
+        message: expect.objectContaining({
+          event: 'device.connected',
+          sender: 'livingroom',
+          params: expect.objectContaining({ ip: '192.168.1.42', online: true }),
+        }),
+      }),
+    );
+
+    send.mockClear();
+    busCallbacks.peerDisconnected?.({ ...peer, online: false });
+    expect(send).toHaveBeenCalledWith(
+      'devices-message',
+      expect.objectContaining({
+        message: expect.objectContaining({
+          event: 'device.disconnected',
+          params: expect.objectContaining({ online: false }),
+        }),
+      }),
+    );
   });
 
   it('forwards message-bus error/connected/updating/message events', () => {

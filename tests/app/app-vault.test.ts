@@ -18,6 +18,9 @@ function resetVaultSingleton(): void {
     entries: Map<string, unknown>;
     dek: Buffer | null;
     configured: boolean;
+    window: unknown;
+    unlockWaiters: unknown[];
+    unlockPromptOpen: boolean;
   };
   vault.vaultRoot = null;
   vault.blobsDir = null;
@@ -27,6 +30,9 @@ function resetVaultSingleton(): void {
   vault.entries = new Map();
   vault.dek = null;
   vault.configured = false;
+  vault.window = null;
+  vault.unlockWaiters = [];
+  vault.unlockPromptOpen = false;
 }
 
 function configureVault(): void {
@@ -113,6 +119,45 @@ describe('AppVault', () => {
     expect(fs.existsSync(path.join(vaultDir, 'meta.json'))).toBe(false);
   });
 
+  it('ensureUnlocked resolves immediately when already unlocked', async () => {
+    appVault.enable(PASSPHRASE);
+    await expect(appVault.ensureUnlocked()).resolves.toBeUndefined();
+  });
+
+  it('ensureUnlocked waits until unlock and getSecretAsync works', async () => {
+    appVault.enable(PASSPHRASE);
+    appVault.putSecret('remote.url', 'https://example.ngrok.app');
+    appVault.lock();
+
+    const pending = appVault.getSecretAsync('remote.url');
+    // Without a BrowserWindow, the unlock prompt rejects immediately.
+    await expect(pending).rejects.toMatchObject({ code: 'VAULT_LOCKED' });
+
+    appVault.unlock(PASSPHRASE);
+    await expect(appVault.getSecretAsync('remote.url')).resolves.toBe('https://example.ngrok.app');
+  });
+
+  it('ensureUnlocked can be satisfied by a concurrent unlock', async () => {
+    appVault.enable(PASSPHRASE);
+    appVault.lock();
+
+    // Fake a window so promptUnlock does not reject immediately.
+    appVault.setWindow({ isDestroyed: () => false } as Electron.BrowserWindow);
+    const pending = appVault.ensureUnlocked();
+    appVault.unlock(PASSPHRASE);
+    await expect(pending).resolves.toBeUndefined();
+  });
+
+  it('dismissUnlockRequest cancels pending ensureUnlocked', async () => {
+    appVault.enable(PASSPHRASE);
+    appVault.lock();
+    appVault.setWindow({ isDestroyed: () => false } as Electron.BrowserWindow);
+
+    const pending = appVault.ensureUnlocked();
+    appVault.dismissUnlockRequest();
+    await expect(pending).rejects.toMatchObject({ code: 'VAULT_UNLOCK_CANCELLED' });
+  });
+
   it('registers configuration ipc handlers', async () => {
     expect(ipcHandleHandlers.has('vault-get-status')).toBe(true);
     expect(ipcHandleHandlers.has('vault-enable')).toBe(true);
@@ -122,6 +167,7 @@ describe('AppVault', () => {
     expect(ipcHandleHandlers.has('vault-change-passphrase')).toBe(true);
     expect(ipcHandleHandlers.has('vault-recover')).toBe(true);
     expect(ipcHandleHandlers.has('vault-regenerate-recovery-codes')).toBe(true);
+    expect(ipcHandleHandlers.has('vault-dismiss-unlock')).toBe(true);
 
     await expect(ipcHandleHandlers.get('vault-get-status')?.()).resolves.toEqual({
       ok: true,

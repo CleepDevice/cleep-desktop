@@ -125,6 +125,7 @@ app.on('ready', async function () {
 
     // configure modules
     appAuth.configure(mainWindow);
+    appVault.setWindow(mainWindow);
     appUpdater.configure(mainWindow);
     appFileDownload.configure(mainWindow);
     appIso.configure(mainWindow);

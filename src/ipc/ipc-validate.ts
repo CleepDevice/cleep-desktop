@@ -186,6 +186,7 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
   'updater-get-software-versions': null,
   'vault-change-passphrase': vaultChangePassphraseRequest,
   'vault-disable': vaultPassphraseRequest,
+  'vault-dismiss-unlock': null,
   'vault-enable': vaultPassphraseRequest,
   'vault-get-status': null,
   'vault-lock': null,
