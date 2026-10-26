@@ -400,12 +400,35 @@ export class Cleepbus {
   }
 
   private decodePeerInfos(headers: Record<string, string>): CleepbusPeerInfos {
-    const reserved = new Set(['uuid', 'hostname', 'port', 'ssl', 'auth', 'cleepdesktop', 'macs']);
+    const reserved = new Set([
+      'uuid',
+      'hostname',
+      'port',
+      'ssl',
+      'auth',
+      'remoteaccess',
+      'cleepdesktop',
+      'macs',
+    ]);
     let macs: string[] = [];
     try {
       macs = normalizeMacList(JSON.parse(headers.macs ?? '[]'));
     } catch {
       macs = [];
+    }
+
+    let remoteaccess: Record<string, string> = {};
+    try {
+      const parsed = JSON.parse(headers.remoteaccess ?? '{}') as unknown;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        remoteaccess = Object.fromEntries(
+          Object.entries(parsed as Record<string, unknown>).filter(
+            (entry): entry is [string, string] => typeof entry[1] === 'string' && Boolean(entry[1]),
+          ),
+        );
+      }
+    } catch {
+      remoteaccess = {};
     }
 
     const extra: Record<string, unknown> = {};
@@ -422,6 +445,7 @@ export class Cleepbus {
       port: Number.parseInt(headers.port ?? '80', 10) || 80,
       ssl: str2bool(headers.ssl, false),
       auth: str2bool(headers.auth, false),
+      remoteaccess,
       cleepdesktop: str2bool(headers.cleepdesktop, false),
       macs,
       online: false,

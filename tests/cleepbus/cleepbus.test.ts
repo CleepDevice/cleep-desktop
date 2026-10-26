@@ -147,6 +147,7 @@ describe('Cleepbus', () => {
         port: '80',
         ssl: '0',
         auth: '0',
+        remoteaccess: JSON.stringify({ ngrok: 'https://dummy.ngrok.app' }),
         cleepdesktop: '0',
         macs: JSON.stringify(['11:22:33:44:55:66', 'aa:bb:cc:dd:ee:ff']),
         version: '0.0.30',
@@ -165,6 +166,8 @@ describe('Cleepbus', () => {
         online: true,
         cleepdesktop: false,
         macs: ['11:22:33:44:55:66', 'AA:BB:CC:DD:EE:FF'],
+        auth: false,
+        remoteaccess: { ngrok: 'https://dummy.ngrok.app' },
         extra: expect.objectContaining({
           configured: true,
           version: '0.0.30',
@@ -172,6 +175,7 @@ describe('Cleepbus', () => {
         }),
       }),
     );
+    expect(peerConnected.mock.calls[0][0].extra?.remoteaccess).toBeUndefined();
 
     const shout: ShoutEvent = {
       type: 'SHOUT',

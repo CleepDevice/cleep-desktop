@@ -20,6 +20,8 @@ export interface CleepbusPeerInfos {
   online: boolean;
   extra?: Record<string, unknown>;
   auth?: boolean;
+  /** Public URLs keyed by application name (from ZRE header). */
+  remoteaccess?: Record<string, string>;
 }
 
 export type CleepbusContentType = 'PEER_CONNECTED' | 'PEER_DISCONNECTED' | 'MESSAGE_RESPONSE';
