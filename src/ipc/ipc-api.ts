@@ -138,6 +138,20 @@ export function createCleepApi(ipc: IpcPrimitives) {
         ipc.on('updater-cleepbus-download-progress', listener),
     },
 
+    vault: {
+      getStatus: () => ipc.invoke('vault-get-status'),
+      enable: (passphrase: string) => ipc.invoke('vault-enable', { passphrase }),
+      disable: (passphrase: string) => ipc.invoke('vault-disable', { passphrase }),
+      unlock: (passphrase: string) => ipc.invoke('vault-unlock', { passphrase }),
+      lock: () => ipc.invoke('vault-lock'),
+      changePassphrase: (currentPassphrase: string, nextPassphrase: string) =>
+        ipc.invoke('vault-change-passphrase', { currentPassphrase, nextPassphrase }),
+      recover: (recoveryCode: string, newPassphrase: string) =>
+        ipc.invoke('vault-recover', { recoveryCode, newPassphrase }),
+      regenerateRecoveryCodes: (passphrase: string) =>
+        ipc.invoke('vault-regenerate-recovery-codes', { passphrase }),
+    },
+
     webview: {
       onNewWindow: (listener: IpcListener<'webview-new-window'>) =>
         ipc.on('webview-new-window', listener),

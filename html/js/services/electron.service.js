@@ -42,12 +42,21 @@ angular
 
     function bindInvoke(fn) {
         return function() {
+            if (typeof fn !== 'function') {
+                return Promise.reject({
+                    code: 'IPC_BRIDGE_STALE',
+                    message: 'Preload bridge is outdated. Restart CleepDesktop to reload it.',
+                });
+            }
             return unwrapInvoke(fn.apply(null, arguments));
         };
     }
 
     function bindSend(fn) {
         return function() {
+            if (typeof fn !== 'function') {
+                return;
+            }
             return fn.apply(null, arguments);
         };
     }
@@ -236,5 +245,16 @@ angular
         onFlashToolProgress: bindOnCoalesced(api.updater.onFlashToolProgress, { mode: 'latest' }),
         onCleepbusAvailable: bindOn(api.updater.onCleepbusAvailable),
         onCleepbusProgress: bindOnCoalesced(api.updater.onCleepbusProgress, { mode: 'latest' }),
+    };
+
+    self.vault = {
+        getStatus: bindInvoke(api.vault.getStatus),
+        enable: bindInvoke(api.vault.enable),
+        disable: bindInvoke(api.vault.disable),
+        unlock: bindInvoke(api.vault.unlock),
+        lock: bindInvoke(api.vault.lock),
+        changePassphrase: bindInvoke(api.vault.changePassphrase),
+        recover: bindInvoke(api.vault.recover),
+        regenerateRecoveryCodes: bindInvoke(api.vault.regenerateRecoveryCodes),
     };
 }]);

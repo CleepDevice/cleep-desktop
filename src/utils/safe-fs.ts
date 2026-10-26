@@ -29,6 +29,22 @@ export function unlinkInside(rootDir: string, candidate: string): void {
   fs.unlinkSync(assertPathInside(rootDir, candidate));
 }
 
+export function readFileInside(rootDir: string, candidate: string): Buffer {
+  return fs.readFileSync(assertPathInside(rootDir, candidate));
+}
+
+export function readFileInsideUtf8(rootDir: string, candidate: string): string {
+  return fs.readFileSync(assertPathInside(rootDir, candidate), { encoding: 'utf8' });
+}
+
+export function writeFileInside(
+  rootDir: string,
+  candidate: string,
+  data: string | NodeJS.ArrayBufferView,
+): void {
+  fs.writeFileSync(assertPathInside(rootDir, candidate), data);
+}
+
 export function createReadStreamInside(
   rootDir: string,
   candidate: string,

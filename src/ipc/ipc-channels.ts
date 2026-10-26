@@ -30,6 +30,14 @@ export const INVOKE_CHANNELS = [
   'update-device-auth',
   'updater-check-for-updates',
   'updater-get-software-versions',
+  'vault-change-passphrase',
+  'vault-disable',
+  'vault-enable',
+  'vault-get-status',
+  'vault-lock',
+  'vault-recover',
+  'vault-regenerate-recovery-codes',
+  'vault-unlock',
 ] as const satisfies readonly InvokeChannel[];
 
 export const SEND_CHANNELS = [

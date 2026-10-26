@@ -132,6 +132,20 @@ const downloadFileOptions = z.object({
   title: z.string().optional(),
 });
 
+const vaultPassphraseRequest = z.object({
+  passphrase: z.string().min(1),
+});
+
+const vaultChangePassphraseRequest = z.object({
+  currentPassphrase: z.string().min(1),
+  nextPassphrase: z.string().min(1),
+});
+
+const vaultRecoverRequest = z.object({
+  recoveryCode: nonEmptyString,
+  newPassphrase: z.string().min(1),
+});
+
 type InvokeSchemaMap = {
   [C in InvokeChannel]: [InvokeRequest<C>] extends [void] ? null : ZodTypeAny;
 };
@@ -170,6 +184,14 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
   'update-device-auth': authEvent,
   'updater-check-for-updates': null,
   'updater-get-software-versions': null,
+  'vault-change-passphrase': vaultChangePassphraseRequest,
+  'vault-disable': vaultPassphraseRequest,
+  'vault-enable': vaultPassphraseRequest,
+  'vault-get-status': null,
+  'vault-lock': null,
+  'vault-recover': vaultRecoverRequest,
+  'vault-regenerate-recovery-codes': vaultPassphraseRequest,
+  'vault-unlock': vaultPassphraseRequest,
 };
 
 export const SEND_PAYLOAD_SCHEMAS: SendSchemaMap = {

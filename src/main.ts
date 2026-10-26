@@ -12,6 +12,7 @@ import { appIso } from './app-iso';
 import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
 import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
+import { appVault } from './app-vault';
 import { handleInvoke, ipcOk, onRendererSend, sendToRenderer } from './ipc/ipc-main';
 
 const isE2e = process.env.CLEEPDESKTOP_E2E === '1';
@@ -30,6 +31,7 @@ let mainWindow: BrowserWindow;
 let splashScreenWindow: BrowserWindow;
 
 appSettings.configure(app);
+appVault.configure(app);
 appContext.configure();
 
 app.on('will-quit', function () {

@@ -15,6 +15,7 @@ import type { InstallData } from '../app-iso';
 import type { LoggerMessage } from '../app-logger';
 import type { KeyPath, KeyValue, SettingsObject, SettingsValue } from '../app-settings';
 import type { UpdateData, UpdateStatus } from '../app-updater';
+import type { VaultEnableResult, VaultStatus } from '../app-vault.types';
 import type { CleebusMessageResponse, CleepbusPeerInfos } from '../cleepbus/cleepbus.types';
 import type { Drive } from '../flash-tool/flashtool.interface';
 import type { RaspiosLatestRelease } from '../iso/raspios';
@@ -22,6 +23,20 @@ import type { IIsoReleaseInfo } from '../iso/utils';
 import type { WifiNetwork } from '../iso/wifi';
 import type { ListedNetworkInterface } from '../pyre/iface';
 import type { IpcResult } from './ipc-result';
+
+export type VaultPassphraseRequest = {
+  passphrase: string;
+};
+
+export type VaultChangePassphraseRequest = {
+  currentPassphrase: string;
+  nextPassphrase: string;
+};
+
+export type VaultRecoverRequest = {
+  recoveryCode: string;
+  newPassphrase: string;
+};
 
 export type DevicesUiState = {
   devices: CleepbusPeerInfos[];
@@ -139,6 +154,20 @@ export type InvokeContract = {
   'update-device-auth': { request: IAuthEvent; response: IpcResult<true> };
   'updater-check-for-updates': { request: void; response: IpcResult<UpdateStatus> };
   'updater-get-software-versions': { request: void; response: IpcResult<SoftwareVersions> };
+  'vault-change-passphrase': {
+    request: VaultChangePassphraseRequest;
+    response: IpcResult<VaultStatus>;
+  };
+  'vault-disable': { request: VaultPassphraseRequest; response: IpcResult<VaultStatus> };
+  'vault-enable': { request: VaultPassphraseRequest; response: IpcResult<VaultEnableResult> };
+  'vault-get-status': { request: void; response: IpcResult<VaultStatus> };
+  'vault-lock': { request: void; response: IpcResult<VaultStatus> };
+  'vault-recover': { request: VaultRecoverRequest; response: IpcResult<VaultEnableResult> };
+  'vault-regenerate-recovery-codes': {
+    request: VaultPassphraseRequest;
+    response: IpcResult<VaultEnableResult>;
+  };
+  'vault-unlock': { request: VaultPassphraseRequest; response: IpcResult<VaultStatus> };
 };
 
 /** send(channel, payload?) — fire-and-forget renderer → main */
