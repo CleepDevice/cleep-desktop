@@ -66,6 +66,8 @@ export function createCleepApi(ipc: IpcPrimitives) {
       getUiState: () => ipc.invoke('devices-get-ui-state'),
       deleteDevice: (deviceUuid: string) => ipc.invoke('devices-delete-device', deviceUuid),
       updateAuth: (auth: IAuthEvent) => ipc.invoke('update-device-auth', auth),
+      prepareAuth: (request: { url: string; deviceUuid: string }) =>
+        ipc.invoke('devices-prepare-auth', request),
       onUpdated: (listener: IpcListener<'devices-updated'>) => ipc.on('devices-updated', listener),
       onAuthUpdated: (listener: IpcListener<'device-auth-updated'>) =>
         ipc.on('device-auth-updated', listener),
@@ -145,6 +147,7 @@ export function createCleepApi(ipc: IpcPrimitives) {
       unlock: (passphrase: string) => ipc.invoke('vault-unlock', { passphrase }),
       lock: () => ipc.invoke('vault-lock'),
       dismissUnlock: () => ipc.invoke('vault-dismiss-unlock'),
+      ensureUnlocked: () => ipc.invoke('vault-ensure-unlocked'),
       changePassphrase: (currentPassphrase: string, nextPassphrase: string) =>
         ipc.invoke('vault-change-passphrase', { currentPassphrase, nextPassphrase }),
       recover: (recoveryCode: string, newPassphrase: string) =>

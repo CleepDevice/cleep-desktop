@@ -1,46 +1,67 @@
-<div>
+<div layout="column" layout-fill class="device-auth-page">
 
-    <div style="width:100%; height:80%;">
-        <md-toolbar flex="initial">
-            <div class="md-toolbar-tools">
-                <h2>
-                    Auth requested by {{ ctl.hostname }}
-                </h2>
-                <span flex></span>
-            </div>
-        </md-toolbar>
-        <md-progress-linear md-mode="determinate" value="100"></md-progress-linear>
-
-        <md-content layout-padding>
-            <div layout="column" layout-sm="column" layout-align="center center" layout-fill>
-                <form>
-                    <md-card>
-                        <img ng-src="images/device-auth.png" class="md-card-image">
-                        <md-card-title>
-                            <md-card-title-text ng-if="ctl.errorCode === 'INVALID_AUTH'">
-                                <div>
-                                    <md-icon md-svg-icon="alert-circle-outline"></md-icon>
-                                    Invalid credentials specified
-                                </div>
-                            </md-card-title-text>
-                        </md-card-title>
-                        <md-card-content layout="column" layout-sm="column">
-                            <md-input-container>
-                                <label>Account</label>
-                                <input ng-model="ctl.account" required>
-                            </md-input-container>
-                            <md-input-container>
-                                <label>Password</label>
-                                <input ng-model="ctl.password" type="password" required>
-                            </md-input-container>
-                        </md-card-content>
-                        <md-card-actions layout="row" layout-align="end center">
-                            <md-button class="md-raised md-primary" ng-click="ctl.login()" type="submit">Login</md-button>
-                        </md-card-actions>
-                    </md-card>
-                </form>
-            </div>
-        </md-content>
+    <div md-colors="::{ background: 'primary-500' }" class="toolbar-content" layout="row" layout-align="start center">
+        <div class="toolbar-spacer"></div>
+        <div layout="row" layout-align="left center">
+            <md-icon style="color:white;" md-svg-icon="cellphone-key"></md-icon>
+            <h1 style="padding-left:5px;" class="md-title">Device sign-in</h1>
+        </div>
     </div>
+
+    <md-content flex class="device-auth-content" layout="column" layout-align="center center">
+        <form class="device-auth-card" ng-submit="ctl.login()" layout="column">
+            <div class="device-auth-card-header" md-colors="::{ background: 'primary-500' }" layout="column" layout-align="center center">
+                <md-icon class="device-auth-lock" md-svg-icon="lock-outline"></md-icon>
+            </div>
+
+            <div class="device-auth-card-body" layout="column">
+                <div class="device-auth-intro">
+                    <div class="device-auth-title">Sign in to device</div>
+                    <div class="device-auth-device">{{ ctl.hostname }}</div>
+                </div>
+
+                <div class="device-auth-error" ng-if="ctl.errorCode === 'INVALID_AUTH'" layout="row" layout-align="start center">
+                    <md-icon md-svg-icon="alert-circle-outline"></md-icon>
+                    <span>Invalid credentials. Please try again.</span>
+                </div>
+
+                <md-input-container class="md-block no-error-spacer">
+                    <label>Account</label>
+                    <input ng-model="ctl.account" name="account" required autocomplete="username" autofocus>
+                </md-input-container>
+
+                <md-input-container class="md-block no-error-spacer">
+                    <label>Password</label>
+                    <input ng-model="ctl.password" name="password" type="password" required autocomplete="current-password">
+                </md-input-container>
+
+                <!-- vault enabled: offer to persist credentials -->
+                <md-checkbox
+                    class="device-auth-vault-option"
+                    ng-if="ctl.vaultEnabled"
+                    ng-model="ctl.saveToVault"
+                >
+                    Save credentials in the application vault
+                </md-checkbox>
+
+                <!-- vault disabled: invite to enable it -->
+                <div class="device-auth-vault-hint" ng-if="ctl.vaultLoaded && !ctl.vaultEnabled">
+                    <md-icon md-svg-icon="shield-key-outline"></md-icon>
+                    <span>
+                        Want to keep this password?
+                        <a href ng-click="ctl.openVaultPreferences($event)">Enable the application vault</a>
+                    </span>
+                </div>
+
+                <md-button
+                    class="md-raised md-primary device-auth-submit"
+                    type="submit"
+                    ng-disabled="!ctl.account || !ctl.password || ctl.busy"
+                >
+                    Sign in
+                </md-button>
+            </div>
+        </form>
+    </md-content>
 
 </div>

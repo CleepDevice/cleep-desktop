@@ -355,3 +355,119 @@ md-toast.info .md-toast-content {
   color: #808080;
   font-style: italic;
 }
+
+/* device auth */
+.device-auth-page {
+  background: #eceff1;
+}
+
+.device-auth-content {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgb(96 125 139 / 12%), transparent 70%),
+    #eceff1;
+  padding: 32px 16px;
+}
+
+.device-auth-card {
+  width: 100%;
+  max-width: 380px;
+  margin: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 6%),
+    0 8px 24px rgb(55 71 79 / 12%);
+  overflow: hidden;
+}
+
+.device-auth-card-header {
+  height: 88px;
+}
+
+.device-auth-lock {
+  width: 36px;
+  height: 36px;
+  color: #fff;
+}
+
+.device-auth-lock svg {
+  fill: #fff;
+}
+
+.device-auth-card-body {
+  padding: 28px 28px 24px;
+}
+
+.device-auth-intro {
+  margin-bottom: 20px;
+}
+
+.device-auth-title {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #263238;
+  line-height: 1.25;
+}
+
+.device-auth-device {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #607d8b;
+  letter-spacing: 0.01em;
+}
+
+.device-auth-error {
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #ffebee;
+  color: #c62828;
+  font-size: 13px;
+}
+
+.device-auth-error md-icon {
+  color: #c62828;
+  min-width: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.device-auth-submit {
+  margin: 8px 0 0;
+  width: 100%;
+}
+
+.device-auth-vault-option {
+  margin: 4px 0 12px;
+  font-size: 13px;
+  color: #455a64;
+}
+
+.device-auth-vault-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 4px 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgb(96 125 139 / 10%);
+  color: #455a64;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.device-auth-vault-hint md-icon {
+  color: #607d8b;
+  min-width: 20px;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+}
+
+.device-auth-vault-hint a {
+  color: #455a64;
+  font-weight: 600;
+  text-decoration: underline;
+}

@@ -83,6 +83,10 @@ function($scope, $rootScope, $state, tasksPanelService, modalService, $timeout, 
         self.openPage(page, params);
     });
 
+    $rootScope.$on('open-preferences', (_event, data) => {
+        self.openModal('preferencesController', 'js/preferences/preferences-dialog.html', data || {});
+    });
+
     // open modal
     self.openModal = function(controllerName, templateUrl, data) {
         modalService.open(controllerName, templateUrl, data || {});

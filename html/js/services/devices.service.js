@@ -40,26 +40,21 @@ function(electron, logger, ipcLifecycle) {
     });
 
     self.onDevicesUpdated = function(_event, devices) {
-        // sync all devices
-        self.devices = devices;
-
-        // add custom fields for frontend usage
+        // Preserve hasAuthStored across peer updates when main omitted the flag.
+        var previousByUuid = {};
         self.devices.forEach((device) => {
-            if (device['hasAuthStored'] === undefined) {
-                device.hasAuthStored = false;
+            previousByUuid[device.uuid] = device;
+        });
+
+        self.devices = devices || [];
+
+        self.devices.forEach((device) => {
+            if (device.hasAuthStored === undefined) {
+                var previous = previousByUuid[device.uuid];
+                device.hasAuthStored = previous ? Boolean(previous.hasAuthStored) : false;
             }
             device.url = (device.ssl ? 'https://' : 'http://') + device.ip + ':' + device.port;
-        })
-
-        // remove obsolete devices
-        var devicesUuids = devices.map((device) => device.uuid);
-        const deviceIndexesToDelete = self.devices.map(
-            (device, index) => devicesUuids.find((deviceUuid) => deviceUuid === device.uuid) ? undefined : index
-        );
-        for (const index of deviceIndexesToDelete.reverse()) {
-            if (index === undefined) continue;
-            self.devices.splice(index, 1);
-        }
+        });
     };
 
     self.onDevicesAuthUpdated = function(_event, auth) {

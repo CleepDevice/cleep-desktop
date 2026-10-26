@@ -161,6 +161,7 @@ export type InvokeContract = {
   'vault-disable': { request: VaultPassphraseRequest; response: IpcResult<VaultStatus> };
   'vault-dismiss-unlock': { request: void; response: IpcResult<VaultStatus> };
   'vault-enable': { request: VaultPassphraseRequest; response: IpcResult<VaultEnableResult> };
+  'vault-ensure-unlocked': { request: void; response: IpcResult<VaultStatus> };
   'vault-get-status': { request: void; response: IpcResult<VaultStatus> };
   'vault-lock': { request: void; response: IpcResult<VaultStatus> };
   'vault-recover': { request: VaultRecoverRequest; response: IpcResult<VaultEnableResult> };
@@ -169,6 +170,10 @@ export type InvokeContract = {
     response: IpcResult<VaultEnableResult>;
   };
   'vault-unlock': { request: VaultPassphraseRequest; response: IpcResult<VaultStatus> };
+  'devices-prepare-auth': {
+    request: { url: string; deviceUuid: string };
+    response: IpcResult<{ ready: boolean }>;
+  };
 };
 
 /** send(channel, payload?) — fire-and-forget renderer → main */

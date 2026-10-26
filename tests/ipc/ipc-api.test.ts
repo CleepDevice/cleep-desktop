@@ -27,6 +27,7 @@ describe('createCleepApi', () => {
       'settings',
       'shell',
       'updater',
+      'vault',
       'webview',
     ]);
   });
@@ -36,14 +37,21 @@ describe('createCleepApi', () => {
     const api = createCleepApi(ipc);
 
     await api.devices.getUiState();
+    await api.devices.prepareAuth({ url: 'http://10.0.0.1/', deviceUuid: 'u1' });
     await api.bus.setNetworkInterface('eth0');
     await api.install.getIsos(true);
     await api.settings.get('cleep.debug');
+    await api.vault.ensureUnlocked();
 
     expect(ipc.invoke).toHaveBeenCalledWith('devices-get-ui-state');
+    expect(ipc.invoke).toHaveBeenCalledWith('devices-prepare-auth', {
+      url: 'http://10.0.0.1/',
+      deviceUuid: 'u1',
+    });
     expect(ipc.invoke).toHaveBeenCalledWith('bus-set-network-interface', 'eth0');
     expect(ipc.invoke).toHaveBeenCalledWith('iso-get-isos', true);
     expect(ipc.invoke).toHaveBeenCalledWith('settings-get', 'cleep.debug');
+    expect(ipc.invoke).toHaveBeenCalledWith('vault-ensure-unlocked');
   });
 
   it('maps semantic sends to channel names', () => {

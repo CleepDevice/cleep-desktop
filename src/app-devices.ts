@@ -1,4 +1,5 @@
 import { BrowserWindow } from 'electron';
+import { appAuth } from './app-auth';
 import { appLogger } from './app-logger';
 import { appSettings, SettingsObject } from './app-settings';
 import { cleepbus } from './cleepbus/cleepbus';
@@ -104,7 +105,7 @@ class AppDevices {
     if (!this.window || this.window.isDestroyed?.()) {
       return;
     }
-    sendToRenderer(this.window, 'devices-updated', this.devicesObjectToArray());
+    sendToRenderer(this.window, 'devices-updated', this.devicesForRenderer());
   }
 
   /** Publish connect/disconnect into the monitoring feed (same channel as device events). */
@@ -142,6 +143,27 @@ class AppDevices {
     return Object.values(this.devices);
   }
 
+  /** Devices payload for the renderer, including vault/session auth flags. */
+  private devicesForRenderer(): Array<CleepbusPeerInfos & { hasAuthStored: boolean }> {
+    return this.devicesObjectToArray().map((device) => ({
+      ...device,
+      hasAuthStored: appAuth.hasStoredAuth(device.uuid),
+    }));
+  }
+
+  /** Lookup a known device by IP / hostname (HTTP auth host). */
+  public findByHost(host: string): CleepbusPeerInfos | undefined {
+    const needle = (host || '').trim().toLowerCase();
+    if (!needle) {
+      return undefined;
+    }
+    return Object.values(this.devices).find((device) => {
+      const ip = (device.ip || '').toLowerCase();
+      const hostname = (device.hostname || '').toLowerCase();
+      return ip === needle || hostname === needle;
+    });
+  }
+
   private deleteDevice(deviceUuid: string): boolean {
     if (!this.devices[deviceUuid]) {
       return false;
@@ -177,7 +199,7 @@ class AppDevices {
   private addIpcs(): void {
     handleInvoke('devices-get-ui-state', async () =>
       ipcOk({
-        devices: this.devicesObjectToArray(),
+        devices: this.devicesForRenderer(),
         busConnected: this.busConnected,
       }),
     );

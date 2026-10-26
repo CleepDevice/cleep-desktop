@@ -136,6 +136,50 @@ describe('AppDevices', () => {
     expect(devices?.find((device) => device.uuid === 'device-offline-test')?.online).toBe(false);
   });
 
+  it('includes hasAuthStored when pushing devices-updated after peer connect', async () => {
+    const { appVault } = await import('../../src/app-vault');
+    const { deviceAuthVaultKey } = await import('../../src/app-auth');
+    const { USER_DATA_DIR } = await import('../setup');
+    const fs = await import('fs');
+    const path = await import('path');
+
+    const vault = appVault as unknown as { configured: boolean; vaultRoot: string | null; dek: Buffer | null; meta: unknown; entries: Map<string, unknown> };
+    vault.configured = false;
+    vault.vaultRoot = null;
+    vault.dek = null;
+    vault.meta = null;
+    vault.entries = new Map();
+    const authVaultDir = path.join(USER_DATA_DIR, 'app-devices-vault');
+    fs.mkdirSync(authVaultDir, { recursive: true });
+    fs.rmSync(path.join(authVaultDir, 'vault'), { recursive: true, force: true });
+    appVault.configure({ getPath: () => authVaultDir } as unknown as Electron.App);
+    appVault.enable('test-pass-123');
+    appVault.putSecret(deviceAuthVaultKey('device-with-vault-auth'), {
+      account: 'a',
+      password: 'b',
+      host: '192.168.1.9',
+      deviceUuid: 'device-with-vault-auth',
+    });
+
+    send.mockClear();
+    busCallbacks.peerConnected?.({
+      uuid: 'device-with-vault-auth',
+      hostname: 'cleepdev4',
+      ip: '192.168.1.9',
+      port: 80,
+      macs: [],
+      cleepdesktop: false,
+      online: true,
+      auth: true,
+    });
+
+    const devices = send.mock.calls.find((call) => call[0] === 'devices-updated')?.[1] as Array<{
+      uuid: string;
+      hasAuthStored?: boolean;
+    }>;
+    expect(devices?.find((device) => device.uuid === 'device-with-vault-auth')?.hasAuthStored).toBe(true);
+  });
+
   it('publishes peer connect/disconnect into the monitoring feed', () => {
     send.mockClear();
     const peer = {

@@ -1,37 +1,77 @@
 angular
 .module('Cleep')
-.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope', 'loggerService',
-function($state, devicesService, toastService, confirmService, $rootScope, logger) {
+.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope', 'loggerService', 'electronService',
+function($state, devicesService, toastService, confirmService, $rootScope, logger, electron) {
     var self = this;
     self.devicesService = devicesService;
 
+    self.goDevicePage = function(device) {
+        $state.go('device', {
+            url: device.url,
+            hostname: device.hostname,
+            auth: device.auth,
+            deviceUuid: device.uuid,
+        });
+    };
+
+    self.goDeviceAuthPage = function(device) {
+        $state.go('deviceAuth', {
+            url: device.url,
+            hostname: device.hostname,
+            deviceUuid: device.uuid,
+        });
+    };
+
+    /**
+     * Open a device:
+     * - no auth → device page
+     * - credentials in session/vault → unlock vault if needed, then device page (no login form)
+     * - otherwise → login form
+     *
+     * Always asks main via prepareAuth (does not trust hasAuthStored alone: peer updates used to wipe it).
+     */
     self.openDevicePage = function(device) {
         if (!device) {
             toastService.error('Invalid device');
+            return;
         }
 
-        if (device.online) {
-            logger.debug('Open device page', device);
-            if (!device.auth || device.hasAuthStored) {
-                var paramsDevice = {
-                    url: device.url,
-                    hostname: device.hostname,
-                    auth: device.auth,
-                    deviceUuid: device.uuid,
-                };
-                $state.go('device', paramsDevice);
-            } else {
-                var paramsDeviceAuth = {
-                    url: device.url,
-                    hostname: device.hostname,
-                    deviceUuid: device.uuid,
-                };
-                $state.go('deviceAuth', paramsDeviceAuth);
-            }
-            devicesService.selectDevice(device.uuid);
-        } else {
+        if (!device.online) {
             toastService.info('You can\'t connect to offline device');
+            return;
         }
+
+        logger.debug('Open device page', device);
+        devicesService.selectDevice(device.uuid);
+
+        if (!device.auth) {
+            self.goDevicePage(device);
+            return;
+        }
+
+        electron.devices.prepareAuth({
+            url: device.url,
+            deviceUuid: device.uuid,
+        })
+            .then((result) => {
+                if (result && result.ready) {
+                    device.hasAuthStored = true;
+                    logger.debug('Device auth ready from session/vault, opening device');
+                    self.goDevicePage(device);
+                    return;
+                }
+                logger.debug('No stored device auth, showing login form');
+                device.hasAuthStored = false;
+                self.goDeviceAuthPage(device);
+            })
+            .catch((error) => {
+                logger.warn('Unable to prepare device auth', error);
+                if (error && error.code === 'VAULT_UNLOCK_CANCELLED') {
+                    toastService.info('Vault unlock cancelled');
+                    return;
+                }
+                self.goDeviceAuthPage(device);
+            });
     };
 
     self.openDeviceMenu = function($mdMenu, ev) {
@@ -54,11 +94,11 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
                 },
                 () => { /* dialog canceled*/ },
             );
-    }
+    };
 
     self.reloadDevicePage = function(device) {
         if (device.online) {
             $rootScope.$emit('reload-device-page', device.hostname);
         }
-    }
+    };
 }]);

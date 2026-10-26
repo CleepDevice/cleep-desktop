@@ -114,6 +114,7 @@ const authEvent = z.object({
   deviceUuid: nonEmptyString,
   account: nonEmptyString,
   password: z.string(),
+  saveToVault: z.boolean().optional(),
 });
 
 const loggerMessage = z.object({
@@ -167,6 +168,10 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
   'cache-purge-files': null,
   'devices-delete-device': nonEmptyString,
   'devices-get-ui-state': null,
+  'devices-prepare-auth': z.object({
+    url: nonEmptyString,
+    deviceUuid: nonEmptyString,
+  }),
   'get-changelog': null,
   'get-electron-log-path': null,
   'iso-get-drives': null,
@@ -188,6 +193,7 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
   'vault-disable': vaultPassphraseRequest,
   'vault-dismiss-unlock': null,
   'vault-enable': vaultPassphraseRequest,
+  'vault-ensure-unlocked': null,
   'vault-get-status': null,
   'vault-lock': null,
   'vault-recover': vaultRecoverRequest,

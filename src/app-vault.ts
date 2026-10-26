@@ -497,6 +497,15 @@ class AppVault {
         return this.toIpcError(error, 'VAULT_DISMISS_FAILED', 'Unable to dismiss vault unlock');
       }
     });
+
+    handleInvoke('vault-ensure-unlocked', async () => {
+      try {
+        await this.ensureUnlocked();
+        return ipcOk(this.getStatus());
+      } catch (error) {
+        return this.toIpcError(error, 'VAULT_LOCKED', 'Unable to unlock vault');
+      }
+    });
   }
 
   private promptUnlock(): void {

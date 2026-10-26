@@ -1,9 +1,11 @@
 angular
 .module('Cleep')
-.controller('preferencesController', ['$scope', 'debounceService', 'toastService', 'settingsService', 'electronService', 'confirmService', 'closeModal',
-function($scope, debounce, toast, settingsService, electron, confirm, closeModal) {
+.controller('preferencesController', ['$scope', 'debounceService', 'toastService', 'settingsService', 'electronService', 'confirmService', 'closeModal', 'modalData',
+function($scope, debounce, toast, settingsService, electron, confirm, closeModal, modalData) {
     var self = this;
-    self.pref = 'general';
+    // Tab order: General, Network, Vault, Cache, Advanced
+    var TAB_INDEX = { general: 0, network: 1, vault: 2, cache: 3, advanced: 4 };
+    self.selectedTab = 0;
     self.settings = {};
     self.cacheDir = '';
     self.cachedFiles = [];
@@ -34,6 +36,16 @@ function($scope, debounce, toast, settingsService, electron, confirm, closeModal
     self.$onInit = function() {
         self.getSettings();
         self.getCacheInfos();
+
+        var requestedTab = modalData && modalData.tab;
+        if (requestedTab && TAB_INDEX[requestedTab] !== undefined) {
+            self.selectedTab = TAB_INDEX[requestedTab];
+            if (requestedTab === 'vault') {
+                self.loadVault();
+            } else if (requestedTab === 'network') {
+                self.loadNetworkConfig();
+            }
+        }
     };
 
     self.loadNetworkConfig = function() {

@@ -1,5 +1,7 @@
 import { BrowserWindow } from 'electron';
 import { appLogger } from './app-logger';
+import { appVault } from './app-vault';
+import { VaultError } from './app-vault.types';
 import { handleInvoke, ipcOk, sendToRenderer } from './ipc/ipc-main';
 
 export interface IAuth {
@@ -15,11 +17,24 @@ export interface IAuthEvent {
   deviceUuid: string;
   account: string;
   password: string;
+  /** Persist credentials in the application vault (requires vault enabled). */
+  saveToVault?: boolean;
 }
+
+type DeviceAuthSecret = {
+  account: string;
+  password: string;
+  host: string;
+  deviceUuid: string;
+};
 
 export const MAX_AUTH_ATTEMPTS = 5;
 const TTL = 30 * 60 * 1000; // 30 mins in ms
 const PURGE_DELAY = 5 * 60 * 1000; // 5 mins in ms
+
+export function deviceAuthVaultKey(deviceUuid: string): string {
+  return `device-auth:${deviceUuid}`;
+}
 
 class AppAuth {
   private auths: Record<string, IAuth> = {};
@@ -45,9 +60,73 @@ class AppAuth {
     }
   }
 
+  /** True when credentials exist in session memory or (enabled) vault. */
+  public hasStoredAuth(deviceUuid: string): boolean {
+    if (Object.values(this.auths).some((auth) => auth.deviceUuid === deviceUuid)) {
+      return true;
+    }
+    try {
+      return appVault.hasSecret(deviceAuthVaultKey(deviceUuid));
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Resolve credentials for an HTTP auth challenge.
+   * Memory first, then vault (may prompt unlock).
+   */
+  public async resolveAuth(host: string, deviceUuid?: string): Promise<IAuth | undefined> {
+    const cached = this.auths[host];
+    if (cached) {
+      cached.attempts += 1;
+      cached.timestamp = Date.now();
+      return cached;
+    }
+
+    if (!deviceUuid) {
+      return undefined;
+    }
+
+    try {
+      if (!appVault.isEnabled() || !appVault.hasSecret(deviceAuthVaultKey(deviceUuid))) {
+        return undefined;
+      }
+      const secret = (await appVault.getSecretAsync(deviceAuthVaultKey(deviceUuid))) as DeviceAuthSecret;
+      if (!secret?.account || typeof secret.password !== 'string') {
+        return undefined;
+      }
+
+      this.auths[host] = {
+        account: secret.account,
+        password: secret.password,
+        deviceUuid,
+        attempts: 1,
+        timestamp: Date.now(),
+      };
+      appLogger.info('Loaded device auth from vault', { host, deviceUuid });
+      return this.auths[host];
+    } catch (error) {
+      if (error instanceof VaultError && error.code === 'VAULT_UNLOCK_CANCELLED') {
+        appLogger.info('Vault unlock cancelled while resolving device auth', { host });
+        return undefined;
+      }
+      appLogger.warn('Unable to load device auth from vault', { host, error });
+      return undefined;
+    }
+  }
+
+  private storeInMemory(host: string, auth: Omit<IAuth, 'attempts' | 'timestamp'>): void {
+    this.auths[host] = {
+      ...auth,
+      attempts: 0,
+      timestamp: Date.now(),
+    };
+  }
+
   private purgeObsoleteAuths(): void {
-    const now = new Date().valueOf();
-    const authUrlToDelete = Object.entries(this.auths).reduce((acc, [url, auth]) => {
+    const now = Date.now();
+    const authUrlToDelete = Object.entries(this.auths).reduce<string[]>((acc, [url, auth]) => {
       if (now >= auth.timestamp + TTL) {
         acc.push(url);
       }
@@ -55,37 +134,68 @@ class AppAuth {
     }, []);
 
     for (const url of authUrlToDelete) {
-      appLogger.debug(`Purging auth for url ${url}`);
+      const deviceUuid = this.auths[url].deviceUuid;
+      appLogger.debug('Purging auth for url', { url });
 
       sendToRenderer(this.window, 'device-auth-updated', {
-        deviceUuid: this.auths[url].deviceUuid,
-        hasAuthStored: false,
+        deviceUuid,
+        hasAuthStored: this.hasStoredAuthAfterMemoryDelete(deviceUuid, url),
       });
 
       delete this.auths[url];
     }
   }
 
+  private hasStoredAuthAfterMemoryDelete(deviceUuid: string, hostToIgnore: string): boolean {
+    if (
+      Object.entries(this.auths).some(
+        ([host, auth]) => host !== hostToIgnore && auth.deviceUuid === deviceUuid,
+      )
+    ) {
+      return true;
+    }
+    try {
+      return appVault.hasSecret(deviceAuthVaultKey(deviceUuid));
+    } catch {
+      return false;
+    }
+  }
+
   private addIpcs(): void {
-    handleInvoke('update-device-auth', (_event, auth) => {
-      appLogger.debug('Add new auth data', auth);
+    handleInvoke('update-device-auth', async (_event, auth) => {
+      appLogger.debug('Add new auth data', { deviceUuid: auth.deviceUuid, saveToVault: Boolean(auth.saveToVault) });
 
       const url = new URL(auth.url);
-      this.auths[url.hostname] = {
+      const host = url.hostname;
+      this.storeInMemory(host, {
         account: auth.account,
         password: auth.password,
-        attempts: 0,
-        timestamp: new Date().valueOf(),
         deviceUuid: auth.deviceUuid,
-      };
+      });
 
-      // return back device has auth to angular
+      if (auth.saveToVault) {
+        await appVault.putSecretAsync(deviceAuthVaultKey(auth.deviceUuid), {
+          account: auth.account,
+          password: auth.password,
+          host,
+          deviceUuid: auth.deviceUuid,
+        } satisfies DeviceAuthSecret);
+        appLogger.info('Device auth stored in vault', { deviceUuid: auth.deviceUuid });
+      }
+
       sendToRenderer(this.window, 'device-auth-updated', {
         deviceUuid: auth.deviceUuid,
         hasAuthStored: true,
       });
 
       return ipcOk(true as const);
+    });
+
+    /** Warm session auth from vault before opening a device webview. */
+    handleInvoke('devices-prepare-auth', async (_event, request) => {
+      const host = new URL(request.url).hostname;
+      const auth = await this.resolveAuth(host, request.deviceUuid);
+      return ipcOk({ ready: Boolean(auth) });
     });
   }
 }

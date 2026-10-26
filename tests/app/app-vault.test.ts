@@ -168,10 +168,15 @@ describe('AppVault', () => {
     expect(ipcHandleHandlers.has('vault-recover')).toBe(true);
     expect(ipcHandleHandlers.has('vault-regenerate-recovery-codes')).toBe(true);
     expect(ipcHandleHandlers.has('vault-dismiss-unlock')).toBe(true);
+    expect(ipcHandleHandlers.has('vault-ensure-unlocked')).toBe(true);
 
     await expect(ipcHandleHandlers.get('vault-get-status')?.()).resolves.toEqual({
       ok: true,
       data: { enabled: false, unlocked: false, recoveryCodesRemaining: 0 },
+    });
+
+    await expect(ipcHandleHandlers.get('vault-ensure-unlocked')?.()).resolves.toMatchObject({
+      ok: false,
     });
 
     const enabled = await ipcHandleHandlers.get('vault-enable')?.({}, { passphrase: PASSPHRASE });
