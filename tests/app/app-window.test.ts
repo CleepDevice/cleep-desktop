@@ -2,6 +2,10 @@ import { BrowserWindow, dialog } from 'electron';
 import { describe, expect, it, vi } from 'vitest';
 import { createAppWindow, createSplashscreenWindow } from '../../src/app-window';
 import { appContext } from '../../src/app-context';
+import {
+  NGROK_HOST_URL_FILTERS,
+  NGROK_SKIP_BROWSER_WARNING_HEADER,
+} from '../../src/utils/ngrok';
 
 describe('app-window', () => {
   it('creates main application window and handles lifecycle events', () => {
@@ -47,6 +51,45 @@ describe('app-window', () => {
     closeHandler?.({ preventDefault });
     appContext.allowAppClosing = true;
     vi.useRealTimers();
+  });
+
+  it('injects ngrok skip-browser-warning header on attached webviews', () => {
+    const splash = { close: vi.fn() } as unknown as BrowserWindow;
+    const window = createAppWindow(splash);
+
+    const attachHandler = vi
+      .mocked(window.webContents.on)
+      .mock.calls.find((call) => call[0] === 'did-attach-webview')?.[1] as
+      | ((_event: unknown, webContents: Electron.WebContents) => void)
+      | undefined;
+
+    const guestSession = {
+      webRequest: { onBeforeSendHeaders: vi.fn() },
+    };
+    const guestWebContents = {
+      session: guestSession,
+      setWindowOpenHandler: vi.fn(),
+    } as unknown as Electron.WebContents;
+
+    attachHandler?.(undefined, guestWebContents);
+
+    expect(guestSession.webRequest.onBeforeSendHeaders).toHaveBeenCalledWith(
+      { urls: NGROK_HOST_URL_FILTERS },
+      expect.any(Function),
+    );
+
+    const headerHandler = guestSession.webRequest.onBeforeSendHeaders.mock.calls[0][1] as (
+      details: { requestHeaders: Record<string, string> },
+      callback: (response: { requestHeaders: Record<string, string> }) => void,
+    ) => void;
+    const callback = vi.fn();
+    headerHandler({ requestHeaders: { Accept: 'text/html' } }, callback);
+    expect(callback).toHaveBeenCalledWith({
+      requestHeaders: {
+        Accept: 'text/html',
+        [NGROK_SKIP_BROWSER_WARNING_HEADER]: 'CleepDesktop',
+      },
+    });
   });
 
   it('creates splashscreen window and shows it after load', () => {

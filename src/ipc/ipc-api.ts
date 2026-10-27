@@ -147,6 +147,7 @@ export function createCleepApi(ipc: IpcPrimitives) {
       unlock: (passphrase: string) => ipc.invoke('vault-unlock', { passphrase }),
       lock: () => ipc.invoke('vault-lock'),
       dismissUnlock: () => ipc.invoke('vault-dismiss-unlock'),
+      notifyUnlockDialogClosed: () => ipc.invoke('vault-unlock-dialog-closed'),
       ensureUnlocked: () => ipc.invoke('vault-ensure-unlocked'),
       changePassphrase: (currentPassphrase: string, nextPassphrase: string) =>
         ipc.invoke('vault-change-passphrase', { currentPassphrase, nextPassphrase }),
@@ -156,6 +157,8 @@ export function createCleepApi(ipc: IpcPrimitives) {
         ipc.invoke('vault-regenerate-recovery-codes', { passphrase }),
       onUnlockRequired: (listener: IpcListener<'vault-unlock-required'>) =>
         ipc.on('vault-unlock-required', listener),
+      onStatusChanged: (listener: IpcListener<'vault-status-changed'>) =>
+        ipc.on('vault-status-changed', listener),
     },
 
     webview: {

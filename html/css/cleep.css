@@ -30,6 +30,11 @@ a {
   color: rgb(189 189 189 / 87%);
 }
 
+.device-remote-apps {
+    opacity: 0.65;
+    font-size: 12px;
+}
+
 .icon-margin {
   margin-right: 20px !important;
 }

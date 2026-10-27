@@ -158,6 +158,26 @@ describe('AppVault', () => {
     await expect(pending).rejects.toMatchObject({ code: 'VAULT_UNLOCK_CANCELLED' });
   });
 
+  it('dismissUnlockRequest is a no-op cancel when vault is already unlocked', async () => {
+    appVault.enable(PASSPHRASE);
+    appVault.lock();
+    appVault.setWindow({ isDestroyed: () => false } as Electron.BrowserWindow);
+
+    const pending = appVault.ensureUnlocked();
+    appVault.unlock(PASSPHRASE);
+    // Modal $destroy often fires dismiss after a successful unlock + route change
+    appVault.dismissUnlockRequest();
+    await expect(pending).resolves.toBeUndefined();
+    expect(appVault.isUnlocked()).toBe(true);
+  });
+
+  it('trims passphrase whitespace on unlock', () => {
+    appVault.enable(PASSPHRASE);
+    appVault.lock();
+    expect(() => appVault.unlock(`  ${PASSPHRASE}  `)).not.toThrow();
+    expect(appVault.isUnlocked()).toBe(true);
+  });
+
   it('registers configuration ipc handlers', async () => {
     expect(ipcHandleHandlers.has('vault-get-status')).toBe(true);
     expect(ipcHandleHandlers.has('vault-enable')).toBe(true);

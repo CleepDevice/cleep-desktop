@@ -199,6 +199,7 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
   'vault-recover': vaultRecoverRequest,
   'vault-regenerate-recovery-codes': vaultPassphraseRequest,
   'vault-unlock': vaultPassphraseRequest,
+  'vault-unlock-dialog-closed': null,
 };
 
 export const SEND_PAYLOAD_SCHEMAS: SendSchemaMap = {

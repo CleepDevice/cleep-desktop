@@ -5,6 +5,11 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
     var self = this;
     self.devicesService = devicesService;
 
+    /** Angular filter predicate: devices that advertise at least one remote URL. */
+    self.hasRemoteAccessFilter = function(device) {
+        return devicesService.hasRemoteAccess(device);
+    };
+
     self.goDevicePage = function(device) {
         $state.go('device', {
             url: device.url,
@@ -42,27 +47,52 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
         }
 
         logger.debug('Open device page', device);
+        self._openDeviceAtUrl(device, device.url);
+    };
+
+    /**
+     * Open a device through its public remote URL (works even if LAN peer is offline).
+     */
+    self.openRemoteDevicePage = function(device) {
+        if (!device) {
+            toastService.error('Invalid device');
+            return;
+        }
+
+        var remoteUrl = devicesService.getPrimaryRemoteUrl(device);
+        if (!remoteUrl) {
+            toastService.error('No remote URL available');
+            return;
+        }
+
+        logger.debug('Open remote device page', { device, remoteUrl });
+        self._openDeviceAtUrl(device, remoteUrl);
+    };
+
+    self._openDeviceAtUrl = function(device, url) {
         devicesService.selectDevice(device.uuid);
 
+        var target = Object.assign({}, device, { url: url });
+
         if (!device.auth) {
-            self.goDevicePage(device);
+            self.goDevicePage(target);
             return;
         }
 
         electron.devices.prepareAuth({
-            url: device.url,
+            url: url,
             deviceUuid: device.uuid,
         })
             .then((result) => {
                 if (result && result.ready) {
                     device.hasAuthStored = true;
                     logger.debug('Device auth ready from session/vault, opening device');
-                    self.goDevicePage(device);
+                    self.goDevicePage(target);
                     return;
                 }
                 logger.debug('No stored device auth, showing login form');
                 device.hasAuthStored = false;
-                self.goDeviceAuthPage(device);
+                self.goDeviceAuthPage(target);
             })
             .catch((error) => {
                 logger.warn('Unable to prepare device auth', error);
@@ -70,7 +100,7 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
                     toastService.info('Vault unlock cancelled');
                     return;
                 }
-                self.goDeviceAuthPage(device);
+                self.goDeviceAuthPage(target);
             });
     };
 

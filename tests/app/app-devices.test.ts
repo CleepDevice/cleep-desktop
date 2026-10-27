@@ -67,6 +67,8 @@ describe('AppDevices', () => {
   beforeAll(async () => {
     ({ appDevices } = await import('../../src/app-devices'));
     appDevices.configure(window);
+    // Mark renderer ready so most tests see immediate devices-message delivery.
+    await ipcHandleHandlers.get('devices-get-ui-state')({});
   });
 
   it('configure starts bus and exposes get-ui-state ipc', async () => {
@@ -214,6 +216,129 @@ describe('AppDevices', () => {
           event: 'device.disconnected',
           params: expect.objectContaining({ online: false }),
         }),
+      }),
+    );
+  });
+
+  it('rebinds a saved device when uuid changes but MACs match', () => {
+    send.mockClear();
+    busCallbacks.peerConnected?.({
+      uuid: 'old-uuid',
+      hostname: 'cleepdev4',
+      ip: '192.168.1.228',
+      port: 443,
+      macs: ['B8:27:EB:62:24:18'],
+      cleepdesktop: false,
+      online: true,
+      remoteaccess: { ngrok: 'https://old.ngrok.app' },
+    });
+    busCallbacks.peerDisconnected?.({
+      uuid: 'old-uuid',
+      hostname: 'cleepdev4',
+      ip: '192.168.1.228',
+      macs: ['B8:27:EB:62:24:18'],
+      cleepdesktop: false,
+      online: false,
+    });
+    send.mockClear();
+
+    busCallbacks.peerConnected?.({
+      uuid: 'new-uuid',
+      hostname: 'cleepdev4',
+      ip: '192.168.1.228',
+      port: 443,
+      macs: ['b8:27:eb:62:24:18'],
+      cleepdesktop: false,
+      online: true,
+      remoteaccess: {},
+    });
+
+    const devices = send.mock.calls.find((call) => call[0] === 'devices-updated')?.[1] as Array<{
+      uuid: string;
+      online: boolean;
+      remoteaccess?: Record<string, string>;
+    }>;
+    expect(devices?.some((device) => device.uuid === 'old-uuid')).toBe(false);
+    expect(devices?.find((device) => device.uuid === 'new-uuid')).toMatchObject({
+      online: true,
+      hostname: 'cleepdev4',
+      remoteaccess: { ngrok: 'https://old.ngrok.app' },
+    });
+  });
+
+  it('force-updates peer remoteaccess from core.remoteaccess.update', () => {
+    send.mockClear();
+    busCallbacks.peerConnected?.({
+      uuid: 'device-remote',
+      hostname: 'cleepdev4',
+      ip: '192.168.1.228',
+      port: 443,
+      macs: [],
+      cleepdesktop: false,
+      online: true,
+      remoteaccess: {},
+    });
+    send.mockClear();
+
+    busCallbacks.message?.(
+      {
+        uuid: 'device-remote',
+        hostname: 'cleepdev4',
+        ip: '192.168.1.228',
+        macs: [],
+        cleepdesktop: false,
+        online: true,
+      },
+      {
+        event: 'core.remoteaccess.update',
+        sender: 'inventory',
+        startup: false,
+        params: { urls: { ngrok: 'https://dummy.ngrok.app' } },
+      },
+    );
+
+    const devices = send.mock.calls.find((call) => call[0] === 'devices-updated')?.[1] as Array<{
+      uuid: string;
+      remoteaccess?: Record<string, string>;
+    }>;
+    expect(devices?.find((device) => device.uuid === 'device-remote')?.remoteaccess).toEqual({
+      ngrok: 'https://dummy.ngrok.app',
+    });
+  });
+
+  it('buffers peer lifecycle messages until the renderer fetches ui state', async () => {
+    appDevices.configure(window);
+    send.mockClear();
+
+    const peer = {
+      uuid: 'device-early-peer',
+      hostname: 'cleepdev4',
+      ip: '192.168.1.228',
+      port: 443,
+      macs: [],
+      cleepdesktop: false,
+      online: true,
+    };
+
+    busCallbacks.peerConnected?.(peer);
+
+    expect(send).toHaveBeenCalledWith('devices-updated', expect.any(Array));
+    expect(
+      send.mock.calls.some(
+        (call) =>
+          call[0] === 'devices-message' &&
+          (call[1] as { message?: { event?: string } })?.message?.event === 'device.connected',
+      ),
+    ).toBe(false);
+
+    send.mockClear();
+    await ipcHandleHandlers.get('devices-get-ui-state')({});
+
+    expect(send).toHaveBeenCalledWith(
+      'devices-message',
+      expect.objectContaining({
+        peerInfos: expect.objectContaining({ uuid: 'device-early-peer', hostname: 'cleepdev4' }),
+        message: expect.objectContaining({ event: 'device.connected' }),
       }),
     );
   });

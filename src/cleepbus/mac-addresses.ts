@@ -32,6 +32,20 @@ export function normalizeMacList(macs: unknown): string[] {
   return [...normalized];
 }
 
+/** True when two MAC lists share at least one address (same physical device). */
+export function macListsOverlap(left: unknown, right: unknown): boolean {
+  const a = new Set(normalizeMacList(left));
+  if (a.size === 0) {
+    return false;
+  }
+  for (const mac of normalizeMacList(right)) {
+    if (a.has(mac)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Collect MAC addresses on the same interface(s) pyre-ts would use for ZRE (default route, private IPv4).
  */

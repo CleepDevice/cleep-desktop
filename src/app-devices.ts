@@ -5,13 +5,36 @@ import { appSettings, SettingsObject } from './app-settings';
 import { cleepbus } from './cleepbus/cleepbus';
 import { listNetworkInterfaces, selectInterface } from './pyre/iface';
 import { CleebusMessageResponse, CleepbusPeerInfos, TEST_DEVICE } from './cleepbus/cleepbus.types';
+import { macListsOverlap } from './cleepbus/mac-addresses';
 import { handleInvoke, ipcErr, ipcOk, sendToRenderer } from './ipc/ipc-main';
 import { appContext } from './app-context';
+
+function normalizeRemoteAccessUrls(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(raw as Record<string, unknown>).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string' && Boolean(entry[1]),
+    ),
+  );
+}
+
+type DevicesMessagePayload = {
+  timestamp: number;
+  peerInfos: CleepbusPeerInfos;
+  message: CleebusMessageResponse;
+};
 
 class AppDevices {
   private window: BrowserWindow;
   private devices: Record<string, CleepbusPeerInfos> = {};
   private busConnected = false;
+  /** False until the renderer has registered IPC listeners (signaled by getUiState). */
+  private rendererReady = false;
+  /** Peer connect/disconnect events received before the monitoring UI is listening. */
+  private pendingLifecycleMessages: DevicesMessagePayload[] = [];
+  private static readonly MAX_PENDING_LIFECYCLE_MESSAGES = 50;
 
   constructor() {
     cleepbus.setCleepbusCallbacks(
@@ -43,6 +66,9 @@ class AppDevices {
 
   public configure(window: BrowserWindow): void {
     this.window = window;
+    // Bus can discover peers before Angular has subscribed to devices-message.
+    this.rendererReady = false;
+    this.pendingLifecycleMessages = [];
     cleepbus.start();
   }
 
@@ -81,8 +107,42 @@ class AppDevices {
 
   private onMessageResponse(peerInfos: CleepbusPeerInfos, messageResponse: CleebusMessageResponse): void {
     appLogger.debug('Received message response from Cleepbus', { peerInfos, messageResponse });
+    if (messageResponse?.event === 'core.remoteaccess.update') {
+      this.applyRemoteAccessUpdate(peerInfos, messageResponse);
+    }
     const timestamp = Math.round(new Date().getTime() / 1000);
-    sendToRenderer(this.window, 'devices-message', { timestamp, peerInfos, message: messageResponse });
+    this.sendDevicesMessage({ timestamp, peerInfos, message: messageResponse });
+  }
+
+  /**
+   * Force-update a peer's remoteaccess map from a live bus event (no reconnection needed).
+   */
+  private applyRemoteAccessUpdate(
+    peerInfos: CleepbusPeerInfos,
+    messageResponse: CleebusMessageResponse,
+  ): void {
+    const uuid = peerInfos?.uuid;
+    if (!uuid) {
+      appLogger.warn('Ignoring remoteaccess update without peer uuid', { messageResponse });
+      return;
+    }
+
+    const urls = normalizeRemoteAccessUrls(
+      (messageResponse.params as { urls?: unknown } | undefined)?.urls,
+    );
+    const existing = this.devices[uuid];
+    if (existing) {
+      existing.remoteaccess = urls;
+      appSettings.set('devices', this.devices as unknown as SettingsObject);
+    } else {
+      this.updateDevices({
+        ...peerInfos,
+        remoteaccess: urls,
+        online: peerInfos.online ?? true,
+      });
+    }
+    appLogger.info('Peer remoteaccess updated', { uuid, urls });
+    this.emitDevicesUpdated();
   }
 
   private onPeerDisconnected(peerInfos: CleepbusPeerInfos): void {
@@ -113,30 +173,96 @@ class AppDevices {
     peerInfos: CleepbusPeerInfos,
     event: 'device.connected' | 'device.disconnected',
   ): void {
+    const timestamp = Math.round(Date.now() / 1000);
+    const payload: DevicesMessagePayload = {
+      timestamp,
+      peerInfos,
+      message: {
+        event,
+        sender: peerInfos.hostname || 'unknown',
+        startup: false,
+        params: {
+          ip: peerInfos.ip,
+          online: event === 'device.connected',
+          port: peerInfos.port,
+        },
+      },
+    };
+
+    if (!this.rendererReady) {
+      this.pendingLifecycleMessages.push(payload);
+      if (this.pendingLifecycleMessages.length > AppDevices.MAX_PENDING_LIFECYCLE_MESSAGES) {
+        this.pendingLifecycleMessages.shift();
+      }
+      return;
+    }
+
+    this.sendDevicesMessage(payload);
+  }
+
+  private sendDevicesMessage(payload: DevicesMessagePayload): void {
     if (!this.window || this.window.isDestroyed?.()) {
       return;
     }
-    const timestamp = Math.round(Date.now() / 1000);
-    const message: CleebusMessageResponse = {
-      event,
-      sender: peerInfos.hostname || 'unknown',
-      startup: false,
-      params: {
-        ip: peerInfos.ip,
-        online: event === 'device.connected',
-        port: peerInfos.port,
-      },
-    };
-    sendToRenderer(this.window, 'devices-message', { timestamp, peerInfos, message });
+    sendToRenderer(this.window, 'devices-message', payload);
+  }
+
+  /**
+   * Mark the renderer as ready and flush peer lifecycle events buffered during startup.
+   * Called from devices-get-ui-state (after monitoringService.init registers its listener).
+   */
+  private flushPendingLifecycleMessages(): void {
+    this.rendererReady = true;
+    if (this.pendingLifecycleMessages.length === 0) {
+      return;
+    }
+    const pending = this.pendingLifecycleMessages;
+    this.pendingLifecycleMessages = [];
+    for (const payload of pending) {
+      this.sendDevicesMessage(payload);
+    }
   }
 
   private updateDevices(peerInfos: CleepbusPeerInfos): void {
+    if (!peerInfos?.uuid) {
+      return;
+    }
+
     if (this.devices[peerInfos.uuid]) {
       Object.assign(this.devices[peerInfos.uuid], peerInfos);
     } else {
-      this.devices[peerInfos.uuid] = peerInfos;
+      // Same physical device can change instance uuid (core regen / reinstall).
+      // Match on MAC like cleepbus does, then rebind the saved entry.
+      const previousUuid = this.findDeviceUuidByMacs(peerInfos.macs);
+      if (previousUuid && previousUuid !== peerInfos.uuid) {
+        const previous = this.devices[previousUuid];
+        delete this.devices[previousUuid];
+        const previousRemote = previous?.remoteaccess || {};
+        const nextRemote = peerInfos.remoteaccess || {};
+        this.devices[peerInfos.uuid] = {
+          ...previous,
+          ...peerInfos,
+          remoteaccess:
+            Object.keys(nextRemote).length > 0 ? nextRemote : previousRemote,
+        };
+        appAuth.rebindDeviceUuid(previousUuid, peerInfos.uuid);
+        appLogger.info('Rebound saved device to new uuid (MAC match)', {
+          previousUuid,
+          nextUuid: peerInfos.uuid,
+          hostname: peerInfos.hostname,
+        });
+      } else {
+        this.devices[peerInfos.uuid] = peerInfos;
+      }
     }
     appSettings.set('devices', this.devices as unknown as SettingsObject);
+  }
+
+  private findDeviceUuidByMacs(macs: string[] | undefined): string | undefined {
+    if (!macs?.length) {
+      return undefined;
+    }
+    return Object.keys(this.devices).find((uuid) => macListsOverlap(this.devices[uuid]?.macs, macs));
   }
 
   private devicesObjectToArray(): CleepbusPeerInfos[] {
@@ -151,7 +277,11 @@ class AppDevices {
     }));
   }
 
-  /** Lookup a known device by IP / hostname (HTTP auth host). */
+  public getDevice(deviceUuid: string): CleepbusPeerInfos | undefined {
+    return this.devices[deviceUuid];
+  }
+
+  /** Lookup a known device by IP / hostname / remote-access host (HTTP auth host). */
   public findByHost(host: string): CleepbusPeerInfos | undefined {
     const needle = (host || '').trim().toLowerCase();
     if (!needle) {
@@ -160,7 +290,17 @@ class AppDevices {
     return Object.values(this.devices).find((device) => {
       const ip = (device.ip || '').toLowerCase();
       const hostname = (device.hostname || '').toLowerCase();
-      return ip === needle || hostname === needle;
+      if (ip === needle || hostname === needle) {
+        return true;
+      }
+      const remote = device.remoteaccess || {};
+      return Object.values(remote).some((remoteUrl) => {
+        try {
+          return new URL(remoteUrl).hostname.toLowerCase() === needle;
+        } catch {
+          return false;
+        }
+      });
     });
   }
 
@@ -197,12 +337,14 @@ class AppDevices {
   }
 
   private addIpcs(): void {
-    handleInvoke('devices-get-ui-state', async () =>
-      ipcOk({
+    handleInvoke('devices-get-ui-state', async () => {
+      // Renderer has attached IPC listeners (monitoring before devices in app.js).
+      this.flushPendingLifecycleMessages();
+      return ipcOk({
         devices: this.devicesForRenderer(),
         busConnected: this.busConnected,
-      }),
-    );
+      });
+    });
 
     handleInvoke('bus-get-network-config', async () => ipcOk(this.getNetworkConfigState()));
 

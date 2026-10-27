@@ -133,6 +133,29 @@ function(electron, logger, ipcLifecycle) {
         }
 
         return device
-    }
+    };
+
+    self.hasRemoteAccess = function(device) {
+        return Boolean(device && device.remoteaccess && Object.keys(device.remoteaccess).length > 0);
+    };
+
+    /** Prefer ngrok when several tunnels exist; otherwise first entry. */
+    self.getPrimaryRemoteUrl = function(device) {
+        if (!self.hasRemoteAccess(device)) {
+            return null;
+        }
+        if (device.remoteaccess.ngrok) {
+            return device.remoteaccess.ngrok;
+        }
+        var keys = Object.keys(device.remoteaccess);
+        return device.remoteaccess[keys[0]] || null;
+    };
+
+    self.getRemoteAccessApps = function(device) {
+        if (!self.hasRemoteAccess(device)) {
+            return '';
+        }
+        return Object.keys(device.remoteaccess).join(', ');
+    };
 
 }]);

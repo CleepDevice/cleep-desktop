@@ -20,8 +20,17 @@ function($scope, toast, electron, closeModal) {
         }
     });
 
-    self.onPassphraseKeypress = function($event) {
+    self.readPassphrase = function() {
+        // Prefer live DOM value: browser autofill often fills the input without
+        // updating Angular ng-model (so ctl.passphrase stays stale/empty/wrong).
+        var input = document.querySelector('md-dialog input[name="vault-passphrase"]');
+        var fromDom = input && typeof input.value === 'string' ? input.value : '';
+        return (fromDom || self.passphrase || '').trim();
+    };
+
+    self.onPassphraseKeydown = function($event) {
         if ($event && $event.keyCode === 13) {
+            $event.preventDefault();
             self.unlock();
         }
     };
@@ -36,12 +45,13 @@ function($scope, toast, electron, closeModal) {
     };
 
     self.unlock = function() {
-        if (!self.passphrase) {
+        var passphrase = self.readPassphrase();
+        if (!passphrase) {
             toast.warning('Please enter the vault passphrase');
             return;
         }
         self.busy = true;
-        electron.vault.unlock(self.passphrase)
+        electron.vault.unlock(passphrase)
             .then(function() {
                 self.completed = true;
                 toast.success('Vault unlocked');

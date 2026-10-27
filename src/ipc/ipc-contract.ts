@@ -170,6 +170,7 @@ export type InvokeContract = {
     response: IpcResult<VaultEnableResult>;
   };
   'vault-unlock': { request: VaultPassphraseRequest; response: IpcResult<VaultStatus> };
+  'vault-unlock-dialog-closed': { request: void; response: IpcResult<VaultStatus> };
   'devices-prepare-auth': {
     request: { url: string; deviceUuid: string };
     response: IpcResult<{ ready: boolean }>;
@@ -212,6 +213,7 @@ export type ReceiveContract = {
   'updater-cleepdesktop-update-available': { args: [UpdateData] };
   'updater-rpi-imager-download-progress': { args: [UpdateData] };
   'updater-rpi-imager-update-available': { args: [UpdateData] };
+  'vault-status-changed': { args: [VaultStatus] };
   'vault-unlock-required': { args: [] };
   'webview-new-window': { args: [webContentsId: number, details: WebviewOpenDetails] };
 };

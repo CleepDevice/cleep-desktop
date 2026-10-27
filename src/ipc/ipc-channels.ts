@@ -41,6 +41,7 @@ export const INVOKE_CHANNELS = [
   'vault-recover',
   'vault-regenerate-recovery-codes',
   'vault-unlock',
+  'vault-unlock-dialog-closed',
 ] as const satisfies readonly InvokeChannel[];
 
 export const SEND_CHANNELS = [
@@ -74,6 +75,7 @@ export const RECEIVE_CHANNELS = [
   'updater-cleepdesktop-update-available',
   'updater-rpi-imager-download-progress',
   'updater-rpi-imager-update-available',
+  'vault-status-changed',
   'vault-unlock-required',
   'webview-new-window',
 ] as const satisfies readonly ReceiveChannel[];

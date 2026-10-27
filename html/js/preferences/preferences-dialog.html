@@ -169,7 +169,7 @@
                         <div ng-if="ctl.vaultStatus.enabled && !ctl.vaultStatus.unlocked && ctl.vaultPanel === 'main'" layout="column">
                             <md-input-container class="md-block">
                                 <label>Passphrase</label>
-                                <input type="password" ng-model="ctl.vaultForm.passphrase" autocomplete="current-password">
+                                <input type="password" ng-model="ctl.vaultForm.passphrase" name="vault-passphrase" autocomplete="off">
                             </md-input-container>
                             <div layout="row" layout-align="space-between center">
                                 <md-button ng-click="ctl.vaultPanel = 'recover'">Forgot passphrase?</md-button>
@@ -196,7 +196,7 @@
                             </p>
                             <md-input-container class="md-block">
                                 <label>Passphrase</label>
-                                <input type="password" ng-model="ctl.vaultForm.passphrase" autocomplete="current-password">
+                                <input type="password" ng-model="ctl.vaultForm.passphrase" autocomplete="off">
                             </md-input-container>
                             <div layout="row" layout-align="end center">
                                 <md-button ng-click="ctl.resetVaultForm(); ctl.vaultPanel = 'main'">Cancel</md-button>
@@ -210,7 +210,7 @@
                         <div ng-if="ctl.vaultPanel === 'change'" layout="column">
                             <md-input-container class="md-block">
                                 <label>Current passphrase</label>
-                                <input type="password" ng-model="ctl.vaultForm.passphrase" autocomplete="current-password">
+                                <input type="password" ng-model="ctl.vaultForm.passphrase" autocomplete="off">
                             </md-input-container>
                             <md-input-container class="md-block">
                                 <label>New passphrase</label>
@@ -235,7 +235,7 @@
                             </p>
                             <md-input-container class="md-block">
                                 <label>Passphrase</label>
-                                <input type="password" ng-model="ctl.vaultForm.passphrase" autocomplete="current-password">
+                                <input type="password" ng-model="ctl.vaultForm.passphrase" autocomplete="off">
                             </md-input-container>
                             <div layout="row" layout-align="end center">
                                 <md-button ng-click="ctl.resetVaultForm(); ctl.vaultPanel = 'main'">Cancel</md-button>

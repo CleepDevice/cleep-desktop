@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Fixed
+- Offline devices with auth always show ``cellphone-off`` (auth lock no longer hides the disconnected state)
+
+### Added
+- Implement internal vault to store keys
+- Live `core.remoteaccess.update` handling: force-update peer remote URLs without reconnection
+- Remote devices section in the left panel (open device via public URL)
+
 ### Changed
 
 - Progress-stream lib replaced by internal code (outdated since 2017)

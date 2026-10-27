@@ -255,10 +255,12 @@ angular
         unlock: bindInvoke(api.vault.unlock),
         lock: bindInvoke(api.vault.lock),
         dismissUnlock: bindInvoke(api.vault.dismissUnlock),
+        notifyUnlockDialogClosed: bindInvoke(api.vault.notifyUnlockDialogClosed),
         ensureUnlocked: bindInvoke(api.vault.ensureUnlocked),
         changePassphrase: bindInvoke(api.vault.changePassphrase),
         recover: bindInvoke(api.vault.recover),
         regenerateRecoveryCodes: bindInvoke(api.vault.regenerateRecoveryCodes),
         onUnlockRequired: bindOn(api.vault.onUnlockRequired),
+        onStatusChanged: bindOn(api.vault.onStatusChanged),
     };
 }]);

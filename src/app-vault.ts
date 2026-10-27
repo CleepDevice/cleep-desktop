@@ -124,6 +124,18 @@ class AppVault {
     };
   }
 
+  /** Push current vault status to the renderer (toolbar, preferences, …). */
+  private emitStatusChanged(): void {
+    if (!this.window || this.window.isDestroyed()) {
+      return;
+    }
+    try {
+      sendToRenderer(this.window, 'vault-status-changed', this.getStatus());
+    } catch (error) {
+      appLogger.debug('Unable to emit vault-status-changed', { error });
+    }
+  }
+
   public isEnabled(): boolean {
     return this.getStatus().enabled;
   }
@@ -158,6 +170,12 @@ class AppVault {
 
   /** Called by the unlock modal when the user closes it without unlocking. */
   public dismissUnlockRequest(): void {
+    // Race: unlock IPC already succeeded and set the DEK, then the modal was
+    // destroyed by a route change / $mdDialog.cancel. Do not cancel waiters.
+    if (this.dek) {
+      this.resolveUnlockWaiters();
+      return;
+    }
     this.rejectUnlockWaiters(
       new VaultError('VAULT_UNLOCK_CANCELLED', 'Vault unlock cancelled'),
     );
@@ -166,7 +184,8 @@ class AppVault {
   /** Enable vault with a passphrase. Returns recovery codes (shown once). */
   public enable(passphrase: string): VaultEnableResult {
     this.assertConfigured();
-    this.assertPassphraseStrength(passphrase);
+    const normalized = this.normalizePassphrase(passphrase);
+    this.assertPassphraseStrength(normalized);
 
     if (this.meta?.enabled) {
       throw new VaultError('VAULT_ALREADY_ENABLED', 'Vault is already enabled');
@@ -174,7 +193,7 @@ class AppVault {
 
     const dek = randomBytes(KEY_LENGTH);
     const kdf = createKdfParams();
-    const kek = deriveKey(passphrase, kdf);
+    const kek = deriveKey(normalized, kdf);
     const wrappedDek = wrapKey(dek, kek);
 
     const recoveryCodes: string[] = [];
@@ -205,6 +224,7 @@ class AppVault {
     this.dek = dek;
     appLogger.info('Vault enabled');
     this.resolveUnlockWaiters();
+    this.emitStatusChanged();
 
     return {
       status: this.getStatus(),
@@ -220,6 +240,7 @@ class AppVault {
     this.wipeVaultData();
     this.rejectUnlockWaiters(new VaultError('VAULT_DISABLED', 'Vault was disabled'));
     appLogger.info('Vault disabled and wiped');
+    this.emitStatusChanged();
     return this.getStatus();
   }
 
@@ -229,6 +250,7 @@ class AppVault {
     this.unlockWithPassphrase(passphrase);
     appLogger.info('Vault unlocked');
     this.resolveUnlockWaiters();
+    this.emitStatusChanged();
     return this.getStatus();
   }
 
@@ -236,23 +258,26 @@ class AppVault {
     this.assertConfigured();
     this.dek = null;
     appLogger.info('Vault locked');
+    this.emitStatusChanged();
     return this.getStatus();
   }
 
   public changePassphrase(currentPassphrase: string, nextPassphrase: string): VaultStatus {
     this.assertConfigured();
     this.assertEnabled();
-    this.assertPassphraseStrength(nextPassphrase);
+    const normalizedNext = this.normalizePassphrase(nextPassphrase);
+    this.assertPassphraseStrength(normalizedNext);
     this.unlockWithPassphrase(currentPassphrase);
 
     const dek = this.requireDek();
     const kdf = createKdfParams();
-    const kek = deriveKey(nextPassphrase, kdf);
+    const kek = deriveKey(normalizedNext, kdf);
     this.meta!.kdf = kdf;
     this.meta!.wrappedDek = wrapKey(dek, kek);
     this.meta!.updatedAt = Date.now();
     this.persistMeta();
     appLogger.info('Vault passphrase changed');
+    this.emitStatusChanged();
     return this.getStatus();
   }
 
@@ -263,7 +288,8 @@ class AppVault {
   public recover(recoveryCode: string, newPassphrase: string): VaultEnableResult {
     this.assertConfigured();
     this.assertEnabled();
-    this.assertPassphraseStrength(newPassphrase);
+    const normalizedPassphrase = this.normalizePassphrase(newPassphrase);
+    this.assertPassphraseStrength(normalizedPassphrase);
 
     const normalized = normalizeRecoveryCode(recoveryCode);
     const meta = this.meta!;
@@ -286,7 +312,7 @@ class AppVault {
     }
 
     const kdf = createKdfParams();
-    const kek = deriveKey(newPassphrase, kdf);
+    const kek = deriveKey(normalizedPassphrase, kdf);
     meta.kdf = kdf;
     meta.wrappedDek = wrapKey(unlockedDek, kek);
     meta.recovery = meta.recovery.filter((slot) => slot.id !== usedSlotId);
@@ -310,6 +336,7 @@ class AppVault {
     this.dek = unlockedDek;
     appLogger.info('Vault recovered with recovery code');
     this.resolveUnlockWaiters();
+    this.emitStatusChanged();
 
     return {
       status: this.getStatus(),
@@ -342,6 +369,7 @@ class AppVault {
     this.meta!.updatedAt = Date.now();
     this.persistMeta();
     appLogger.info('Vault recovery codes regenerated');
+    this.emitStatusChanged();
 
     return {
       status: this.getStatus(),
@@ -498,6 +526,15 @@ class AppVault {
       }
     });
 
+    handleInvoke('vault-unlock-dialog-closed', () => {
+      try {
+        this.notifyUnlockDialogClosed();
+        return ipcOk(this.getStatus());
+      } catch (error) {
+        return this.toIpcError(error, 'VAULT_DISMISS_FAILED', 'Unable to clear unlock dialog state');
+      }
+    });
+
     handleInvoke('vault-ensure-unlocked', async () => {
       try {
         await this.ensureUnlocked();
@@ -509,9 +546,6 @@ class AppVault {
   }
 
   private promptUnlock(): void {
-    if (this.unlockPromptOpen) {
-      return;
-    }
     if (!this.window || this.window.isDestroyed()) {
       this.rejectUnlockWaiters(
         new VaultError('VAULT_LOCKED', 'Vault is locked and no UI is available to unlock it'),
@@ -519,8 +553,19 @@ class AppVault {
       return;
     }
 
+    // Always notify the renderer. Re-sending recovers when a previous dialog was
+    // lost while waiters are still pending (unlockPromptOpen stuck true).
+    const alreadyPrompting = this.unlockPromptOpen;
     this.unlockPromptOpen = true;
     sendToRenderer(this.window, 'vault-unlock-required');
+    if (alreadyPrompting) {
+      appLogger.debug('Re-sent vault unlock prompt for pending waiters');
+    }
+  }
+
+  /** Renderer signals the unlock dialog was closed (success, cancel, or replace). */
+  public notifyUnlockDialogClosed(): void {
+    this.unlockPromptOpen = false;
   }
 
   private resolveUnlockWaiters(): void {
@@ -577,6 +622,11 @@ class AppVault {
     }
   }
 
+  /** Strip accidental leading/trailing whitespace (clipboard paste, etc.). */
+  private normalizePassphrase(passphrase: string): string {
+    return typeof passphrase === 'string' ? passphrase.trim() : '';
+  }
+
   private requireDek(): Buffer {
     if (!this.dek) {
       throw new VaultError('VAULT_LOCKED', 'Vault is locked');
@@ -589,10 +639,14 @@ class AppVault {
     if (!meta?.enabled) {
       throw new VaultError('VAULT_DISABLED', 'Vault is not enabled');
     }
+    const normalized = this.normalizePassphrase(passphrase);
     try {
-      const kek = deriveKey(passphrase, meta.kdf);
+      const kek = deriveKey(normalized, meta.kdf);
       this.dek = unwrapKey(meta.wrappedDek, kek);
-    } catch {
+    } catch (error) {
+      appLogger.debug('Vault passphrase unwrap failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw new VaultError('VAULT_INVALID_PASSPHRASE', 'Invalid vault passphrase');
     }
   }

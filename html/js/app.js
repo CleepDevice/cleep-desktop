@@ -11,7 +11,96 @@ function($scope, $rootScope, $state, tasksPanelService, modalService, $timeout, 
     self.taskRestartRequiredPanelId = null;
     self.selectedToolbarItem = null;
     self.toolbarCollapsed = true;
+    self._vaultUnlockDialog = null;
     self._unsubscribers = [];
+    self.vaultStatus = {
+        enabled: false,
+        unlocked: false,
+        recoveryCodesRemaining: 0,
+    };
+
+    self.refreshVaultStatus = function(status) {
+        self.vaultStatus = status || {
+            enabled: false,
+            unlocked: false,
+            recoveryCodesRemaining: 0,
+        };
+    };
+
+    self.loadVaultStatus = function() {
+        return electron.vault.getStatus()
+            .then(function(status) {
+                self.refreshVaultStatus(status);
+            })
+            .catch(angular.noop);
+    };
+
+    self.vaultStatusIcon = function() {
+        if (!self.vaultStatus.enabled) {
+            return 'safe';
+        }
+        return self.vaultStatus.unlocked ? 'lock-open-variant' : 'lock';
+    };
+
+    self.vaultStatusIconClass = function() {
+        if (self.vaultStatus.enabled && !self.vaultStatus.unlocked) {
+            return 'md-accent';
+        }
+        return 'white-icon';
+    };
+
+    self.vaultStatusLabel = function() {
+        if (!self.vaultStatus.enabled) {
+            return 'Vault disabled';
+        }
+        return self.vaultStatus.unlocked ? 'Vault unlocked' : 'Vault locked';
+    };
+
+    self.vaultStatusTitle = function() {
+        return self.vaultStatusLabel();
+    };
+
+    self.openVaultUnlockDialog = function() {
+        // One dialog at a time. Re-sent prompts while open are ignored; when the
+        // dialog closes we clear main-process unlockPromptOpen so a later
+        // ensureUnlocked can show the dialog again (avoids a silent deadlock).
+        if (self._vaultUnlockDialog) {
+            return;
+        }
+        self._vaultUnlockDialog = self.openModal(
+            'vaultUnlockController',
+            'js/vault/vault-unlock-dialog.html'
+        );
+        if (!self._vaultUnlockDialog || typeof self._vaultUnlockDialog.finally !== 'function') {
+            self._vaultUnlockDialog = null;
+            return;
+        }
+        self._vaultUnlockDialog
+            .catch(angular.noop)
+            .finally(function() {
+                self._vaultUnlockDialog = null;
+                if (electron.vault.notifyUnlockDialogClosed) {
+                    electron.vault.notifyUnlockDialogClosed().catch(angular.noop);
+                }
+                self.loadVaultStatus();
+            });
+    };
+
+    self.onVaultToolbarClick = function() {
+        if (!self.vaultStatus.enabled) {
+            self.openModal('preferencesController', 'js/preferences/preferences-dialog.html', {
+                tab: 'vault',
+            });
+            return;
+        }
+        if (self.vaultStatus.unlocked) {
+            self.openModal('preferencesController', 'js/preferences/preferences-dialog.html', {
+                tab: 'vault',
+            });
+            return;
+        }
+        self.openVaultUnlockDialog();
+    };
 
     self.$onInit = function() {
         // init services (idempotent — safe if called again)
@@ -20,6 +109,7 @@ function($scope, $rootScope, $state, tasksPanelService, modalService, $timeout, 
         updateService.init();
         installService.init();
         devicesService.init();
+        self.loadVaultStatus();
 
         self._unsubscribers.push(
             electron.app.onOpenPage(function(_event, data) {
@@ -45,7 +135,10 @@ function($scope, $rootScope, $state, tasksPanelService, modalService, $timeout, 
                 self.openModal(args.controller, args.template, args.data);
             }),
             electron.vault.onUnlockRequired(function() {
-                self.openModal('vaultUnlockController', 'js/vault/vault-unlock-dialog.html');
+                self.openVaultUnlockDialog();
+            }),
+            electron.vault.onStatusChanged(function(_event, status) {
+                self.refreshVaultStatus(status);
             }),
         );
 
@@ -87,9 +180,9 @@ function($scope, $rootScope, $state, tasksPanelService, modalService, $timeout, 
         self.openModal('preferencesController', 'js/preferences/preferences-dialog.html', data || {});
     });
 
-    // open modal
+    // open modal (returns $mdDialog promise)
     self.openModal = function(controllerName, templateUrl, data) {
-        modalService.open(controllerName, templateUrl, data || {});
+        return modalService.open(controllerName, templateUrl, data || {});
     };
 
     // toolbar

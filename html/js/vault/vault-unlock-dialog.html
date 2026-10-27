@@ -19,9 +19,13 @@
             <md-input-container class="md-block">
                 <label>Passphrase</label>
                 <input type="password"
+                       name="vault-passphrase"
                        ng-model="ctl.passphrase"
-                       ng-keypress="ctl.onPassphraseKeypress($event)"
-                       autocomplete="current-password">
+                       ng-keydown="ctl.onPassphraseKeydown($event)"
+                       autocomplete="off"
+                       readonly
+                       onfocus="this.removeAttribute('readonly');"
+                       autofocus>
             </md-input-container>
             <div layout="row" layout-align="space-between center">
                 <md-button ng-click="ctl.panel = 'recover'" ng-disabled="ctl.busy">Forgot passphrase?</md-button>
