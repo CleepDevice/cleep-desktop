@@ -9,6 +9,7 @@
 - Implement internal vault to store keys
 - Live `core.remoteaccess.update` handling: force-update peer remote URLs without reconnection
 - Remote devices section in the left panel (open device via public URL)
+- Off-LAN remote URL refresh via provider descriptor (vault secret + error-page / menu action)
 
 ### Changed
 

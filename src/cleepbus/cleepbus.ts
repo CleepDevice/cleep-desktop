@@ -1,4 +1,5 @@
 import { hostname } from 'os';
+import { v4 as uuidv4 } from 'uuid';
 import { appLogger } from '../app-logger';
 import { appSettings } from '../app-settings';
 import { getError } from '../utils/app.helpers';
@@ -78,6 +79,14 @@ type QueuedBusEvent =
  * - event handlers run via setImmediate so ZRE I/O is not blocked by JSON/IPC
  * - SHOUT/WHISPER dropped when the deferred queue is saturated (ENTER/EXIT kept)
  */
+const COMMAND_RESPONSE_EVENT = 'external.command.response';
+
+type PendingPeerCommand = {
+  resolve: (data: unknown) => void;
+  reject: (error: Error) => void;
+  timer: NodeJS.Timeout;
+};
+
 export class Cleepbus {
   private messageBusErrorCallback: OnMessageBusErrorCallback;
   private messageBusConnectedCallback: OnMessageBusConnectedCallback;
@@ -86,6 +95,7 @@ export class Cleepbus {
   private messageResponseCallback: OnMessageBusMessageResponseCallback;
   private pyre: Pyre | null = null;
   private peers = new Map<string, CleepbusPeerInfos>();
+  private pendingCommands = new Map<string, PendingPeerCommand>();
   private starting = false;
   private forcedStop = false;
   private restartTimer: NodeJS.Timeout | null = null;
@@ -212,6 +222,52 @@ export class Cleepbus {
     }
     void this.pyre.shout(BUS_CHANNEL, message).catch((error: Error) => {
       appLogger.error('Unable to shout cleepbus message', { error: getError(error) });
+    });
+  }
+
+  /**
+   * Whisper a command to a peer and wait for ``external.command.response``.
+   *
+   * @param peerIdent Pyre peer UUID (``peerInfos.ident``)
+   * @param command Command name on the target module
+   * @param to Module name (e.g. ``ngrok``)
+   * @param params Command parameters
+   * @param timeoutSec Timeout in seconds (must be > 3 like device bus)
+   */
+  public sendCommandToPeer(
+    peerIdent: string,
+    command: string,
+    to: string,
+    params: Record<string, unknown> = {},
+    timeoutSec = 8,
+  ): Promise<unknown> {
+    if (!this.pyre) {
+      return Promise.reject(new Error('Message bus is not started'));
+    }
+    const commandUuid = uuidv4();
+    const payload = {
+      command,
+      params,
+      to,
+      sender: 'cleepdesktop',
+      command_uuid: commandUuid,
+      timeout: timeoutSec,
+    };
+
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pendingCommands.delete(commandUuid);
+        reject(new Error(`Peer command "${command}" timed out`));
+      }, timeoutSec * 1000);
+      this.pendingCommands.set(commandUuid, { resolve, reject, timer });
+
+      void this.pyre!
+        .whisper(peerIdent, JSON.stringify(payload))
+        .catch((error: Error) => {
+          clearTimeout(timer);
+          this.pendingCommands.delete(commandUuid);
+          reject(error);
+        });
     });
   }
 
@@ -386,8 +442,17 @@ export class Cleepbus {
     }
 
     const raw = event.content[0]?.toString('utf8') ?? '';
-    const parsed = JSON.parse(raw) as CleebusMessageResponse;
+    const parsed = JSON.parse(raw) as CleebusMessageResponse & {
+      command_uuid?: string;
+      timeout?: number;
+    };
     appLogger.debug('Message received from Cleepbus', { peerUuid: event.peerUuid, parsed });
+
+    if (parsed.event === COMMAND_RESPONSE_EVENT && parsed.command_uuid) {
+      this.resolvePendingCommand(parsed.command_uuid, parsed.params);
+      return;
+    }
+
     this.messageResponseCallback?.(peerInfos, {
       event: parsed.event,
       command: parsed.command,
@@ -396,7 +461,29 @@ export class Cleepbus {
       startup: Boolean(parsed.startup),
       device_id: parsed.device_id,
       sender: parsed.sender ?? '',
+      command_uuid: parsed.command_uuid,
     });
+  }
+
+  private resolvePendingCommand(commandUuid: string, params: unknown): void {
+    const pending = this.pendingCommands.get(commandUuid);
+    if (!pending) {
+      appLogger.debug('No pending peer command for response', { commandUuid });
+      return;
+    }
+    clearTimeout(pending.timer);
+    this.pendingCommands.delete(commandUuid);
+
+    const response = (params && typeof params === 'object' ? params : {}) as {
+      error?: boolean;
+      message?: string;
+      data?: unknown;
+    };
+    if (response.error) {
+      pending.reject(new Error(response.message || 'Peer command failed'));
+      return;
+    }
+    pending.resolve(response.data);
   }
 
   private decodePeerInfos(headers: Record<string, string>): CleepbusPeerInfos {

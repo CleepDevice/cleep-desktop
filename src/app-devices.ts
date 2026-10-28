@@ -8,6 +8,12 @@ import { CleebusMessageResponse, CleepbusPeerInfos, TEST_DEVICE } from './cleepb
 import { macListsOverlap } from './cleepbus/mac-addresses';
 import { handleInvoke, ipcErr, ipcOk, sendToRenderer } from './ipc/ipc-main';
 import { appContext } from './app-context';
+import {
+  executeRemoteUrlRefresh,
+  parseRemoteUrlRefreshPayload,
+  readRemoteRefreshSecret,
+  storeRemoteRefreshSecret,
+} from './remote-url-refresh';
 
 function normalizeRemoteAccessUrls(raw: unknown): Record<string, string> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -143,6 +149,7 @@ class AppDevices {
     }
     appLogger.info('Peer remoteaccess updated', { uuid, urls });
     this.emitDevicesUpdated();
+    void this.fetchRemoteRefreshDescriptors(uuid);
   }
 
   private onPeerDisconnected(peerInfos: CleepbusPeerInfos): void {
@@ -159,6 +166,7 @@ class AppDevices {
     this.updateDevices(peerInfos);
     this.emitDevicesUpdated();
     this.emitPeerLifecycleMessage(peerInfos, 'device.connected');
+    void this.fetchRemoteRefreshDescriptors(peerInfos.uuid);
   }
 
   private emitDevicesUpdated(): void {
@@ -317,6 +325,115 @@ class AppDevices {
     return true;
   }
 
+  /**
+   * Ask each remote-access app on the device for its refresh descriptor (LAN only).
+   */
+  private async fetchRemoteRefreshDescriptors(deviceUuid: string): Promise<void> {
+    const device = this.devices[deviceUuid];
+    if (!device?.online || !device.ident) {
+      appLogger.debug('Skip remote URL refresh fetch (device offline or missing ident)', {
+        deviceUuid,
+        online: device?.online,
+        hasIdent: Boolean(device?.ident),
+      });
+      return;
+    }
+    const apps = Object.keys(device.remoteaccess || {});
+    if (apps.length === 0) {
+      appLogger.debug('Skip remote URL refresh fetch (no remoteaccess apps)', { deviceUuid });
+      return;
+    }
+
+    appLogger.info('Fetching remote URL refresh descriptors', { deviceUuid, apps });
+    let changed = false;
+    const remoteRefresh = { ...(device.remoteRefresh || {}) };
+    for (const app of apps) {
+      try {
+        const data = await cleepbus.sendCommandToPeer(
+          device.ident,
+          'get_remote_url_refresh',
+          app,
+          {},
+          8,
+        );
+        const parsed = parseRemoteUrlRefreshPayload(data);
+        if (!parsed) {
+          appLogger.warn('Invalid get_remote_url_refresh payload', { deviceUuid, app });
+          continue;
+        }
+        if (parsed.entry.supported && parsed.secret) {
+          await storeRemoteRefreshSecret(deviceUuid, app, parsed.secret);
+        }
+        remoteRefresh[app] = parsed.entry;
+        changed = true;
+        appLogger.info('Remote URL refresh descriptor cached', {
+          deviceUuid,
+          app,
+          supported: parsed.entry.supported,
+        });
+      } catch (error) {
+        appLogger.warn('Unable to fetch remote URL refresh descriptor', {
+          deviceUuid,
+          app,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    if (!changed) {
+      return;
+    }
+    device.remoteRefresh = remoteRefresh;
+    appSettings.set('devices', this.devices as unknown as SettingsObject);
+    this.emitDevicesUpdated();
+  }
+
+  /**
+   * Re-resolve a public URL via the provider API using the cached descriptor + vault secret.
+   * When the device is online on LAN, re-fetch the descriptor first so module updates apply.
+   */
+  public async refreshRemoteUrl(deviceUuid: string, app?: string): Promise<string> {
+    const device = this.devices[deviceUuid];
+    if (!device) {
+      throw new Error('Device not found');
+    }
+    if (device.online && device.ident) {
+      await this.fetchRemoteRefreshDescriptors(deviceUuid);
+    }
+    const remote = device.remoteaccess || {};
+    const apps = app ? [app] : Object.keys(remote);
+    if (apps.length === 0) {
+      throw new Error('No remote access URL on this device');
+    }
+
+    let lastError: Error | null = null;
+    for (const appName of apps) {
+      const entry = this.devices[deviceUuid]?.remoteRefresh?.[appName];
+      if (!entry?.supported) {
+        lastError = new Error(`Remote URL refresh is not supported for ${appName}`);
+        continue;
+      }
+      try {
+        const secret = await readRemoteRefreshSecret(deviceUuid, appName);
+        if (!secret) {
+          throw new Error('Refresh secret is missing from the vault');
+        }
+        const publicUrl = await executeRemoteUrlRefresh(entry.descriptor, secret);
+        device.remoteaccess = {
+          ...(device.remoteaccess || {}),
+          [appName]: publicUrl,
+        };
+        appSettings.set('devices', this.devices as unknown as SettingsObject);
+        this.emitDevicesUpdated();
+        return publicUrl;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        appLogger.warn('Remote URL refresh failed', { deviceUuid, app: appName, error: lastError });
+      }
+    }
+    throw lastError || new Error('Unable to refresh remote URL');
+  }
+
   private getNetworkConfigState() {
     const selectedInterface = appSettings.get<string>('cleep.networkinterface') || '';
     const forcedName = selectedInterface.trim() || undefined;
@@ -365,6 +482,16 @@ class AppDevices {
         return ipcErr('DEVICE_NOT_FOUND', `Device ${deviceUuid} was not found`);
       }
       return ipcOk(null);
+    });
+
+    handleInvoke('devices-refresh-remote-url', async (_event, request) => {
+      try {
+        const publicUrl = await this.refreshRemoteUrl(request.deviceUuid, request.app);
+        return ipcOk({ publicUrl });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return ipcErr('REMOTE_URL_REFRESH_FAILED', message);
+      }
     });
   }
 }

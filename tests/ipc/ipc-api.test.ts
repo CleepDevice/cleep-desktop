@@ -79,9 +79,13 @@ describe('createCleepApi', () => {
     api.devices.onMessage(listener);
     api.install.onProgress(listener);
     api.app.onOpenPage(listener);
+    api.webview.onHttpError(listener);
+    api.webview.onNewWindow(listener);
 
     expect(ipc.on).toHaveBeenCalledWith('devices-message', listener);
     expect(ipc.on).toHaveBeenCalledWith('iso-install-progress', listener);
     expect(ipc.on).toHaveBeenCalledWith('open-page', listener);
+    expect(ipc.on).toHaveBeenCalledWith('webview-http-error', listener);
+    expect(ipc.on).toHaveBeenCalledWith('webview-new-window', listener);
   });
 });

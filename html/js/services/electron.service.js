@@ -153,11 +153,33 @@ angular
     }
 
     self.registerWebview = function(webviewDomElement) {
-        return api.webview.onNewWindow(function(_event, _webContentsId, details) {
+        var unsubNewWindow = api.webview.onNewWindow(function(_event, _webContentsId, details) {
             const customEvent = new CustomEvent('new-window');
             customEvent.details = details;
             webviewDomElement.dispatchEvent(customEvent);
         });
+        var unsubHttpError = api.webview.onHttpError(function(_event, webContentsId, details) {
+            if (typeof webviewDomElement.getWebContentsId === 'function') {
+                try {
+                    if (webviewDomElement.getWebContentsId() !== webContentsId) {
+                        return;
+                    }
+                } catch (_error) {
+                    return;
+                }
+            }
+            const customEvent = new CustomEvent('http-error');
+            customEvent.details = details;
+            webviewDomElement.dispatchEvent(customEvent);
+        });
+        return function() {
+            if (unsubNewWindow) {
+                unsubNewWindow();
+            }
+            if (unsubHttpError) {
+                unsubHttpError();
+            }
+        };
     };
 
     self.app = {
@@ -183,6 +205,7 @@ angular
         deleteDevice: bindInvoke(api.devices.deleteDevice),
         updateAuth: bindInvoke(api.devices.updateAuth),
         prepareAuth: bindInvoke(api.devices.prepareAuth),
+        refreshRemoteUrl: bindInvoke(api.devices.refreshRemoteUrl),
         onUpdated: bindOn(api.devices.onUpdated),
         onAuthUpdated: bindOn(api.devices.onAuthUpdated),
         onBusConnected: bindOn(api.devices.onBusConnected),

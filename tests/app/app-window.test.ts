@@ -64,9 +64,10 @@ describe('app-window', () => {
       | undefined;
 
     const guestSession = {
-      webRequest: { onBeforeSendHeaders: vi.fn() },
+      webRequest: { onBeforeSendHeaders: vi.fn(), onCompleted: vi.fn() },
     };
     const guestWebContents = {
+      id: 42,
       session: guestSession,
       setWindowOpenHandler: vi.fn(),
     } as unknown as Electron.WebContents;
@@ -75,6 +76,10 @@ describe('app-window', () => {
 
     expect(guestSession.webRequest.onBeforeSendHeaders).toHaveBeenCalledWith(
       { urls: NGROK_HOST_URL_FILTERS },
+      expect.any(Function),
+    );
+    expect(guestSession.webRequest.onCompleted).toHaveBeenCalledWith(
+      { urls: ['*://*/*'] },
       expect.any(Function),
     );
 

@@ -131,4 +131,27 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
             $rootScope.$emit('reload-device-page', device.hostname);
         }
     };
+
+    self.canRefreshRemoteUrl = function(device) {
+        return devicesService.canRefreshRemoteUrl(device);
+    };
+
+    self.refreshRemoteUrl = function(device) {
+        if (!device || !self.canRefreshRemoteUrl(device)) {
+            toastService.info('Remote URL refresh is not available for this device');
+            return;
+        }
+
+        electron.devices.refreshRemoteUrl({ deviceUuid: device.uuid })
+            .then((result) => {
+                toastService.success('Remote URL updated');
+                if (result && result.publicUrl) {
+                    self._openDeviceAtUrl(device, result.publicUrl);
+                }
+            })
+            .catch((error) => {
+                logger.warn('Unable to refresh remote URL', error);
+                toastService.error((error && error.message) || 'Unable to refresh remote URL');
+            });
+    };
 }]);

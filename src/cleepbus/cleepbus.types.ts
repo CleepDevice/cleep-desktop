@@ -6,7 +6,23 @@ export interface CleebusMessageResponse {
   startup: boolean;
   device_id?: string;
   sender: string;
+  command_uuid?: string;
 }
+
+/** Provider call description for off-LAN remote URL refresh (no secret). */
+export type RemoteUrlRefreshDescriptor = {
+  version: number;
+  method: string;
+  url: string;
+  query?: Record<string, string>;
+  headers?: Record<string, string>;
+  extract?: { list?: string; url?: string };
+};
+
+/** Per-app refresh capability cached on the device (secret lives in the vault). */
+export type RemoteUrlRefreshEntry =
+  | { supported: false }
+  | { supported: true; descriptor: RemoteUrlRefreshDescriptor };
 
 export interface CleepbusPeerInfos {
   uuid: string;
@@ -22,6 +38,8 @@ export interface CleepbusPeerInfos {
   auth?: boolean;
   /** Public URLs keyed by application name (from ZRE header). */
   remoteaccess?: Record<string, string>;
+  /** Remote URL refresh descriptors keyed by application name. */
+  remoteRefresh?: Record<string, RemoteUrlRefreshEntry>;
 }
 
 export type CleepbusContentType = 'PEER_CONNECTED' | 'PEER_DISCONNECTED' | 'MESSAGE_RESPONSE';

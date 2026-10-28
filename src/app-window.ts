@@ -5,6 +5,7 @@ import { appContext } from './app-context';
 import { appLogger } from './app-logger';
 import { sendToRenderer } from './ipc/ipc-main';
 import { installNgrokSkipBrowserWarning } from './utils/ngrok';
+import { installWebviewHttpErrorBridge } from './utils/webview-http-error';
 import { getHtmlFilePath, getResourceFilePath } from './utils/paths';
 
 function getPreloadPath(): string {
@@ -38,6 +39,7 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
     appLogger.debug('webview attached');
     // Free ngrok plan shows an HTML interstitial unless this header is set
     installNgrokSkipBrowserWarning(webContents.session);
+    installWebviewHttpErrorBridge(mainWindow, webContents);
     webContents.setWindowOpenHandler((details) => {
       sendToRenderer(mainWindow, 'webview-new-window', webContents.id, { url: details.url });
       return { action: 'deny' };

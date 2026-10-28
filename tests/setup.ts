@@ -27,6 +27,7 @@ vi.mock('electron', () => {
         removeListener: vi.fn(),
         webRequest: {
           onBeforeSendHeaders: vi.fn(),
+          onCompleted: vi.fn(),
         },
       },
     },
@@ -50,6 +51,9 @@ vi.mock('electron', () => {
   });
 
   return {
+    net: {
+      fetch: vi.fn(),
+    },
     app: {
       isPackaged: true,
       name: 'CleepDesktop',

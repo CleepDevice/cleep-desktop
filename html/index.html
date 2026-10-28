@@ -258,6 +258,15 @@
                                             Device infos
                                         </md-button>
                                     </md-menu-item>
+                                    <md-menu-item>
+                                        <md-button
+                                            ng-click="ctl.refreshRemoteUrl(device)"
+                                            ng-disabled="!ctl.canRefreshRemoteUrl(device)"
+                                        >
+                                            <md-icon md-svg-icon="refresh"></md-icon>
+                                            Refresh remote URL
+                                        </md-button>
+                                    </md-menu-item>
                                 </md-menu-content>
                             </md-menu>
                         </md-list-item>

@@ -14,6 +14,7 @@ export const INVOKE_CHANNELS = [
   'devices-delete-device',
   'devices-get-ui-state',
   'devices-prepare-auth',
+  'devices-refresh-remote-url',
   'get-changelog',
   'get-electron-log-path',
   'iso-get-drives',
@@ -77,6 +78,7 @@ export const RECEIVE_CHANNELS = [
   'updater-rpi-imager-update-available',
   'vault-status-changed',
   'vault-unlock-required',
+  'webview-http-error',
   'webview-new-window',
 ] as const satisfies readonly ReceiveChannel[];
 

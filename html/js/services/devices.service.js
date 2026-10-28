@@ -158,4 +158,15 @@ function(electron, logger, ipcLifecycle) {
         return Object.keys(device.remoteaccess).join(', ');
     };
 
+    /** True when at least one remote-access app has a cached refresh descriptor. */
+    self.canRefreshRemoteUrl = function(device) {
+        if (!device || !device.remoteRefresh) {
+            return false;
+        }
+        return Object.keys(device.remoteRefresh).some(function(app) {
+            var entry = device.remoteRefresh[app];
+            return Boolean(entry && entry.supported);
+        });
+    };
+
 }]);

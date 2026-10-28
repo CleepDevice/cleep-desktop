@@ -137,6 +137,10 @@ export type InvokeContract = {
   'cache-purge-files': { request: void; response: IpcResult<boolean> };
   'devices-delete-device': { request: string; response: IpcResult<null> };
   'devices-get-ui-state': { request: void; response: IpcResult<DevicesUiState> };
+  'devices-refresh-remote-url': {
+    request: { deviceUuid: string; app?: string };
+    response: IpcResult<{ publicUrl: string }>;
+  };
   'get-changelog': { request: void; response: IpcResult<string> };
   'get-electron-log-path': { request: void; response: IpcResult<string> };
   'iso-get-drives': { request: void; response: IpcResult<IsoDrivesPayload> };
@@ -215,6 +219,9 @@ export type ReceiveContract = {
   'updater-rpi-imager-update-available': { args: [UpdateData] };
   'vault-status-changed': { args: [VaultStatus] };
   'vault-unlock-required': { args: [] };
+  'webview-http-error': {
+    args: [webContentsId: number, details: { url: string; statusCode: number }];
+  };
   'webview-new-window': { args: [webContentsId: number, details: WebviewOpenDetails] };
 };
 

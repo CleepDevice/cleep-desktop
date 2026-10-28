@@ -13,6 +13,15 @@
                 <md-card>
                     <img ng-src="images/device-error.png" class="md-card-image">
                 </md-card>
+                <md-button
+                    class="md-raised md-primary"
+                    ng-if="ctl.deviceUuid"
+                    ng-click="ctl.refreshRemoteUrl()"
+                    ng-disabled="!ctl.canRefresh() || ctl.refreshing"
+                >
+                    <md-icon md-svg-icon="refresh"></md-icon>
+                    Refresh remote URL
+                </md-button>
             </div>
         </md-content>
     </div>

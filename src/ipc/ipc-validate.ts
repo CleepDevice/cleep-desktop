@@ -172,6 +172,10 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
     url: nonEmptyString,
     deviceUuid: nonEmptyString,
   }),
+  'devices-refresh-remote-url': z.object({
+    deviceUuid: nonEmptyString,
+    app: z.string().optional(),
+  }),
   'get-changelog': null,
   'get-electron-log-path': null,
   'iso-get-drives': null,

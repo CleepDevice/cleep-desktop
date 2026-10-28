@@ -8,6 +8,20 @@ function($scope, $rootScope, $stateParams, logger, $document, $timeout, electron
     self.webview = document.getElementById('deviceWebview');
     self.loading = true;
     self._unsubscribeWebview = null;
+    self._navigatedToError = false;
+
+    self.goDeviceError = function(extra) {
+        if (self._navigatedToError) {
+            return;
+        }
+        self._navigatedToError = true;
+        var params = Object.assign({
+            hostname: $stateParams.hostname,
+            url: $stateParams.url,
+            deviceUuid: $stateParams.deviceUuid,
+        }, extra || {});
+        $state.go('deviceError', params);
+    };
 
     
     // handle external link (unsubscribe when leaving the device page)
@@ -54,11 +68,15 @@ function($scope, $rootScope, $stateParams, logger, $document, $timeout, electron
             description: event.errorDescription,
             url : event.validatedURL,
         });
+        self.goDeviceError({ url: event.validatedURL || $stateParams.url });
+    });
 
-        var params = {
-            hostname: $stateParams.hostname,
-        };
-        $state.go('deviceError', params);
+    // HTTP error on main frame (e.g. ngrok offline endpoint → 404/502)
+    self.webview.addEventListener('http-error', (event) => {
+        logger.warn('Device page returned HTTP error', event.details);
+        self.goDeviceError({
+            url: (event.details && event.details.url) || $stateParams.url,
+        });
     });
 
     // configure webview src as soon as document is ready
@@ -77,6 +95,7 @@ function($scope, $rootScope, $stateParams, logger, $document, $timeout, electron
         }
 
         logger.debug('Reloading device page');
+        self._navigatedToError = false;
         self.loading = true;
         self.webview.reloadIgnoringCache();
     });
