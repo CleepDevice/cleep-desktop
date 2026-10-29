@@ -4,6 +4,7 @@
 
 ### Fixed
 - Offline devices with auth always show ``cellphone-off`` (auth lock no longer hides the disconnected state)
+- Refresh peer hostname (and related identity fields) on reconnect; apply live ``parameters.hostname.update``
 - Do not prompt vault unlock at startup when caching gateway/refresh secrets from the bus (queue until unlock / user action)
 - Ngrok free interstitial again after gateway headers (single ``onBeforeSendHeaders``: skip + Auth/Target)
 - Device infos menu crashes when peer has no ``extra`` (disable action; guard filter)

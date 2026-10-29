@@ -4,7 +4,11 @@ import { appLogger } from './app-logger';
 import { appSettings, SettingsObject } from './app-settings';
 import { cleepbus } from './cleepbus/cleepbus';
 import { listNetworkInterfaces, selectInterface } from './pyre/iface';
-import { CleebusMessageResponse, CleepbusPeerInfos } from './cleepbus/cleepbus.types';
+import {
+  CleebusMessageResponse,
+  CleepbusPeerInfos,
+  UNCONFIGURED_DEVICE_HOSTNAME,
+} from './cleepbus/cleepbus.types';
 import { macListsOverlap } from './cleepbus/mac-addresses';
 import { handleInvoke, ipcErr, ipcOk, sendToRenderer } from './ipc/ipc-main';
 import {
@@ -112,6 +116,8 @@ class AppDevices {
     appLogger.debug('Received message response from Cleepbus', { peerInfos, messageResponse });
     if (messageResponse?.event === 'core.remoteaccess.update') {
       this.applyRemoteAccessUpdate(peerInfos, messageResponse);
+    } else if (messageResponse?.event === 'parameters.hostname.update') {
+      this.applyHostnameUpdate(peerInfos, messageResponse);
     }
     const timestamp = Math.round(new Date().getTime() / 1000);
     this.sendDevicesMessage({ timestamp, peerInfos, message: messageResponse });
@@ -147,6 +153,40 @@ class AppDevices {
     appLogger.info('Peer remoteaccess updated', { uuid, urls });
     this.emitDevicesUpdated();
     void this.fetchRemoteRefreshDescriptors(uuid);
+  }
+
+  /**
+   * Force-update a peer hostname from ``parameters.hostname.update`` (no reconnection needed).
+   */
+  private applyHostnameUpdate(
+    peerInfos: CleepbusPeerInfos,
+    messageResponse: CleebusMessageResponse,
+  ): void {
+    const uuid = peerInfos?.uuid;
+    const params = messageResponse.params as { hostname?: unknown } | undefined;
+    const hostname = typeof params?.hostname === 'string' ? params.hostname.trim() : '';
+    if (!uuid || !hostname) {
+      appLogger.warn('Ignoring hostname update without peer uuid/hostname', { messageResponse });
+      return;
+    }
+
+    const existing = this.devices[uuid];
+    if (existing) {
+      existing.hostname = hostname;
+      existing.extra = {
+        ...(existing.extra || {}),
+        configured: Boolean(hostname) && hostname !== UNCONFIGURED_DEVICE_HOSTNAME,
+      };
+      appSettings.set('devices', this.devices as unknown as SettingsObject);
+    } else {
+      this.updateDevices({
+        ...peerInfos,
+        hostname,
+        online: peerInfos.online ?? true,
+      });
+    }
+    appLogger.info('Peer hostname updated', { uuid, hostname });
+    this.emitDevicesUpdated();
   }
 
   /** Merge gateway catalogue peers into the device list (offline until seen on bus). */
@@ -268,7 +308,7 @@ class AppDevices {
     }
 
     if (this.devices[peerInfos.uuid]) {
-      Object.assign(this.devices[peerInfos.uuid], peerInfos);
+      this.mergePeerIntoDevice(this.devices[peerInfos.uuid], peerInfos);
     } else {
       // Same physical device can change instance uuid (core regen / reinstall).
       // Match on MAC like cleepbus does, then rebind the saved entry.
@@ -276,14 +316,7 @@ class AppDevices {
       if (previousUuid && previousUuid !== peerInfos.uuid) {
         const previous = this.devices[previousUuid];
         delete this.devices[previousUuid];
-        const previousRemote = previous?.remoteaccess || {};
-        const nextRemote = peerInfos.remoteaccess || {};
-        this.devices[peerInfos.uuid] = {
-          ...previous,
-          ...peerInfos,
-          remoteaccess:
-            Object.keys(nextRemote).length > 0 ? nextRemote : previousRemote,
-        };
+        this.devices[peerInfos.uuid] = this.mergePeerIntoDevice({ ...previous }, peerInfos);
         appAuth.rebindDeviceUuid(previousUuid, peerInfos.uuid);
         appLogger.info('Rebound saved device to new uuid (MAC match)', {
           previousUuid,
@@ -295,6 +328,34 @@ class AppDevices {
       }
     }
     appSettings.set('devices', this.devices as unknown as SettingsObject);
+  }
+
+  /**
+   * Overlay live peer infos onto a saved device.
+   * Identity/network fields always refresh from the bus; vault-only caches are kept
+   * when the peer does not advertise them yet.
+   */
+  private mergePeerIntoDevice(
+    existing: CleepbusPeerInfos,
+    peerInfos: CleepbusPeerInfos,
+  ): CleepbusPeerInfos {
+    const previousRemote = existing.remoteaccess || {};
+    const nextRemote = peerInfos.remoteaccess || {};
+    const previousRefresh = existing.remoteRefresh;
+    Object.assign(existing, peerInfos, {
+      // Always take live identity from ZRE (fixes stale hostname after rename)
+      hostname: peerInfos.hostname ?? existing.hostname,
+      ip: peerInfos.ip ?? existing.ip,
+      port: peerInfos.port ?? existing.port,
+      ssl: peerInfos.ssl ?? existing.ssl,
+      auth: peerInfos.auth ?? existing.auth,
+      macs: peerInfos.macs?.length ? peerInfos.macs : existing.macs,
+      online: peerInfos.online,
+      remoteaccess: Object.keys(nextRemote).length > 0 ? nextRemote : previousRemote,
+      remoteRefresh: peerInfos.remoteRefresh || previousRefresh,
+      extra: { ...(existing.extra || {}), ...(peerInfos.extra || {}) },
+    });
+    return existing;
   }
 
   private findDeviceUuidByMacs(macs: string[] | undefined): string | undefined {

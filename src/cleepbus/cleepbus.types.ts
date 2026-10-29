@@ -42,6 +42,9 @@ export interface CleepbusPeerInfos {
   remoteRefresh?: Record<string, RemoteUrlRefreshEntry>;
 }
 
+/** Default hostname before the user renames the device in parameters. */
+export const UNCONFIGURED_DEVICE_HOSTNAME = 'cleepdevice';
+
 export type CleepbusContentType = 'PEER_CONNECTED' | 'PEER_DISCONNECTED' | 'MESSAGE_RESPONSE';
 
 export interface CleepbusMessage {

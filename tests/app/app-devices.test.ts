@@ -266,6 +266,86 @@ describe('AppDevices', () => {
     });
   });
 
+  it('refreshes hostname from peer on reconnect', () => {
+    send.mockClear();
+    busCallbacks.peerConnected?.({
+      uuid: 'device-rename',
+      hostname: 'old-name',
+      ip: '192.168.1.50',
+      port: 80,
+      macs: ['aa:bb:cc:dd:ee:01'],
+      cleepdesktop: false,
+      online: true,
+      remoteaccess: {},
+    });
+    busCallbacks.peerDisconnected?.({
+      uuid: 'device-rename',
+      hostname: 'old-name',
+      ip: '192.168.1.50',
+      port: 80,
+      macs: ['aa:bb:cc:dd:ee:01'],
+      cleepdesktop: false,
+      online: false,
+      remoteaccess: {},
+    });
+    send.mockClear();
+
+    busCallbacks.peerConnected?.({
+      uuid: 'device-rename',
+      hostname: 'new-name',
+      ip: '192.168.1.50',
+      port: 80,
+      macs: ['aa:bb:cc:dd:ee:01'],
+      cleepdesktop: false,
+      online: true,
+      remoteaccess: {},
+    });
+
+    const devices = send.mock.calls.find((call) => call[0] === 'devices-updated')?.[1] as Array<{
+      uuid: string;
+      hostname: string;
+    }>;
+    expect(devices?.find((device) => device.uuid === 'device-rename')?.hostname).toBe('new-name');
+  });
+
+  it('force-updates peer hostname from parameters.hostname.update', () => {
+    send.mockClear();
+    busCallbacks.peerConnected?.({
+      uuid: 'device-hostname',
+      hostname: 'old-host',
+      ip: '192.168.1.60',
+      port: 80,
+      macs: [],
+      cleepdesktop: false,
+      online: true,
+      remoteaccess: {},
+    });
+    send.mockClear();
+
+    busCallbacks.message?.(
+      {
+        uuid: 'device-hostname',
+        hostname: 'old-host',
+        ip: '192.168.1.60',
+        macs: [],
+        cleepdesktop: false,
+        online: true,
+      },
+      {
+        event: 'parameters.hostname.update',
+        sender: 'parameters',
+        startup: false,
+        params: { hostname: 'fresh-host' },
+      },
+    );
+
+    const devices = send.mock.calls.find((call) => call[0] === 'devices-updated')?.[1] as Array<{
+      uuid: string;
+      hostname: string;
+    }>;
+    expect(devices?.find((device) => device.uuid === 'device-hostname')?.hostname).toBe('fresh-host');
+  });
+
   it('force-updates peer remoteaccess from core.remoteaccess.update', () => {
     send.mockClear();
     busCallbacks.peerConnected?.({

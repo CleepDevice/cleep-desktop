@@ -82,9 +82,18 @@ function(electron, logger, ipcLifecycle) {
         }
 
         foundDevice.online = eventName === 'device.connected';
+        // Keep identity fields in sync if devices-updated races behind this message
+        if (peer.hostname) {
+            foundDevice.hostname = peer.hostname;
+        }
+        if (peer.ip) {
+            foundDevice.ip = peer.ip;
+            foundDevice.url = (foundDevice.ssl ? 'https://' : 'http://') + peer.ip + ':' + (peer.port || foundDevice.port);
+        }
         logger.debug('Device availability updated from lifecycle event', {
             uuid: foundDevice.uuid,
             online: foundDevice.online,
+            hostname: foundDevice.hostname,
             eventName: eventName,
         });
     };

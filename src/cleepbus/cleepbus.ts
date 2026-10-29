@@ -6,7 +6,11 @@ import { getError } from '../utils/app.helpers';
 import { IToolUpdateStatus, OnUpdateAvailableCallback } from '../app-updater';
 import { OnDownloadProgressCallback } from '../utils/download';
 import { Pyre, type EnterEvent, type ExitEvent, type ShoutEvent, type WhisperEvent } from '../pyre';
-import { CleebusMessageResponse, CleepbusPeerInfos } from './cleepbus.types';
+import {
+  CleebusMessageResponse,
+  CleepbusPeerInfos,
+  UNCONFIGURED_DEVICE_HOSTNAME,
+} from './cleepbus.types';
 import { getMacAddresses, normalizeMacList } from './mac-addresses';
 import {
   OnMessageBusConnectedCallback,
@@ -22,7 +26,6 @@ export const CLEEPBUS_VERSION = '0.1.0';
 
 const BUS_NAME = 'CLEEP';
 const BUS_CHANNEL = 'CLEEP';
-const UNCONFIGURED_DEVICE_HOSTNAME = 'cleepdevice';
 
 /** Drop non-critical bus events when the deferred queue is this deep (keeps UI responsive). */
 const MAX_QUEUED_EVENTS = 500;
