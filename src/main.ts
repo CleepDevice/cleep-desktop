@@ -56,14 +56,18 @@ app.on('certificate-error', (event, _webContents, _url, _error, certificate, cal
   callback(certificate?.subjectName === 'Cleep' && certificate?.issuerName === 'Cleep');
 });
 
-app.on('login', (event, _webContents, _request, authInfo, callback) => {
+app.on('login', (event, webContents, _request, authInfo, callback) => {
   appLogger.debug('Auth requested', { authInfo });
   const host = authInfo.host;
   event.preventDefault();
 
   void (async () => {
-    const device = appDevices.findByHost(host);
-    const auth = await appAuth.resolveAuth(host, device?.uuid);
+    const { getGatewayWebviewBinding } = await import('./utils/gateway');
+    const binding = getGatewayWebviewBinding(webContents.id);
+    const device = binding?.deviceUuid
+      ? appDevices.getDevice(binding.deviceUuid)
+      : appDevices.findByHost(host);
+    const auth = await appAuth.resolveAuth(host, device?.uuid ?? binding?.deviceUuid);
 
     if (!auth) {
       appLogger.warn('No auth found for the device', { host });

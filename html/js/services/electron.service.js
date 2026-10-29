@@ -206,6 +206,7 @@ angular
         updateAuth: bindInvoke(api.devices.updateAuth),
         prepareAuth: bindInvoke(api.devices.prepareAuth),
         refreshRemoteUrl: bindInvoke(api.devices.refreshRemoteUrl),
+        bindWebview: bindInvoke(api.devices.bindWebview),
         onUpdated: bindOn(api.devices.onUpdated),
         onAuthUpdated: bindOn(api.devices.onAuthUpdated),
         onBusConnected: bindOn(api.devices.onBusConnected),

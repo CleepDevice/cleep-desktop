@@ -5,17 +5,13 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
     var self = this;
     self.devicesService = devicesService;
 
-    /** Angular filter predicate: devices that advertise at least one remote URL. */
-    self.hasRemoteAccessFilter = function(device) {
-        return devicesService.hasRemoteAccess(device);
-    };
-
-    self.goDevicePage = function(device) {
+    self.goDevicePage = function(device, viaGateway) {
         $state.go('device', {
             url: device.url,
             hostname: device.hostname,
             auth: device.auth,
             deviceUuid: device.uuid,
+            viaGateway: Boolean(viaGateway),
         });
     };
 
@@ -28,12 +24,7 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
     };
 
     /**
-     * Open a device:
-     * - no auth → device page
-     * - credentials in session/vault → unlock vault if needed, then device page (no login form)
-     * - otherwise → login form
-     *
-     * Always asks main via prepareAuth (does not trust hasAuthStored alone: peer updates used to wipe it).
+     * Open a device (LAN if online, else via house gateway public URL).
      */
     self.openDevicePage = function(device) {
         if (!device) {
@@ -41,41 +32,26 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
             return;
         }
 
-        if (!device.online) {
-            toastService.info('You can\'t connect to offline device');
+        var url = devicesService.resolveOpenUrl(device);
+        if (!url) {
+            toastService.info(device.online
+                ? 'Unable to open device'
+                : 'Device is offline and no remote gateway is available');
             return;
         }
 
-        logger.debug('Open device page', device);
-        self._openDeviceAtUrl(device, device.url);
+        var viaGateway = !device.online;
+        logger.debug('Open device page', { device: device, url: url, viaGateway: viaGateway });
+        self._openDeviceAtUrl(device, url, viaGateway);
     };
 
-    /**
-     * Open a device through its public remote URL (works even if LAN peer is offline).
-     */
-    self.openRemoteDevicePage = function(device) {
-        if (!device) {
-            toastService.error('Invalid device');
-            return;
-        }
-
-        var remoteUrl = devicesService.getPrimaryRemoteUrl(device);
-        if (!remoteUrl) {
-            toastService.error('No remote URL available');
-            return;
-        }
-
-        logger.debug('Open remote device page', { device, remoteUrl });
-        self._openDeviceAtUrl(device, remoteUrl);
-    };
-
-    self._openDeviceAtUrl = function(device, url) {
+    self._openDeviceAtUrl = function(device, url, viaGateway) {
         devicesService.selectDevice(device.uuid);
 
         var target = Object.assign({}, device, { url: url });
 
         if (!device.auth) {
-            self.goDevicePage(target);
+            self.goDevicePage(target, viaGateway);
             return;
         }
 
@@ -87,7 +63,7 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
                 if (result && result.ready) {
                     device.hasAuthStored = true;
                     logger.debug('Device auth ready from session/vault, opening device');
-                    self.goDevicePage(target);
+                    self.goDevicePage(target, viaGateway);
                     return;
                 }
                 logger.debug('No stored device auth, showing login form');
@@ -127,13 +103,18 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
     };
 
     self.reloadDevicePage = function(device) {
-        if (device.online) {
+        if (device.online || devicesService.isGatewayAccess(device)) {
             $rootScope.$emit('reload-device-page', device.hostname);
         }
     };
 
     self.canRefreshRemoteUrl = function(device) {
         return devicesService.canRefreshRemoteUrl(device);
+    };
+
+    /** Refresh is only meaningful on the gateway device that owns the tunnel. */
+    self.showRefreshRemoteUrl = function(device) {
+        return Boolean(devicesService.getPrimaryRemoteUrl(device));
     };
 
     self.refreshRemoteUrl = function(device) {

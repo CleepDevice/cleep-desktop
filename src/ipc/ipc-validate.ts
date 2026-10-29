@@ -176,6 +176,11 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
     deviceUuid: nonEmptyString,
     app: z.string().optional(),
   }),
+  'devices-bind-webview': z.object({
+    webContentsId: z.number().int().nonnegative(),
+    deviceUuid: nonEmptyString,
+    gatewayDeviceUuid: z.string().optional(),
+  }),
   'get-changelog': null,
   'get-electron-log-path': null,
   'iso-get-drives': null,

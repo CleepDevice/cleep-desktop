@@ -169,14 +169,17 @@
                                 </md-button>
                                 <md-menu-content>
                                     <md-menu-item>
-                                        <md-button ng-click="cleep.openModal('deviceDetailsController', 'js/device/device-details.dialog.html', device)">
+                                        <md-button
+                                            ng-click="cleep.openModal('deviceDetailsController', 'js/device/device-details.dialog.html', device)"
+                                            ng-disabled="!device.extra"
+                                        >
                                             <md-icon md-svg-icon="information-outline"></md-icon>
                                             Device infos
                                         </md-button>
                                     </md-menu-item>
                                     <md-menu-item ng-show="device.uuid === ctl.devicesService.selectedDeviceUuid">
                                         <md-button ng-click="ctl.reloadDevicePage(device)">
-                                            <md-icon md-svg-icon="information-outline"></md-icon>
+                                            <md-icon md-svg-icon="reload"></md-icon>
                                             Reload device page
                                         </md-button>
                                     </md-menu-item>
@@ -202,47 +205,6 @@
                             <md-icon ng-if="!device.online" md-svg-icon="cellphone-off" class="icon-margin md-accent"></md-icon>
                             <p>
                                 {{ device.hostname }}
-                            </p>
-                            <md-menu class="md-secondary">
-                                <md-button class="md-icon-button" ng-click="ctl.openDeviceMenu($mdMenu, $event)">
-                                    <md-icon md-svg-icon="dots-vertical"></md-icon>
-                                </md-button>
-                                <md-menu-content>
-                                    <md-menu-item>
-                                        <md-button ng-click="cleep.openModal('deviceDetailsController', 'js/device/device-details.dialog.html', device)">
-                                            <md-icon md-svg-icon="information-outline"></md-icon>
-                                            Device infos
-                                        </md-button>
-                                    </md-menu-item>
-                                    <md-menu-item ng-show="device.uuid === ctl.devicesService.selectedDeviceUuid">
-                                        <md-button ng-click="ctl.reloadDevicePage(device)">
-                                            <md-icon md-svg-icon="reload"></md-icon>
-                                            Reload device page
-                                        </md-button>
-                                    </md-menu-item>
-                                    <md-menu-divider></md-menu-divider>
-                                    <md-menu-item>
-                                        <md-button ng-click="ctl.deleteDevice(device)">
-                                            <md-icon md-svg-icon="delete"></md-icon>
-                                            Delete
-                                        </md-button>
-                                    </md-menu-item>
-                                </md-menu-content>
-                            </md-menu>
-                        </md-list-item>
-
-                        <md-subheader
-                            class="md-no-sticky"
-                            ng-if="(ctl.devicesService.devices | filter:ctl.hasRemoteAccessFilter).length"
-                        >Remote devices</md-subheader>
-                        <md-list-item
-                            ng-repeat="device in ctl.devicesService.devices | filter:ctl.hasRemoteAccessFilter"
-                            ng-click="ctl.openRemoteDevicePage(device)"
-                            md-colors="device.uuid === ctl.devicesService.selectedDeviceUuid ? { background: 'accent-100' } : { background: 'background' }"
-                        >
-                            <md-icon md-svg-icon="web" class="icon-margin"></md-icon>
-                            <p>
-                                {{ device.hostname }}
                                 <span class="device-remote-apps" ng-if="ctl.devicesService.getRemoteAccessApps(device)">
                                     ({{ ctl.devicesService.getRemoteAccessApps(device) }})
                                 </span>
@@ -253,18 +215,34 @@
                                 </md-button>
                                 <md-menu-content>
                                     <md-menu-item>
-                                        <md-button ng-click="cleep.openModal('deviceDetailsController', 'js/device/device-details.dialog.html', device)">
+                                        <md-button
+                                            ng-click="cleep.openModal('deviceDetailsController', 'js/device/device-details.dialog.html', device)"
+                                            ng-disabled="!device.extra"
+                                        >
                                             <md-icon md-svg-icon="information-outline"></md-icon>
                                             Device infos
                                         </md-button>
                                     </md-menu-item>
-                                    <md-menu-item>
+                                    <md-menu-item ng-show="device.uuid === ctl.devicesService.selectedDeviceUuid">
+                                        <md-button ng-click="ctl.reloadDevicePage(device)">
+                                            <md-icon md-svg-icon="reload"></md-icon>
+                                            Reload device page
+                                        </md-button>
+                                    </md-menu-item>
+                                    <md-menu-item ng-show="ctl.showRefreshRemoteUrl(device)">
                                         <md-button
                                             ng-click="ctl.refreshRemoteUrl(device)"
                                             ng-disabled="!ctl.canRefreshRemoteUrl(device)"
                                         >
                                             <md-icon md-svg-icon="refresh"></md-icon>
                                             Refresh remote URL
+                                        </md-button>
+                                    </md-menu-item>
+                                    <md-menu-divider></md-menu-divider>
+                                    <md-menu-item>
+                                        <md-button ng-click="ctl.deleteDevice(device)">
+                                            <md-icon md-svg-icon="delete"></md-icon>
+                                            Delete
                                         </md-button>
                                     </md-menu-item>
                                 </md-menu-content>

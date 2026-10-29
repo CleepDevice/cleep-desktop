@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.controller('deviceController', ['$scope', '$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'electronService', '$state', 'downloadService',
-function($scope, $rootScope, $stateParams, logger, $document, $timeout, electron, $state, downloadService) {
+.controller('deviceController', ['$scope', '$rootScope', '$stateParams', 'loggerService', '$document', '$timeout', 'electronService', '$state', 'downloadService', 'devicesService',
+function($scope, $rootScope, $stateParams, logger, $document, $timeout, electron, $state, downloadService, devicesService) {
     var self = this;
     logger.debug("deviceController stateParams", $stateParams);
     self.hostname = $stateParams.hostname;
@@ -9,6 +9,7 @@ function($scope, $rootScope, $stateParams, logger, $document, $timeout, electron
     self.loading = true;
     self._unsubscribeWebview = null;
     self._navigatedToError = false;
+    self._srcSet = false;
 
     self.goDeviceError = function(extra) {
         if (self._navigatedToError) {
@@ -21,6 +22,34 @@ function($scope, $rootScope, $stateParams, logger, $document, $timeout, electron
             deviceUuid: $stateParams.deviceUuid,
         }, extra || {});
         $state.go('deviceError', params);
+    };
+
+    self.bindGatewayWebview = function() {
+        if (!$stateParams.deviceUuid || typeof self.webview.getWebContentsId !== 'function') {
+            return Promise.resolve();
+        }
+        var gateway = devicesService.findGatewayDevice();
+        var gatewayDeviceUuid = ($stateParams.viaGateway && gateway) ? gateway.uuid : undefined;
+        try {
+            return electron.devices.bindWebview({
+                webContentsId: self.webview.getWebContentsId(),
+                deviceUuid: $stateParams.deviceUuid,
+                gatewayDeviceUuid: gatewayDeviceUuid,
+            }).catch(function(error) {
+                logger.warn('Unable to bind gateway webview', error);
+            });
+        } catch (error) {
+            logger.warn('Unable to bind gateway webview', error);
+            return Promise.resolve();
+        }
+    };
+
+    self.setWebviewSrc = function() {
+        if (self._srcSet) {
+            return;
+        }
+        self._srcSet = true;
+        self.webviewAngular.attr('src', $stateParams.url + '?' + Date.now());
     };
 
     
@@ -59,6 +88,8 @@ function($scope, $rootScope, $stateParams, logger, $document, $timeout, electron
         $timeout(function() {
             self.loading = false;
         }, 0);
+        // Re-bind after attach so webContentsId is valid
+        self.bindGatewayWebview();
     });
 
     // error loading device page
@@ -84,9 +115,13 @@ function($scope, $rootScope, $stateParams, logger, $document, $timeout, electron
         $timeout(function() {
             self.loading = true;
         }, 0);
-        logger.debug('Opening "'+$stateParams.hostname+'" device url: '+$stateParams.url);
+        logger.debug('Opening "'+$stateParams.hostname+'" device url: '+$stateParams.url, {
+            viaGateway: $stateParams.viaGateway,
+        });
         self.webviewAngular = angular.element(self.webview);
-        self.webviewAngular.attr('src', $stateParams.url + '?'+Date.now());
+        self.bindGatewayWebview().finally(function() {
+            self.setWebviewSrc();
+        });
     });
 
     $rootScope.$on('reload-device-page', function() {

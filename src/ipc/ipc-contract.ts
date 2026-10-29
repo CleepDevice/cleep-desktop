@@ -141,6 +141,15 @@ export type InvokeContract = {
     request: { deviceUuid: string; app?: string };
     response: IpcResult<{ publicUrl: string }>;
   };
+  'devices-bind-webview': {
+    request: {
+      webContentsId: number;
+      deviceUuid: string;
+      /** When set, load gateway token from vault and inject Auth+Target headers. */
+      gatewayDeviceUuid?: string;
+    };
+    response: IpcResult<null>;
+  };
   'get-changelog': { request: void; response: IpcResult<string> };
   'get-electron-log-path': { request: void; response: IpcResult<string> };
   'iso-get-drives': { request: void; response: IpcResult<IsoDrivesPayload> };

@@ -66,6 +66,7 @@ describe('app-window', () => {
     const guestSession = {
       webRequest: { onBeforeSendHeaders: vi.fn(), onCompleted: vi.fn() },
     };
+    // Single onBeforeSendHeaders: ngrok skip-warning (+ gateway Auth/Target when bound)
     const guestWebContents = {
       id: 42,
       session: guestSession,

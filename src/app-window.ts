@@ -4,7 +4,7 @@ import url from 'url';
 import { appContext } from './app-context';
 import { appLogger } from './app-logger';
 import { sendToRenderer } from './ipc/ipc-main';
-import { installNgrokSkipBrowserWarning } from './utils/ngrok';
+import { installGatewayHeaders } from './utils/gateway';
 import { installWebviewHttpErrorBridge } from './utils/webview-http-error';
 import { getHtmlFilePath, getResourceFilePath } from './utils/paths';
 
@@ -37,8 +37,8 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
 
   mainWindow.webContents.on('did-attach-webview', (_event, webContents: Electron.WebContents) => {
     appLogger.debug('webview attached');
-    // Free ngrok plan shows an HTML interstitial unless this header is set
-    installNgrokSkipBrowserWarning(webContents.session);
+    // One handler: ngrok skip-interstitial + optional gateway Auth/Target
+    installGatewayHeaders(webContents.session);
     installWebviewHttpErrorBridge(mainWindow, webContents);
     webContents.setWindowOpenHandler((details) => {
       sendToRenderer(mainWindow, 'webview-new-window', webContents.id, { url: details.url });

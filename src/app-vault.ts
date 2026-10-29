@@ -82,6 +82,8 @@ class AppVault {
   private window: BrowserWindow | null = null;
   private unlockWaiters: UnlockWaiter[] = [];
   private unlockPromptOpen = false;
+  /** Secrets received while locked (e.g. LAN cache); flushed on unlock — no prompt. */
+  private pendingSecrets = new Map<string, VaultSecret>();
 
   public configure(app: App): void {
     if (this.configured) {
@@ -334,6 +336,7 @@ class AppVault {
     meta.updatedAt = Date.now();
     this.persistMeta();
     this.dek = unlockedDek;
+    this.flushPendingSecrets();
     appLogger.info('Vault recovered with recovery code');
     this.resolveUnlockWaiters();
     this.emitStatusChanged();
@@ -399,6 +402,24 @@ class AppVault {
   public async putSecretAsync(key: string, secret: VaultSecret): Promise<void> {
     await this.ensureUnlocked();
     this.putSecret(key, secret);
+  }
+
+  /**
+   * Store without prompting: write immediately if unlocked, else queue until unlock.
+   * No-op when the vault is disabled. Use for background LAN caches (gateway token, …).
+   */
+  public putSecretLazy(key: string, secret: VaultSecret): void {
+    this.assertConfigured();
+    if (!this.meta?.enabled) {
+      return;
+    }
+    if (this.dek) {
+      this.putSecret(key, secret);
+      return;
+    }
+    const normalizedKey = normalizeSecretKey(key);
+    this.pendingSecrets.set(normalizedKey, secret);
+    appLogger.debug('Vault secret queued until unlock', { key: normalizedKey });
   }
 
   /** Main-process API: read a secret by opaque key (vault must already be unlocked). */
@@ -649,6 +670,25 @@ class AppVault {
       });
       throw new VaultError('VAULT_INVALID_PASSPHRASE', 'Invalid vault passphrase');
     }
+    this.flushPendingSecrets();
+  }
+
+  /** Persist secrets queued while the vault was locked. */
+  private flushPendingSecrets(): void {
+    if (!this.dek || this.pendingSecrets.size === 0) {
+      return;
+    }
+    for (const [key, secret] of this.pendingSecrets) {
+      try {
+        this.putSecret(key, secret);
+      } catch (error) {
+        appLogger.warn('Unable to flush pending vault secret', {
+          key,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+    this.pendingSecrets.clear();
   }
 
   private wipeVaultData(): void {

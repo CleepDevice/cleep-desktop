@@ -69,6 +69,7 @@
                 hostname: null,
                 deviceUuid: null,
                 auth: null,
+                viaGateway: false,
             },
             controller: 'deviceController',
             controllerAs: 'ctl',

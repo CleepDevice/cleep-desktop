@@ -4,7 +4,8 @@ angular
     var self = this;
     self.device = modalData;
     self.closeModal = closeModal;
-    self.deviceApps = self.device.extra.apps.filter((app) => {
+    var apps = (self.device.extra && self.device.extra.apps) || [];
+    self.deviceApps = apps.filter((app) => {
         return ['audio', 'cleepbus', 'network', 'parameters', 'system', 'update'].indexOf(app)===-1;
     });
     self.boardImages = {
@@ -81,5 +82,7 @@ angular
         'c041a0': 'images/raspberry-pi-compute-module-5.jpg',
         'd041a0': 'images/raspberry-pi-compute-module-5.jpg'
     }
-    self.boardImg = self.boardImages[self.device.extra['hwrevision']];
+    self.boardImg = self.device.extra
+        ? self.boardImages[self.device.extra['hwrevision']]
+        : undefined;
 }]);

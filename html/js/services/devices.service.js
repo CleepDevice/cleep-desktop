@@ -169,4 +169,35 @@ function(electron, logger, ipcLifecycle) {
         });
     };
 
+    /** Device that publishes a public HTTPS remoteaccess URL (house gateway). */
+    self.findGatewayDevice = function() {
+        return self.devices.find(function(device) {
+            return Boolean(self.getPrimaryRemoteUrl(device));
+        }) || null;
+    };
+
+    /**
+     * Resolve the URL to open for a device:
+     * - LAN when online
+     * - else gateway public URL (Desktop injects Target header)
+     */
+    self.resolveOpenUrl = function(device) {
+        if (!device) {
+            return null;
+        }
+        if (device.online && device.ip) {
+            return device.url || ((device.ssl ? 'https://' : 'http://') + device.ip + ':' + device.port);
+        }
+        var gateway = self.findGatewayDevice();
+        if (!gateway) {
+            return null;
+        }
+        return self.getPrimaryRemoteUrl(gateway);
+    };
+
+    /** Via gateway when offline but a public gateway URL exists. */
+    self.isGatewayAccess = function(device) {
+        return Boolean(device && !device.online && self.findGatewayDevice() && self.resolveOpenUrl(device));
+    };
+
 }]);

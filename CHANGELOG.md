@@ -4,12 +4,16 @@
 
 ### Fixed
 - Offline devices with auth always show ``cellphone-off`` (auth lock no longer hides the disconnected state)
+- Do not prompt vault unlock at startup when caching gateway/refresh secrets from the bus (queue until unlock / user action)
+- Ngrok free interstitial again after gateway headers (single ``onBeforeSendHeaders``: skip + Auth/Target)
+- Device infos menu crashes when peer has no ``extra`` (disable action; guard filter)
 
 ### Added
 - Implement internal vault to store keys
 - Live `core.remoteaccess.update` handling: force-update peer remote URLs without reconnection
 - Remote devices section in the left panel (open device via public URL)
 - Off-LAN remote URL refresh via provider descriptor (vault secret + error-page / menu action)
+- Desktop-only LAN gateway: vault gateway token, header injection, single device list (icon for gateway access)
 
 ### Changed
 

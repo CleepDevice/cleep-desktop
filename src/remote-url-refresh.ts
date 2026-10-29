@@ -17,25 +17,29 @@ export function vaultKeyForRemoteRefresh(deviceUuid: string, app: string): strin
 type ProviderPayload = {
   descriptor?: RemoteUrlRefreshDescriptor | null;
   secret?: string | null;
+  gateway?: unknown;
 };
 
 /**
  * Normalize peer ``get_remote_url_refresh`` response into a cache entry.
  * Returns null when the payload is malformed (caller should skip).
+ * Gateway-only payloads (no descriptor) are valid: refresh unsupported, gateway present.
  */
 export function parseRemoteUrlRefreshPayload(data: unknown): {
   entry: RemoteUrlRefreshEntry;
   secret: string | null;
+  gateway: unknown;
 } | null {
   if (data === null || data === undefined) {
-    return { entry: { supported: false }, secret: null };
+    return { entry: { supported: false }, secret: null, gateway: null };
   }
   if (typeof data !== 'object' || Array.isArray(data)) {
     return null;
   }
   const payload = data as ProviderPayload;
+  const gateway = payload.gateway ?? null;
   if (!payload.descriptor || typeof payload.descriptor !== 'object') {
-    return { entry: { supported: false }, secret: null };
+    return { entry: { supported: false }, secret: null, gateway };
   }
   const descriptor = payload.descriptor;
   if (typeof descriptor.url !== 'string' || typeof descriptor.method !== 'string') {
@@ -43,7 +47,7 @@ export function parseRemoteUrlRefreshPayload(data: unknown): {
   }
   const secret = typeof payload.secret === 'string' && payload.secret ? payload.secret : null;
   if (!secret) {
-    return { entry: { supported: false }, secret: null };
+    return { entry: { supported: false }, secret: null, gateway };
   }
   return {
     entry: {
@@ -60,15 +64,17 @@ export function parseRemoteUrlRefreshPayload(data: unknown): {
       },
     },
     secret,
+    gateway,
   };
 }
 
+/** Cache refresh secret without prompting to unlock (queued if vault is locked). */
 export async function storeRemoteRefreshSecret(
   deviceUuid: string,
   app: string,
   secret: string,
 ): Promise<void> {
-  await appVault.putSecretAsync(vaultKeyForRemoteRefresh(deviceUuid, app), secret);
+  appVault.putSecretLazy(vaultKeyForRemoteRefresh(deviceUuid, app), secret);
 }
 
 export async function readRemoteRefreshSecret(

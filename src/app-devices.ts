@@ -4,16 +4,17 @@ import { appLogger } from './app-logger';
 import { appSettings, SettingsObject } from './app-settings';
 import { cleepbus } from './cleepbus/cleepbus';
 import { listNetworkInterfaces, selectInterface } from './pyre/iface';
-import { CleebusMessageResponse, CleepbusPeerInfos, TEST_DEVICE } from './cleepbus/cleepbus.types';
+import { CleebusMessageResponse, CleepbusPeerInfos } from './cleepbus/cleepbus.types';
 import { macListsOverlap } from './cleepbus/mac-addresses';
 import { handleInvoke, ipcErr, ipcOk, sendToRenderer } from './ipc/ipc-main';
-import { appContext } from './app-context';
 import {
   executeRemoteUrlRefresh,
   parseRemoteUrlRefreshPayload,
   readRemoteRefreshSecret,
   storeRemoteRefreshSecret,
 } from './remote-url-refresh';
+import { parseGatewayAccess, readGatewayAccess, storeGatewayAccess } from './gateway-access';
+import { bindGatewayWebview, unbindGatewayWebview } from './utils/gateway';
 
 function normalizeRemoteAccessUrls(raw: unknown): Record<string, string> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -63,10 +64,6 @@ class AppDevices {
     // set all devices not online and wait for message bus peer connection to set online
     for (const device of Object.values(this.devices)) {
       device.online = false;
-    }
-
-    if (appContext.isDev) {
-      this.devices[TEST_DEVICE.uuid] = TEST_DEVICE;
     }
   }
 
@@ -133,9 +130,8 @@ class AppDevices {
       return;
     }
 
-    const urls = normalizeRemoteAccessUrls(
-      (messageResponse.params as { urls?: unknown } | undefined)?.urls,
-    );
+    const params = messageResponse.params as { urls?: unknown; peers?: unknown } | undefined;
+    const urls = normalizeRemoteAccessUrls(params?.urls);
     const existing = this.devices[uuid];
     if (existing) {
       existing.remoteaccess = urls;
@@ -147,9 +143,44 @@ class AppDevices {
         online: peerInfos.online ?? true,
       });
     }
+    this.mergeGatewayPeers(params?.peers);
     appLogger.info('Peer remoteaccess updated', { uuid, urls });
     this.emitDevicesUpdated();
     void this.fetchRemoteRefreshDescriptors(uuid);
+  }
+
+  /** Merge gateway catalogue peers into the device list (offline until seen on bus). */
+  private mergeGatewayPeers(raw: unknown): void {
+    if (!Array.isArray(raw)) {
+      return;
+    }
+    let changed = false;
+    for (const entry of raw) {
+      if (!entry || typeof entry !== 'object') {
+        continue;
+      }
+      const peer = entry as Record<string, unknown>;
+      const peerUuid = typeof peer.uuid === 'string' ? peer.uuid : '';
+      if (!peerUuid || this.devices[peerUuid]) {
+        continue;
+      }
+      this.devices[peerUuid] = {
+        uuid: peerUuid,
+        hostname: typeof peer.hostname === 'string' ? peer.hostname : peerUuid,
+        ip: typeof peer.ip === 'string' ? peer.ip : '',
+        port: typeof peer.port === 'number' ? peer.port : 443,
+        ssl: Boolean(peer.ssl),
+        auth: Boolean(peer.auth),
+        macs: [],
+        cleepdesktop: false,
+        online: false,
+        remoteaccess: {},
+      };
+      changed = true;
+    }
+    if (changed) {
+      appSettings.set('devices', this.devices as unknown as SettingsObject);
+    }
   }
 
   private onPeerDisconnected(peerInfos: CleepbusPeerInfos): void {
@@ -364,6 +395,11 @@ class AppDevices {
         if (parsed.entry.supported && parsed.secret) {
           await storeRemoteRefreshSecret(deviceUuid, app, parsed.secret);
         }
+        const gateway = parseGatewayAccess({ gateway: parsed.gateway });
+        if (gateway) {
+          await storeGatewayAccess(deviceUuid, app, gateway);
+          appLogger.info('Gateway access token cached', { deviceUuid, app });
+        }
         remoteRefresh[app] = parsed.entry;
         changed = true;
         appLogger.info('Remote URL refresh descriptor cached', {
@@ -492,6 +528,32 @@ class AppDevices {
         const message = error instanceof Error ? error.message : String(error);
         return ipcErr('REMOTE_URL_REFRESH_FAILED', message);
       }
+    });
+
+    handleInvoke('devices-bind-webview', async (_event, request) => {
+      const { webContentsId, deviceUuid, gatewayDeviceUuid } = request;
+      if (gatewayDeviceUuid) {
+        const access = await readGatewayAccess(gatewayDeviceUuid);
+        if (access?.token) {
+          bindGatewayWebview(webContentsId, {
+            deviceUuid,
+            gatewayDeviceUuid,
+            gatewayToken: access.token,
+          });
+          return ipcOk(null);
+        }
+        appLogger.warn('No gateway token in vault for bind-webview', { gatewayDeviceUuid });
+      }
+      unbindGatewayWebview(webContentsId);
+      return ipcOk(null);
+    });
+  }
+
+  /** First cached device that advertises a public remoteaccess URL (house gateway). */
+  public findGatewayDevice(): CleepbusPeerInfos | undefined {
+    return Object.values(this.devices).find((device) => {
+      const remote = device.remoteaccess || {};
+      return Object.values(remote).some((url) => typeof url === 'string' && url.startsWith('https://'));
     });
   }
 }

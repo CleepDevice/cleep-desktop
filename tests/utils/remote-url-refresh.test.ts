@@ -20,6 +20,7 @@ describe('remote-url-refresh', () => {
     expect(parseRemoteUrlRefreshPayload(null)).toEqual({
       entry: { supported: false },
       secret: null,
+      gateway: null,
     });
   });
 
@@ -54,7 +55,18 @@ describe('remote-url-refresh', () => {
           url: 'https://api.ngrok.com/endpoints',
         },
       }),
-    ).toEqual({ entry: { supported: false }, secret: null });
+    ).toEqual({ entry: { supported: false }, secret: null, gateway: null });
+  });
+
+  it('accepts gateway-only payload', () => {
+    const parsed = parseRemoteUrlRefreshPayload({
+      gateway: { token: 'gw-token', header_auth: 'X-Cleep-Gateway-Auth' },
+    });
+    expect(parsed?.entry).toEqual({ supported: false });
+    expect(parsed?.gateway).toEqual({
+      token: 'gw-token',
+      header_auth: 'X-Cleep-Gateway-Auth',
+    });
   });
 
   it('executes GET descriptor and extracts https URL', async () => {

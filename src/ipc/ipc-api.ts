@@ -70,6 +70,11 @@ export function createCleepApi(ipc: IpcPrimitives) {
         ipc.invoke('devices-prepare-auth', request),
       refreshRemoteUrl: (request: { deviceUuid: string; app?: string }) =>
         ipc.invoke('devices-refresh-remote-url', request),
+      bindWebview: (request: {
+        webContentsId: number;
+        deviceUuid: string;
+        gatewayDeviceUuid?: string;
+      }) => ipc.invoke('devices-bind-webview', request),
       onUpdated: (listener: IpcListener<'devices-updated'>) => ipc.on('devices-updated', listener),
       onAuthUpdated: (listener: IpcListener<'device-auth-updated'>) =>
         ipc.on('device-auth-updated', listener),

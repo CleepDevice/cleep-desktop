@@ -21,6 +21,7 @@ function resetVaultSingleton(): void {
     window: unknown;
     unlockWaiters: unknown[];
     unlockPromptOpen: boolean;
+    pendingSecrets: Map<string, unknown>;
   };
   vault.vaultRoot = null;
   vault.blobsDir = null;
@@ -33,6 +34,7 @@ function resetVaultSingleton(): void {
   vault.window = null;
   vault.unlockWaiters = [];
   vault.unlockPromptOpen = false;
+  vault.pendingSecrets = new Map();
 }
 
 function configureVault(): void {
@@ -85,6 +87,17 @@ describe('AppVault', () => {
     const blobFiles = fs.readdirSync(path.join(vaultDir, 'blobs'));
     expect(blobFiles.length).toBe(1);
     expect(fs.readFileSync(path.join(vaultDir, 'blobs', blobFiles[0])).toString('utf8')).not.toContain('super-secret');
+  });
+
+  it('queues putSecretLazy while locked and flushes on unlock', () => {
+    appVault.enable(PASSPHRASE);
+    appVault.lock();
+
+    appVault.putSecretLazy('gateway.token', { token: 'gw-secret' });
+    expect(() => appVault.getSecret('gateway.token')).toThrowError(VaultError);
+
+    appVault.unlock(PASSPHRASE);
+    expect(appVault.getSecret('gateway.token')).toEqual({ token: 'gw-secret' });
   });
 
   it('rejects weak passphrases and wrong unlock', () => {

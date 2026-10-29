@@ -11,6 +11,7 @@ export const INVOKE_CHANNELS = [
   'cache-delete-file',
   'cache-get-infos',
   'cache-purge-files',
+  'devices-bind-webview',
   'devices-delete-device',
   'devices-get-ui-state',
   'devices-prepare-auth',
