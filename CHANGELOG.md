@@ -17,6 +17,7 @@
 
 ### Changed
 
+- Devices panel: single list sorted by hostname (drop Unconfigured / Configured sections)
 - Progress-stream lib replaced by internal code (outdated since 2017)
 - Update Electron from 36 to 41
 - Replace eslint by oxlint
