@@ -119,6 +119,12 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
             electron.app.onAuthError(function(_event, data) {
                 const foundDevice = devicesService.getSelectedDevice() || devicesService.findDevice(null, data.ip);
 
+                // Auth was enabled while this device page was already open: keep the
+                // current session and ask for credentials only after the user leaves.
+                if (foundDevice && devicesService.shouldDeferAuthPrompt(foundDevice.uuid)) {
+                    return;
+                }
+
                 if (foundDevice) {
                     const params = {
                         url: foundDevice.url,

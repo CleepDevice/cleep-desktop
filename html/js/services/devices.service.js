@@ -6,6 +6,8 @@ function(electron, logger, ipcLifecycle) {
     self.devices = [];
     self.messageBusError = '';
     self.selectedDeviceUuid = null;
+    // When auth turns on while viewing a device, defer the login screen until leave.
+    self.deferredAuthPromptUuids = {};
 
     // status:
     // - CONNECTED: when connected to cleepbus
@@ -49,12 +51,42 @@ function(electron, logger, ipcLifecycle) {
         self.devices = devices || [];
 
         self.devices.forEach((device) => {
+            var previous = previousByUuid[device.uuid];
             if (device.hasAuthStored === undefined) {
-                var previous = previousByUuid[device.uuid];
                 device.hasAuthStored = previous ? Boolean(previous.hasAuthStored) : false;
             }
             device.url = (device.ssl ? 'https://' : 'http://') + device.ip + ':' + device.port;
+
+            // Auth just enabled on the device currently open: keep the session,
+            // ask for credentials only after the user leaves this device.
+            if (
+                previous
+                && !previous.auth
+                && device.auth
+                && device.uuid === self.selectedDeviceUuid
+            ) {
+                self.deferredAuthPromptUuids[device.uuid] = true;
+                logger.debug('Deferring auth prompt until leaving device', {
+                    uuid: device.uuid,
+                    hostname: device.hostname,
+                });
+            }
+            if (previous && previous.auth && !device.auth) {
+                delete self.deferredAuthPromptUuids[device.uuid];
+            }
         });
+    };
+
+    self.shouldDeferAuthPrompt = function(deviceUuid) {
+        return Boolean(deviceUuid && self.deferredAuthPromptUuids[deviceUuid]);
+    };
+
+    self.clearDeferredAuthPrompt = function(deviceUuid) {
+        if (deviceUuid) {
+            delete self.deferredAuthPromptUuids[deviceUuid];
+            return;
+        }
+        self.deferredAuthPromptUuids = {};
     };
 
     self.onDevicesAuthUpdated = function(_event, auth) {
@@ -117,6 +149,9 @@ function(electron, logger, ipcLifecycle) {
     }
 
     self.selectDevice = function(selectedDeviceUuid) {
+        if (self.selectedDeviceUuid && self.selectedDeviceUuid !== selectedDeviceUuid) {
+            self.clearDeferredAuthPrompt(self.selectedDeviceUuid);
+        }
         self.selectedDeviceUuid = selectedDeviceUuid;
     };
 

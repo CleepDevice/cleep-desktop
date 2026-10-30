@@ -118,6 +118,8 @@ class AppDevices {
       this.applyRemoteAccessUpdate(peerInfos, messageResponse);
     } else if (messageResponse?.event === 'parameters.hostname.update') {
       this.applyHostnameUpdate(peerInfos, messageResponse);
+    } else if (messageResponse?.event === 'parameters.auth.update') {
+      this.applyAuthUpdate(peerInfos, messageResponse);
     }
     const timestamp = Math.round(new Date().getTime() / 1000);
     this.sendDevicesMessage({ timestamp, peerInfos, message: messageResponse });
@@ -186,6 +188,40 @@ class AppDevices {
       });
     }
     appLogger.info('Peer hostname updated', { uuid, hostname });
+    this.emitDevicesUpdated();
+  }
+
+  /**
+   * Force-update a peer auth flag from ``parameters.auth.update`` (no reconnection needed).
+   * Does not clear stored credentials or force a re-login while the device page is open;
+   * the renderer defers the login prompt until the user leaves that device.
+   */
+  private applyAuthUpdate(
+    peerInfos: CleepbusPeerInfos,
+    messageResponse: CleebusMessageResponse,
+  ): void {
+    const uuid = peerInfos?.uuid;
+    const params = messageResponse.params as { enabled?: unknown } | undefined;
+    if (!uuid || typeof params?.enabled !== 'boolean') {
+      appLogger.warn('Ignoring auth update without peer uuid/enabled', { messageResponse });
+      return;
+    }
+
+    const authEnabled = params.enabled;
+    const existing = this.devices[uuid];
+    if (existing) {
+      existing.auth = authEnabled;
+      appSettings.set('devices', this.devices as unknown as SettingsObject);
+    } else {
+      this.updateDevices({
+        ...peerInfos,
+        auth: authEnabled,
+        online: peerInfos.online ?? true,
+      });
+    }
+    // Keep in-memory bus peer in sync so later merges do not revive a stale auth flag.
+    peerInfos.auth = authEnabled;
+    appLogger.info('Peer auth updated', { uuid, auth: authEnabled });
     this.emitDevicesUpdated();
   }
 

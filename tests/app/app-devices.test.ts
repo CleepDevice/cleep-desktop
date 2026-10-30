@@ -308,6 +308,46 @@ describe('AppDevices', () => {
     expect(devices?.find((device) => device.uuid === 'device-rename')?.hostname).toBe('new-name');
   });
 
+  it('force-updates peer auth from parameters.auth.update', () => {
+    send.mockClear();
+    busCallbacks.peerConnected?.({
+      uuid: 'device-auth',
+      hostname: 'secure-pi',
+      ip: '192.168.1.70',
+      port: 80,
+      macs: [],
+      cleepdesktop: false,
+      online: true,
+      auth: false,
+      remoteaccess: {},
+    });
+    send.mockClear();
+
+    busCallbacks.message?.(
+      {
+        uuid: 'device-auth',
+        hostname: 'secure-pi',
+        ip: '192.168.1.70',
+        macs: [],
+        cleepdesktop: false,
+        online: true,
+        auth: false,
+      },
+      {
+        event: 'parameters.auth.update',
+        sender: 'parameters',
+        startup: false,
+        params: { enabled: true },
+      },
+    );
+
+    const devices = send.mock.calls.find((call) => call[0] === 'devices-updated')?.[1] as Array<{
+      uuid: string;
+      auth?: boolean;
+    }>;
+    expect(devices?.find((device) => device.uuid === 'device-auth')?.auth).toBe(true);
+  });
+
   it('force-updates peer hostname from parameters.hostname.update', () => {
     send.mockClear();
     busCallbacks.peerConnected?.({
