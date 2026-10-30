@@ -1,7 +1,6 @@
 
-<div layout="column" layout-fill>
+<div layout="column" layout-fill class="app-page">
 
-    <!-- menu -->
     <div md-colors="::{ background: 'primary-500' }" class="toolbar-content" layout="row" layout-align="start center">
         <div class="toolbar-spacer"></div>
         <div layout="row" layout-align="left center">
@@ -10,62 +9,27 @@
         </div>
     </div>
 
-    <!-- page content -->
-    <md-content layout-padding>
-
-        <div layout="row">
-            
-            <!-- latest news -->
-            <md-card flex="100">
-                <md-card-title>
-                    <md-card-title-text>
-                        <span class="md-headline">
-                            <md-icon class="rounded-icon" md-svg-icon="bullhorn"></md-icon>
-                            News
-                        </span>
-                    </md-card-title-text>
-                </md-card-title>
-                <md-card-content>
-                    Coming soon...
-                </md-card-content>
-            </md-card>
-
+    <md-content flex class="app-page-content">
+        <div class="app-page-lead" layout="row" layout-align="start center">
+            <img src="images/cleep-3d.png" alt="" class="app-page-lead-img" width="64" height="64">
+            <div flex layout="column">
+                <div class="app-page-lead-title">Welcome to CleepDesktop</div>
+                <p class="app-page-lead-text">
+                    News, tutorials and latest messages from the Cleep community will land here.
+                </p>
+            </div>
         </div>
 
-        <div layout="row" layout-align="space-between center">
+        <div class="app-page-panel">
+            <config-section cl-title="News" cl-icon="bullhorn"></config-section>
+            <config-note cl-type="info" cl-note="Coming soon..."></config-note>
 
-            <!-- latest tutorials -->
-            <md-card flex="50">
-                <md-card-title>
-                    <md-card-title-text>
-                        <span class="md-headline">
-                            <md-icon class="rounded-icon" md-svg-icon="video"></md-icon>
-                            Latest tutorials
-                        </span>
-                    </md-card-title-text>
-                </md-card-title>
-                <md-card-content>
-                    Coming soon...
-                </md-card-content>
-            </md-card>
+            <config-section cl-title="Latest tutorials" cl-icon="video"></config-section>
+            <config-note cl-type="info" cl-note="Coming soon..."></config-note>
 
-            <!-- latest forum messages -->
-            <md-card flex="50">
-                <md-card-title>
-                    <md-card-title-text>
-                        <span class="md-headline">
-                            <md-icon class="rounded-icon" md-svg-icon="forum"></md-icon>
-                            Latest messages
-                        </span>
-                    </md-card-title-text>
-                </md-card-title>
-                <md-card-content>
-                    Coming soon...
-                </md-card-content>
-            </md-card>
-
+            <config-section cl-title="Latest messages" cl-icon="forum"></config-section>
+            <config-note cl-type="info" cl-note="Coming soon..."></config-note>
         </div>
-
     </md-content>
 
 </div>

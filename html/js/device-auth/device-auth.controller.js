@@ -78,7 +78,7 @@ function(logger, electron, $stateParams, $state, toast, modalService) {
                 logger.error('Unable to store device auth', error);
                 var message = (error && error.message) || 'Unable to sign in';
                 if (error && error.code === 'VAULT_UNLOCK_CANCELLED') {
-                    message = 'Vault unlock cancelled — credentials were not saved';
+                    message = 'Vault unlock cancelled - credentials were not saved';
                 }
                 toast.warning(message);
             })

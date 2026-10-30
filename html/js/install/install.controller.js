@@ -1,15 +1,63 @@
 angular
 .module('Cleep')
-.controller('installController', ['$rootScope', 'toastService', 'confirmService', 'loggerService', 'updateService', 
+.controller('installController', ['$rootScope', '$scope', 'toastService', 'confirmService', 'loggerService', 'updateService', 
                                 'installService', 'modalService', 'downloadService',
-function($rootScope, toast, confirm, logger, updateService, installService, modalService, downloadService) {
+function($rootScope, $scope, toast, confirm, logger, updateService, installService, modalService, downloadService) {
     var self = this;
     self.installService = installService;
     self.updateService = updateService;
+    self.networkOptions = [
+        { value: 0, label: 'Wired connection' },
+        { value: 1, label: 'Wifi on available network' },
+        { value: 2, label: 'Wifi on hidden network' },
+    ];
+    self.installProgressTitle = 'No installation running';
 
     self.$onInit = function() {
         installService.getIsoSettings();
     };
+
+    self.onNetworkTypeChange = function() {
+        if (installService.installConfig.network === 0) {
+            installService.installConfig.wifi = null;
+        }
+    };
+
+    self.refreshInstallProgressTitle = function() {
+        var progress = installService.installProgress || {};
+        if (progress.error && progress.error.length > 0) {
+            self.installProgressTitle = 'Installation failed';
+            return;
+        }
+        if (progress.step === 'idle' && !installService.installing && !progress.terminated) {
+            self.installProgressTitle = 'No installation running';
+        } else if (progress.step === 'idle' && installService.installing) {
+            self.installProgressTitle = 'Preparing installation...';
+        } else if (progress.step === 'idle' && !installService.installing && progress.terminated) {
+            self.installProgressTitle = 'Installation terminated. Insert SD card on your raspberry and power it up.';
+        } else if (progress.step === 'canceled') {
+            self.installProgressTitle = 'Installation canceled.';
+        } else if (progress.step === 'downloading') {
+            self.installProgressTitle = 'Step 1/4: downloading files';
+        } else if (progress.step === 'privileges') {
+            self.installProgressTitle = 'Step 2/4: requesting permissions to write on drive';
+        } else if (progress.step === 'flashing') {
+            self.installProgressTitle = 'Step 3/4: flashing drive';
+        } else if (progress.step === 'validating') {
+            self.installProgressTitle = 'Step 4/4: validating operation';
+        }
+    };
+
+    $scope.$watch(function() {
+        return [
+            installService.installing,
+            installService.installProgress && installService.installProgress.step,
+            installService.installProgress && installService.installProgress.error,
+            installService.installProgress && installService.installProgress.terminated,
+        ].join('|');
+    }, function() {
+        self.refreshInstallProgressTitle();
+    });
 
     self.gotoManualInstall = function() {
         $rootScope.$broadcast('open-page', { page: 'installManually' });
@@ -86,5 +134,9 @@ function($rootScope, toast, confirm, logger, updateService, installService, moda
         }
 
         downloadService.downloadUrl(installService.installConfig.iso.url);
-    }
+    };
+
+    self.openRaspberryPiImager = function() {
+        window.open('https://www.raspberrypi.com/software/', '_blank');
+    };
 }]);

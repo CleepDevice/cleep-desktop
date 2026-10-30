@@ -1,6 +1,5 @@
-<div layout="column" layout-fill>
+<div layout="column" layout-fill class="app-page">
 
-    <!-- menu -->
     <div md-colors="::{ background: 'primary-500' }" class="toolbar-content" layout="row" layout-align="start center">
         <div class="toolbar-spacer"></div>
         <div layout="row" layout-align="left center">
@@ -9,65 +8,72 @@
         </div>
     </div>
 
-    <md-content layout-padding>
-        <md-card>
-            <md-card-content>
+    <md-content flex class="app-page-content">
+        <div class="app-page-lead" layout="row" layout-align="start center">
+            <div class="app-page-lead-badge" layout="row" layout-align="center center" aria-hidden="true">
+                <md-icon md-svg-icon="open-in-new"></md-icon>
+            </div>
+            <div flex layout="column">
+                <div class="app-page-lead-title">Install Cleep with Raspberry Pi Imager</div>
+                <p class="app-page-lead-text">
+                    Download the image, then flash your SD card yourself with the official Imager tool.
+                </p>
+            </div>
+        </div>
 
-                <md-list>
+        <div class="app-page-panel">
+            <config-note
+                cl-type="warning"
+                cl-icon="alert-outline"
+                cl-note="Please note that with a manual installation you will need to connect your device via the ethernet, the wifi can not be configured"
+            ></config-note>
 
-                    <!-- warning -->
-                    <md-list-item>
-                        <md-icon md-svg-icon="alert-outline"></md-icon>
-                        <p>Please note that with a manual installation you will need to connect your device via the ethernet, the wifi can not be configured</p>
-                    </md-list-item>
+            <config-button
+                cl-icon="numeric-1-circle"
+                cl-title="Download and install Raspberry Pi Imager, free SD card flashing tool, from the official website"
+                cl-btn-label="raspberrypi.com"
+                cl-btn-icon="open-in-new"
+                cl-btn-style="md-raised md-primary"
+                cl-click="ctl.openRaspberryPiImager()"
+            ></config-button>
 
-                    <!-- raspberry pi imager -->
-                    <md-list-item>
-                        <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <p>Download and install Raspberry Pi Imager, free SD card flashing tool, from the official website</p>
-                        <md-button class="md-secondary md-raised md-primary" ng-href="https://www.raspberrypi.com/software/" target="_blank">
-                            <md-icon md-svg-icon="open-in-new"></md-icon>
-                            raspberrypi.com
-                        </md-button>
-                    </md-list-item>
+            <config-button
+                cl-icon="numeric-2-circle"
+                cl-title="{{ !ctl.installService.settings.isoraspios ? 'Select Cleep version you want to install on your SD card' : 'Select distribution you want to install on your SD card' }}"
+                cl-subtitle="{{ ctl.installService.installConfig.iso ? ctl.installService.installConfig.iso.label : 'No version selected' }}"
+                cl-btn-icon="feature-search-outline"
+                cl-btn-style="md-raised md-primary"
+                cl-disabled="ctl.installService.installing"
+                cl-click="ctl.openIsoDialog()"
+            ></config-button>
 
-                    <!-- iso -->
-                    <md-list-item>
-                        <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <p ng-if="!ctl.installService.settings.isoraspios">Select Cleep version you want to install on your SD card</p>
-                        <p ng-if="ctl.installService.settings.isoraspios">Select distribution you want to install on your SD card</p>
-                        <span class="md-secondary md-caption">
-                            {{ctl.installService.installConfig.iso ? ctl.installService.installConfig.iso.label : 'No version selected'}}
-                        </span>
-                        <md-button ng-click="ctl.openIsoDialog()" class="md-secondary md-raised md-primary md-no-text" ng-disabled="ctl.installService.installing">
-                            <md-icon md-svg-icon="feature-search-outline"></md-icon>
-                        </md-button>
-                    </md-list-item>
+            <config-button
+                cl-icon="numeric-3-circle"
+                cl-title="Download selected image file"
+                cl-subtitle="{{ ctl.installService.installConfig.iso.url || 'No distribution selected' }}"
+                cl-btn-label="Download"
+                cl-btn-icon="download"
+                cl-btn-style="md-raised md-primary"
+                cl-disabled="!ctl.installService.installConfig.iso.url || ctl.installService.installConfig.iso.category==='local'"
+                cl-click="ctl.downloadIso()"
+            ></config-button>
 
-                    <!-- download url -->
-                    <md-list-item class="md-2-line">
-                        <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <div class="md-list-item-text">
-                            <h3>Download selected image file</h3>
-                            <p ng-if="ctl.installService.installConfig.iso.url">{{ctl.installService.installConfig.iso.url}}</p>
-                            <p ng-if="!ctl.installService.installConfig.iso.url">No distribution selected</p>
-                        </div>
-                        <md-button class="md-secondary md-raised md-primary" ng-click="ctl.downloadIso()" ng-disabled="!ctl.installService.installConfig.iso.url || ctl.installService.installConfig.iso.category==='local'">
-                            <md-icon md-svg-icon="download"></md-icon>
-                            Download
-                        </md-button>
-                    </md-list-item>
+            <config-basic
+                cl-icon="'numeric-4-circle'"
+                cl-title="'Now launch Raspberry Pi Imager, choose Use custom for the OS, select the downloaded image, then flash your SD card'"
+            ></config-basic>
 
-                    <!-- flash tips -->
-                    <md-list-item>
-                        <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <p>Now launch Raspberry Pi Imager, choose "Use custom" for the OS, select the downloaded image, then flash your SD card</p>
-                    </md-list-item>
-
-                </md-list>
-                
-            </md-card-content>
-        </md-card>
+            <div class="install-powered" layout="row" layout-align="center center">
+                <img
+                    class="install-powered-logo"
+                    src="images/raspberry-pi-logo.png"
+                    width="18"
+                    height="18"
+                    alt=""
+                >
+                <span class="install-powered-text">Powered by Raspberry Pi Imager</span>
+            </div>
+        </div>
     </md-content>
 
 </div>

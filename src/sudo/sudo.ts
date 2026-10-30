@@ -24,7 +24,8 @@ export interface SudoOptions {
 
 const BINARIES_LINUX = {
   // Prefer run0 (polkit via systemd): works when Electron sets NoNewPrivs (pkexec/sudo setuid fail).
-  run0: ['--description==APPNAME='],
+  // Fixed unit name + description so the polkit dialog mentions CleepDesktop instead of run-pNNN.service.
+  run0: ['--unit=cleepdesktop-flash', '--description==APPNAME='],
   gksudo: ['--preserve-env', '--sudo-mode', '--description="=APPNAME="'],
   pkexec: ['--disable-internal-agent'],
 };

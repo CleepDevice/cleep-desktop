@@ -1,12 +1,13 @@
 /**
- * Download service handle download from angularjs app handling download panels
+ * Download service - progress shown in the left toolbar task slot.
+ * No dedicated page: click cancels while running, dismisses when finished.
  */
 angular
 .module('Cleep')
-.service('downloadService', ['tasksPanelService', 'toastService', 'electronService', 'ipcLifecycle',
-function(tasksPanelService, toast, electron, ipcLifecycle) {
+.service('downloadService', ['toolbarTaskService', 'toastService', 'electronService', 'ipcLifecycle',
+function(toolbarTask, toast, electron, ipcLifecycle) {
     var self = this;
-    self.downloadPanels = {};
+    self.downloads = {};
 
     self.downloadUrl = function(url) {
         if (this.isDownloadWithUrl(url)) {
@@ -14,22 +15,21 @@ function(tasksPanelService, toast, electron, ipcLifecycle) {
             return;
         }
         electron.download.start({ url, title: 'Download file from device' });
-    }
+    };
 
     self.isDownloadWithUrl = function(url) {
-        for (var panel of Object.values(self.downloadPanels)) {
-            if (panel.url === url) {
+        for (var item of Object.values(self.downloads)) {
+            if (item.url === url) {
                 return true;
             }
         }
         return false;
-    }
+    };
 
     self.cancelDownload = function(downloadId) {
-        var panel = self.downloadPanels[downloadId];
-        if (panel) {
-            tasksPanelService.removePanel(panel.panelId);
-            delete self.downloadPanels[downloadId];
+        if (self.downloads[downloadId]) {
+            delete self.downloads[downloadId];
+            toolbarTask.clear('download-' + downloadId);
         }
         electron.download.cancel(downloadId);
     };
@@ -44,30 +44,27 @@ function(tasksPanelService, toast, electron, ipcLifecycle) {
     ipcLifecycle.attach(self, self.addIpcs);
 
     self.onHandleDownloadStarted = function(_event, downloadData) {
-        if (self.downloadPanels[downloadData.downloadId]) {
-            // handle issue in electron-dl that trigger another download started when new one launched
+        if (self.downloads[downloadData.downloadId]) {
             return;
         }
 
-        var panelId = tasksPanelService.addPanel(
-            'Downloading ' + downloadData.filename + '...',
-            {
-                onAction: () => { self.cancelDownload(downloadData.downloadId); },
-                tooltip: 'Cancel',
-                icon: 'close-circle'
-            },
-            {
-                onClose: null,
-                disabled: true
-            },
-            'percent',
-        );
-        
-        self.downloadPanels[downloadData.downloadId] = {
-            panelId,
+        var taskId = 'download-' + downloadData.downloadId;
+        self.downloads[downloadData.downloadId] = {
             downloadId: downloadData.downloadId,
             url: downloadData.url,
+            filename: downloadData.filename,
         };
+
+        toolbarTask.set(taskId, {
+            page: null,
+            label: 'Download...',
+            title: 'Downloading ' + downloadData.filename,
+            status: 'running',
+            percent: 0,
+            onClick: function() {
+                self.cancelDownload(downloadData.downloadId);
+            },
+        });
     };
 
     self.onHandleDownloadStatus = function(_event, status) {
@@ -79,25 +76,55 @@ function(tasksPanelService, toast, electron, ipcLifecycle) {
     };
 
     self.handleDownloadingStatus = function(status) {
-        var panel = self.downloadPanels[status.downloadId];
-        if (panel) {
-            tasksPanelService.setPercent(panel.panelId, status.percent);
-        }       
+        if (!self.downloads[status.downloadId]) {
+            return;
+        }
+        var taskId = 'download-' + status.downloadId;
+        toolbarTask.set(taskId, {
+            label: 'Download...',
+            title: 'Downloading... ' + Math.round(status.percent || 0) + '%',
+            status: 'running',
+            percent: status.percent || 0,
+            onClick: function() {
+                self.cancelDownload(status.downloadId);
+            },
+        });
     };
 
     self.handleEndOfDownload = function(status) {
+        var taskId = 'download-' + status.downloadId;
         if (status.status === 'canceled') {
             toast.info('Download canceled');
-        } else if (status.status === 'success') {
-            toast.success('Download succeed');
-        } else if (status.status === 'failed') {
-            toast.error('Download failed');
+            toolbarTask.clear(taskId);
+            delete self.downloads[status.downloadId];
+            return;
         }
-
-        var panel = self.downloadPanels[status.downloadId];
-        if (panel) {
-            tasksPanelService.removePanel(panel.panelId);
-            delete self.downloadPanels[status.downloadId];
+        if (status.status === 'success') {
+            toast.success('Download succeed');
+            toolbarTask.set(taskId, {
+                label: 'Download done',
+                title: 'Download finished - click to dismiss',
+                status: 'success',
+                percent: 100,
+                onClick: function() {
+                    toolbarTask.clear(taskId);
+                    delete self.downloads[status.downloadId];
+                },
+            });
+            return;
+        }
+        if (status.status === 'failed') {
+            toast.error('Download failed');
+            toolbarTask.set(taskId, {
+                label: 'Download failed',
+                title: 'Download failed - click to dismiss',
+                status: 'error',
+                percent: 100,
+                onClick: function() {
+                    toolbarTask.clear(taskId);
+                    delete self.downloads[status.downloadId];
+                },
+            });
         }
     };
 }]);

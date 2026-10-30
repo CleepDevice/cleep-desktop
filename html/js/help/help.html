@@ -1,7 +1,6 @@
 
-<div layout="column" layout-fill>
+<div layout="column" layout-fill class="app-page">
 
-    <!-- menu -->
     <div md-colors="::{ background: 'primary-500' }" class="toolbar-content" layout="row" layout-align="start center">
         <div class="toolbar-spacer"></div>
         <div layout="row" layout-align="left center">
@@ -10,147 +9,110 @@
         </div>
     </div>
 
-    <!-- page content -->
-    <md-content layout-padding>
-
-        <!-- ui -->
-        <md-card>
-            <md-card-title>
-                <md-card-title-text>
-                    <span class="md-headline">
-                        <md-icon class="rounded-icon" md-svg-icon="application"></md-icon>
-                        Application window
-                    </span>
-                </md-card-title-text>
-            </md-card-title>
-            <md-card-content>
-                <p class="md-title">
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    Left panel
+    <md-content flex class="app-page-content">
+        <div class="app-page-lead" layout="row" layout-align="start center">
+            <img src="images/cleep-3d.png" alt="" class="app-page-lead-img" width="64" height="64">
+            <div flex layout="column">
+                <div class="app-page-lead-title">CleepDesktop</div>
+                <p class="app-page-lead-text">
+                    Installs, discovers and configures your Cleep devices. This page describes the main areas of the application.
                 </p>
-                <div layout="row" layout-padding layout-align="start center">
-                    <div>
-                        <img src="images/cleep-left-panel.png" style="padding-right:25px;"/>
-                    </div>
-                    <div>
-                        The left panel is the <b>devices</b> panel. It allows you to select a device to access its configuration.
-                        <br/><br/>
-                        Cleep devices are automatically discovered by CleepDesktop as soon as they have started.
-                        <br/><br/>
-                        All known devices appear in a single list (sorted by name).
-                        <br/><br/>
-                        On the left of each device, an icon shows its status:
-                        <ul>
-                            <li><md-icon md-svg-icon="cellphone-off"></md-icon> device offline (powered off or disconnected)</li>
-                            <li><md-icon md-svg-icon="cellphone"></md-icon> device online</li>
-                            <li><md-icon md-svg-icon="cellphone-lock"></md-icon> device online with authentication enabled</li>
-                        </ul>
-                        <br/><br/>
-                        Clicking on <md-icon md-svg-icon="information-outline"></md-icon> device icon will display device informations like installed apps and hardware details.
-                    </div>
-                </div>
-                <p class="md-title">
-                    <md-icon md-svg-icon="chevron-right"></md-icon>
-                    Right panel
-                </p>
-                <div layout="row" layout-padding>
-                    <div>
-                        <img src="images/cleep-right-panel.png" style="padding-right:25px;"/>
-                    </div>
-                    <div>
-                        The right panel is the dynamic one. It will display different application pages such as:
-                        <ul>
-                            <li>Application updates</li>
-                            <li>Device pages</li>
-                            <li>Device installation</li>
-                            <li>Help infos (like this page)</li>
-                            <li>...</li>
-                        </ul>
-                    </div>
-                </div>
-            </md-card-content>
-        </md-card>
+            </div>
+        </div>
 
-        <!-- toolbar -->
-        <md-card>
-            <md-card-title>
-                <md-card-title-text>
-                    <span class="md-headline">
-                        <md-icon class="rounded-icon" md-svg-icon="dots-vertical"></md-icon>
-                        Toolbar
-                    </span>
-                </md-card-title-text>
-            </md-card-title>
-            <md-card-content layout="column" layout-align="start stretch" layout-padding layout-margin>
+        <div class="app-page-panel">
+            <config-section cl-title="Devices panel" cl-icon="cellphone"></config-section>
+            <div layout="row" layout-padding layout-align="start center">
                 <div>
-                Toolbar is the leftmost area of the application. It contains quick access buttons to application features
+                    <img src="images/cleep-left-panel.png" style="padding-right:25px;"/>
                 </div>
-                <div class="md-title">
-                    <md-icon md-svg-icon="sd"></md-icon>
-                    Cleep installation
-                </div>
-                <div style="padding-left:30px;">
-                    This page is dedicated to Cleep installation on your device.
+                <div>
+                    The middle panel lists your Cleep devices. Devices on the local network are discovered automatically once they have started.
                     <br/><br/>
-                    It allows you to prepare easily a SD card helping you:
+                    Devices appear in one list, sorted by name. Remote-access providers (when configured on the device) are shown next to the hostname.
+                    <br/><br/>
+                    Status icons:
                     <ul>
-                        <li>to choose the latest Cleep software available,</li>
-                        <li>to select the appropriate drive for the installation,</li>
-                        <li>to configure the device wifi connection in case you need it</li>
+                        <li><md-icon md-svg-icon="cellphone-off"></md-icon> offline (powered off or disconnected)</li>
+                        <li><md-icon md-svg-icon="web"></md-icon> remote (reachable via the house gateway)</li>
+                        <li><md-icon md-svg-icon="cellphone"></md-icon> online</li>
+                        <li><md-icon md-svg-icon="cellphone-lock"></md-icon> online with authentication enabled</li>
                     </ul>
-                    Finally you can follow full installation progress (download, installation and final checks)
-                    <br/><br/>
-                    In case of trouble you will find a link to manual Cleep installation.
+                    Use the <md-icon md-svg-icon="dots-vertical"></md-icon> menu on a device for:
+                    <ul>
+                        <li><b>Device infos</b> - installed apps and hardware details</li>
+                        <li><b>Reload device page</b> - refresh the device UI (when that device is open)</li>
+                        <li><b>Refresh remote URL</b> - update a public remote-access URL when available</li>
+                        <li><b>Delete</b> - remove the device from the list</li>
+                    </ul>
                 </div>
-                <div class="md-title">
-                    <md-icon md-svg-icon="message-text-outline"></md-icon>
-                    Monitoring
-                </div>
-                <div style="padding-left:30px;">
-                    The monitoring page allows you to follow messages sent by your Cleep devices.
-                    <br>
-                    All messages are not distributed by a device, only useful messages such as temperature, motion, weather...
-                </div>
-                <div class="md-title">
-                    <md-icon md-svg-icon="cog"></md-icon>
-                    Parameters
-                </div>
-                <div style="padding-left:30px;">
-                    This is a quick access to CleepDesktop preferences. Preferences can also be opened using main application menu.
-                </div>
-            </md-card-content>
-        </md-card>
+            </div>
 
-        <!-- application menu -->
-        <md-card>
-            <md-card-title>
-                <md-card-title-text>
-                    <span class="md-headline">
-                        <md-icon class="rounded-icon" md-svg-icon="menu"></md-icon>
-                        Application menu
-                    </span>
-                </md-card-title-text>
-            </md-card-title>
-            <md-card-content layout="column" layout-align="start stretch" layout-padding layout-margin>
-                <div class="md-title">
-                    <md-icon md-svg-icon="update"></md-icon>
-                    Updates
+            <config-section cl-title="Content panel" cl-icon="monitor"></config-section>
+            <div layout="row" layout-padding>
+                <div>
+                    <img src="images/cleep-right-panel.png" style="padding-right:25px;"/>
                 </div>
-                <div style="padding-left:30px;">
-                    The updates page helps you following available software updates.
-                    <br/><br/>
-                    Please note, Raspberry Pi Imager is the 3rd party software used to install Cleep software on SD card.
+                <div>
+                    The right panel shows the current page, for example:
+                    <ul>
+                        <li>Homepage</li>
+                        <li>Device configuration (webview)</li>
+                        <li>Cleep install</li>
+                        <li>Monitoring</li>
+                        <li>Updates, help, support, about</li>
+                    </ul>
                 </div>
-                <div class="md-title">
-                    <md-icon md-svg-icon="cog"></md-icon>
-                    Preferences
-                </div>
-                <div style="padding-left:30px;">
-                    Preferences page allows you to configure CleepDesktop application.
-                </div>
-            </md-card-content>
-        </md-card>
+            </div>
 
+            <config-section cl-title="Navigation toolbar" cl-icon="menu"></config-section>
+            <config-note
+                cl-type="note"
+                cl-note="The leftmost vertical toolbar gives quick access to the main features. Collapse it with the double-chevron at the top."
+            ></config-note>
+            <config-basic
+                cl-title="'Homepage'"
+                cl-subtitle="'Return to the CleepDesktop home page.'"
+                cl-icon="'home'"
+            ></config-basic>
+            <config-basic
+                cl-title="'Cleep install'"
+                cl-subtitle="'Prepare an SD card: choose a Cleep image, select a drive, optionally configure Wi-Fi, then follow download and flash progress. A manual install path is available if needed.'"
+                cl-icon="'sd'"
+            ></config-basic>
+            <config-basic
+                cl-title="'Monitoring'"
+                cl-subtitle="'Follow live messages from your devices (temperature, motion, weather, and other events).'"
+                cl-icon="'message-text'"
+            ></config-basic>
+            <config-basic
+                cl-title="'Preferences'"
+                cl-subtitle="'Language, auto-update, network interface for discovery, vault, cache, and crash reports. Also available from the application menu.'"
+                cl-icon="'cog'"
+            ></config-basic>
+            <config-basic
+                cl-title="'Vault'"
+                cl-subtitle="'Optional encrypted store for application secrets (device credentials, remote-access tokens). Disabled by default; status appears at the bottom of the toolbar.'"
+                cl-icon="'safe'"
+            ></config-basic>
+
+            <config-section cl-title="Application menu" cl-icon="application"></config-section>
+            <config-basic
+                cl-title="'File → Updates'"
+                cl-subtitle="'Check and install updates for CleepDesktop and related tools (including the flash tool used to write images).'"
+                cl-icon="'update'"
+            ></config-basic>
+            <config-basic
+                cl-title="'File → Preferences'"
+                cl-subtitle="'Same preferences dialog as the toolbar button.'"
+                cl-icon="'cog'"
+            ></config-basic>
+            <config-basic
+                cl-title="'Help'"
+                cl-subtitle="'Application help (this page), Get support, and About.'"
+                cl-icon="'lifebuoy'"
+            ></config-basic>
+        </div>
     </md-content>
 
 </div>

@@ -1,6 +1,6 @@
-<div layout="column" layout-fill>
 
-    <!-- menu -->
+<div layout="column" layout-fill class="app-page">
+
     <div md-colors="::{ background: 'primary-500' }" class="toolbar-content" layout="row" layout-align="start center">
         <div class="toolbar-spacer"></div>
         <div layout="row" layout-align="left center">
@@ -9,57 +9,65 @@
         </div>
     </div>
 
-    <!-- page content -->
-    <md-content layout-padding>
+    <md-content flex class="app-page-content">
+        <div class="app-page-lead" layout="row" layout-align="start center">
+            <div class="app-page-lead-badge" layout="row" layout-align="center center" aria-hidden="true">
+                <md-icon md-svg-icon="lifebuoy"></md-icon>
+            </div>
+            <div flex layout="column">
+                <div class="app-page-lead-title">We're here to help</div>
+                <p class="app-page-lead-text">
+                    Report a bug, follow a tutorial, or join the community - pick what fits you best.
+                </p>
+            </div>
+        </div>
 
-        <md-card>
-            <md-card-content>
-                <md-list>
+        <div class="support-actions" layout="column" flex>
+            <div class="support-action" layout="row" layout-align="start center">
+                <div class="support-action-icon support-action-icon-discord" layout="row" layout-align="center center">
+                    <md-icon md-svg-icon="discord"></md-icon>
+                </div>
+                <div flex class="support-action-copy">
+                    <div class="support-action-title">You have questions or simply need some help about Cleep project</div>
+                    <div class="support-action-subtitle">Please feel free to join us on our Discord channel</div>
+                </div>
+                <md-button
+                    class="md-raised md-primary support-action-btn"
+                    ng-click="ctl.openUrl('https://discord.com/channels/1541381052285583380/')"
+                >
+                    Open Discord
+                </md-button>
+            </div>
 
-                    <!-- bugs -->
-                    <md-list-item class="md-2-line">
-                        <md-icon md-svg-icon="bug"></md-icon>
-                        <div class="md-list-item-text">
-                            <h3>You discovered a bug?</h3>
-                            <p>Please declare it in dedicated bugs page</p>
-                        </div>
-                        <md-button class="md-secondary md-raised md-primary" ng-href="https://github.com/CleepDevice/cleep-desktop/issues" target="_blank">Create a bug</md-button>
-                    </md-list-item>
+            <div class="support-action" layout="row" layout-align="start center">
+                <div class="support-action-icon support-action-icon-bug" layout="row" layout-align="center center">
+                    <md-icon md-svg-icon="bug"></md-icon>
+                </div>
+                <div flex class="support-action-copy">
+                    <div class="support-action-title">You discovered a bug?</div>
+                    <div class="support-action-subtitle">Please declare it on the dedicated bugs page</div>
+                </div>
+                <md-button
+                    class="md-raised md-primary support-action-btn"
+                    ng-click="ctl.openUrl('https://github.com/CleepDevice/cleep-desktop/issues')"
+                >
+                    Create a bug
+                </md-button>
+            </div>
 
-                    <!-- forum -->
-                    <md-list-item class="md-2-line">
-                        <md-icon md-svg-icon="forum"></md-icon>
-                        <div class="md-list-item-text">
-                            <h3>You need some help?</h3>
-                            <p>Please ask your questions on our forum.</p>
-                        </div>
-                        <md-button class="md-secondary md-raised md-primary" ng-disabled="true">Coming soon</md-button>
-                    </md-list-item>
-
-                    <!-- tutorials -->
-                    <md-list-item class="md-2-line">
-                        <md-icon md-svg-icon="video"></md-icon>
-                        <div class="md-list-item-text">
-                            <h3>You are lost building your device?</h3>
-                            <p>Feel inspiration watching our tutorials.</p>
-                        </div>
-                        <md-button class="md-secondary md-raised md-primary" ng-disabled="true">Coming soon</md-button>
-                    </md-list-item>
-
-                    <!-- slack -->
-                    <md-list-item class="md-2-line">
-                        <md-icon md-svg-icon="slack"></md-icon>
-                        <div class="md-list-item-text">
-                            <h3>You want to discuss about CleepDesktop?</h3>
-                            <p>Please feel free to join us on our Slack channel</p>
-                        </div>
-                        <md-button class="md-secondary md-raised md-primary" ng-href="https://cleep.slack.com/messages/C32JBPELW/" target="_blank">Open slack</md-button>
-                    </md-list-item>
-
-                </md-list>
-            </md-card-content>
-        </md-card>
-
+            <div class="support-action support-action-muted" layout="row" layout-align="start center">
+                <div class="support-action-icon support-action-icon-video" layout="row" layout-align="center center">
+                    <md-icon md-svg-icon="video"></md-icon>
+                </div>
+                <div flex class="support-action-copy">
+                    <div class="support-action-title">You are lost building your device?</div>
+                    <div class="support-action-subtitle">Feel inspiration watching our tutorials</div>
+                </div>
+                <md-button class="md-raised support-action-btn" ng-disabled="true">
+                    Coming soon
+                </md-button>
+            </div>
+        </div>
     </md-content>
 
 </div>

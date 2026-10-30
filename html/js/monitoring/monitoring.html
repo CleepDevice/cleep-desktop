@@ -1,95 +1,98 @@
-<div layout="column" layout-fill>
+<div layout="column" layout-fill class="app-page">
 
-    <!-- menu: .toolbar-content matches devices panel + real Cleep device header -->
     <div md-colors="::{ background: 'primary-500' }" class="toolbar-content" layout="row" layout-align="start center">
         <div class="toolbar-spacer"></div>
         <div layout="row" layout-align="left center">
             <md-icon style="color:white;" md-svg-icon="message-text-outline"></md-icon>
-            <h1 style="padding-left:5px;" class="md-title">Monitoring</h1>
+            <h1 style="padding-left:5px;" class="md-title">Messages received from devices</h1>
         </div>
+        <span flex></span>
+        <md-button
+            class="md-icon-button"
+            ng-if="ctl.monitoring.messages.length>0"
+            ng-click="ctl.monitoring.clearMessages()"
+            title="Clear messages"
+        >
+            <md-icon style="color:white;" md-svg-icon="delete-outline"></md-icon>
+        </md-button>
     </div>
 
-    <!-- page content -->
-    <md-content layout-padding>
+    <md-content flex class="app-page-content">
+        <div class="app-page-lead" layout="row" layout-align="start center">
+            <div class="app-page-lead-badge" layout="row" layout-align="center center" aria-hidden="true">
+                <md-icon md-svg-icon="message-text-outline"></md-icon>
+            </div>
+            <div flex layout="column">
+                <div class="app-page-lead-title">Live device feed</div>
+                <p class="app-page-lead-text">
+                    This area will display messages received from your devices during current session. When CleepDesktop is closed, all messages are lost.
+                </p>
+            </div>
+        </div>
 
-        <md-card>
-            <md-card-title>
-                <md-card-title-text>
-                    <span class="md-headline">
-                        <md-icon class="rounded-icon" md-svg-icon="message-text"></md-icon>
-                        Messages received from devices
-                    </span>
-                </md-card-title-text>
-                <md-button
-                    class="md-primary"
-                    ng-if="ctl.monitoring.messages.length>0"
-                    ng-click="ctl.monitoring.clearMessages()"
-                >
-                    <md-icon md-svg-icon="delete-outline"></md-icon>
-                    Clear messages
-                </md-button>
-            </md-card-title>
-            <md-card-content>
-
-                <!-- no message -->
-                <div layout="row" ng-if="ctl.monitoring.messages.length===0" layout-align="start center">
-                    <span style="padding: 30px 0px 30px;">
-                        This area will display messages received from your devices during current session. When CleepDesktop is closed, all messages are lost.
-                        <br><br>
-                        For now your devices have not published any message.
-                    </span>
+        <div class="app-page-panel">
+            <div
+                class="monitoring-empty"
+                ng-if="ctl.monitoring.messages.length===0"
+                layout="column"
+                layout-align="center center"
+            >
+                <div class="monitoring-empty-visual" aria-hidden="true">
+                    <span class="monitoring-empty-ring monitoring-empty-ring--outer"></span>
+                    <span class="monitoring-empty-ring monitoring-empty-ring--inner"></span>
+                    <md-icon class="monitoring-empty-icon" md-svg-icon="message-text-outline"></md-icon>
                 </div>
+                <h2 class="monitoring-empty-title">Waiting for device messages</h2>
+                <p class="monitoring-empty-text">
+                    For now your devices have not published any message.
+                </p>
+            </div>
 
-                <!-- messages feed -->
-                <div class="monitoring-feed" ng-if="ctl.monitoring.messages.length>0">
-                    <div
-                        class="monitoring-event"
-                        ng-repeat="message in ctl.monitoring.messages"
-                        ng-click="ctl.toggleEventDetails(message)"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <div class="monitoring-event-header" layout="row" layout-align="start center">
-                            <md-icon class="monitoring-event-icon" md-svg-icon="message-text"></md-icon>
-                            <div class="monitoring-event-title" flex>
-                                <span class="monitoring-event-name">{{message.message.event || 'unknown event'}}</span>
-                                <span class="monitoring-event-device">
-                                    {{message.peerInfos.hostname}}
-                                    <span class="monitoring-event-ip" ng-if="message.peerInfos.ip">({{message.peerInfos.ip}})</span>
-                                </span>
-                            </div>
-                            <time
-                                class="monitoring-event-time"
-                                title="{{message.timestamp | hrDatetime}}"
-                            >{{message.timestamp | hrTimestamp}}</time>
-                        </div>
-                        <div
-                            class="monitoring-event-summary"
-                            ng-if="message.summary.length"
-                        >
-                            <span
-                                class="monitoring-event-chip"
-                                ng-repeat="field in message.summary"
-                            >
-                                <span class="monitoring-event-chip-key">{{field.key}}</span>
-                                <span class="monitoring-event-chip-value">{{field.value}}</span>
+            <div class="monitoring-feed" ng-if="ctl.monitoring.messages.length>0">
+                <div
+                    class="monitoring-event"
+                    ng-repeat="message in ctl.monitoring.messages"
+                    ng-click="ctl.toggleEventDetails(message)"
+                    role="button"
+                    tabindex="0"
+                >
+                    <div class="monitoring-event-header" layout="row" layout-align="start center">
+                        <md-icon class="monitoring-event-icon" md-svg-icon="message-text"></md-icon>
+                        <div class="monitoring-event-title" flex>
+                            <span class="monitoring-event-name">{{message.message.event || 'unknown event'}}</span>
+                            <span class="monitoring-event-device">
+                                {{message.peerInfos.hostname}}
+                                <span class="monitoring-event-ip" ng-if="message.peerInfos.ip">({{message.peerInfos.ip}})</span>
                             </span>
                         </div>
-                        <div
-                            class="monitoring-event-summary monitoring-event-summary-empty"
-                            ng-if="!message.summary.length"
+                        <time
+                            class="monitoring-event-time"
+                            title="{{message.timestamp | hrDatetime}}"
+                        >{{message.timestamp | hrTimestamp}}</time>
+                    </div>
+                    <div
+                        class="monitoring-event-summary"
+                        ng-if="message.summary.length"
+                    >
+                        <span
+                            class="monitoring-event-chip"
+                            ng-repeat="field in message.summary"
                         >
-                            No scalar fields to preview — click for full message
-                        </div>
+                            <span class="monitoring-event-chip-key">{{field.key}}</span>
+                            <span class="monitoring-event-chip-value">{{field.value}}</span>
+                        </span>
+                    </div>
+                    <div
+                        class="monitoring-event-summary monitoring-event-summary-empty"
+                        ng-if="!message.summary.length"
+                    >
+                        No scalar fields to preview - click for full message
                     </div>
                 </div>
-
-            </md-card-content>
-        </md-card>
-
+            </div>
+        </div>
     </md-content>
 
-    <!-- message content -->
     <md-sidenav class="md-sidenav-right md-whiteframe-4dp monitoring-sidenav" md-component-id="right">
         <md-toolbar flex="initial" class="monitoring-sidenav-toolbar">
             <div class="md-toolbar-tools">

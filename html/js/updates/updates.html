@@ -1,155 +1,73 @@
-<div layout="column" layout-fill>
+<div layout="column" layout-fill class="app-page">
 
-    <!-- menu -->
     <div md-colors="::{ background: 'primary-500' }" class="toolbar-content" layout="row" layout-align="start center">
         <div class="toolbar-spacer"></div>
         <div layout="row" layout-align="left center">
             <md-icon style="color:white;" md-svg-icon="update"></md-icon>
             <h1 style="padding-left:5px;" class="md-title">Updates</h1>
         </div>
+        <md-progress-linear ng-if="ctl.loading" md-mode="indeterminate" class="md-accent"></md-progress-linear>
     </div>
-    <md-progress-linear ng-if="ctl.loading" md-mode="indeterminate" class="md-accent"></md-progress-linear>
 
-    <!-- page content -->
-    <md-content layout-padding>
+    <md-content flex class="app-page-content">
+        <div class="app-page-lead" layout="row" layout-align="start center">
+            <div class="app-page-lead-badge" layout="row" layout-align="center center" aria-hidden="true">
+                <md-icon md-svg-icon="update"></md-icon>
+            </div>
+            <div flex layout="column">
+                <div class="app-page-lead-title">Keep CleepDesktop up to date</div>
+                <p class="app-page-lead-text">
+                    Check for application updates and make sure Raspberry Pi Imager is installed for SD card flashing.
+                </p>
+            </div>
+        </div>
 
-        <!-- current versions -->
-        <md-card>
-            <md-card-title>
-                <md-card-title-text>
-                    <span class="md-headline">
-                        <md-icon md-svg-icon="information-outline"></md-icon>
-                        Installed versions
-                    </span>
-                </md-card-title-text>
-            </md-card-title>
-            <md-card-content>
-                <md-list>
+        <div class="app-page-panel">
+            <config-button
+                ng-if="!ctl.updateService.restartRequired"
+                cl-title="Last check for updates made on {{ctl.updateService.lastUpdateCheck | hrDatetime}}"
+                cl-btn-label="Check updates"
+                cl-btn-icon="refresh"
+                cl-btn-style="md-raised md-primary"
+                cl-disabled="ctl.loading"
+                cl-click="ctl.checkForUpdates()"
+            ></config-button>
+            <config-button
+                ng-if="ctl.updateService.restartRequired"
+                cl-title="Last check for updates made on {{ctl.updateService.lastUpdateCheck | hrDatetime}}"
+                cl-subtitle="Please restart CleepDesktop to install latest update"
+                cl-btn-label="Restart"
+                cl-btn-icon="restart"
+                cl-btn-style="md-raised md-accent"
+                cl-click="ctl.restartApplication()"
+            ></config-button>
 
-                    <!-- update -->
-                    <md-list-item>
-                        <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <p>Last check for updates made on {{ctl.updateService.lastUpdateCheck | hrDatetime}}</p>
-                        <md-button
-                            class="md-secondary md-raised md-primary"
-                            ng-click="ctl.checkForUpdates()"
-                            ng-disabled="ctl.loading || ctl.updateService.cleepdesktopStatus.restartrequired"
-                        >
-                            <md-icon md-svg-icon="refresh"></md-icon>
-                            Check updates
-                        </md-button>
-                    
-                        <!-- application restart -->
-                        <div class="md-secondary" ng-if="ctl.updateService.restartRequired">
-                            <span>Please restart CleepDesktop to install latest update</span>
-                        </div>
-                        <md-button
-                            class="md-secondary md-raised md-accent"
-                            ng-click="ctl.restartApplication()"
-                            ng-if="ctl.cleepdesktopStatus.restartrequired"
-                        >
-                            <md-icon md-svg-icon="restart"></md-icon>
-                            Restart
-                        </md-button>
-                    </md-list-item>
+            <config-button
+                cl-title="CleepDesktop v{{ ctl.updateService.softwareVersions.cleepDesktop }} is installed"
+                cl-subtitle="{{ ctl.updateService.cleepDesktopUpdate.error ? ('Error: ' + ctl.updateService.cleepDesktopUpdate.error) : (ctl.updateService.cleepDesktopUpdate.message || '') }}"
+                cl-btn-label="Changelog"
+                cl-btn-icon="notebook"
+                cl-btn-style="md-raised md-primary"
+                cl-click="ctl.openChangelog()"
+            ></config-button>
+            <config-progress
+                ng-if="ctl.updateService.cleepDesktopUpdate.percent>=0 && !ctl.updateService.cleepDesktopUpdate.error"
+                cl-title="Downloading CleepDesktop update"
+                cl-model="ctl.updateService.cleepDesktopUpdate.percent"
+                cl-infinite="ctl.updateService.cleepDesktopUpdate.percent===0"
+            ></config-progress>
 
-                    <!-- cleepdesktop -->
-                    <md-list-item>
-                        <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <p>CleepDesktop v{{ ctl.updateService.softwareVersions.cleepDesktop }} is installed</p>
-                        <div class="md-secondary" ng-if="ctl.updateService.cleepDesktopUpdate.error">
-                            Error: {{ctl.updateService.cleepDesktopUpdate.error}}
-                        </div>
-                        <div
-                            class="md-secondary"
-                            ng-if="ctl.updateService.cleepDesktopUpdate.percent>=0 && !ctl.updateService.cleepDesktopUpdate.error"
-                        >
-                            <div>
-                                {{ ctl.updateService.cleepDesktopUpdate.message }}
-                            </div>
-                            
-                            <md-progress-linear ng-if="ctl.updateService.cleepDesktopUpdate.percent===0"
-                                md-mode="indeterminate" style="width: 250px;" class="md-accent">
-                            </md-progress-linear>
-                            <md-progress-linear ng-if="ctl.updateService.cleepDesktopUpdate.percent>0"
-                                md-mode="determinate" style="width: 250px;" class="md-accent"
-                                value="{{ctl.updateService.cleepDesktopUpdate.percent}}">
-                            </md-progress-linear>
-                        </div>
-                        <!-- changelog -->
-                        <md-button
-                            class="md-secondary md-raised md-primary"
-                            ng-click="ctl.openChangelog()"
-                        >
-                            <md-icon md-svg-icon="notebook"></md-icon>
-                            Changelog
-                        </md-button>
-                    </md-list-item>
-
-                    <!-- raspberry pi imager -->
-                    <md-list-item>
-                        <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <p ng-if="ctl.updateService.softwareVersions.flashTool">
-                            Raspberry Pi Imager v{{ ctl.updateService.softwareVersions.flashTool }} is installed
-                        </p>
-                        <p ng-if="!ctl.updateService.softwareVersions.flashTool">
-                            Raspberry Pi Imager is not installed. Click on "Check updates" button to install.
-                        </p>
-                        <div class="md-secondary" ng-if="ctl.updateService.flashToolUpdate.error">
-                            Error: {{ ctl.updateService.flashToolUpdate.error }}
-                        </div>
-                        <div
-                            class="md-secondary"
-                            ng-if="ctl.updateService.flashToolUpdate.percent>=0 && !ctl.updateService.flashToolUpdate.error"
-                        >
-                            <div>
-                                {{ ctl.updateService.flashToolUpdate.message }}
-                            </div>
-                            <md-progress-linear ng-if="ctl.updateService.flashToolUpdate.percent===0"
-                                style="width: 250px;" md-mode="indeterminate" class="md-accent">
-                            </md-progress-linear>
-                            <md-progress-linear ng-if="ctl.updateService.flashToolUpdate.percent>0"
-                                style="width: 250px;" md-mode="determinate" class="md-accent"
-                                value="{{ctl.updateService.flashToolUpdate.percent}}">
-                            </md-progress-linear>
-                        </div>
-                    </md-list-item>
-
-                    <!-- cleepbus -->
-                    <md-list-item>
-                        <md-icon md-svg-icon="chevron-right"></md-icon>
-                        <p ng-if="ctl.updateService.softwareVersions.cleepbus">
-                            Cleepbus version v{{ ctl.updateService.softwareVersions.cleepbus }} is installed
-                        </p>
-                        <p ng-if="!ctl.updateService.softwareVersions.cleepbus">
-                            Cleepbus is not installed. Click on "Check updates" button to install.
-                        </p>
-                        <div class="md-secondary" ng-if="ctl.updateService.cleepbusUpdate.error">
-                            Error: {{ctl.updateService.cleepbusUpdate.error}}
-                        </div>
-                        <div
-                            class="md-secondary"
-                            ng-if="ctl.updateService.cleepbusUpdate.percent>=0 && !ctl.updateService.cleepbusUpdate.error"
-                        >
-                            <div>
-                                {{ ctl.updateService.cleepbusUpdate.message }}
-                            </div>
-                            
-                            <md-progress-linear ng-if="ctl.updateService.cleepbusUpdate.percent===0"
-                                style="width: 250px;" md-mode="indeterminate" class="md-accent">
-                            </md-progress-linear>
-                            <md-progress-linear ng-if="ctl.updateService.cleepbusUpdate.percent>=0"
-                                style="width: 250px;" md-mode="determinate" class="md-accent"
-                                value="{{ctl.updateService.cleepbusUpdate.percent}}">
-                            </md-progress-linear>
-                        </div>
-                    </md-list-item>
-
-                </md-list>
-            </md-card-content>
-        </md-card>
-
+            <config-basic
+                cl-title="ctl.updateService.softwareVersions.flashTool ? ('Raspberry Pi Imager v' + ctl.updateService.softwareVersions.flashTool + ' is installed') : 'Raspberry Pi Imager is not installed. Click on &quot;Check updates&quot; button to install.'"
+                cl-subtitle="ctl.updateService.flashToolUpdate.error ? ('Error: ' + ctl.updateService.flashToolUpdate.error) : (ctl.updateService.flashToolUpdate.message || '')"
+            ></config-basic>
+            <config-progress
+                ng-if="ctl.updateService.flashToolUpdate.percent>=0 && !ctl.updateService.flashToolUpdate.error"
+                cl-title="Downloading Raspberry Pi Imager"
+                cl-model="ctl.updateService.flashToolUpdate.percent"
+                cl-infinite="ctl.updateService.flashToolUpdate.percent===0"
+            ></config-progress>
+        </div>
     </md-content>
 
 </div>
-

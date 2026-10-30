@@ -10,68 +10,57 @@
         </div>
     </md-toolbar>
 
-    <md-dialog-content style="height: 450px;">
+    <md-dialog-content style="height: 450px; padding: 8px 16px;">
 
-        <!-- loader -->
         <div layout="column" layout-align="center center" layout-fill layout-margin ng-if="ctl.loading">
-            <div>
-                <md-progress-circular md-mode="indeterminate"></md-progress-circular>
-            </div>
-            <div>
-                <span>Fetching available versions...</span>
-            </div>
+            <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+            <span>Fetching available versions...</span>
         </div>
 
-        <md-list ng-show="!ctl.loading" style="padding: 0px;">
+        <div ng-show="!ctl.loading">
+            <config-section cl-title="Cleep versions" cl-icon="sd"></config-section>
+            <config-note
+                ng-if="!ctl.installService.isosInfo.cleepos.label"
+                cl-type="warning"
+                cl-icon="alert-outline"
+                cl-note="No Cleep version found. You surely reach free Github api requests amount. Please retry next hour."
+            ></config-note>
+            <config-button
+                ng-if="ctl.installService.isosInfo.cleepos.label"
+                cl-title="{{ctl.installService.isosInfo.cleepos.label}} - {{ctl.installService.isosInfo.cleepos.date | date:'yyyy/MM/dd'}} - {{ctl.installService.isosInfo.cleepos.size | hrBytes}}"
+                cl-btn-icon="check"
+                cl-btn-style="md-raised md-primary"
+                cl-click="ctl.selectRemoteIso(ctl.installService.isosInfo.cleepos)"
+            ></config-button>
 
-            <!-- cleep -->
-            <md-subheader class="md-no-sticky">
-                Cleep versions
-            </md-subheader>
-            <md-list-item ng-if="!ctl.installService.isosInfo.cleepos.label" class="md-2-line">
-                <div class="md-list-item-text">
-                    <h3>No Cleep version found</h3>
-                    <p>You surely reach free Github api requests amount. Please retry next hour.</p>
-                </div>
-            </md-list-item>
-            <md-list-item ng-if="ctl.installService.isosInfo.cleepos.label" ng-click="ctl.selectRemoteIso(ctl.installService.isosInfo.cleepos)">
-                <md-icon md-svg-icon="circle-small"></md-icon>
-                <p>
-                    {{ctl.installService.isosInfo.cleepos.label}} - 
-                    {{ctl.installService.isosInfo.cleepos.date | date:'yyyy/MM/dd'}} - 
-                    {{ctl.installService.isosInfo.cleepos.size | hrBytes}}
-                </p>
-            </md-list-item>
+            <div ng-if="ctl.installService.settings.isoraspios">
+                <config-section cl-title="Latest Raspios" cl-icon="raspberry-pi"></config-section>
+                <config-button
+                    ng-if="ctl.installService.isosInfo.raspios.full"
+                    cl-title="{{ctl.installService.isosInfo.raspios.full.label}} - {{ctl.installService.isosInfo.raspios.full.date | date:'yyyy/MM/dd'}}"
+                    cl-btn-icon="check"
+                    cl-btn-style="md-raised md-primary"
+                    cl-click="ctl.selectRemoteIso(ctl.installService.isosInfo.raspios.full)"
+                ></config-button>
+                <config-button
+                    ng-if="ctl.installService.isosInfo.raspios.lite"
+                    cl-title="{{ctl.installService.isosInfo.raspios.lite.label}} - {{ctl.installService.isosInfo.raspios.lite.date | date:'yyyy/MM/dd'}}"
+                    cl-btn-icon="check"
+                    cl-btn-style="md-raised md-primary"
+                    cl-click="ctl.selectRemoteIso(ctl.installService.isosInfo.raspios.lite)"
+                ></config-button>
+            </div>
 
-            <!-- raspios -->
-            <md-subheader ng-if="ctl.installService.settings.isoraspios" class="md-no-sticky">
-                Latest Raspios
-            </md-subheader>
-            <md-list-item ng-if="ctl.installService.settings.isoraspios && ctl.installService.isosInfo.raspios.full" ng-click="ctl.selectRemoteIso(ctl.installService.isosInfo.raspios.full)">
-                <md-icon md-svg-icon="circle-small"></md-icon>
-                <p>
-                    {{ctl.installService.isosInfo.raspios.full.label}} - 
-                    {{ctl.installService.isosInfo.raspios.full.date | date:'yyyy/MM/dd'}} 
-                </p>
-            </md-list-item>
-            <md-list-item ng-if="ctl.installService.settings.isoraspios && ctl.installService.isosInfo.raspios.lite" ng-click="ctl.selectRemoteIso(ctl.installService.isosInfo.raspios.lite)">
-                <md-icon md-svg-icon="circle-small"></md-icon>
-                <p>
-                    {{ctl.installService.isosInfo.raspios.lite.label}} - 
-                    {{ctl.installService.isosInfo.raspios.lite.date | date:'yyyy/MM/dd'}}
-                </p>
-            </md-list-item>
-
-            <!-- local iso -->
-            <md-subheader ng-if="ctl.installService.settings.isolocal" class="md-no-sticky">
-                Local iso
-            </md-subheader>
-            <md-list-item ng-if="ctl.installService.settings.isolocal" ng-click="ctl.selectLocalIso()">
-                <md-icon md-svg-icon="circle-small"></md-icon>
-                <p>Click to select iso file from your computer</p>
-            </md-list-item>
-
-        </md-list>
+            <div ng-if="ctl.installService.settings.isolocal">
+                <config-section cl-title="Local iso" cl-icon="folder-open"></config-section>
+                <config-button
+                    cl-title="Select iso file from your computer"
+                    cl-btn-icon="folder-open"
+                    cl-btn-style="md-raised md-primary"
+                    cl-click="ctl.selectLocalIso()"
+                ></config-button>
+            </div>
+        </div>
     </md-dialog-content>
 
     <md-dialog-actions>

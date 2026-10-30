@@ -1,4 +1,4 @@
-<md-dialog flex="40">
+<md-dialog flex="40" class="vault-unlock-dialog">
     <md-toolbar>
         <div class="md-toolbar-tools">
             <h2>Unlock vault</h2>
@@ -9,13 +9,13 @@
         </div>
     </md-toolbar>
 
-    <md-dialog-content layout-padding>
-        <p class="md-body-1">
-            CleepDesktop needs the application vault to continue. Enter your vault passphrase.
-        </p>
-
+    <md-dialog-content class="vault-unlock-content">
         <!-- unlock -->
         <div ng-if="ctl.panel === 'unlock'" layout="column">
+            <p class="vault-unlock-lead">
+                CleepDesktop needs the application vault to continue. Enter your vault passphrase.
+            </p>
+
             <md-input-container class="md-block">
                 <label>Passphrase</label>
                 <input type="password"
@@ -27,7 +27,8 @@
                        onfocus="this.removeAttribute('readonly');"
                        autofocus>
             </md-input-container>
-            <div layout="row" layout-align="space-between center">
+
+            <div layout="row" layout-align="space-between center" class="vault-unlock-actions">
                 <md-button ng-click="ctl.panel = 'recover'" ng-disabled="ctl.busy">Forgot passphrase?</md-button>
                 <div>
                     <md-button ng-click="ctl.cancel()" ng-disabled="ctl.busy">Cancel</md-button>
@@ -40,9 +41,10 @@
 
         <!-- recover -->
         <div ng-if="ctl.panel === 'recover'" layout="column">
-            <p class="md-body-1">
+            <p class="vault-unlock-lead">
                 Enter a recovery code and choose a new passphrase.
             </p>
+
             <md-input-container class="md-block">
                 <label>Recovery code</label>
                 <input ng-model="ctl.recoveryCode" autocomplete="off">
@@ -55,7 +57,8 @@
                 <label>Confirm new passphrase</label>
                 <input type="password" ng-model="ctl.passphraseConfirm" autocomplete="new-password">
             </md-input-container>
-            <div layout="row" layout-align="end center">
+
+            <div layout="row" layout-align="end center" class="vault-unlock-actions">
                 <md-button ng-click="ctl.panel = 'unlock'" ng-disabled="ctl.busy">Back</md-button>
                 <md-button class="md-raised md-primary" ng-click="ctl.recover()" ng-disabled="ctl.busy">
                     Recover
@@ -65,14 +68,16 @@
 
         <!-- recovery codes after recover -->
         <div ng-if="ctl.panel === 'codes'" layout="column">
-            <p class="md-body-1">
+            <p class="vault-unlock-lead vault-unlock-lead-warning">
                 Store these new recovery codes in a safe place. They are shown only once.
             </p>
+
             <md-input-container class="md-block">
                 <label>Recovery codes</label>
-                <textarea ng-model="ctl.recoveryCodesText" rows="8" readonly style="font-family: monospace;"></textarea>
+                <textarea ng-model="ctl.recoveryCodesText" rows="8" readonly class="vault-unlock-codes"></textarea>
             </md-input-container>
-            <div layout="row" layout-align="end center">
+
+            <div layout="row" layout-align="end center" class="vault-unlock-actions">
                 <md-button ng-click="ctl.copyRecoveryCodes()">
                     <md-icon md-svg-icon="content-copy"></md-icon>
                     Copy

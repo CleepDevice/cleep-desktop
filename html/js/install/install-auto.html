@@ -1,191 +1,111 @@
-<div layout="column" layout-fill>
+<div layout="column" layout-fill class="app-page">
 
-        <!-- menu -->
-        <div md-colors="::{ background: 'primary-500' }" class="toolbar-content" layout="row" layout-align="start center">
-            <div class="toolbar-spacer"></div>
-            <div layout="row" layout-align="left center">
-                <md-icon style="color:white;" md-svg-icon="sd"></md-icon>
-                <h1 style="padding-left:5px;" class="md-title">Cleep installation</h1>
+    <div md-colors="::{ background: 'primary-500' }" class="toolbar-content" layout="row" layout-align="start center">
+        <div class="toolbar-spacer"></div>
+        <div layout="row" layout-align="left center">
+            <md-icon style="color:white;" md-svg-icon="sd"></md-icon>
+            <h1 style="padding-left:5px;" class="md-title">Cleep installation</h1>
+        </div>
+    </div>
+
+    <md-content flex class="app-page-content">
+        <div class="app-page-lead" layout="row" layout-align="start center">
+            <div class="app-page-lead-badge" layout="row" layout-align="center center" aria-hidden="true">
+                <md-icon md-svg-icon="sd"></md-icon>
+            </div>
+            <div flex layout="column">
+                <div class="app-page-lead-title">Flash Cleep onto an SD card</div>
+                <p class="app-page-lead-text">
+                    Pick an image, choose a drive, optionally set Wi-Fi, then follow the progress below.
+                </p>
             </div>
         </div>
 
-        <md-content layout-padding>
+        <div class="app-page-panel">
+            <config-section cl-title="Preparation" cl-icon="wrench"></config-section>
 
-            <!-- preparation -->
-            <md-card>
-                <md-card-title>
-                    <md-card-title-text>
-                        <span class="md-headline">
-                            <md-icon class="rounded-icon" md-svg-icon="wrench"></md-icon>
-                            Preparation
-                        </span>
-                    </md-card-title-text>
-                </md-card-title>
+            <config-button
+                cl-title="{{ !ctl.installService.settings.isoraspios ? 'Select CleepOs version you want to install on your SD card' : 'Select distribution you want to install on your SD card' }}"
+                cl-subtitle="{{ ctl.installService.installConfig.iso ? ctl.installService.installConfig.iso.filename : 'No version selected' }}"
+                cl-btn-icon="feature-search-outline"
+                cl-btn-style="md-raised md-primary"
+                cl-disabled="ctl.installService.installing"
+                cl-click="ctl.openIsoDialog()"
+            ></config-button>
 
-                <md-card-content>
-                    <md-list>
+            <config-button
+                cl-title="Plug your SD card or your USB card reader on your computer and select it from drives list"
+                cl-subtitle="{{ ctl.installService.installConfig.drive ? ctl.installService.installConfig.drive.description : 'No drive selected' }}"
+                cl-btn-icon="feature-search-outline"
+                cl-btn-style="md-raised md-primary"
+                cl-disabled="ctl.installService.installing"
+                cl-click="ctl.openDriveDialog()"
+            ></config-button>
 
-                        <!-- iso -->
-                        <md-list-item>
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p ng-if="!ctl.installService.settings.isoraspios">Select CleepOs version you want to install on your SD card</p>
-                            <p ng-if="ctl.installService.settings.isoraspios">Select distribution you want to install on your SD card</p>
-                            <span class="md-secondary md-caption">
-                                {{ ctl.installService.installConfig.iso ? ctl.installService.installConfig.iso.filename : 'No version selected' }}
-                            </span>
-                            <md-button ng-click="ctl.openIsoDialog()" class="md-secondary md-raised md-primary md-no-text" ng-disabled="ctl.installService.installing">
-                                <md-icon md-svg-icon="feature-search-outline"></md-icon>
-                            </md-button>
-                        </md-list-item>
+            <config-select
+                ng-if="ctl.installService.installConfig.iso.category==='cleepos'"
+                cl-title="Choose way your device will connect to your network"
+                cl-model="ctl.installService.installConfig.network"
+                cl-options="ctl.networkOptions"
+                cl-disabled="ctl.installService.installing"
+                cl-change="ctl.onNetworkTypeChange()"
+            ></config-select>
 
-                        <!-- drive -->
-                        <md-list-item>
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Plug your SD card or your USB card reader on your computer and select it from drives list</p>
-                            <span class="md-secondary md-caption">
-                                {{ctl.installService.installConfig.drive ? ctl.installService.installConfig.drive.description : 'No drive selected'}}
-                            </span>
-                            <md-button ng-click="ctl.openDriveDialog()" class="md-secondary md-raised md-primary md-no-text" ng-disabled="ctl.installService.installing">
-                                <md-icon md-svg-icon="feature-search-outline"></md-icon>
-                            </md-button>
-                        </md-list-item>
+            <config-button
+                ng-if="(ctl.installService.installConfig.network===1 || ctl.installService.installConfig.network===2) && ctl.installService.installConfig.iso.category=='cleepos'"
+                cl-title="Wifi configuration"
+                cl-subtitle="{{ ctl.installService.installConfig.wifi ? ctl.installService.installConfig.wifi.network : 'Wifi not configured' }}"
+                cl-btn-icon="feature-search-outline"
+                cl-btn-style="md-raised md-primary"
+                cl-disabled="ctl.installService.installing"
+                cl-click="ctl.openWifiDialog()"
+            ></config-button>
 
-                        <!-- network choice -->
-                        <md-list-item ng-if="ctl.installService.installConfig.iso.category==='cleepos'">
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Choose way your device will connect to your network</p>
-                            <md-input-container class="md-secondary">
-                                <md-select ng-model="ctl.installService.installConfig.network"
-                                    placeholder="Network connection"
-                                    class="md-no-underline"
-                                    ng-disabled="ctl.installService.installing"
-                                    ng-change="ctl.installService.installConfig.network === 0 && (ctl.installService.installConfig.wifi = null)">
-                                    <md-option ng-value="0">Wired connection</md-option>
-                                    <md-option ng-value="1">Wifi on available network</md-option>
-                                    <md-option ng-value="2">Wifi on hidden network</md-option>
-                                </md-select>
-                            </md-input-container>
-                        </md-list-item>
+            <config-button
+                cl-title="Click on button to install Cleep and follow install process below"
+                cl-subtitle="{{ (!ctl.updateService.softwareVersions.flashTool && !ctl.installService.flashToolInstalled) ? 'Flash tool is not installed yet. Please wait until application updates finish.' : '' }}"
+                cl-btn-label="Install"
+                cl-btn-icon="sd"
+                cl-btn-style="md-raised md-accent"
+                cl-disabled="ctl.installService.installing || (!ctl.updateService.softwareVersions.flashTool && !ctl.installService.flashToolInstalled)"
+                cl-click="ctl.startInstall()"
+            ></config-button>
 
-                        <!-- wifi configuration -->
-                        <md-list-item ng-if="(ctl.installService.installConfig.network===1 || ctl.installService.installConfig.network===2) && ctl.installService.installConfig.iso.category=='cleepos'"> 
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Wifi configuration</p>
-                            <span class="md-secondary md-caption">
-                                {{ ctl.installService.installConfig.wifi ? ctl.installService.installConfig.wifi.network : 'Wifi not configured' }}
-                            </span>
-                            <md-button ng-click="ctl.openWifiDialog()" class="md-secondary md-raised md-primary md-no-text" ng-disabled="ctl.installService.installing">
-                                <md-icon md-svg-icon="feature-search-outline"></md-icon>
-                            </md-button>
-                        </md-list-item>
+            <config-section cl-title="Installation progress" cl-icon="flag"></config-section>
+            <config-progress
+                cl-title="{{ ctl.installProgressTitle }}"
+                cl-model="ctl.installService.installProgress.percent"
+                cl-show-percent="true"
+                cl-btn-icon="cancel"
+                cl-btn-tooltip="{{ ctl.installService.canCancelInstall() ? 'Cancel download' : 'Cancel is disabled once the SD card write has started' }}"
+                cl-btn-disabled="!ctl.installService.canCancelInstall()"
+                cl-cancel="ctl.cancelInstall()"
+            ></config-progress>
+            <config-note
+                ng-if="ctl.installService.installProgress.error.length > 0"
+                cl-type="error"
+                cl-note="{{ 'Installation failed: ' + ctl.installService.installProgress.error }}"
+            ></config-note>
 
-                        <!-- install button -->
-                        <md-list-item class="md-2-line">
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <div class="md-list-item-text">
-                                <h3>Click on button to install Cleep and follow install process below</h3>
-                                <p ng-if="!ctl.updateService.softwareVersions.flashTool && !ctl.installService.flashToolInstalled">
-                                    Flash tool is not installed yet. Please wait until application updates finish.
-                                </p>
-                            </div>
-                            <md-button ng-click="ctl.startInstall()" ng-disabled="ctl.installService.installing || (!ctl.updateService.softwareVersions.flashTool && !ctl.installService.flashToolInstalled)" class="md-secondary md-raised md-accent">
-                                <md-icon md-svg-icon="sd"></md-icon>
-                                Install
-                            </md-button>
-                        </md-list-item>
+            <config-section cl-title="Having trouble?" cl-icon="bug"></config-section>
+            <config-button
+                cl-title="If an error occured, you can try to install CleepOs manually"
+                cl-btn-label="Manual install tutorial"
+                cl-btn-style="md-raised md-primary"
+                cl-click="ctl.gotoManualInstall()"
+            ></config-button>
 
-                    </md-list>
+            <div class="install-powered" layout="row" layout-align="center center">
+                <img
+                    class="install-powered-logo"
+                    src="images/raspberry-pi-logo.png"
+                    width="18"
+                    height="18"
+                    alt=""
+                >
+                <span class="install-powered-text">Powered by Raspberry Pi Imager</span>
+            </div>
+        </div>
+    </md-content>
 
-                </md-card-content>
-            </md-card>
-
-            <!-- installation -->
-            <md-card>
-                <md-card-title>
-                    <md-card-title-text>
-                        <span class="md-headline">
-                            <md-icon class="rounded-icon" md-svg-icon="flag"></md-icon>
-                            Installation progress
-                        </span>
-                    </md-card-title-text>
-                </md-card-title>
-                <md-card-content>
-                    <div ng-if="ctl.installService.installProgress.error.length === 0" layout="row" layout-align="space-between center">
-                        <div>
-                            <span ng-if="ctl.installService.installProgress.step === 'idle' && !ctl.installService.installing && !ctl.installService.installProgress.terminated">
-                                No installation running
-                            </span>
-                            <span ng-if="ctl.installService.installProgress.step === 'idle' && ctl.installService.installing">
-                                Preparing installation...
-                            </span>
-                            <span ng-if="ctl.installService.installProgress.step === 'idle' && !ctl.installService.installing && ctl.installService.installProgress.terminated">
-                                Installation terminated. If no error insert SDCard on your raspberry and power it up.
-                            </span>
-                            <span ng-if="ctl.installService.installProgress.step === 'canceled'">
-                                Installation canceled.
-                            </span>
-                            <span ng-if="ctl.installService.installProgress.step === 'downloading'">
-                                Step 1/4: downloading files
-                                <span ng-if="ctl.installService.installProgress.eta >= 0">
-                                    (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
-                                </span>
-                            </span>
-                            <span ng-if="ctl.installService.installProgress.step === 'privileges'">
-                                Step 2/4: requesting permissions to write on drive
-                            </span>
-                            <span ng-if="ctl.installService.installProgress.step === 'flashing'">
-                                Step 3/4: flashing drive
-                                <span ng-if="ctl.installService.installProgress.eta >= 0">
-                                    (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
-                                </span>
-                            </span>
-                            <span ng-if="ctl.installService.installProgress.step === 'validating'">
-                                Step 4/4: validating operation
-                                <span ng-if="ctl.installService.installProgress.eta >= 0">
-                                    (ETA {{ ctl.installService.installProgress.eta | hrSeconds }})
-                                </span>
-                            </span>
-                        </div>
-                        <md-button
-                            class="md-raised"
-                            ng-click="ctl.cancelInstall()"
-                            ng-if="ctl.installService.installing"
-                            ng-disabled="!ctl.installService.canCancelInstall()">
-                            Cancel
-                            <md-tooltip ng-if="!ctl.installService.canCancelInstall()">
-                                Cancel is disabled once the SD card write has started
-                            </md-tooltip>
-                        </md-button>
-                    </div>
-                    <div ng-if="ctl.installService.installProgress.error.length > 0">
-                        Installation failed: {{ ctl.installService.installProgress.error }}
-                    </div>
-                    <div>
-                        <md-progress-linear md-mode="determinate" class="md-accent" value="{{ctl.installService.installProgress.percent || 0}}" style="padding-top: 15px !important;"></md-progress-linear>
-                    </div>
-                    <div layout="row" layout-align="end center" style="padding-top:30px;">
-                        <span class="md-caption">Powered by&nbsp;<a href="https://www.raspberrypi.com/software/" target="_blank">Raspberry Pi Imager</a></span>
-                    </div>
-                </md-card-content>
-            </md-card>
-
-            <!-- trouble -->
-            <md-card>
-                <md-card-title>
-                    <md-card-title-text>
-                        <span class="md-headline">
-                            <md-icon class="rounded-icon" md-svg-icon="bug"></md-icon>
-                            Having trouble?
-                        </span>
-                    </md-card-title-text>
-                </md-card-title>
-                <md-card-content>
-                    <p>
-                        If an error occured, you can try to install CleepOs manually following <a href="#" ng-click="$event.preventDefault(); ctl.gotoManualInstall()">this tutorial</a>.
-                    </p>
-                </md-card-content>
-            </md-card>    
-
-        </md-content>
-
-    </div>
+</div>

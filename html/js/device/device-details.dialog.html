@@ -1,4 +1,4 @@
-<md-dialog flex="50">
+<md-dialog flex="50" class="device-details-dialog">
 
     <md-toolbar>
         <div class="md-toolbar-tools">
@@ -10,101 +10,70 @@
         </div>
     </md-toolbar>
 
-    <md-dialog-content>
-        <div style="height:450px;">
+    <md-dialog-content class="device-details-dialog-content">
+        <config-tabs cl-selected="ctl.selectedTabId" class="config-tabs-flush">
 
-            <md-tabs md-border-bottom md-dynamic-height style="height:400px;">
+            <config-tab cl-id="software" cl-label="Software" cl-icon="application">
+                <config-basic cl-title="'Device name'">
+                    <span>{{ ctl.device.hostname }}</span>
+                </config-basic>
+                <config-basic cl-title="'Cleep version'">
+                    <span>{{ ctl.device.extra.version }}</span>
+                </config-basic>
 
-                <!-- software -->
-                <md-tab label="Software" style="padding:15px;">
-                    <md-list style="padding-right:15px;">
-                        <md-list-item>
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Device name</p>
-                            <div class="md-secondary">{{::ctl.device.hostname}}</div>
-                        </md-list-item>
-                        <md-list-item>
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Ip address</p>
-                            <div class="md-secondary">{{::ctl.device.ip}}</div>
-                        </md-list-item>
-                        <md-list-item>
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Security</p>
-                            <div class="md-secondary">
-                                <ul>
-                                    <li>SSL: {{::ctl.device.ssl}}</li>
-                                    <li>Auth: {{::ctl.device.auth}}</li>
-                                </ul>
-                            </div>
-                        </md-list-item>
-                        <md-list-item>
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Cleep version</p>
-                            <div class="md-secondary">{{::ctl.device.extra.version}}</div>
-                        </md-list-item>
-                        <md-list-item>
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Installed applications</p>
-                            <div class="md-secondary">
-                                <ul>
-                                    <li ng-repeat="app in ctl.deviceApps">{{app}}</li>
-                                </ul>
-                            </div>
-                        </md-list-item>
-                    </md-list>
-                </md-tab>
+                <config-section cl-title="Installed applications" cl-icon="puzzle"></config-section>
+                <div class="device-details-apps" ng-if="ctl.deviceApps.length">
+                    <md-chips ng-model="ctl.deviceApps" readonly="true" md-removable="false"></md-chips>
+                </div>
+                <config-basic ng-if="!ctl.deviceApps.length" cl-title="'No additional applications'"></config-basic>
+            </config-tab>
 
-                <!-- hardware -->
-                <md-tab label="Hardware">
-                    <md-list style="padding-right:15px;">
-                        <md-list-item>
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Raspberry pi model</p>
-                            <div class="md-secondary">{{::ctl.device.extra.hwmodel}} (rev {{::ctl.device.extra.hwrevision}})</div>
-                        </md-list-item>
-                        <md-list-item>
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Memory</p>
-                            <div class="md-secondary">{{::ctl.device.extra.hwmemory}}</div>
-                        </md-list-item>
-                        <md-subheader class="md-no-sticky">Board capabilities</md-subheader>
-                        <md-list-item>
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Ethernet</p>
-                            <md-icon ng-if="ctl.device.extra.hwethernet" md-svg-icon="check-box-outline" class="md-secondary"></md-icon>
-                            <md-icon ng-if="!ctl.device.extra.hwethernet" md-svg-icon="checkbox-blank-outline" class="md-secondary"></md-icon>
-                        </md-list-item>
-                        <md-list-item>
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Wireless</p>
-                            <md-icon ng-if="ctl.device.extra.hwwireless" md-svg-icon="check-box-outline" class="md-secondary"></md-icon>
-                            <md-icon ng-if="!ctl.device.extra.hwwireless" md-svg-icon="checkbox-blank-outline" class="md-secondary"></md-icon>
-                        </md-list-item>
-                        <md-list-item>
-                            <md-icon md-svg-icon="chevron-right"></md-icon>
-                            <p>Audio</p>
-                            <md-icon ng-if="ctl.device.extra.hwaudio" md-svg-icon="check-box-outline" class="md-secondary"></md-icon>
-                            <md-icon ng-if="!ctl.device.extra.hwaudio" md-svg-icon="checkbox-blank-outline" class="md-secondary"></md-icon>
-                        </md-list-item>
-                    </md-list>
-                </md-tab>
+            <config-tab cl-id="security" cl-label="Security" cl-icon="shield-lock">
+                <config-basic cl-title="'Authentication'">
+                    <md-icon md-svg-icon="{{ ctl.device.auth ? 'check' : 'close' }}"></md-icon>
+                </config-basic>
+                <config-basic cl-title="'SSL'">
+                    <md-icon md-svg-icon="{{ ctl.device.ssl ? 'check' : 'close' }}"></md-icon>
+                </config-basic>
+            </config-tab>
 
-                <!-- board -->
-                <md-tab label="Board">
-                    <div layout="column" layout-align="center center" style="margin-top:15px;">
-                        <div>
-                            <img ng-src="{{ctl.boardImg}}" height="350px">
-                        </div>
-                        <div>
-                            <span class="md-caption">Board code: {{::ctl.device.extra.hwrevision}}</span>
-                        </div>
-                    </div>
-                </md-tab>
+            <config-tab cl-id="network" cl-label="Network" cl-icon="lan">
+                <config-basic cl-title="'Ip address'">
+                    <span>{{ ctl.device.ip }}</span>
+                </config-basic>
+                <config-basic cl-title="'Remote URL'">
+                    <span>{{ ctl.remoteUrlLabel }}</span>
+                </config-basic>
+            </config-tab>
 
-            </md-tabs>
-            
-        </div>
+            <config-tab cl-id="hardware" cl-label="Hardware" cl-icon="chip">
+                <config-basic cl-title="'Raspberry pi model'">
+                    <span>{{ ctl.hardwareModelLabel }}</span>
+                </config-basic>
+                <config-basic cl-title="'Memory'">
+                    <span>{{ ctl.device.extra.hwmemory }}</span>
+                </config-basic>
+                <config-section cl-title="Board capabilities" cl-icon="memory"></config-section>
+                <config-basic cl-title="'Ethernet'">
+                    <md-icon md-svg-icon="{{ ctl.device.extra.hwethernet ? 'check' : 'close' }}"></md-icon>
+                </config-basic>
+                <config-basic cl-title="'Wireless'">
+                    <md-icon md-svg-icon="{{ ctl.device.extra.hwwireless ? 'check' : 'close' }}"></md-icon>
+                </config-basic>
+                <config-basic cl-title="'Audio'">
+                    <md-icon md-svg-icon="{{ ctl.device.extra.hwaudio ? 'check' : 'close' }}"></md-icon>
+                </config-basic>
+
+                <config-section cl-title="Board" cl-icon="raspberry-pi"></config-section>
+                <config-basic cl-title="'Board code'">
+                    <span>{{ ctl.device.extra.hwrevision }}</span>
+                </config-basic>
+                <div class="device-details-board" layout="column" layout-align="center center" ng-if="ctl.boardImg">
+                    <img ng-src="{{ ctl.boardImg }}" alt="Board" class="device-details-board-img">
+                </div>
+            </config-tab>
+
+        </config-tabs>
     </md-dialog-content>
 
 </md-dialog>

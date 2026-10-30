@@ -15,7 +15,7 @@ function($scope, toast, electron, closeModal) {
     $scope.$on('$destroy', function() {
         if (!self.completed) {
             electron.vault.dismissUnlock().catch(function() {
-                // ignore — main may already have resolved/rejected waiters
+                // ignore - main may already have resolved/rejected waiters
             });
         }
     });
@@ -23,7 +23,8 @@ function($scope, toast, electron, closeModal) {
     self.readPassphrase = function() {
         // Prefer live DOM value: browser autofill often fills the input without
         // updating Angular ng-model (so ctl.passphrase stays stale/empty/wrong).
-        var input = document.querySelector('md-dialog input[name="vault-passphrase"]');
+        var input = document.querySelector('md-dialog input[name="vault-passphrase"]')
+            || document.querySelector('md-dialog input[type="password"]');
         var fromDom = input && typeof input.value === 'string' ? input.value : '';
         return (fromDom || self.passphrase || '').trim();
     };

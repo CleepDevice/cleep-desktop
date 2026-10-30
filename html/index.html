@@ -1,5 +1,6 @@
 <html>
 <head>
+    <meta charset="utf-8">
     <title>CleepDesktop</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/roboto-fonts.css">
@@ -58,6 +59,38 @@
 
             <md-list class="toolbar" style="padding:0px;">
                 <md-divider></md-divider>
+                <md-list-item
+                    ng-if="cleep.toolbarTask.display"
+                    class="toolbar-task-item"
+                    ng-click="cleep.onToolbarTaskClick()"
+                    title="{{ cleep.toolbarTask.display.title }}"
+                >
+                    <md-progress-circular
+                        ng-if="cleep.toolbarTask.display.status === 'running'"
+                        class="toolbar-task-progress progress-circular-white"
+                        md-mode="{{ cleep.toolbarTask.display.percent > 0 ? 'determinate' : 'indeterminate' }}"
+                        value="{{ cleep.toolbarTask.display.percent }}"
+                        md-diameter="22"
+                    ></md-progress-circular>
+                    <md-icon
+                        ng-if="cleep.toolbarTask.display.status === 'success'"
+                        class="toolbar-task-icon toolbar-task-icon-success"
+                        md-svg-icon="check-circle"
+                    ></md-icon>
+                    <md-icon
+                        ng-if="cleep.toolbarTask.display.status === 'error'"
+                        class="toolbar-task-icon white-icon"
+                        md-svg-icon="alert-circle"
+                    ></md-icon>
+                    <md-icon
+                        ng-if="cleep.toolbarTask.display.status === 'action'"
+                        class="toolbar-task-icon white-icon"
+                        md-svg-icon="restart"
+                    ></md-icon>
+                    <p style="color:white;" ng-if="!cleep.toolbarCollapsed">
+                        {{ cleep.toolbarTask.display.label }}
+                    </p>
+                </md-list-item>
                 <md-list-item
                     ng-click="cleep.onVaultToolbarClick()"
                     title="{{ cleep.vaultStatusTitle() }}"
@@ -234,6 +267,8 @@
     <script src="js/app.js"></script>
     <script src="js/app.config.js"></script>
     <script src="js/app.filter.js"></script>
+    <script src="js/components/ui.components.js"></script>
+    <script src="js/components/config.components.js"></script>
     <script src="js/services/logger.service.js"></script>
     <script src="js/services/electron.service.js"></script>
     <script src="js/services/ipc-lifecycle.js"></script>
@@ -241,7 +276,7 @@
     <script src="js/services/settings.service.js"></script>
     <script src="js/services/debounce.service.js"></script>
     <script src="js/services/confirm.service.js"></script>
-    <script src="js/services/taskspanel.service.js"></script>
+    <script src="js/services/toolbartask.service.js"></script>
     <script src="js/services/modal.service.js"></script>
     <script src="js/services/update.service.js"></script>
     <script src="js/services/install.service.js"></script>
@@ -262,7 +297,9 @@
     <script src="js/device-error/device-error.controller.js"></script>
     <script src="js/monitoring/monitoring.controller.js"></script>
     <script src="js/about/about.controller.js"></script>
+    <script src="js/support/support.controller.js"></script>
     <script src="js/help/help-dialog.controller.js"></script>
+    <script src="js/dev/dev-playground.controller.js"></script>
 
 </body>
 </html>

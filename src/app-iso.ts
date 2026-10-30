@@ -56,6 +56,30 @@ interface InstallProgress {
 const FLASH_STDERR_ERROR_PATTERN =
   /\b(error|failed|fatal|exception|permission denied|setuid|no new privileges|access denied|unknown option)\b/i;
 
+/** Map technical elevation/flash stderr to a short user-facing message (raw kept in logs). */
+function humanizeFlashError(raw: string): string {
+  const text = raw.trim();
+  const lower = text.toLowerCase();
+
+  if (
+    lower.includes('access denied') ||
+    lower.includes('permission denied') ||
+    lower.includes('not authorized') ||
+    lower.includes('authentication') && lower.includes('fail') ||
+    lower.includes('transient service unit') ||
+    lower.includes('no new privileges') ||
+    lower.includes('setuid')
+  ) {
+    return 'Unable to get administrator rights (access denied)';
+  }
+
+  if (/flash failed with exit code/i.test(text)) {
+    return 'SD card write failed';
+  }
+
+  return text;
+}
+
 class AppIso {
   private wifiNetworks: WifiNetwork[] = [];
   private lastRaspiosUpdate = 0;
@@ -378,7 +402,8 @@ class AppIso {
     sendToRenderer(this.window, 'iso-install-progress', installProgress);
 
     const options: SudoOptions = {
-      appName: app.name,
+      // Product name for run0/gksudo polkit prompts (not package.json "name").
+      appName: 'CleepDesktop',
       terminatedCallback: this.flashTerminatedCallback.bind(this),
       stdoutCallback: this.flashStdoutCallback.bind(this),
       stderrCallback: this.flashStderrCallback.bind(this),
@@ -401,9 +426,10 @@ class AppIso {
     }
 
     const failed = exitCode !== 0 || Boolean(this.currentInstall.flashError);
-    const error =
+    const rawError =
       this.currentInstall.flashError ||
       (exitCode !== 0 ? `Flash failed with exit code ${exitCode}` : '');
+    const error = rawError ? humanizeFlashError(rawError) : '';
 
     const installProgress: InstallProgress = {
       percent: 100,
@@ -415,7 +441,7 @@ class AppIso {
     sendToRenderer(this.window, 'iso-install-progress', installProgress);
 
     if (failed) {
-      appLogger.error('Flash drive failed', { exitCode, error });
+      appLogger.error('Flash drive failed', { exitCode, error, rawError });
     }
 
     void this.cleanupFirstRunScript(firstRunScriptPath);
@@ -447,10 +473,11 @@ class AppIso {
     }
 
     if (FLASH_STDERR_ERROR_PATTERN.test(trimmed)) {
-      appLogger.error('Drive flash failed', { error: trimmed });
+      const error = humanizeFlashError(trimmed);
+      appLogger.error('Drive flash failed', { error, rawError: trimmed });
       this.currentInstall.flashError = trimmed;
       sendToRenderer(this.window, 'iso-install-progress', {
-        error: trimmed,
+        error,
       });
       return;
     }

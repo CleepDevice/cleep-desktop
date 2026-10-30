@@ -3,7 +3,7 @@ angular
 .controller('deviceErrorController', ['$stateParams', '$state', 'devicesService', 'electronService', 'toastService', 'loggerService',
 function($stateParams, $state, devicesService, electron, toastService, logger) {
     var self = this;
-    self.hostname = $stateParams.hostname || 'Unknown device';
+    self.hostname = $stateParams.hostname || 'unknown';
     self.deviceUuid = $stateParams.deviceUuid || null;
     self.url = $stateParams.url || null;
     self.refreshing = false;

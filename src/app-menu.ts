@@ -103,11 +103,28 @@ export function createAppMenu(window: BrowserWindow): void {
     ],
   };
 
+  const subMenuDev: MenuItemConstructorOptions = {
+    label: 'Dev',
+    submenu: [
+      {
+        label: 'Playground',
+        click: () => {
+          sendToRenderer(window, 'open-page', { page: 'devPlayground' });
+        },
+      },
+      { type: 'separator' },
+      { role: 'reload' },
+      { role: 'forceReload' },
+      { role: 'toggleDevTools' },
+    ],
+  };
+
   const isMac = process.platform === 'darwin';
   const template: MenuItemConstructorOptions[] = [
     subMenuFile,
     ...(isMac ? [subMenuEdit] : []),
     subMenuHelp,
+    ...(appContext.isDev ? [subMenuDev] : []),
     ...(appContext.isDev ? [subMenuView] : []),
   ];
   const menu = Menu.buildFromTemplate(template);

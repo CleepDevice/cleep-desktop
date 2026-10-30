@@ -1,24 +1,49 @@
 angular
 .module('Cleep')
-.controller('wifiController', ['closeModal', 'installService', 'modalData', 
-function(closeModal, installService, modalData) {
+.controller('wifiController', ['$scope', 'closeModal', 'installService', 'modalData', 
+function($scope, closeModal, installService, modalData) {
     var self = this;
     self.closeModal = closeModal;
     self.installService = installService;
     self.selectedWifi = null;
+    self.selectedWifiSsid = '';
     self.wifiPassword = null;
     self.wifiNetworkName = '';
     self.wifiNetworkSecurity = 'wpa2';
-    self.showPassword = false;
     self.network = modalData.network;
+    self.wifiNetworkOptions = [];
+    self.securityOptions = [
+        { value: 'wpa3', label: 'WPA3' },
+        { value: 'wpa2', label: 'WPA2' },
+        { value: 'wpa', label: 'WPA' },
+        { value: 'wep', label: 'WEP' },
+        { value: 'unsecured', label: 'Unsecured' },
+    ];
+
+    self.refreshWifiNetworkOptions = function() {
+        self.wifiNetworkOptions = (installService.wifiInfo.networks || []).map(function(network) {
+            return {
+                value: network.ssid,
+                label: network.ssid + ' (' + network.security + ')',
+            };
+        });
+    };
 
     self.$onInit = function() {
         installService.hasWifi().then(function(hasWifi) {
             if (hasWifi && self.network === 1) {
-                installService.refreshWifiNetworks(true);
+                installService.refreshWifiNetworks(true).then(function() {
+                    self.refreshWifiNetworkOptions();
+                });
             }
         });
     };
+
+    $scope.$watch(function() {
+        return installService.wifiInfo.networks;
+    }, function() {
+        self.refreshWifiNetworkOptions();
+    }, true);
 
     /** Manual SSID/security fields: no adapter, hidden network, or empty scan. */
     self.useManualWifiFields = function() {
@@ -35,6 +60,16 @@ function(closeModal, installService, modalData) {
 
     self.useNetworkSelector = function() {
         return installService.wifiInfo.hasWifi && self.network === 1;
+    };
+
+    self.onWifiNetworkChange = function() {
+        var ssid = self.selectedWifiSsid;
+        self.selectedWifi = (installService.wifiInfo.networks || []).find(function(network) {
+            return network.ssid === ssid;
+        }) || null;
+        if (!self.selectedWifi) {
+            self.selectedWifiSsid = '';
+        }
     };
 
     self.isUnsecured = function() {

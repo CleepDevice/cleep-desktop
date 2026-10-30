@@ -19,7 +19,7 @@ function($rootScope, toast, updateService, modalService, electron) {
     };
 
     self.restartApplication = function() {
-        $rootScope.$broadcast('restartrequired');
+        $rootScope.$broadcast('restart');
     };
 
     self.checkForUpdates = function() {

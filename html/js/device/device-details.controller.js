@@ -4,10 +4,24 @@ angular
     var self = this;
     self.device = modalData;
     self.closeModal = closeModal;
+    self.selectedTabId = 'software';
     var apps = (self.device.extra && self.device.extra.apps) || [];
     self.deviceApps = apps.filter((app) => {
         return ['audio', 'cleepbus', 'network', 'parameters', 'system', 'update'].indexOf(app)===-1;
-    });
+    }).slice().sort();
+    self.hardwareModelLabel = self.device.extra
+        ? (self.device.extra.hwmodel + ' (rev ' + self.device.extra.hwrevision + ')')
+        : '';
+
+    var remoteaccess = (self.device && self.device.remoteaccess) || {};
+    var remoteUrls = Object.keys(remoteaccess)
+        .filter(function(app) { return typeof remoteaccess[app] === 'string' && remoteaccess[app]; })
+        .map(function(app) { return { app: app, url: remoteaccess[app] }; });
+    // Prefer ngrok when several tunnels exist
+    var preferred = remoteUrls.find(function(entry) { return entry.app === 'ngrok'; });
+    self.remoteUrlLabel = preferred
+        ? preferred.url
+        : (remoteUrls.length ? remoteUrls[0].url : 'local network');
     self.boardImages = {
         '0002':   'images/raspberry-pi-1-model-b.jpg',
         '0003':   'images/raspberry-pi-1-model-b.jpg',
@@ -31,6 +45,7 @@ angular
         'a01040': 'images/raspberry-pi-2-model-b.jpg',
         'a01041': 'images/raspberry-pi-2-model-b.jpg',
         'a21041': 'images/raspberry-pi-2-model-b.jpg',
+        'a02042': 'images/raspberry-pi-2-model-b.jpg',
         'a22042': 'images/raspberry-pi-2-model-b.jpg',
         '900061': 'images/raspberry-pi-compute-module-1.jpg',
         'a02082': 'images/raspberry-pi-3-model-b.jpg',
@@ -70,6 +85,7 @@ angular
         'b04170': 'images/raspberry-pi-5.jpg',
         'c04170': 'images/raspberry-pi-5.jpg',
         'd04170': 'images/raspberry-pi-5.jpg',
+        'a04171': 'images/raspberry-pi-5.jpg',
         'b04171': 'images/raspberry-pi-5.jpg',
         'c04171': 'images/raspberry-pi-5.jpg',
         'd04171': 'images/raspberry-pi-5.jpg',
@@ -77,10 +93,13 @@ angular
         'b04180': 'images/raspberry-pi-compute-module-5.jpg',
         'c04180': 'images/raspberry-pi-compute-module-5.jpg',
         'd04180': 'images/raspberry-pi-compute-module-5.jpg',
+        'e04180': 'images/raspberry-pi-compute-module-5.jpg',
         'd04190': 'images/raspberry-pi-500.jpg',
+        'e04190': 'images/raspberry-pi-500-plus.jpg',
         'b041a0': 'images/raspberry-pi-compute-module-5.jpg',
         'c041a0': 'images/raspberry-pi-compute-module-5.jpg',
-        'd041a0': 'images/raspberry-pi-compute-module-5.jpg'
+        'd041a0': 'images/raspberry-pi-compute-module-5.jpg',
+        'e041a0': 'images/raspberry-pi-compute-module-5.jpg',
     }
     self.boardImg = self.device.extra
         ? self.boardImages[self.device.extra['hwrevision']]

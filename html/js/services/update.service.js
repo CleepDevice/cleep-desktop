@@ -1,9 +1,8 @@
 angular
 .module('Cleep')
-.service('updateService', ['$rootScope', 'loggerService', 'tasksPanelService', 'electronService', 'ipcLifecycle',
-function($rootScope, logger, tasksPanelService, electron, ipcLifecycle) {
+.service('updateService', ['$rootScope', 'loggerService', 'toolbarTaskService', 'electronService', 'ipcLifecycle',
+function($rootScope, logger, toolbarTask, electron, ipcLifecycle) {
     var self = this;
-    self.taskUpdatePanelId = null;
     self.flashToolUpdate = { terminated: true };
     self.cleepbusUpdate = { terminated: true };
     self.cleepDesktopUpdate = { terminated: true };
@@ -12,13 +11,12 @@ function($rootScope, logger, tasksPanelService, electron, ipcLifecycle) {
         cleepDesktop: null,
         flashTool: null,
         cleepbus: null,
-    }
+    };
     self.lastUpdateCheck = 0;
     self.changelog = '';
     self.loading = false;
 
     self.addIpcs = function() {
-        // Rare “available” events stay immediate; progress is coalesced (latest %).
         self._unsubscribers.push(
             electron.updater.onCleepDesktopAvailable(self.onCleepDesktopUpdateCallback.bind(self)),
             electron.updater.onCleepDesktopProgress(self.onCleepDesktopUpdateCallback.bind(self)),
@@ -40,37 +38,66 @@ function($rootScope, logger, tasksPanelService, electron, ipcLifecycle) {
                 self.lastUpdateCheck = softwareVersions.lastUpdateCheck;
                 angular.copy(softwareVersions, self.softwareVersions);
             });
-    }
+    };
 
     self.goToUpdates = function() {
         $rootScope.$broadcast('open-page', { page: 'updates' });
     };
- 
-    self.closeUpdateTaskPanel = function() {
-        tasksPanelService.removePanel(self.taskUpdatePanelId);
-        self.taskUpdatePanelId = null;
-    };
 
-    self.openUpdateTaskPanel = function() {
-        if (self.taskUpdatePanelId) {
+    self.syncUpdateToolbarTask = function(running) {
+        if (running) {
+            var percent = 0;
+            var count = 0;
+            [self.cleepDesktopUpdate, self.flashToolUpdate, self.cleepbusUpdate].forEach(function(item) {
+                if (!item.terminated && typeof item.percent === 'number' && item.percent >= 0) {
+                    percent += item.percent;
+                    count += 1;
+                }
+            });
+            toolbarTask.set('update', {
+                page: 'updates',
+                label: 'Updating...',
+                title: 'Updating application...',
+                status: 'running',
+                percent: count ? Math.round(percent / count) : 0,
+            });
             return;
         }
-        self.taskUpdatePanelId = tasksPanelService.addPanel(
-            'Updating application...',
-            {
-                onAction: self.goToUpdates,
-                tooltip: 'Open updates page',
-                icon: 'open-in-app'
-            },
-            {
-                onClose: null,
-                disabled: true
-            },
-            true
-        );
+
+        var failed = [self.cleepDesktopUpdate, self.flashToolUpdate, self.cleepbusUpdate]
+            .some(function(item) { return item.terminated && item.error; });
+        if (failed) {
+            toolbarTask.set('update', {
+                page: 'updates',
+                label: 'Update failed',
+                title: 'Update failed - open Updates for details',
+                status: 'error',
+                percent: 100,
+            });
+            return;
+        }
+
+        if (self.restartRequired) {
+            toolbarTask.set('update', {
+                page: 'updates',
+                label: 'Restart needed',
+                title: 'Please restart CleepDesktop to apply updates',
+                status: 'action',
+                percent: 100,
+            });
+            return;
+        }
+
+        toolbarTask.set('update', {
+            page: 'updates',
+            label: 'Update done',
+            title: 'Update finished - open Updates for details',
+            status: 'success',
+            percent: 100,
+        });
     };
-    
-    self.onCleepDesktopUpdateCallback =  function(_event, updateData) {
+
+    self.onCleepDesktopUpdateCallback = function(_event, updateData) {
         angular.copy(updateData, self.cleepDesktopUpdate);
         self.cleepDesktopUpdate.message = `Updating to ${self.cleepDesktopUpdate.version}`;
 
@@ -80,7 +107,7 @@ function($rootScope, logger, tasksPanelService, electron, ipcLifecycle) {
         } else if (self.cleepDesktopUpdate.terminated && self.cleepDesktopUpdate.error) {
             self.cleepDesktopUpdate.message = 'Update failed';
         } else if (!self.cleepDesktopUpdate.terminated) {
-            self.openUpdateTaskPanel();
+            self.syncUpdateToolbarTask(true);
         }
 
         self.updateOverallUpdateStatus();
@@ -95,7 +122,7 @@ function($rootScope, logger, tasksPanelService, electron, ipcLifecycle) {
         } else if (self.flashToolUpdate.terminated && self.flashToolUpdate.error) {
             self.flashToolUpdate.message = 'Update failed';
         } else if (!self.flashToolUpdate.terminated) {
-            self.openUpdateTaskPanel();
+            self.syncUpdateToolbarTask(true);
         }
 
         self.updateOverallUpdateStatus();
@@ -110,7 +137,7 @@ function($rootScope, logger, tasksPanelService, electron, ipcLifecycle) {
         } else if (self.cleepbusUpdate.terminated && self.cleepbusUpdate.error) {
             self.cleepbusUpdate.message = 'Update failed';
         } else if (!self.cleepbusUpdate.terminated) {
-            self.openUpdateTaskPanel();
+            self.syncUpdateToolbarTask(true);
         }
 
         self.updateOverallUpdateStatus();
@@ -127,9 +154,6 @@ function($rootScope, logger, tasksPanelService, electron, ipcLifecycle) {
                 logger.info('Check for software updates', updateStatus);
                 self.lastUpdateCheck = updateStatus.lastUpdateCheck;
 
-                // Progress / success state is driven by updater-* IPC callbacks.
-                // The check response only carries { updateAvailable, error? } and must not
-                // overwrite in-flight or already-finished install state (race with fast installs).
                 self.applyCheckError('cleepDesktopUpdate', updateStatus.cleepDesktop);
                 self.applyCheckError('flashToolUpdate', updateStatus.flashTool);
                 self.applyCheckError('cleepbusUpdate', updateStatus.cleepbus);
@@ -138,8 +162,7 @@ function($rootScope, logger, tasksPanelService, electron, ipcLifecycle) {
                   || updateStatus.flashTool?.updateAvailable
                   || updateStatus.cleepbus?.updateAvailable;
                 if (hasUpdate) {
-                    self.openUpdateTaskPanel();
-                    // Fast installs (e.g. local dist/) may already be terminated before this returns.
+                    self.syncUpdateToolbarTask(true);
                     self.updateOverallUpdateStatus();
                 } else {
                     self.loading = false;
@@ -164,7 +187,6 @@ function($rootScope, logger, tasksPanelService, electron, ipcLifecycle) {
             error: status.error,
             message: 'Update failed',
         };
-        // Whitelist avoids dynamic property assignment (object injection).
         if (field === 'cleepDesktopUpdate') {
             self.cleepDesktopUpdate = payload;
         } else if (field === 'flashToolUpdate') {
@@ -179,7 +201,7 @@ function($rootScope, logger, tasksPanelService, electron, ipcLifecycle) {
             return;
         }
 
-        self.closeUpdateTaskPanel();
+        self.syncUpdateToolbarTask(false);
         self.updateSofwareVersions();
         self.loading = false;
     };

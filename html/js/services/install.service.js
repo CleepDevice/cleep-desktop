@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.service('installService', ['$state', 'loggerService', 'tasksPanelService', 'settingsService', 'electronService', 'toastService', 'ipcLifecycle',
-function($state, logger, tasksPanelService, settingsService, electron, toast, ipcLifecycle) {
+.service('installService', ['$state', 'loggerService', 'toolbarTaskService', 'settingsService', 'electronService', 'toastService', 'ipcLifecycle',
+function($state, logger, toolbarTask, settingsService, electron, toast, ipcLifecycle) {
     var self = this;
     self.settings = {
         isolocal: false,
@@ -25,18 +25,16 @@ function($state, logger, tasksPanelService, settingsService, electron, toast, ip
         retrieved: false,
         hasWifi: true,
         networks: []
-    }
+    };
     self.isosInfo = {
         retrieved: false,
         raspios: {},
         cleepos: {},
-    }
+    };
     self.drives = [];
-    self.taskInstallPanelId = null;
     self.flashToolInstalled = false;
 
     self.addIpcs = function() {
-        // Latest progress wins — flash % can spam faster than the UI can paint.
         self._unsubscribers.push(
             electron.install.onProgress(self.onHandleInstallProgress.bind(self)),
         );
@@ -46,9 +44,66 @@ function($state, logger, tasksPanelService, settingsService, electron, toast, ip
         self.getIsoSettings();
     });
 
+    self.installTaskLabel = function(progress) {
+        var step = (progress && progress.step) || 'idle';
+        if (step === 'downloading') {
+            return 'Download SD';
+        }
+        if (step === 'privileges') {
+            return 'Install SD';
+        }
+        if (step === 'flashing') {
+            return 'Flash SD';
+        }
+        if (step === 'validating') {
+            return 'Validate SD';
+        }
+        return 'Install SD';
+    };
+
+    self.syncInstallToolbarTask = function() {
+        var progress = self.installProgress;
+        if (self.installing) {
+            var stepLabel = self.installTaskLabel(progress);
+            var percentLabel = Math.round(progress.percent || 0) + '%';
+            toolbarTask.set('install', {
+                page: 'installAuto',
+                label: stepLabel + ' ' + percentLabel,
+                title: stepLabel + ' ' + percentLabel,
+                status: 'running',
+                percent: progress.percent || 0,
+            });
+            return;
+        }
+
+        if (progress.step === 'canceled') {
+            toolbarTask.clear('install');
+            return;
+        }
+        if (progress.error && progress.error.length) {
+            toolbarTask.set('install', {
+                page: 'installAuto',
+                label: 'Install failed',
+                title: progress.error,
+                status: 'error',
+                percent: 100,
+            });
+            return;
+        }
+        if (progress.terminated) {
+            toolbarTask.set('install', {
+                page: 'installAuto',
+                label: 'Install done',
+                title: 'Installation finished - open Install for details',
+                status: 'success',
+                percent: 100,
+            });
+        }
+    };
+
     self.onHandleInstallProgress = function(_event, installProgress) {
         Object.assign(self.installProgress, installProgress);
-        if(self.installProgress.terminated || self.installProgress.error || self.installProgress.step === 'canceled') {
+        if (self.installProgress.terminated || self.installProgress.error || self.installProgress.step === 'canceled') {
             self.installing = false;
         } else {
             self.installing = true;
@@ -56,17 +111,17 @@ function($state, logger, tasksPanelService, settingsService, electron, toast, ip
 
         if (!self.installing) {
             self.terminateInstall();
+        } else {
+            self.syncInstallToolbarTask();
         }
     };
 
     self.terminateInstall = function() {
         if (self.installProgress.error.length === 0 && self.installProgress.step !== 'canceled') {
-            // install terminated without error, reset only drive field that
-            // must be scanned again if user installs another device
             self.installConfig.drive = null;
         }
-        self.onCloseInstallTaskPanel();
-    }
+        self.syncInstallToolbarTask();
+    };
 
     self.getIsoSettings = function() {
         return settingsService.getSelected(['cleep.isolocal', 'cleep.isoraspios'])
@@ -89,7 +144,7 @@ function($state, logger, tasksPanelService, settingsService, electron, toast, ip
                 self.wifiInfo.hasWifi = false;
                 return false;
             });
-    }
+    };
 
     self.refreshWifiNetworks = function(force = false) {
         if ((self.wifiInfo.retrieved && !force) || !self.wifiInfo.hasWifi) {
@@ -98,8 +153,8 @@ function($state, logger, tasksPanelService, settingsService, electron, toast, ip
 
         return electron.install.refreshWifiNetworks()
             .then((networks) => {
-                self.wifiInfo.retrieved = true;
                 self.fillArray(self.wifiInfo.networks, networks);
+                self.wifiInfo.retrieved = true;
             })
             .catch(() => {
                 toast.error('Unable to refresh wifi networks');
@@ -139,21 +194,7 @@ function($state, logger, tasksPanelService, settingsService, electron, toast, ip
         self.installProgress.terminated = false;
         self.installProgress.step = 'idle';
         self.installProgress.percent = 0;
-        if (!self.taskInstallPanelId) {
-            self.taskInstallPanelId = tasksPanelService.addPanel(
-                'Installing device...', 
-                {
-                    onAction: self.goToInstallAuto,
-                    tooltip: 'Open install page',
-                    icon: 'open-in-app'
-                },
-                {
-                    onClose: self.onCloseInstallTaskPanel,
-                    disabled: false
-                },
-                true
-            );
-        }
+        self.syncInstallToolbarTask();
 
         var useWifi = self.installConfig.iso.category === 'cleepos' && self.installConfig.network !== 0;
         var installData = {
@@ -186,12 +227,6 @@ function($state, logger, tasksPanelService, settingsService, electron, toast, ip
         electron.install.cancel();
     };
 
-    self.onCloseInstallTaskPanel = function() {
-        if (!self.taskInstallPanelId) return;
-        tasksPanelService.removePanel(self.taskInstallPanelId);
-        self.taskInstallPanelId = null;
-    };
-
     self.goToInstallAuto = function() {
         $state.go('installAuto');
     };
@@ -199,5 +234,5 @@ function($state, logger, tasksPanelService, settingsService, electron, toast, ip
     self.fillArray = function(source, data) {
         while (source.length) source.pop();
         Object.assign(source, data);
-    }
+    };
 }]);

@@ -1,16 +1,18 @@
 angular
 .module('Cleep')
-.controller('preferencesController', ['$scope', 'debounceService', 'toastService', 'settingsService', 'electronService', 'confirmService', 'closeModal', 'modalData',
-function($scope, debounce, toast, settingsService, electron, confirm, closeModal, modalData) {
+.controller('preferencesController', ['$scope', '$filter', 'debounceService', 'toastService', 'settingsService', 'electronService', 'confirmService', 'closeModal', 'modalData',
+function($scope, $filter, debounce, toast, settingsService, electron, confirm, closeModal, modalData) {
     var self = this;
-    // Tab order: General, Network, Vault, Cache, Advanced
-    var TAB_INDEX = { general: 0, network: 1, vault: 2, cache: 3, advanced: 4 };
-    self.selectedTab = 0;
+    // Prefer modalData.tab immediately so config-tabs can open on the right panel.
+    self.selectedTabId = (modalData && modalData.tab) || 'general';
+    self.localeOptions = [{ value: 'en', label: 'English' }];
     self.settings = {};
     self.cacheDir = '';
     self.cachedFiles = [];
     self.networkInterfaces = [];
+    self.networkInterfaceOptions = [];
     self.selectedNetworkInterface = '';
+    self.networkAutomaticLabel = 'Automatic';
     self.networkConfig = {};
     self.networkApplying = false;
     self.networkPollTimer = null;
@@ -19,6 +21,9 @@ function($scope, debounce, toast, settingsService, electron, confirm, closeModal
         unlocked: false,
         recoveryCodesRemaining: 0,
     };
+    self.vaultLockLabel = 'Disabled';
+    self.vaultStatusIcon = 'lock';
+    self.vaultRecoveryRemainingLabel = '0 recovery code(s) remaining';
     self.vaultPanel = 'main';
     self.vaultBusy = false;
     self.vaultRecoveryCodes = [];
@@ -36,16 +41,54 @@ function($scope, debounce, toast, settingsService, electron, confirm, closeModal
     self.$onInit = function() {
         self.getSettings();
         self.getCacheInfos();
-
-        var requestedTab = modalData && modalData.tab;
-        if (requestedTab && TAB_INDEX[requestedTab] !== undefined) {
-            self.selectedTab = TAB_INDEX[requestedTab];
-            if (requestedTab === 'vault') {
-                self.loadVault();
-            } else if (requestedTab === 'network') {
-                self.loadNetworkConfig();
-            }
+        if (self.selectedTabId) {
+            self.onPreferencesTabShown(self.selectedTabId);
         }
+    };
+
+    self.onPreferencesTabShown = function(tabId) {
+        if (tabId === 'vault') {
+            self.loadVault();
+        } else if (tabId === 'network') {
+            self.loadNetworkConfig();
+        } else if (tabId === 'cache') {
+            self.getCacheInfos();
+        }
+    };
+
+    $scope.$on('config-tabs:shown', function(_event, tabId) {
+        self.onPreferencesTabShown(tabId);
+    });
+
+    self.buildNetworkInterfaceOptions = function(interfaces) {
+        self.networkInterfaceOptions = (interfaces || []).map(function(iface) {
+            var label = iface.name;
+            if (iface.address) {
+                label += ' - ' + iface.address;
+            }
+            if (iface.onDefaultRoute) {
+                label += ' (default route)';
+            }
+            return {
+                value: iface.name,
+                label: label,
+                disabled: !iface.usableForBus,
+            };
+        });
+    };
+
+    self.refreshNetworkAutomaticLabel = function(config) {
+        var active = config && config.activeInterface;
+        if (active && active.name) {
+            var label = 'Automatic (' + active.name;
+            if (active.address) {
+                label += ' - ' + active.address;
+            }
+            label += ')';
+            self.networkAutomaticLabel = label;
+            return;
+        }
+        self.networkAutomaticLabel = 'Automatic';
     };
 
     self.loadNetworkConfig = function() {
@@ -53,21 +96,31 @@ function($scope, debounce, toast, settingsService, electron, confirm, closeModal
             .then((config) => {
                 self.networkConfig = config;
                 self.networkInterfaces = config.interfaces || [];
+                self.buildNetworkInterfaceOptions(self.networkInterfaces);
+                self.refreshNetworkAutomaticLabel(config);
+                // Empty string = automatic (default-route interface); not a missing selection.
                 self.selectedNetworkInterface = config.selectedInterface || '';
             })
             .catch(() => {
                 toast.warning('Network settings are unavailable. Restart CleepDesktop (main process update required).');
                 self.networkConfig = { busConnected: false, peerCount: 0, interfaces: [] };
                 self.networkInterfaces = [];
+                self.networkInterfaceOptions = [];
+                self.networkAutomaticLabel = 'Automatic';
             });
     };
 
-    self.applyNetworkInterface = function() {
+    self.applyNetworkInterface = function(data) {
+        if (data && data.value !== undefined) {
+            self.selectedNetworkInterface = data.value;
+        }
         self.networkApplying = true;
         electron.bus.setNetworkInterface(self.selectedNetworkInterface)
             .then((config) => {
                 self.networkConfig = config;
                 self.networkInterfaces = config.interfaces || [];
+                self.buildNetworkInterfaceOptions(self.networkInterfaces);
+                self.refreshNetworkAutomaticLabel(config);
                 self.selectedNetworkInterface = config.selectedInterface || '';
                 if (self.settings.cleep) {
                     self.settings.cleep.networkinterface = self.selectedNetworkInterface;
@@ -119,6 +172,7 @@ function($scope, debounce, toast, settingsService, electron, confirm, closeModal
             .then((data) => {
                 self.fillArray(self.cachedFiles, data.files);
                 self.cacheDir = data.dir;
+                self.refreshCachedListItems();
             })
             .catch(() => {
                 toast.warning('Unable to load cache infos');
@@ -170,12 +224,67 @@ function($scope, debounce, toast, settingsService, electron, confirm, closeModal
         };
     };
 
+    self.openVaultRecover = function() { self.vaultPanel = 'recover'; };
+    self.openVaultChange = function() { self.vaultPanel = 'change'; };
+    self.openVaultRegen = function() {
+        if (!self.vaultStatus.unlocked) {
+            return;
+        }
+        self.dismissRecoveryCodes();
+        self.resetVaultForm();
+        self.vaultPanel = 'regen';
+    };
+    self.openVaultDisable = function() { self.vaultPanel = 'disable'; };
+    self.cancelVaultPanel = function() {
+        self.resetVaultForm();
+        self.vaultPanel = 'main';
+    };
+
+    self.vaultMainButtons = [
+        { label: 'Lock', click: function() { self.lockVault(); }, style: 'md-raised' },
+        { label: 'Change passphrase', click: self.openVaultChange, style: 'md-raised' },
+        { label: 'Disable vault', style: 'md-raised md-warn', click: self.openVaultDisable },
+    ];
+
+    self.cachedListItems = [];
+    self.refreshCachedListItems = function() {
+        var hrBytes = $filter('hrBytes');
+        self.cachedListItems = (self.cachedFiles || []).map(function(cached) {
+            return {
+                title: cached.filename,
+                subtitle: cached.filesizeLabel || hrBytes(cached.filesize || 0),
+                icon: 'file',
+                meta: { filename: cached.filename },
+                clicks: [{
+                    icon: 'delete',
+                    tooltip: 'Delete',
+                    click: function(meta) {
+                        self.deleteCachedFile(meta && meta.filename);
+                    },
+                    meta: { filename: cached.filename },
+                }],
+            };
+        });
+    };
+
     self.applyVaultStatus = function(status) {
         self.vaultStatus = status || {
             enabled: false,
             unlocked: false,
             recoveryCodesRemaining: 0,
         };
+        var remaining = self.vaultStatus.recoveryCodesRemaining || 0;
+        if (!self.vaultStatus.enabled) {
+            self.vaultLockLabel = 'Disabled';
+            self.vaultStatusIcon = 'lock';
+        } else if (self.vaultStatus.unlocked) {
+            self.vaultLockLabel = 'Unlocked';
+            self.vaultStatusIcon = 'lock-open-variant';
+        } else {
+            self.vaultLockLabel = 'Locked';
+            self.vaultStatusIcon = 'lock';
+        }
+        self.vaultRecoveryRemainingLabel = remaining + ' recovery code(s) remaining';
     };
 
     self.showRecoveryCodes = function(codes) {

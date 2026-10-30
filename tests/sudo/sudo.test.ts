@@ -58,7 +58,7 @@ describe('Sudo', () => {
 
     expect(spawn).toHaveBeenCalledWith(
       '/usr/bin/run0',
-      ['--description=CleepDesktop', '/bin/echo', 'hello'],
+      ['--unit=cleepdesktop-flash', '--description=CleepDesktop', '/bin/echo', 'hello'],
       expect.any(Object),
     );
   });

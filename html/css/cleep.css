@@ -1,9 +1,17 @@
-/* infos panel */
-.update-panel {
-  border-radius: 4px;
-  box-shadow: 0 7px 8px -4px rgb(0 0 0 / 20%), 0 13px 19px 2px rgb(0 0 0 / 14%), 0 5px 24px 4px rgb(0 0 0 / 12%);
-  width: 500px;
-  min-height: 50px;
+/* left-toolbar background task indicator (above vault) */
+.toolbar-task-item md-progress-circular.toolbar-task-progress {
+  margin: 8px 16px 8px 0;
+  flex: none;
+  pointer-events: none;
+}
+
+.toolbar-task-item .toolbar-task-icon {
+  margin: 0;
+  pointer-events: none;
+}
+
+.toolbar-task-icon-success {
+  color: #a5d6a7 !important;
 }
 
 /* default href */
@@ -130,15 +138,37 @@ md-toast.info .md-toast-content {
   padding: 5px;
 }
 
-/* toolbar */
+/* toolbar - fixed 64px so page headers match devices panel (flex min-height:auto + h1 margins otherwise grow it) */
 .toolbar-content {
+  position: relative;
+  box-sizing: border-box;
   height: 64px;
-  overflow-y: hidden;
+  min-height: 64px;
+  max-height: 64px;
+  flex: none;
+  overflow: hidden;
+}
+
+.toolbar-content h1,
+.toolbar-content .md-title {
+  margin: 0;
+  line-height: 1.25;
+}
+
+/* Loading bar sits on the toolbar bottom edge (does not push page content) */
+.toolbar-content > md-progress-linear {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  margin: 0 !important;
 }
 
 .toolbar-spacer {
   width: 15px;
 }
+
 
 /* button */
 .md-button.md-no-text {
@@ -146,10 +176,105 @@ md-toast.info .md-toast-content {
 }
 
 /* monitoring feed */
+.monitoring-empty {
+  min-height: 280px;
+  padding: 36px 24px 48px;
+  text-align: center;
+  animation: monitoring-empty-fade 0.45s ease-out;
+}
+
+.monitoring-empty-visual {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  margin-bottom: 22px;
+}
+
+.monitoring-empty-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgb(96 125 139 / 22%);
+  background: radial-gradient(circle at 35% 30%, #fff 0%, #eceff1 62%, #cfd8dc 100%);
+}
+
+.monitoring-empty-ring--outer {
+  animation: monitoring-empty-pulse 2.8s ease-out infinite;
+}
+
+.monitoring-empty-ring--inner {
+  inset: 12px;
+  border-color: rgb(96 125 139 / 28%);
+  background: radial-gradient(circle at 40% 35%, #fff 0%, #e8eef1 70%);
+}
+
+.monitoring-empty-icon {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 40px;
+  height: 40px;
+  color: #546e7a;
+  animation: monitoring-empty-float 3.2s ease-in-out infinite;
+}
+
+.monitoring-empty-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgb(38 50 56 / 92%);
+}
+
+.monitoring-empty-text {
+  margin: 0;
+  max-width: 360px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgb(0 0 0 / 54%);
+}
+
+@keyframes monitoring-empty-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes monitoring-empty-pulse {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.08);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.08);
+    opacity: 0;
+  }
+}
+
+@keyframes monitoring-empty-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
 .monitoring-feed {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-top: 8px;
 }
 
 .monitoring-event {
@@ -361,15 +486,313 @@ md-toast.info .md-toast-content {
   font-style: italic;
 }
 
+/* Shared desktop page shell (full-bleed, light grey) */
+.app-page {
+  background: #fafafa;
+  min-height: 0;
+}
+
+.app-page-content {
+  background: #fafafa;
+  min-height: 0;
+  padding: 16px 16px 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.app-page-lead {
+  gap: 18px;
+  padding: 18px 22px;
+  margin-bottom: 12px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 5%),
+    0 8px 24px rgb(55 71 79 / 10%);
+  animation: app-page-lead-in 0.4s ease-out;
+}
+
+.app-page-lead-badge {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  /* primary blue-grey (not accent red) - discrete, matches app chrome */
+  background:
+    linear-gradient(145deg, #90a4ae 0%, #607d8b 55%, #546e7a 100%);
+  box-shadow: 0 4px 12px rgb(96 125 139 / 18%);
+}
+
+.app-page-lead-badge md-icon {
+  color: #fff;
+  width: 28px;
+  height: 28px;
+}
+
+.app-page-lead-img {
+  flex: none;
+  display: block;
+  border-radius: 50%;
+}
+
+.app-page-lead-title {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #263238;
+  line-height: 1.3;
+}
+
+.app-page-lead-text {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #546e7a;
+}
+
+.app-page-panel {
+  display: block;
+  height: auto;
+  overflow: visible;
+  padding: 8px 12px 10px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 5%),
+    0 8px 24px rgb(55 71 79 / 8%);
+  animation: app-page-panel-in 0.45s ease-out 0.05s both;
+}
+
+@keyframes app-page-lead-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes app-page-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* install page extras */
+.install-powered {
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 8px 4px;
+  opacity: 0.55;
+}
+
+.install-powered-logo {
+  display: block;
+  width: 16px;
+  height: 16px;
+  opacity: 0.9;
+}
+
+.install-powered-text {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: #607d8b;
+}
+
+.about-trademark {
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 8px 4px;
+  opacity: 0.55;
+}
+
+.about-trademark-logo {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.about-trademark-text {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: #607d8b;
+}
+
+/* support page actions */
+.support-actions {
+  gap: 12px;
+}
+
+.support-action {
+  gap: 16px;
+  padding: 18px 20px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgb(0 0 0 / 4%);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.support-action-muted {
+  opacity: 0.78;
+}
+
+.support-action-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.support-action-icon md-icon {
+  color: #fff;
+}
+
+.support-action-icon-discord {
+  background: #5865f2;
+}
+
+.support-action-icon-bug {
+  background: #607d8b;
+}
+
+.support-action-icon-video {
+  background: #90a4ae;
+}
+
+.support-action-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #263238;
+  line-height: 1.35;
+}
+
+.support-action-subtitle {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #607d8b;
+}
+
+.support-action-btn {
+  flex: none;
+  margin: 0 !important;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .support-action {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .support-action-btn {
+    align-self: stretch;
+  }
+}
+
+/* vault unlock dialog */
+.vault-unlock-content {
+  padding: 24px 28px 20px !important;
+}
+
+.vault-unlock-lead {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #546e7a;
+}
+
+.vault-unlock-lead-warning {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  color: #6d4c41;
+}
+
+.vault-unlock-actions {
+  margin-top: 8px;
+}
+
+.vault-unlock-codes {
+  font-family: monospace;
+}
+
+/* device error */
+.device-error-page,
+.device-error-content {
+  background: #fafafa;
+}
+
+.device-error-content {
+  padding: 32px 16px;
+}
+
+.device-error-card {
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 6%),
+    0 8px 24px rgb(55 71 79 / 12%);
+  overflow: hidden;
+}
+
+.device-error-art {
+  line-height: 0;
+  background: #000;
+}
+
+.device-error-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: top;
+}
+
+.device-error-body {
+  padding: 24px 32px 28px;
+  text-align: center;
+}
+
+.device-error-title {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #263238;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.device-error-hint {
+  margin: 12px 0 0;
+  max-width: 36em;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #546e7a;
+}
+
+.device-error-action {
+  margin-top: 20px !important;
+  min-width: 200px;
+}
+
 /* device auth */
-.device-auth-page {
-  background: #eceff1;
+.device-auth-page,
+.device-auth-content {
+  background: #fafafa;
 }
 
 .device-auth-content {
-  background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgb(96 125 139 / 12%), transparent 70%),
-    #eceff1;
   padding: 32px 16px;
 }
 
@@ -475,4 +898,362 @@ md-toast.info .md-toast-content {
   color: #455a64;
   font-weight: 600;
   text-decoration: underline;
+}
+
+/********** design-system (copied from cleep) **********/
+button.md-button.cl-button-sm {
+    min-width: 48px !important;
+}
+
+a.md-button.cl-button-sm {
+    min-width: 48px !important;
+    padding-top: 5px !important;
+}
+
+.no-margin {
+    margin: 0px 0px 0px 0px !important;
+}
+
+.no-md-error .md-errors-spacer {
+    min-height: 0px !important;
+    height: 0px !important;
+}
+
+/********** icons (from cleep) **********/
+.icon-white {
+    color: white;
+    fill: white;
+}
+
+.icon-xs {
+    line-height: 16px !important;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    min-height: 16px;
+}
+
+.icon-md {
+    line-height: 32px !important;
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+}
+
+.icon-lg {
+    line-height: 48px !important;
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+}
+
+/********** config-item ***********/
+.config-input-container-no-margin {
+    margin: 0px 0px !important;
+}
+
+/* Keep md-select menus inside the viewport (Material anchors on the trigger) */
+.md-select-menu-container.config-select-menu {
+    max-width: calc(100vw - 16px);
+}
+
+
+/* Row rhythm: config-* replaces md-list-item which had Material min-heights/padding */
+.config-item {
+    padding: 10px 8px;
+    margin-bottom: 2px;
+    box-sizing: border-box;
+}
+
+/* Right-side control in config-progress (next to optional cancel). */
+.config-progress-bar {
+    min-width: 260px;
+    width: 300px;
+    margin-right: 8px;
+}
+
+.config-progress-percent {
+    min-width: 3.25em;
+    margin-right: 8px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: rgba(0, 0, 0, 0.54);
+}
+
+.config-item md-input-container .md-errors-spacer {
+    display: none;
+}
+
+.config-item > form {
+    margin: 0px !important;
+}
+
+.config-item input[type="time"]::-webkit-calendar-picker-indicator {
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 10px 5px;
+}
+
+.config-item-note-none {
+}
+
+.config-item-note-note,
+.config-item-note-info,
+.config-item-note-success,
+.config-item-note-warning,
+.config-item-note-error {
+    margin: 12px 0;
+}
+
+.config-item-note-note {
+    background-color: rgb(226, 227, 229);
+    border: 1px solid rgb(196, 200, 203);
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.config-item-note-info {
+    background-color: rgb(207, 226, 255);
+    border: 1px solid rgb(158, 197, 254);
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.config-item-note-success {
+    background-color: rgb(209, 231, 221);
+    border: 1px solid rgb(163, 207, 187);
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.config-item-note-warning {
+    background-color: rgb(255, 243, 205);
+    border: 1px solid rgb(255, 230, 156);
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.config-item-note-error {
+    background-color: rgb(248, 215, 218);
+    border: 1px solid rgb(241, 174, 181);
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.config-item-section {
+    border-bottom: 1px solid rgb(196, 200, 203);
+    padding: 4px 8px 12px;
+    margin: 20px 0 12px 8px;
+}
+
+.config-item-section div md-icon {
+    margin-right: 5px;
+}
+
+.config-item-section > span {
+    color: rgba(0, 0, 0, 0.54);
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.config-item-section .config-section-action {
+    margin: 0 0 0 8px;
+    flex: none;
+}
+
+.config-list-item {
+    padding: 10px 0px;
+}
+
+/********** config-collapse ***********/
+.config-collapse {
+    margin: 8px 0 16px;
+    border: 1px solid rgb(196, 200, 203);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.config-collapse-header {
+    cursor: pointer;
+    padding: 4px 12px;
+    margin: 0 !important;
+    user-select: none;
+}
+
+.config-collapse .config-item {
+    margin-bottom: 0;
+}
+
+.config-collapse-header:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.config-collapse-disabled .config-collapse-header {
+    cursor: default;
+    opacity: 0.55;
+}
+
+.config-collapse-disabled .config-collapse-header:hover {
+    background-color: transparent;
+}
+
+.config-collapse-chevron {
+    margin-left: 8px;
+    opacity: 0.65;
+}
+
+.config-collapse-body {
+    padding: 4px 12px 12px;
+    border-top: 1px solid rgb(226, 227, 229);
+}
+
+/********** preferences dialog **********/
+.preferences-dialog-content {
+  height: 600px;
+  padding: 0 !important;
+  max-width: none;
+}
+
+.device-details-dialog-content {
+  height: 450px;
+  padding: 0 !important;
+  max-width: none;
+}
+
+.device-details-board {
+  padding: 12px 8px 16px;
+}
+
+.device-details-board-img {
+  display: block;
+  max-width: 100%;
+  max-height: 280px;
+  height: auto;
+  border-radius: 8px;
+}
+
+.device-details-apps {
+  padding: 4px 8px 12px;
+}
+
+.device-details-apps md-chips {
+  display: block;
+}
+
+.device-details-apps .md-chips {
+  box-shadow: none;
+  padding: 0;
+}
+
+.device-details-apps .md-chips md-chip {
+  margin: 0 8px 8px 0;
+  font-size: 13px;
+}
+
+/* Tabs bar flush to dialog edges; keep padding only on panel body */
+.config-tabs-flush {
+  margin: 0 !important;
+}
+
+.config-tabs-flush md-tabs-canvas,
+.config-tabs-flush md-pagination-wrapper {
+  width: 100%;
+}
+
+.config-tabs-flush md-tab-content {
+  padding: 12px 16px 16px;
+}
+
+/********** config-tabs ***********/
+.config-tabs {
+    display: block;
+    margin: 8px 0 16px;
+}
+
+.config-tabs md-pagination-wrapper md-tab-item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.config-tabs md-tab-item cl-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 6px;
+    flex: none;
+    line-height: 1;
+}
+
+.config-tabs md-tab-item md-icon {
+    margin: 0;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    font-size: 18px;
+    line-height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.config-tabs md-tab-content {
+    padding-top: 8px;
+}
+
+/********** config-table ***********/
+.config-table-item {
+    align-items: flex-start;
+}
+
+.config-table-item > config-item-desc {
+    min-width: 160px;
+    max-width: 280px;
+    margin-right: 12px;
+}
+
+.config-table {
+    display: block;
+    min-width: 0;
+    overflow-x: auto;
+}
+
+.config-table-bordered {
+    border: 1px solid rgb(196, 200, 203);
+    border-radius: 8px;
+}
+
+.config-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.config-table th,
+.config-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid rgb(226, 227, 229);
+    vertical-align: top;
+    word-break: break-word;
+}
+
+.config-table thead th {
+    color: rgba(0, 0, 0, 0.54);
+    font-weight: 500;
+    border-bottom: 1px solid rgb(196, 200, 203);
+}
+
+.config-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.config-table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.04);
 }

@@ -8,6 +8,7 @@
         </div>
     </div>
 
+    <!-- Distinctive centered auth card kept as Desktop-custom chrome; fields use config-* where they fit. -->
     <md-content flex class="device-auth-content" layout="column" layout-align="center center">
         <form class="device-auth-card" ng-submit="ctl.login()" layout="column">
             <div class="device-auth-card-header" md-colors="::{ background: 'primary-500' }" layout="column" layout-align="center center">
@@ -20,10 +21,12 @@
                     <div class="device-auth-device">{{ ctl.hostname }}</div>
                 </div>
 
-                <div class="device-auth-error" ng-if="ctl.errorCode === 'INVALID_AUTH'" layout="row" layout-align="start center">
-                    <md-icon md-svg-icon="alert-circle-outline"></md-icon>
-                    <span>Invalid credentials. Please try again.</span>
-                </div>
+                <config-note
+                    ng-if="ctl.errorCode === 'INVALID_AUTH'"
+                    cl-type="error"
+                    cl-icon="alert-circle-outline"
+                    cl-note="Invalid credentials. Please try again."
+                ></config-note>
 
                 <md-input-container class="md-block no-error-spacer">
                     <label>Account</label>
@@ -35,7 +38,6 @@
                     <input ng-model="ctl.password" name="password" type="password" required autocomplete="current-password">
                 </md-input-container>
 
-                <!-- vault enabled: offer to persist credentials -->
                 <md-checkbox
                     class="device-auth-vault-option"
                     ng-if="ctl.vaultEnabled"
@@ -44,7 +46,6 @@
                     Save credentials in the application vault
                 </md-checkbox>
 
-                <!-- vault disabled: invite to enable it -->
                 <div class="device-auth-vault-hint" ng-if="ctl.vaultLoaded && !ctl.vaultEnabled">
                     <md-icon md-svg-icon="shield-key-outline"></md-icon>
                     <span>

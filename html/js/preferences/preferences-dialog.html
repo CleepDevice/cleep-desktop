@@ -1,4 +1,4 @@
-<md-dialog flex="80">
+<md-dialog flex="80" class="preferences-dialog">
 <form>
     <md-toolbar>
         <div class="md-toolbar-tools">
@@ -10,400 +10,239 @@
         </div>
     </md-toolbar>
 
-    <md-dialog-content style="height:600px;">
-        <md-tabs md-selected="ctl.selectedTab" layout-fill>
+    <md-dialog-content class="preferences-dialog-content">
+        <config-tabs cl-selected="ctl.selectedTabId" class="config-tabs-flush">
 
-            <!-- general -->
-            <md-tab label="General" layout-padding>
-                <!-- locale --> 
-                <md-card>
-                    <md-card-title>
-                        <md-card-title-text>
-                            <span class="md-headline">
-                                <md-icon class="rounded-icon" md-svg-icon="web"></md-icon>
-                                Language
-                            </span>
-                        </md-card-title-text>
-                    </md-card-title>
-                    <md-card-content>
-                        <md-list>
-                            <md-list-item>
-                                <md-icon md-svg-icon="chevron-right"></md-icon>
-                                <p>Prefered language</p>
-                                <md-select ng-model="ctl.settings.cleep.locale">
-                                    <md-option value="en">English</md-option>
-                                </md-select>
-                            </md-list-item>
-                        </md-list>
-                    </md-card-content>
-                </md-card>
+            <config-tab cl-id="general" cl-label="General" cl-icon="cog">
+                <config-section cl-title="Language" cl-icon="web"></config-section>
+                <config-select
+                    cl-title="Prefered language"
+                    cl-model="ctl.settings.cleep.locale"
+                    cl-options="ctl.localeOptions"
+                ></config-select>
 
-                <!-- update -->
-                <md-card>
-                    <md-card-title>
-                        <md-card-title-text>
-                            <span class="md-headline">
-                                <md-icon class="rounded-icon" md-svg-icon="update"></md-icon>
-                                Updates
-                            </span>
-                        </md-card-title-text>
-                    </md-card-title>
-                    <md-card-content>
-                        <md-list>
-                            <md-list-item>
-                                <md-icon md-svg-icon="chevron-right"></md-icon>
-                                <p>Auto-update application</p>
-                                <md-switch class="md-secondary" ng-model="ctl.settings.cleep.autoupdate"></md-switch>
-                            </md-list-item>
-                        </md-list>
-                    </md-card-content>
-                </md-card>
+                <config-section cl-title="Updates" cl-icon="update"></config-section>
+                <config-switch
+                    cl-title="Auto-update application"
+                    cl-model="ctl.settings.cleep.autoupdate"
+                ></config-switch>
+            </config-tab>
 
-            </md-tab>
+            <config-tab cl-id="network" cl-label="Network" cl-icon="lan">
+                <config-note
+                    cl-type="note"
+                    cl-note="If you experience network issues, the automatically detected network interface may not be the correct one. In that case, select the appropriate interface from the list below."
+                ></config-note>
+                <config-select
+                    cl-title="Interface"
+                    cl-model="ctl.selectedNetworkInterface"
+                    cl-options="ctl.networkInterfaceOptions"
+                    cl-empty="{{ ctl.networkAutomaticLabel }}"
+                    cl-disabled="ctl.networkApplying"
+                    cl-change="ctl.applyNetworkInterface({value: value})"
+                ></config-select>
+                <config-comment
+                    ng-if="!ctl.networkConfig.activeInterface && ctl.selectedNetworkInterface"
+                    cl-comment="'The selected interface has no usable IPv4 address for device discovery.'"
+                ></config-comment>
+                <config-comment
+                    ng-if="ctl.networkApplying"
+                    cl-comment="'Restarting message bus...'"
+                ></config-comment>
+                <config-comment
+                    ng-if="!ctl.networkApplying && ctl.networkConfig.busConnected"
+                    cl-comment="ctl.networkConfig.peerCount + ' device(s) detected on the message bus.'"
+                ></config-comment>
+                <config-comment
+                    ng-if="!ctl.networkApplying && !ctl.networkConfig.busConnected"
+                    cl-comment="'Message bus is not connected.'"
+                ></config-comment>
+            </config-tab>
 
-            <!-- network -->
-            <md-tab label="Network" layout-padding md-on-select="ctl.loadNetworkConfig()">
-                <md-card>
-                    <md-card-title>
-                        <md-card-title-text>
-                            <span class="md-headline">
-                                <md-icon class="rounded-icon" md-svg-icon="web"></md-icon>
-                                Network interface
-                            </span>
-                        </md-card-title-text>
-                    </md-card-title>
-                    <md-card-content>
-                        <p class="md-body-1">
-                            If you experience network issues, the automatically detected network interface may not be the correct one.
-                            In that case, select the appropriate interface from the list below.
-                        </p>
-                        <md-list>
-                            <md-list-item>
-                                <md-icon md-svg-icon="chevron-right"></md-icon>
-                                <p>Interface</p>
-                                <md-select
-                                    class="md-secondary"
-                                    ng-model="ctl.selectedNetworkInterface"
-                                    ng-change="ctl.applyNetworkInterface()"
-                                    ng-disabled="ctl.networkApplying"
-                                    placeholder="Automatic">
-                                    <md-option value="">Automatic</md-option>
-                                    <md-option
-                                        ng-repeat="iface in ctl.networkInterfaces"
-                                        ng-value="iface.name"
-                                        ng-disabled="!iface.usableForBus">
-                                        {{iface.name}}{{iface.address ? ' — ' + iface.address : ''}}{{iface.onDefaultRoute ? ' (default route)' : ''}}
-                                    </md-option>
-                                </md-select>
-                            </md-list-item>
-                        </md-list>
+            <config-tab cl-id="vault" cl-label="Vault" cl-icon="safe">
+                <config-note
+                    cl-type="note"
+                    cl-note="Optional encrypted store used by CleepDesktop to keep application secrets. Disabled by default. Secrets are never shown in this interface."
+                ></config-note>
+
+                <config-basic
+                    cl-title="'Status'"
+                    cl-icon="ctl.vaultStatusIcon"
+                >
+                    <span>{{ ctl.vaultLockLabel }}</span>
+                </config-basic>
+
+                <div ng-if="!ctl.vaultStatus.enabled" layout="column">
+                    <config-text cl-title="Passphrase (min. 8 characters)" cl-password="true" cl-model="ctl.vaultForm.passphrase" cl-min="8"></config-text>
+                    <config-text cl-title="Confirm passphrase" cl-password="true" cl-model="ctl.vaultForm.passphraseConfirm" cl-min="8"></config-text>
+                    <config-button
+                        cl-title="Enable vault"
+                        cl-btn-label="Enable vault"
+                        cl-btn-style="md-raised md-primary"
+                        cl-disabled="ctl.vaultBusy"
+                        cl-click="ctl.enableVault()"
+                    ></config-button>
+                </div>
+
+                <div ng-if="ctl.vaultStatus.enabled && !ctl.vaultStatus.unlocked && ctl.vaultPanel === 'main'" layout="column">
+                    <config-text
+                        cl-title="Unlock vault"
+                        cl-placeholder="Passphrase"
+                        cl-password="true"
+                        cl-model="ctl.vaultForm.passphrase"
+                        cl-btn-icon="lock-open-variant"
+                        cl-btn-tooltip="Unlock"
+                        cl-btn-style="md-raised md-primary"
+                        cl-disabled="ctl.vaultBusy"
+                        cl-click="ctl.unlockVault()"
+                    ></config-text>
+                    <config-button
+                        cl-title="Forgot passphrase?"
+                        cl-subtitle="Recover access with a recovery code"
+                        cl-btn-label="Recover"
+                        cl-btn-style="md-raised"
+                        cl-click="ctl.openVaultRecover()"
+                    ></config-button>
+                </div>
+
+                <div ng-if="ctl.vaultStatus.enabled && ctl.vaultStatus.unlocked && (ctl.vaultPanel === 'main' || ctl.vaultPanel === 'regen')" layout="column">
+                    <config-buttons cl-title="Vault actions" cl-buttons="ctl.vaultMainButtons" cl-limit="4"></config-buttons>
+                </div>
+
+                <div ng-if="ctl.vaultPanel === 'change'" layout="column">
+                    <config-text cl-title="Current passphrase" cl-password="true" cl-model="ctl.vaultForm.passphrase"></config-text>
+                    <config-text cl-title="New passphrase" cl-password="true" cl-model="ctl.vaultForm.nextPassphrase" cl-min="8"></config-text>
+                    <config-text cl-title="Confirm new passphrase" cl-password="true" cl-model="ctl.vaultForm.passphraseConfirm" cl-min="8"></config-text>
+                    <div layout="row" layout-align="end center">
+                        <md-button ng-click="ctl.cancelVaultPanel()">Cancel</md-button>
+                        <md-button class="md-raised md-primary" ng-click="ctl.changeVaultPassphrase()" ng-disabled="ctl.vaultBusy">Save passphrase</md-button>
+                    </div>
+                </div>
+
+                <div ng-if="ctl.vaultPanel === 'disable'" layout="column">
+                    <config-note cl-type="error" cl-note="Disabling the vault permanently deletes all stored application secrets."></config-note>
+                    <config-text cl-title="Passphrase" cl-password="true" cl-model="ctl.vaultForm.passphrase"></config-text>
+                    <div layout="row" layout-align="end center">
+                        <md-button ng-click="ctl.cancelVaultPanel()">Cancel</md-button>
+                        <md-button class="md-raised md-warn" ng-click="ctl.disableVault()" ng-disabled="ctl.vaultBusy">Disable and wipe</md-button>
+                    </div>
+                </div>
+
+                <div ng-if="ctl.vaultPanel === 'recover'" layout="column">
+                    <config-note cl-type="note" cl-note="Enter one recovery code and choose a new passphrase. The used recovery code is invalidated and a new set is generated."></config-note>
+                    <config-text cl-title="Recovery code" cl-model="ctl.vaultForm.recoveryCode"></config-text>
+                    <config-text cl-title="New passphrase" cl-password="true" cl-model="ctl.vaultForm.nextPassphrase" cl-min="8"></config-text>
+                    <config-text cl-title="Confirm new passphrase" cl-password="true" cl-model="ctl.vaultForm.passphraseConfirm" cl-min="8"></config-text>
+                    <div layout="row" layout-align="end center">
+                        <md-button ng-click="ctl.cancelVaultPanel()">Cancel</md-button>
+                        <md-button class="md-raised md-primary" ng-click="ctl.recoverVault()" ng-disabled="ctl.vaultBusy">Recover vault</md-button>
+                    </div>
+                </div>
+
+                <div ng-if="ctl.vaultStatus.enabled" layout="column">
+                    <config-section cl-title="Recovery codes" cl-icon="key"></config-section>
+                    <config-basic cl-title="'Recovery codes'">
+                        <span>{{ ctl.vaultRecoveryRemainingLabel }}</span>
+                    </config-basic>
+                    <config-button
+                        cl-title="Regenerate recovery codes"
+                        cl-subtitle="Previous codes stop working immediately"
+                        cl-btn-label="Regenerate"
+                        cl-btn-style="md-raised md-primary"
+                        cl-btn-icon="refresh"
+                        cl-disabled="!ctl.vaultStatus.unlocked || ctl.vaultBusy || ctl.vaultPanel === 'regen'"
+                        cl-click="ctl.openVaultRegen()"
+                    ></config-button>
+                    <div ng-if="ctl.vaultPanel === 'regen'" layout="column">
+                        <config-note cl-type="warning" cl-note="Previous recovery codes will stop working immediately. Enter your passphrase to confirm."></config-note>
+                        <config-text
+                            cl-title="Confirm passphrase"
+                            cl-placeholder="Passphrase"
+                            cl-password="true"
+                            cl-model="ctl.vaultForm.passphrase"
+                            cl-btn-icon="refresh"
+                            cl-btn-tooltip="Regenerate"
+                            cl-btn-style="md-raised md-primary"
+                            cl-disabled="ctl.vaultBusy"
+                            cl-click="ctl.regenerateRecoveryCodes()"
+                        ></config-text>
                         <div layout="row" layout-align="end center">
-                            <span class="md-caption" ng-if="!ctl.networkConfig.activeInterface && ctl.selectedNetworkInterface">
-                                The selected interface has no usable IPv4 address for device discovery.
-                            </span>
-                            <span class="md-caption" ng-if="ctl.networkApplying">Restarting message bus…</span>
-                            <span class="md-caption" ng-if="!ctl.networkApplying && ctl.networkConfig.busConnected">
-                                {{ctl.networkConfig.peerCount}} device{{ctl.networkConfig.peerCount === 1 ? '' : 's'}} detected on the message bus.
-                            </span>
-                            <span class="md-caption" ng-if="!ctl.networkApplying && !ctl.networkConfig.busConnected">
-                                Message bus is not connected.
-                            </span>
+                            <md-button ng-click="ctl.cancelVaultPanel()">Cancel</md-button>
                         </div>
-                    </md-card-content>
-                </md-card>
-            </md-tab>
-            
-            <!-- vault -->
-            <md-tab label="Vault" layout-padding md-on-select="ctl.loadVault()">
-                <md-card>
-                    <md-card-title>
-                        <md-card-title-text>
-                            <span class="md-headline">
-                                <md-icon class="rounded-icon" md-svg-icon="safe"></md-icon>
-                                Application vault
-                            </span>
-                        </md-card-title-text>
-                    </md-card-title>
-                    <md-card-content>
-                        <p class="md-body-1">
-                            Optional encrypted store used by CleepDesktop to keep application secrets.
-                            Disabled by default. Secrets are never shown in this interface.
-                            When enabled, CleepDesktop will ask for the passphrase the first time it needs the vault.
-                        </p>
-
-                        <md-list>
-                            <md-list-item class="md-2-line">
-                                <md-icon md-svg-icon="{{ctl.vaultStatus.enabled ? 'lock-open-variant' : 'lock'}}"></md-icon>
-                                <div class="md-list-item-text">
-                                    <h3>Status</h3>
-                                    <p>
-                                        <span ng-if="!ctl.vaultStatus.enabled">Disabled</span>
-                                        <span ng-if="ctl.vaultStatus.enabled && ctl.vaultStatus.unlocked">Enabled — unlocked for this session</span>
-                                        <span ng-if="ctl.vaultStatus.enabled && !ctl.vaultStatus.unlocked">Enabled — locked</span>
-                                        <span ng-if="ctl.vaultStatus.enabled">
-                                            — {{ctl.vaultStatus.recoveryCodesRemaining}} recovery code{{ctl.vaultStatus.recoveryCodesRemaining === 1 ? '' : 's'}} remaining
-                                        </span>
-                                    </p>
-                                </div>
-                            </md-list-item>
-                        </md-list>
-
-                        <!-- enable -->
-                        <div ng-if="!ctl.vaultStatus.enabled" layout="column">
-                            <md-input-container class="md-block">
-                                <label>Passphrase (min. 8 characters)</label>
-                                <input type="password" ng-model="ctl.vaultForm.passphrase" autocomplete="new-password">
-                            </md-input-container>
-                            <md-input-container class="md-block">
-                                <label>Confirm passphrase</label>
-                                <input type="password" ng-model="ctl.vaultForm.passphraseConfirm" autocomplete="new-password">
-                            </md-input-container>
-                            <div layout="row" layout-align="end center">
-                                <md-button class="md-raised md-primary" ng-click="ctl.enableVault()" ng-disabled="ctl.vaultBusy">
-                                    Enable vault
-                                </md-button>
-                            </div>
+                    </div>
+                    <div ng-if="ctl.vaultRecoveryCodes.length" layout="column">
+                        <config-note cl-type="warning" cl-note="Store these codes in a safe place. They are shown only once."></config-note>
+                        <md-input-container class="md-block">
+                            <label>Recovery codes</label>
+                            <textarea ng-model="ctl.vaultRecoveryCodesText" rows="8" readonly class="vault-unlock-codes"></textarea>
+                        </md-input-container>
+                        <div layout="row" layout-align="end center">
+                            <md-button ng-click="ctl.copyRecoveryCodes()" ng-disabled="ctl.vaultCopyingCodes">
+                                <cl-icon cl-icon="content-copy"></cl-icon>
+                                Copy
+                            </md-button>
+                            <md-button class="md-raised md-primary" ng-click="ctl.dismissRecoveryCodes()">I saved these codes</md-button>
                         </div>
+                    </div>
+                </div>
+            </config-tab>
 
-                        <!-- unlock -->
-                        <div ng-if="ctl.vaultStatus.enabled && !ctl.vaultStatus.unlocked && ctl.vaultPanel === 'main'" layout="column">
-                            <md-input-container class="md-block">
-                                <label>Passphrase</label>
-                                <input type="password" ng-model="ctl.vaultForm.passphrase" name="vault-passphrase" autocomplete="off">
-                            </md-input-container>
-                            <div layout="row" layout-align="space-between center">
-                                <md-button ng-click="ctl.vaultPanel = 'recover'">Forgot passphrase?</md-button>
-                                <md-button class="md-raised md-primary" ng-click="ctl.unlockVault()" ng-disabled="ctl.vaultBusy">
-                                    Unlock
-                                </md-button>
-                            </div>
-                        </div>
+            <config-tab cl-id="cache" cl-label="Cache" cl-icon="folder-open">
+                <config-note
+                    cl-type="note"
+                    cl-note="Downloaded installation images and temporary files used by CleepDesktop. You can remove individual files or clear the whole cache."
+                ></config-note>
+                <config-button
+                    cl-title="Clear cache"
+                    cl-btn-label="Clear all"
+                    cl-btn-style="md-raised md-primary"
+                    cl-btn-icon="delete-sweep"
+                    cl-disabled="ctl.cachedFiles.length===0"
+                    cl-click="ctl.purgeCachedFiles()"
+                ></config-button>
+                <config-basic cl-title="'Cache folder'">
+                    <span md-truncate>{{ ctl.cacheDir }}</span>
+                </config-basic>
+                <config-section cl-title="Cached files" cl-icon="file-multiple"></config-section>
+                <config-list
+                    cl-items="ctl.cachedListItems"
+                    cl-empty="No cached files"
+                    cl-empty-icon="folder-open"
+                ></config-list>
+            </config-tab>
 
-                        <!-- unlocked actions -->
-                        <div ng-if="ctl.vaultStatus.enabled && ctl.vaultStatus.unlocked && ctl.vaultPanel === 'main'" layout="column">
-                            <div layout="row" layout-align="end center" layout-wrap>
-                                <md-button ng-click="ctl.lockVault()" ng-disabled="ctl.vaultBusy">Lock</md-button>
-                                <md-button ng-click="ctl.vaultPanel = 'change'">Change passphrase</md-button>
-                                <md-button ng-click="ctl.vaultPanel = 'regen'">Regenerate recovery codes</md-button>
-                                <md-button class="md-warn" ng-click="ctl.vaultPanel = 'disable'">Disable vault</md-button>
-                            </div>
-                        </div>
+            <config-tab cl-id="advanced" cl-label="Advanced" cl-icon="tune">
+                <config-section cl-title="Installation images" cl-icon="download"></config-section>
+                <config-switch
+                    cl-title="Include latest Raspios versions in installer"
+                    cl-model="ctl.settings.cleep.isoraspios"
+                ></config-switch>
+                <config-switch
+                    cl-title="Allow local file iso flashing"
+                    cl-model="ctl.settings.cleep.isolocal"
+                ></config-switch>
 
-                        <!-- regenerate recovery codes -->
-                        <div ng-if="ctl.vaultPanel === 'regen'" layout="column">
-                            <p class="md-body-1">
-                                Previous recovery codes will stop working immediately. Enter your passphrase to confirm.
-                            </p>
-                            <md-input-container class="md-block">
-                                <label>Passphrase</label>
-                                <input type="password" ng-model="ctl.vaultForm.passphrase" autocomplete="off">
-                            </md-input-container>
-                            <div layout="row" layout-align="end center">
-                                <md-button ng-click="ctl.resetVaultForm(); ctl.vaultPanel = 'main'">Cancel</md-button>
-                                <md-button class="md-raised md-primary" ng-click="ctl.regenerateRecoveryCodes()" ng-disabled="ctl.vaultBusy">
-                                    Regenerate
-                                </md-button>
-                            </div>
-                        </div>
+                <config-section cl-title="Debug" cl-icon="bug"></config-section>
+                <config-switch
+                    cl-title="Send CleepDesktop crash report (no personal data). Need app restart"
+                    cl-subtitle="This software is open-source and enabling crash report will help us improving the application"
+                    cl-model="ctl.settings.cleep.crashreport"
+                ></config-switch>
+                <config-switch
+                    cl-title="Enable debug mode"
+                    cl-subtitle="Enabling debug mode add more messages in application log file."
+                    cl-model="ctl.settings.cleep.debug"
+                ></config-switch>
+                <config-button
+                    cl-title="Open logs file"
+                    cl-btn-label="Open"
+                    cl-btn-icon="file"
+                    cl-btn-style="md-raised md-primary"
+                    cl-click="ctl.openElectronLogs()"
+                ></config-button>
+            </config-tab>
 
-                        <!-- change passphrase -->
-                        <div ng-if="ctl.vaultPanel === 'change'" layout="column">
-                            <md-input-container class="md-block">
-                                <label>Current passphrase</label>
-                                <input type="password" ng-model="ctl.vaultForm.passphrase" autocomplete="off">
-                            </md-input-container>
-                            <md-input-container class="md-block">
-                                <label>New passphrase</label>
-                                <input type="password" ng-model="ctl.vaultForm.nextPassphrase" autocomplete="new-password">
-                            </md-input-container>
-                            <md-input-container class="md-block">
-                                <label>Confirm new passphrase</label>
-                                <input type="password" ng-model="ctl.vaultForm.passphraseConfirm" autocomplete="new-password">
-                            </md-input-container>
-                            <div layout="row" layout-align="end center">
-                                <md-button ng-click="ctl.resetVaultForm(); ctl.vaultPanel = 'main'">Cancel</md-button>
-                                <md-button class="md-raised md-primary" ng-click="ctl.changeVaultPassphrase()" ng-disabled="ctl.vaultBusy">
-                                    Save passphrase
-                                </md-button>
-                            </div>
-                        </div>
-
-                        <!-- disable -->
-                        <div ng-if="ctl.vaultPanel === 'disable'" layout="column">
-                            <p class="md-body-1">
-                                Disabling the vault permanently deletes all stored application secrets.
-                            </p>
-                            <md-input-container class="md-block">
-                                <label>Passphrase</label>
-                                <input type="password" ng-model="ctl.vaultForm.passphrase" autocomplete="off">
-                            </md-input-container>
-                            <div layout="row" layout-align="end center">
-                                <md-button ng-click="ctl.resetVaultForm(); ctl.vaultPanel = 'main'">Cancel</md-button>
-                                <md-button class="md-raised md-warn" ng-click="ctl.disableVault()" ng-disabled="ctl.vaultBusy">
-                                    Disable and wipe
-                                </md-button>
-                            </div>
-                        </div>
-
-                        <!-- recover -->
-                        <div ng-if="ctl.vaultPanel === 'recover'" layout="column">
-                            <p class="md-body-1">
-                                Enter one recovery code and choose a new passphrase. The used recovery code is invalidated and a new set is generated.
-                            </p>
-                            <md-input-container class="md-block">
-                                <label>Recovery code</label>
-                                <input ng-model="ctl.vaultForm.recoveryCode" autocomplete="off">
-                            </md-input-container>
-                            <md-input-container class="md-block">
-                                <label>New passphrase</label>
-                                <input type="password" ng-model="ctl.vaultForm.nextPassphrase" autocomplete="new-password">
-                            </md-input-container>
-                            <md-input-container class="md-block">
-                                <label>Confirm new passphrase</label>
-                                <input type="password" ng-model="ctl.vaultForm.passphraseConfirm" autocomplete="new-password">
-                            </md-input-container>
-                            <div layout="row" layout-align="end center">
-                                <md-button ng-click="ctl.resetVaultForm(); ctl.vaultPanel = 'main'">Cancel</md-button>
-                                <md-button class="md-raised md-primary" ng-click="ctl.recoverVault()" ng-disabled="ctl.vaultBusy">
-                                    Recover vault
-                                </md-button>
-                            </div>
-                        </div>
-
-                        <!-- one-time recovery codes display -->
-                        <div ng-if="ctl.vaultRecoveryCodes.length" layout="column">
-                            <h4 class="md-subhead">Recovery codes</h4>
-                            <p class="md-body-1">
-                                Store these codes in a safe place. They are shown only once and can unlock the vault if you lose the passphrase.
-                            </p>
-                            <md-input-container class="md-block">
-                                <label>Recovery codes</label>
-                                <textarea
-                                    ng-model="ctl.vaultRecoveryCodesText"
-                                    rows="8"
-                                    readonly
-                                    style="font-family: monospace;"></textarea>
-                            </md-input-container>
-                            <div layout="row" layout-align="end center">
-                                <md-button ng-click="ctl.copyRecoveryCodes()" ng-disabled="ctl.vaultCopyingCodes">
-                                    <md-icon md-svg-icon="content-copy"></md-icon>
-                                    Copy
-                                </md-button>
-                                <md-button class="md-raised md-primary" ng-click="ctl.dismissRecoveryCodes()">
-                                    I saved these codes
-                                </md-button>
-                            </div>
-                        </div>
-                    </md-card-content>
-                </md-card>
-            </md-tab>
-
-            <!-- cache -->
-            <md-tab label="Cache" layout-padding>
-                <md-card>
-                    <md-card-title>
-                        <md-card-title-text>
-                            <span class="md-headline">
-                                <md-icon class="rounded-icon" md-svg-icon="folder-open"></md-icon>
-                                Downloaded files
-                            </span>
-                        </md-card-title-text>
-                    </md-card-title>
-                    <md-card-content>
-                        <div layout="row" layout-align="center center" ng-if="ctl.cachedFiles.length==0">
-                            <span>No file cached</span>
-                        </div>
-                        <md-list>
-                            <md-list-item ng-repeat="cached in ctl.cachedFiles">
-                                <md-icon md-svg-icon="chevron-right"></md-icon>
-                                <p>{{cached.filename}} ({{cached.filesize | hrBytes}})</p>
-                                <md-icon class="md-secondary" ng-click="ctl.deleteCachedFile(cached.filename)" md-svg-icon="delete"></md-icon>
-                            </md-list-item>
-                        </md-list>
-                        <md-card-actions layout="row" layout-align="end center">
-                            <md-button class="md-raised md-primary" ng-click="ctl.purgeCachedFiles()" ng-disabled="ctl.cachedFiles.length===0">Clear all cached files</md-button>
-                        </md-card-actions>
-                        <div layout="row" layout-align="start center">
-                            <span class="md-caption">Files are stored in {{ctl.cacheDir}}</span>
-                        </div>
-                    </md-card-content>
-                </md-card>
-            </md-tab>
-
-            <!-- advanced -->
-            <md-tab label="Advanced" layout-padding>
-
-                <!-- iso -->
-                <md-card>
-                    <md-card-title>
-                        <md-card-title-text>
-                            <span class="md-headline">
-                                <md-icon class="rounded-icon" md-svg-icon="download"></md-icon>
-                                Installation images
-                            </span>
-                        </md-card-title-text>
-                    </md-card-title>
-                    <md-card-content>
-                        <md-list>
-                            <md-list-item>
-                                <md-icon md-svg-icon="chevron-right"></md-icon>
-                                <p>Include latest Raspios versions in installer</p>
-                                <md-switch class="md-secondary" ng-model="ctl.settings.cleep.isoraspios"></md-switch>
-                            </md-list-item>
-                            <md-list-item>
-                                <md-icon md-svg-icon="chevron-right"></md-icon>
-                                <p>Allow local file iso flashing</p>
-                                <md-switch class="md-secondary" ng-model="ctl.settings.cleep.isolocal"></md-switch>
-                            </md-list-item>
-                        </md-list>
-                    </md-card-content>
-                </md-card>
-
-                <!-- debug/troubleshoot -->
-                <md-card>
-                    <md-card-title>
-                        <md-card-title-text>
-                            <span class="md-headline">
-                                <md-icon class="rounded-icon" md-svg-icon="bug"></md-icon>
-                                Debug
-                            </span>
-                        </md-card-title-text>
-                    </md-card-title>
-                    <md-card-content>
-                        <md-list>
-                            <md-list-item class="md-2-line">
-                                <md-icon md-svg-icon="chevron-right"></md-icon>
-                                <div class="md-list-item-text">
-                                    <h3>Send CleepDesktop crash report (no personal data are sent to our server!). Need app restart</h3>
-                                    <p>This software is open-source and enabling crash report will help us improving the application</p>
-                                </div>
-                                <md-switch class="md-secondary" ng-model="ctl.settings.cleep.crashreport"></md-switch>
-                            </md-list-item>
-                            <md-list-item class="md-2-line">
-                                <md-icon md-svg-icon="chevron-right"></md-icon>
-                                <div class="md-list-item-text">
-                                    <h3>Enable debug mode</h3>
-                                    <p>Enabling debug mode add more messages in application log file. This is useful to report a problem.</p>
-                                </div>
-                                <md-switch class="md-secondary" ng-model="ctl.settings.cleep.debug"></md-switch>
-                            </md-list-item>
-                            <md-list-item ng-click="ctl.openLogs()">
-                                <md-icon md-svg-icon="chevron-right"></md-icon>
-                                <p>Open logs file</p>
-                                <md-button class="md-icon-button md-secondary" ng-click="ctl.openElectronLogs()">
-                                    <md-icon md-svg-icon="file">
-                                        <md-tooltip>Open log file</md-tooltip>
-                                    </md-icon>
-                                </md-button>
-                            </md-list-item>
-                        </md-list>
-                    </md-card-content>
-                </md-card>
-
-            </md-tab>
-
-        </md-tabs>
-
+        </config-tabs>
     </md-dialog-content>
 </form>
 </md-dialog>

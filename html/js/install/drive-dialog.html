@@ -10,49 +10,46 @@
         </div>
     </md-toolbar>
 
-    <md-dialog-content style="height: 400px;">
+    <md-dialog-content style="height: 400px; padding: 8px 16px;">
 
-        <!-- loader -->
         <div layout="column" layout-align="center center" layout-fill layout-margin ng-if="ctl.loading">
-            <div>
-                <md-progress-circular md-mode="indeterminate"></md-progress-circular>
-            </div>
-            <div>
-                <span>Fetching drive list...</span>
-            </div>
+            <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+            <span>Fetching drive list...</span>
         </div>
 
-        <!-- list -->
-        <md-list ng-show="!ctl.loading" style="padding: 0px;">
-            <md-list-item ng-if="ctl.installService.drives.length === 0 && !ctl.installService.flashToolInstalled" class="md-2-line">
-                <md-icon md-svg-icon="alert"></md-icon>
-                <div class="md-list-item-text">
-                    <h3>Flash tool is not installed</h3>
-                    <p>Please go to updates page to install it</p>
-                </div>
-                <md-button ng-click="ctl.gotoUpdates()">
-                    <md-icon md-svg-icon="open-in-app"></md-icon>
-                    Open updates page
-                </md-button>
-            </md-list-item>
-            <md-list-item ng-if="ctl.installService.drives.length === 0 && ctl.installService.flashToolInstalled" class="md-2-line">
-                <md-icon md-svg-icon="alert"></md-icon>
-                <div class="md-list-item-text">
-                    <h3>No drive found</h3>
-                    <p>Please plug SD card or SD card reader then click on refresh button.</p>
-                </div>
-            </md-list-item>
-            <md-list-item ng-repeat="drive in ctl.installService.drives" ng-click="ctl.selectDrive(drive)" class="md-2-line">
-                <md-icon md-svg-icon="usb-flash-drive"></md-icon>
-                <div class="md-list-item-text">
-                    <h3>{{ drive.description | limitTo: 50 }}</h3>
-                    <p>Size {{ drive.size | hrBytes }}</p>
-                </div>
-                <span class="md-secondary">
-                    {{ drive.size < ctl.minSize ? '&gt;4Go drive required' : '' }}
-                </span>
-            </md-list-item>
-        </md-list>
+        <div ng-show="!ctl.loading">
+            <config-note
+                ng-if="ctl.installService.drives.length === 0 && !ctl.installService.flashToolInstalled"
+                cl-type="warning"
+                cl-icon="alert"
+                cl-note="Flash tool is not installed. Please go to updates page to install it."
+            ></config-note>
+            <config-button
+                ng-if="ctl.installService.drives.length === 0 && !ctl.installService.flashToolInstalled"
+                cl-title="Open updates page"
+                cl-btn-label="Open updates page"
+                cl-btn-icon="open-in-app"
+                cl-btn-style="md-raised md-primary"
+                cl-click="ctl.gotoUpdates()"
+            ></config-button>
+
+            <config-note
+                ng-if="ctl.installService.drives.length === 0 && ctl.installService.flashToolInstalled"
+                cl-type="warning"
+                cl-icon="alert"
+                cl-note="No drive found. Please plug SD card or SD card reader then click on refresh button."
+            ></config-note>
+
+            <config-button
+                ng-repeat="drive in ctl.installService.drives"
+                cl-title="{{ drive.description | limitTo: 50 }}"
+                cl-subtitle="Size {{ drive.size | hrBytes }}{{ drive.size < ctl.minSize ? ' - >4Go drive required' : '' }}"
+                cl-icon="usb-flash-drive"
+                cl-btn-icon="check"
+                cl-btn-style="md-raised md-primary"
+                cl-click="ctl.selectDrive(drive)"
+            ></config-button>
+        </div>
 
     </md-dialog-content>
 
@@ -64,4 +61,3 @@
     </md-dialog-actions>
 
 </md-dialog>
-    

@@ -3,6 +3,11 @@
 ## [Unreleased]
 
 ### Fixed
+- Device details: Raspberry Pi revision codes + board images (incl. Pi 500+, CM5 16GB, Pi5 1GB)
+- Support page: warmer layout (lead + action cards); Slack → Discord; drop forum duplicate
+- Toolbar headers stay 64px (match devices panel; flex + h1 margins no longer stretch them)
+- Help page: sections + grey note cards (Cleep image on intro); config-note supports cl-img-src
+- Load config/ui component scripts (and support controller) so Desktop pages render after design-system migration
 - Offline devices with auth always show ``cellphone-off`` (auth lock no longer hides the disconnected state)
 - Refresh peer hostname (and related identity fields) on reconnect; apply live ``parameters.hostname.update``
 - Do not prompt vault unlock at startup when caching gateway/refresh secrets from the bus (queue until unlock / user action)

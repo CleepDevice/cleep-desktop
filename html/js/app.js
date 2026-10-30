@@ -1,14 +1,14 @@
 var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'ui.router', 'ngSanitize', 'ngWebSocket']);
 
 Cleep
-.controller('cleepController', ['$scope', '$rootScope', '$state', 'tasksPanelService', 'modalService',
+.controller('cleepController', ['$scope', '$rootScope', '$state', 'toolbarTaskService', 'modalService',
                                 '$timeout', '$transitions', 'settingsService', 'devicesService',
                                 'updateService', 'installService', 'monitoringService', 'downloadService',
                                 'electronService',
-function($scope, $rootScope, $state, tasksPanelService, modalService, $timeout, $transitions, settings,
+function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $transitions, settings,
         devicesService, updateService, installService, monitoringService, downloadService, electron) {
     var self = this;
-    self.taskRestartRequiredPanelId = null;
+    self.toolbarTask = toolbarTask;
     self.selectedToolbarItem = null;
     self.toolbarCollapsed = true;
     self._vaultUnlockDialog = null;
@@ -103,7 +103,7 @@ function($scope, $rootScope, $state, tasksPanelService, modalService, $timeout, 
     };
 
     self.$onInit = function() {
-        // init services (idempotent — safe if called again)
+        // init services (idempotent - safe if called again)
         downloadService.init();
         monitoringService.init();
         updateService.init();
@@ -188,39 +188,32 @@ function($scope, $rootScope, $state, tasksPanelService, modalService, $timeout, 
     // toolbar
     $transitions.onEnter({}, (_trans, state) => {
         self.selectedToolbarItem = state.name;
+        toolbarTask.clearForPage(state.name);
     });
 
     self.toggleToolbar = function() {
         self.toolbarCollapsed = !self.toolbarCollapsed;
     };
 
-    // application restart
+    self.onToolbarTaskClick = function() {
+        toolbarTask.activate();
+    };
+
+    // application restart (from Updates page / menu)
     $rootScope.$on('restartrequired', () => {
-        if (!self.taskRestartRequiredPanelId) {
-            self.taskRestartRequiredPanelId = tasksPanelService.addPanel(
-                'Please restart application to apply changes.', 
-                {
-                    onAction: self.restartApplication,
-                    tooltip: 'Restart now!',
-                    icon: 'restart'
-                },
-                {
-                    onClose: self.onCloseRestartRequiredTaskPanel,
-                    disabled: false
-                },
-                false
-            );
-        }
+        updateService.restartRequired = true;
+        toolbarTask.set('update', {
+            page: 'updates',
+            label: 'Restart needed',
+            title: 'Please restart CleepDesktop to apply updates',
+            status: 'action',
+            percent: 100,
+        });
     });
 
     $rootScope.$on('restart', function(_event, _data) {
         self.restartApplication();
     });
-
-    self.onCloseRestartRequiredTaskPanel = function() {
-        tasksPanelService.removePanel(self.taskRestartRequiredPanelId);
-        self.taskRestartRequiredPanelId = null;
-    };
 
     self.restartApplication = function() {
         electron.updater.quitAndInstall();

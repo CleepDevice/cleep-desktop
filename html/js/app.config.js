@@ -42,8 +42,11 @@
         })
         .state('support', {
             url: '/support',
+            controller: 'supportController',
+            controllerAs: 'ctl',
             templateUrl: 'js/support/support.html'
         })
+
         .state('updates', {
             url: '/updates',
             controller: 'updatesController',
@@ -103,6 +106,12 @@
             controller: 'monitoringController',
             controllerAs: 'ctl',
             templateUrl: 'js/monitoring/monitoring.html'
+        })
+        .state('devPlayground', {
+            url: '/dev/playground',
+            controller: 'devPlaygroundController',
+            controllerAs: 'ctl',
+            templateUrl: 'js/dev/dev-playground.html'
         });
 
     $urlRouterProvider.otherwise('/');

@@ -75,7 +75,7 @@ angular
     }
 
     /**
-     * Coalesced subscribe — one digest per animation frame.
+     * Coalesced subscribe - one digest per animation frame.
      * @param {function(Function): function} subscribe
      * @param {{ mode?: 'latest'|'batch', keyFromArgs?: function(Array): string }} [defaultOptions]
      */
