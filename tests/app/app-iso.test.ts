@@ -291,7 +291,8 @@ describe('AppIso', () => {
       'iso-install-progress',
       expect.objectContaining({
         terminated: true,
-        error: 'Flash failed with exit code 42',
+        // User-facing copy; raw exit code stays in main-process logs.
+        error: 'SD card write failed',
       }),
     );
   });

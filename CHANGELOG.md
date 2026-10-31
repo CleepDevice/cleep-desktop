@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+- Bump Electron 44.7 → 45.2 and refresh npm deps (Sentry 8.3, electron-builder, vitest, axios, …)
+
 ### Fixed
 - Wire Sentry for both Electron main and AngularJS renderer (opt-in crash reports)
 - Apply live ``parameters.auth.update``: refresh device lock icon without reconnect; defer login while the device page stays open
