@@ -43,9 +43,6 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
     };
 
     self.vaultStatusIconClass = function() {
-        if (self.vaultStatus.enabled && !self.vaultStatus.unlocked) {
-            return 'md-accent';
-        }
         return 'white-icon';
     };
 

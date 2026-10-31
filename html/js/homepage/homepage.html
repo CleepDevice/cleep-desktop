@@ -5,7 +5,7 @@
         <div class="toolbar-spacer"></div>
         <div layout="row" layout-align="left center">
             <img src="images/cleep-3d.png" style="width:30px; height:30px;"/>
-            <h1 style="padding-left:5px;" class="md-title">CleepDesktop</h1>
+            <h1 style="padding-left:5px;" class="md-title">Welcome to CleepDesktop</h1>
         </div>
         <md-progress-linear
             ng-if="ctl.loading || (ctl.newsService.syncing && !ctl.newsService.articles.length)"
@@ -15,16 +15,6 @@
     </div>
 
     <md-content flex class="app-page-content">
-        <div class="app-page-lead" layout="row" layout-align="start center">
-            <img src="images/cleep-3d.png" alt="" class="app-page-lead-img" width="64" height="64">
-            <div flex layout="column">
-                <div class="app-page-lead-title">Welcome to CleepDesktop</div>
-                <p class="app-page-lead-text">
-                    News, tutorials and latest messages from the Cleep community will land here.
-                </p>
-            </div>
-        </div>
-
         <div class="app-page-panel">
             <config-section cl-title="News" cl-icon="bullhorn"></config-section>
             <config-note
