@@ -252,6 +252,15 @@
     </md-content>
 
     <!-- system -->
+    <!-- Sentry renderer (bundled); init only when crash reports are enabled in main. -->
+    <script src="js/libs/sentry-renderer.js"></script>
+    <script>
+        (function () {
+            if (window.cleep && window.cleep.crashReportEnabled && window.CleepSentry && typeof window.CleepSentry.initSentry === 'function') {
+                window.CleepSentry.initSentry();
+            }
+        })();
+    </script>
     <script src="js/libs/jquery.min.js"></script>
     <script src="js/libs/angular.min.js"></script>
     <script src="js/libs/angular-animate.min.js"></script>

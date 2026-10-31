@@ -50,7 +50,13 @@ describe('AppContext', () => {
 
     (appContext as unknown as { configureCrashReport: () => void }).configureCrashReport();
     expect(appContext.crashReportEnabled).toBe(true);
-    expect(sentry.init).toHaveBeenCalled();
+    expect(sentry.init).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dsn: expect.stringContaining('ingest.sentry.io'),
+        release: expect.stringMatching(/^cleep-desktop@/),
+        environment: 'production',
+      }),
+    );
     appSettings.set('cleep.crashreport', false);
   });
 });

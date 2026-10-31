@@ -121,3 +121,22 @@ angular.module('Cleep').config(function($mdAriaProvider) {
     // Globally disables all ARIA warnings.
     $mdAriaProvider.disableWarnings();
 });
+
+/**
+ * Forward AngularJS exceptions to Sentry when crash reports are enabled.
+ */
+angular.module('Cleep').factory('$exceptionHandler', [function() {
+    return function cleepExceptionHandler(exception, cause) {
+        if (typeof console !== 'undefined' && console.error) {
+            console.error(exception, cause);
+        }
+        if (
+            window.cleep
+            && window.cleep.crashReportEnabled
+            && window.CleepSentry
+            && typeof window.CleepSentry.captureException === 'function'
+        ) {
+            window.CleepSentry.captureException(exception);
+        }
+    };
+}]);

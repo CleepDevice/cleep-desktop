@@ -20,6 +20,7 @@ describe('app-window', () => {
       contextIsolation: true,
       sandbox: true,
       webviewTag: true,
+      additionalArguments: [],
     });
     expect(windowOptions?.webPreferences?.preload).toMatch(/preload\.js$/);
     expect(window.loadURL).toHaveBeenCalled();

@@ -6,6 +6,8 @@ dist/
 build/
 packaging/
 node_modules/
+html/js/libs/sentry-renderer.js
+
 core/*.pyc
 core/libs/*.pyc
 .vscode

@@ -55,7 +55,11 @@ const ipc = {
   },
 };
 
+/** Set from BrowserWindow webPreferences.additionalArguments when crash reports are on. */
+const crashReportEnabled = process.argv.includes('--cleep-crash-report');
+
 const cleepBridge = {
+  crashReportEnabled,
   ipc,
   api: createCleepApi(ipc),
 };

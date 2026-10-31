@@ -25,6 +25,8 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
       contextIsolation: true,
       sandbox: true,
       allowRunningInsecureContent: true,
+      // Read by preload to gate Sentry renderer init (main already decided at configure()).
+      additionalArguments: appContext.crashReportEnabled ? ['--cleep-crash-report'] : [],
     },
     width: 1024,
     height: 600,

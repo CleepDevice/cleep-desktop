@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Fixed
+- Wire Sentry for both Electron main and AngularJS renderer (opt-in crash reports)
 - Apply live ``parameters.auth.update``: refresh device lock icon without reconnect; defer login while the device page stays open
 - Device details: Raspberry Pi revision codes + board images (incl. Pi 500+, CM5 16GB, Pi5 1GB)
 - Support page: warmer layout (lead + action cards); Slack → Discord; drop forum duplicate
