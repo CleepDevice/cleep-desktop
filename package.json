@@ -34,7 +34,6 @@
     "author": "Tanguy BONNEAU <tanguy.bonneau@gmail.com>",
     "license": "MIT",
     "devDependencies": {
-        "@electron/notarize": "^3.1.2",
         "@playwright/test": "^1.64.1",
         "@types/node": "^26.6.6",
         "@types/node-wifi": "^2.0.2",

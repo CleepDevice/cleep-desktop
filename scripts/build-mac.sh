@@ -45,6 +45,8 @@ echo "Copying release files..."
 echo "------------------------"
 cp -a build/. "$CLEEPDESKTOPPATH/"
 cp -a resources "$CLEEPDESKTOPPATH/"
+# entitlements + Info.plist (electron-builder mac.extendInfo / entitlements paths)
+cp -a config "$CLEEPDESKTOPPATH/"
 cp -a LICENSE.txt "$CLEEPDESKTOPPATH/"
 cp -a README.md "$CLEEPDESKTOPPATH/"
 echo "Done"

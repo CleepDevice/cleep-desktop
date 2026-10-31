@@ -11,6 +11,11 @@ During first application launch, CleepDesktop will download necessary tools auto
 
 > For linux users it is advised of installing [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) to properly handle your AppImages.
 
+> **macOS:** builds are not Apple-notarized yet. After installing, if Gatekeeper says the app is "damaged", clear the quarantine flag then reopen:
+> ```bash
+> xattr -cr /Applications/CleepDesktop.app
+> ```
+
 ## How it works
 
 CleepDesktop discovers Cleep devices on user network and add quick access buttons to configure it.

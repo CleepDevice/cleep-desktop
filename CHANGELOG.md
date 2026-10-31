@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Changed
+- Drop legacy ``config/notarize.js`` / ``@electron/notarize``; rely on electron-builder built-in notarytool (``APPLE_ID`` / API key env vars) when Developer ID secrets exist
 - Bump Electron 44.7 → 45.2 and refresh npm deps (Sentry 8.3, electron-builder, vitest, axios, …)
 
 ### Fixed
