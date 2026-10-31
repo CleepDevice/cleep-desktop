@@ -24,7 +24,8 @@ function($state, logger, toolbarTask, settingsService, electron, toast, ipcLifec
     self.wifiInfo = {
         retrieved: false,
         hasWifi: true,
-        networks: []
+        networks: [],
+        currentSsid: '',
     };
     self.isosInfo = {
         retrieved: false,
@@ -152,11 +153,17 @@ function($state, logger, toolbarTask, settingsService, electron, toast, ipcLifec
         }
 
         return electron.install.refreshWifiNetworks()
-            .then((networks) => {
+            .then((data) => {
+                var networks = Array.isArray(data) ? data : ((data && data.networks) || []);
+                var currentSsid = Array.isArray(data) ? '' : ((data && data.currentSsid) || '');
                 self.fillArray(self.wifiInfo.networks, networks);
+                self.wifiInfo.currentSsid = currentSsid || '';
                 self.wifiInfo.retrieved = true;
             })
             .catch(() => {
+                self.fillArray(self.wifiInfo.networks, []);
+                self.wifiInfo.currentSsid = '';
+                self.wifiInfo.retrieved = true;
                 toast.error('Unable to refresh wifi networks');
             });
     };

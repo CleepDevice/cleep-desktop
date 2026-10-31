@@ -20,7 +20,7 @@ import type { CleebusMessageResponse, CleepbusPeerInfos } from '../cleepbus/clee
 import type { Drive } from '../flash-tool/flashtool.interface';
 import type { RaspiosLatestRelease } from '../iso/raspios';
 import type { IIsoReleaseInfo } from '../iso/utils';
-import type { WifiNetwork } from '../iso/wifi';
+import type { WifiNetwork, WifiScanResult } from '../iso/wifi';
 import type { ListedNetworkInterface } from '../pyre/iface';
 import type { IpcResult } from './ipc-result';
 
@@ -156,7 +156,7 @@ export type InvokeContract = {
   'iso-get-isos': { request: boolean | void; response: IpcResult<IsoReleasesPayload> };
   'iso-get-wifi-networks': { request: void; response: IpcResult<WifiNetwork[]> };
   'iso-has-wifi': { request: void; response: IpcResult<boolean> };
-  'iso-refresh-wifi-networks': { request: void; response: IpcResult<WifiNetwork[]> };
+  'iso-refresh-wifi-networks': { request: void; response: IpcResult<WifiScanResult> };
   'open-dialog': { request: OpenDialogSyncOptions; response: IpcResult<string[]> };
   'settings-filepath': { request: void; response: IpcResult<string> };
   'settings-get': { request: KeyPath; response: IpcResult<SettingsValue> };

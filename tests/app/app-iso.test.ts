@@ -6,9 +6,9 @@ import * as drivelist from 'drivelist';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotInstalledException } from '../../src/exceptions/not-installed.exception';
 import { appSettings } from '../../src/app-settings';
-import * as NodeWifi from 'node-wifi';
 import { ipcHandleHandlers, ipcOnHandlers } from '../setup';
 import type { InstallData } from '../../src/app-iso';
+import { Wifi } from '../../src/iso/wifi';
 import { RPI_IMAGER_DIR } from '../../src/flash-tool/constants';
 import { mockProcessPlatform } from '../helpers/mock-platform';
 
@@ -92,25 +92,29 @@ describe('AppIso', () => {
   });
 
   it('refreshWifiNetworks populates networks', async () => {
-    vi.mocked(NodeWifi.scan).mockImplementation((callback) => {
-      callback(null, [
+    const spy = vi.spyOn(Wifi.prototype, 'refreshNetworks').mockResolvedValue({
+      networks: [
         {
           ssid: 'HomeWifi',
-          bssid: 'aa',
           mac: 'aa:bb',
           channel: 1,
           frequency: 2412,
-          signal_level: -40,
+          signalLevel: -40,
           quality: 80,
           security: 'WPA2',
-          security_flags: [],
-          mode: 'Unknown',
         },
-      ]);
+      ],
+      currentSsid: null,
     });
 
-    await appIso.refreshWifiNetworks();
-    expect(appIso.getWifiNetworks()[0].ssid).toBe('HomeWifi');
+    try {
+      const result = await appIso.refreshWifiNetworks();
+      expect(result.networks[0].ssid).toBe('HomeWifi');
+      expect(result.currentSsid).toBeNull();
+      expect(appIso.getWifiNetworks()[0].ssid).toBe('HomeWifi');
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('getLatestRaspios returns undefined when disabled in settings', async () => {
@@ -371,7 +375,10 @@ describe('AppIso', () => {
     });
     await expect(ipcHandleHandlers.get('iso-refresh-wifi-networks')({})).resolves.toMatchObject({
       ok: true,
-      data: expect.any(Array),
+      data: expect.objectContaining({
+        networks: expect.any(Array),
+        currentSsid: null,
+      }),
     });
     await expect(ipcHandleHandlers.get('iso-get-wifi-networks')({})).resolves.toMatchObject({
       ok: true,
@@ -405,14 +412,19 @@ describe('AppIso', () => {
     });
   });
 
-  it('iso-has-wifi returns false when adapter scan fails', async () => {
-    vi.mocked(NodeWifi.scan).mockImplementationOnce((callback) => {
-      callback(new Error('no adapter'), []);
-    });
-    await expect(ipcHandleHandlers.get('iso-has-wifi')({})).resolves.toEqual({
-      ok: true,
-      data: false,
-    });
+  it('iso-has-wifi returns false when no wifi adapter is present', async () => {
+    mockProcessPlatform('linux');
+    const readdirSpy = vi.spyOn(fs.promises, 'readdir').mockResolvedValue(['lo', 'eth0'] as never);
+    const accessSpy = vi.spyOn(fs.promises, 'access').mockRejectedValue(new Error('missing'));
+    try {
+      await expect(ipcHandleHandlers.get('iso-has-wifi')({})).resolves.toEqual({
+        ok: true,
+        data: false,
+      });
+    } finally {
+      readdirSpy.mockRestore();
+      accessSpy.mockRestore();
+    }
   });
 
   it('downloadIso reports progress and caches file', async () => {

@@ -200,11 +200,3 @@ vi.mock('@sentry/electron/main', () => ({
 vi.mock('detect-port', () => ({
   default: vi.fn(async () => 5610),
 }));
-
-vi.mock('node-wifi', () => ({
-  init: vi.fn(),
-  scan: vi.fn((callback: (error: Error | null, networks: unknown[]) => void) => callback(null, [])),
-  getCurrentConnections: vi.fn((callback: (error: Error | null, connections: unknown[]) => void) =>
-    callback(null, []),
-  ),
-}));

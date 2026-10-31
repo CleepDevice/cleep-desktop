@@ -11,48 +11,55 @@
     </md-toolbar>
 
     <md-dialog-content style="height:350px; padding: 8px 16px;">
-        <config-note
-            ng-if="!ctl.installService.wifiInfo.hasWifi"
-            cl-type="warning"
-            cl-icon="alert"
-            cl-note="No wifi adapter detected. You can still fill wifi parameters manually."
-        ></config-note>
+        <div layout="column" layout-align="center center" layout-fill layout-margin ng-if="ctl.scanning">
+            <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+            <span style="margin-top: 12px;">Searching for wifi networks...</span>
+        </div>
 
-        <config-note
-            ng-if="ctl.installService.wifiInfo.hasWifi && ctl.network === 1 && ctl.installService.wifiInfo.retrieved && ctl.installService.wifiInfo.networks.length === 0"
-            cl-type="warning"
-            cl-icon="alert"
-            cl-note="No wifi network found nearby. Enter SSID and password manually."
-        ></config-note>
+        <div ng-show="!ctl.scanning">
+            <config-note
+                ng-if="!ctl.installService.wifiInfo.hasWifi"
+                cl-type="warning"
+                cl-icon="alert"
+                cl-note="No wifi adapter detected. You can still fill wifi parameters manually."
+            ></config-note>
 
-        <config-select
-            ng-if="ctl.useNetworkSelector()"
-            cl-title="Wifi network"
-            cl-model="ctl.selectedWifiSsid"
-            cl-options="ctl.wifiNetworkOptions"
-            cl-empty="None"
-            cl-change="ctl.onWifiNetworkChange()"
-        ></config-select>
+            <config-note
+                ng-if="ctl.installService.wifiInfo.hasWifi && ctl.network === 1 && ctl.installService.wifiInfo.retrieved && ctl.installService.wifiInfo.networks.length === 0"
+                cl-type="warning"
+                cl-icon="alert"
+                cl-note="{{ ctl.emptyScanNote }}"
+            ></config-note>
 
-        <config-text
-            ng-if="ctl.useManualWifiFields()"
-            cl-title="Wifi network name"
-            cl-model="ctl.wifiNetworkName"
-        ></config-text>
+            <config-select
+                ng-if="ctl.useNetworkSelector()"
+                cl-title="Wifi network"
+                cl-model="ctl.selectedWifiSsid"
+                cl-options="ctl.wifiNetworkOptions"
+                cl-empty="None"
+                cl-change="ctl.onWifiNetworkChange()"
+            ></config-select>
 
-        <config-select
-            ng-if="ctl.useManualWifiFields()"
-            cl-title="Network security"
-            cl-model="ctl.wifiNetworkSecurity"
-            cl-options="ctl.securityOptions"
-        ></config-select>
+            <config-text
+                ng-if="ctl.useManualWifiFields()"
+                cl-title="Wifi network name"
+                cl-model="ctl.wifiNetworkName"
+            ></config-text>
 
-        <config-text
-            cl-title="Password"
-            cl-password="true"
-            cl-model="ctl.wifiPassword"
-            cl-disabled="ctl.isUnsecured()"
-        ></config-text>
+            <config-select
+                ng-if="ctl.useManualWifiFields()"
+                cl-title="Network security"
+                cl-model="ctl.wifiNetworkSecurity"
+                cl-options="ctl.securityOptions"
+            ></config-select>
+
+            <config-text
+                cl-title="Password"
+                cl-password="true"
+                cl-model="ctl.wifiPassword"
+                cl-disabled="ctl.isUnsecured()"
+            ></config-text>
+        </div>
     </md-dialog-content>
 
     <md-dialog-actions>

@@ -3,10 +3,15 @@
 ## [Unreleased]
 
 ### Changed
+- Replace ``node-wifi`` with direct OS wifi scan (``nmcli`` / ``netsh``; macOS current SSID via ``networksetup``)
+- Windows wifi scan: UTF-8 via ``chcp 65001`` + FR/EN ``netsh`` field labels
+- macOS wifi scan: try ``airport -s``, fall back to ``system_profiler SPAirPortDataType``; spinner while scanning
+- Host wifi integration tests on CI matrix (soft checks against real OS tools)
 - Drop legacy ``config/notarize.js`` / ``@electron/notarize``; rely on electron-builder built-in notarytool (``APPLE_ID`` / API key env vars) when Developer ID secrets exist
 - Bump Electron 44.7 → 45.2 and refresh npm deps (Sentry 8.3, electron-builder, vitest, axios, …)
 
 ### Fixed
+- Wifi install dialog: hide network dropdown when scan is empty; prefill SSID from current association; clearer note for Win11 Location permission / macOS scan limits
 - Wire Sentry for both Electron main and AngularJS renderer (opt-in crash reports)
 - Apply live ``parameters.auth.update``: refresh device lock icon without reconnect; defer login while the device page stays open
 - Device details: Raspberry Pi revision codes + board images (incl. Pi 500+, CM5 16GB, Pi5 1GB)

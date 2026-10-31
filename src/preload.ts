@@ -60,6 +60,8 @@ const crashReportEnabled = process.argv.includes('--cleep-crash-report');
 
 const cleepBridge = {
   crashReportEnabled,
+  /** Host OS (`process.platform`): win32 | darwin | linux | … */
+  platform: process.platform,
   ipc,
   api: createCleepApi(ipc),
 };

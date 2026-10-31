@@ -65,7 +65,7 @@ function humanizeFlashError(raw: string): string {
     lower.includes('access denied') ||
     lower.includes('permission denied') ||
     lower.includes('not authorized') ||
-    lower.includes('authentication') && lower.includes('fail') ||
+    (lower.includes('authentication') && lower.includes('fail')) ||
     lower.includes('transient service unit') ||
     lower.includes('no new privileges') ||
     lower.includes('setuid')
@@ -121,11 +121,18 @@ class AppIso {
     this.addIpcs();
   }
 
-  public async refreshWifiNetworks() {
+  public async refreshWifiNetworks(): Promise<{
+    networks: WifiNetwork[];
+    currentSsid: string | null;
+  }> {
     try {
-      this.wifiNetworks = await this.wifi.refreshNetworks();
+      const result = await this.wifi.refreshNetworks();
+      this.wifiNetworks = result.networks;
+      return result;
     } catch (error) {
       appLogger.error('Unable to get wifi networks', { error });
+      this.wifiNetworks = [];
+      return { networks: [], currentSsid: null };
     }
   }
 
@@ -142,11 +149,7 @@ class AppIso {
     }
 
     const now = Date.now();
-    if (
-      !force &&
-      this.isosReleases.raspios &&
-      this.lastRaspiosUpdate + this.RASPIOS_CACHE_DURATION_MS > now
-    ) {
+    if (!force && this.isosReleases.raspios && this.lastRaspiosUpdate + this.RASPIOS_CACHE_DURATION_MS > now) {
       return this.isosReleases.raspios;
     }
 
@@ -379,9 +382,7 @@ class AppIso {
         payloads: payloads.map((p) => p.filename),
       });
     } catch (error) {
-      throw new Error(
-        `Error writing first-run script ${(error as Error)?.message || 'unknown error'}`,
-      );
+      throw new Error(`Error writing first-run script ${(error as Error)?.message || 'unknown error'}`);
     }
   }
 
@@ -427,8 +428,7 @@ class AppIso {
 
     const failed = exitCode !== 0 || Boolean(this.currentInstall.flashError);
     const rawError =
-      this.currentInstall.flashError ||
-      (exitCode !== 0 ? `Flash failed with exit code ${exitCode}` : '');
+      this.currentInstall.flashError || (exitCode !== 0 ? `Flash failed with exit code ${exitCode}` : '');
     const error = rawError ? humanizeFlashError(rawError) : '';
 
     const installProgress: InstallProgress = {
@@ -502,8 +502,7 @@ class AppIso {
 
     handleInvoke('iso-refresh-wifi-networks', async () => {
       try {
-        await this.refreshWifiNetworks();
-        return ipcOk(this.getWifiNetworks());
+        return ipcOk(await this.refreshWifiNetworks());
       } catch (error) {
         appLogger.error('Unable to refresh wifi networks', { error });
         return ipcErr('WIFI_SCAN_FAILED', 'Unable to refresh wifi networks');

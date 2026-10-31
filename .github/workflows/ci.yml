@@ -52,7 +52,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Unit tests
+      # Unit + host integration (tests/integration): real OS tools when present
+      # (nmcli / netsh / airport|system_profiler). Soft asserts — no WiFi radio on CI is OK.
+      - name: Unit and host integration tests
         run: npm test
 
       - name: Compile
