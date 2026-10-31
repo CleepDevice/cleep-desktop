@@ -200,6 +200,11 @@ angular
         purgeFiles: bindInvoke(api.cache.purgeFiles),
     };
 
+    self.news = {
+        getCache: bindInvoke(api.news && api.news.getCache),
+        saveCache: bindInvoke(api.news && api.news.saveCache),
+    };
+
     self.devices = {
         getUiState: bindInvoke(api.devices.getUiState),
         deleteDevice: bindInvoke(api.devices.deleteDevice),

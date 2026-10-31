@@ -6,6 +6,7 @@
 import type { IAuthEvent } from '../app-auth';
 import type { InstallData } from '../app-iso';
 import type { LoggerMessage } from '../app-logger';
+import type { NewsCacheIncomingArticle } from '../app-news-cache';
 import type { KeyPath, KeyValue, SettingsObject } from '../app-settings';
 import type { OpenDialogSyncOptions } from 'electron';
 import type {
@@ -60,6 +61,11 @@ export function createCleepApi(ipc: IpcPrimitives) {
       getInfos: () => ipc.invoke('cache-get-infos'),
       deleteFile: (filename: string) => ipc.invoke('cache-delete-file', filename),
       purgeFiles: () => ipc.invoke('cache-purge-files'),
+    },
+
+    news: {
+      getCache: () => ipc.invoke('news-cache-get'),
+      saveCache: (articles: NewsCacheIncomingArticle[]) => ipc.invoke('news-cache-save', articles),
     },
 
     devices: {

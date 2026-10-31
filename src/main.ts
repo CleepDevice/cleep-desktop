@@ -13,7 +13,11 @@ import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
 import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
 import { appVault } from './app-vault';
+import { appNewsCache } from './app-news-cache';
 import { handleInvoke, ipcOk, onRendererSend, sendToRenderer } from './ipc/ipc-main';
+
+// Register news-cache IPC handlers (singleton side effect).
+void appNewsCache;
 
 const isE2e = process.env.CLEEPDESKTOP_E2E === '1';
 

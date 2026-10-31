@@ -1,5 +1,5 @@
 
-<div layout="column" layout-fill class="app-page">
+<div layout="column" layout-fill class="app-page" ng-controller="homepageController as ctl">
 
     <div md-colors="::{ background: 'primary-500' }" class="toolbar-content" layout="row" layout-align="start center">
         <div class="toolbar-spacer"></div>
@@ -7,6 +7,11 @@
             <img src="images/cleep-3d.png" style="width:30px; height:30px;"/>
             <h1 style="padding-left:5px;" class="md-title">CleepDesktop</h1>
         </div>
+        <md-progress-linear
+            ng-if="ctl.loading || (ctl.newsService.syncing && !ctl.newsService.articles.length)"
+            md-mode="indeterminate"
+            class="md-accent"
+        ></md-progress-linear>
     </div>
 
     <md-content flex class="app-page-content">
@@ -22,12 +27,40 @@
 
         <div class="app-page-panel">
             <config-section cl-title="News" cl-icon="bullhorn"></config-section>
-            <config-note cl-type="info" cl-note="Coming soon..."></config-note>
+            <config-note
+                ng-if="ctl.newsService.error && !ctl.loading"
+                cl-type="warning"
+                cl-note="News feed is unavailable right now. Check your network or try again later."
+            ></config-note>
+            <config-note
+                ng-if="!ctl.loading && !ctl.newsService.error && ctl.newsService.articles.length === 0"
+                cl-type="info"
+                cl-note="No news yet."
+            ></config-note>
+
+            <div class="news-cards" layout="column">
+                <div
+                    class="news-card"
+                    ng-repeat="article in ctl.newsService.articles track by article.slug"
+                >
+                    <div class="news-card-inner" layout="row">
+                        <div class="news-card-cover" ng-if="article.coverUrl">
+                            <img ng-src="{{ article.coverUrl }}" alt="" />
+                        </div>
+                        <div class="news-card-body" layout="column" flex>
+                            <div class="news-card-header" layout="row" layout-align="start baseline">
+                                <div class="news-card-title" flex>{{ article.title }}</div>
+                                <div class="news-card-meta" ng-if="article.publishedAt">
+                                    {{ article.publishedAt / 1000 | hrDatetime }}
+                                </div>
+                            </div>
+                            <div class="news-card-content" ng-bind-html="article.bodyHtml"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <config-section cl-title="Latest tutorials" cl-icon="video"></config-section>
-            <config-note cl-type="info" cl-note="Coming soon..."></config-note>
-
-            <config-section cl-title="Latest messages" cl-icon="forum"></config-section>
             <config-note cl-type="info" cl-note="Coming soon..."></config-note>
         </div>
     </md-content>

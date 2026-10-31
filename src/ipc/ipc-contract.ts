@@ -11,6 +11,7 @@
 import type { OpenDialogSyncOptions } from 'electron';
 import type { IAuthEvent } from '../app-auth';
 import type { CachedFileInfos } from '../app-cache';
+import type { NewsCacheArticle, NewsCacheIncomingArticle } from '../app-news-cache';
 import type { InstallData } from '../app-iso';
 import type { LoggerMessage } from '../app-logger';
 import type { KeyPath, KeyValue, SettingsObject, SettingsValue } from '../app-settings';
@@ -135,6 +136,14 @@ export type InvokeContract = {
   'cache-delete-file': { request: string; response: IpcResult<boolean> };
   'cache-get-infos': { request: void; response: IpcResult<CacheInfosPayload> };
   'cache-purge-files': { request: void; response: IpcResult<boolean> };
+  'news-cache-get': {
+    request: void;
+    response: IpcResult<{ fetchedAt: number; articles: NewsCacheArticle[] } | null>;
+  };
+  'news-cache-save': {
+    request: NewsCacheIncomingArticle[];
+    response: IpcResult<{ fetchedAt: number; articles: NewsCacheArticle[] }>;
+  };
   'devices-delete-device': { request: string; response: IpcResult<null> };
   'devices-get-ui-state': { request: void; response: IpcResult<DevicesUiState> };
   'devices-refresh-remote-url': {

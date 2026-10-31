@@ -166,6 +166,18 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
   'cache-delete-file': safeBasename,
   'cache-get-infos': null,
   'cache-purge-files': null,
+  'news-cache-get': null,
+  'news-cache-save': z.array(
+    z.object({
+      id: z.number(),
+      title: z.string(),
+      slug: nonEmptyString,
+      excerpt: z.string(),
+      bodyHtml: z.string(),
+      publishedAt: z.number().nullable(),
+      coverUrl: z.string().nullable(),
+    }),
+  ),
   'devices-delete-device': nonEmptyString,
   'devices-get-ui-state': null,
   'devices-prepare-auth': z.object({
