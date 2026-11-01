@@ -57,6 +57,27 @@
                     ng-if="!ctl.networkApplying && !ctl.networkConfig.busConnected"
                     cl-comment="'Message bus is not connected.'"
                 ></config-comment>
+
+                <config-section cl-title="Cleep website API" cl-icon="web"></config-section>
+                <config-note
+                    cl-type="info"
+                    cl-note="Cleep does not have a public website yet. Access is limited to invited users. To express your interest, please ask on Discord."
+                ></config-note>
+                <config-button
+                    cl-title="Discord"
+                    cl-btn-label="Open Discord"
+                    cl-btn-icon="discord"
+                    cl-btn-style="md-raised"
+                    cl-click="ctl.openDiscord()"
+                ></config-button>
+                <config-text
+                    cl-title="API URL"
+                    cl-model="ctl.settings.cleep.apiurl"
+                    cl-placeholder="https://your-cleep-host/api"
+                ></config-text>
+                <config-comment
+                    cl-comment="'When set, a website sign-in button appears in the left toolbar (under Vault). Leave empty to hide it.'"
+                ></config-comment>
             </config-tab>
 
             <config-tab cl-id="vault" cl-label="Vault" cl-icon="safe">

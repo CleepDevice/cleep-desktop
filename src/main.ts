@@ -13,6 +13,7 @@ import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
 import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
 import { appVault } from './app-vault';
+import { appWebsiteAuth } from './app-website-auth';
 import { appNewsCache } from './app-news-cache';
 import { handleInvoke, ipcOk, onRendererSend, sendToRenderer } from './ipc/ipc-main';
 
@@ -144,6 +145,7 @@ app.on('ready', async function () {
     // configure modules
     appAuth.configure(mainWindow);
     appVault.setWindow(mainWindow);
+    appWebsiteAuth.configure(mainWindow);
     appUpdater.configure(mainWindow);
     appFileDownload.configure(mainWindow);
     appIso.configure(mainWindow);

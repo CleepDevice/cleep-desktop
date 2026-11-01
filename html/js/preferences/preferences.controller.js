@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.controller('preferencesController', ['$scope', '$filter', 'debounceService', 'toastService', 'settingsService', 'electronService', 'confirmService', 'closeModal', 'modalData',
-function($scope, $filter, debounce, toast, settingsService, electron, confirm, closeModal, modalData) {
+.controller('preferencesController', ['$scope', '$rootScope', '$filter', 'debounceService', 'toastService', 'settingsService', 'electronService', 'confirmService', 'closeModal', 'modalData',
+function($scope, $rootScope, $filter, debounce, toast, settingsService, electron, confirm, closeModal, modalData) {
     var self = this;
     // Prefer modalData.tab immediately so config-tabs can open on the right panel.
     self.selectedTabId = (modalData && modalData.tab) || 'general';
@@ -35,7 +35,6 @@ function($scope, $filter, debounce, toast, settingsService, electron, confirm, c
         nextPassphrase: '',
         recoveryCode: '',
     };
-
     self.closeModal = closeModal;
 
     self.$onInit = function() {
@@ -54,6 +53,10 @@ function($scope, $filter, debounce, toast, settingsService, electron, confirm, c
         } else if (tabId === 'cache') {
             self.getCacheInfos();
         }
+    };
+
+    self.openDiscord = function() {
+        electron.shell.openUrl('https://discord.com/channels/1541381052285583380/');
     };
 
     $scope.$on('config-tabs:shown', function(_event, tabId) {
@@ -191,6 +194,7 @@ function($scope, $filter, debounce, toast, settingsService, electron, confirm, c
         electron.settings.setAll(self.settings)
             .then(() => {
                 self.getSettings();
+                $rootScope.$broadcast('cleep-settings-saved');
             })
             .catch(() => {
                 toast.warning('Invalid settings, please check it');

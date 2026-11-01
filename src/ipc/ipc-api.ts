@@ -174,6 +174,17 @@ export function createCleepApi(ipc: IpcPrimitives) {
         ipc.on('vault-status-changed', listener),
     },
 
+    website: {
+      getSession: () => ipc.invoke('website-auth-get-session'),
+      loadCredentials: () => ipc.invoke('website-auth-load-credentials'),
+      login: (email: string, password: string) =>
+        ipc.invoke('website-auth-login', { email, password }),
+      logout: () => ipc.invoke('website-auth-logout'),
+      getApiUrl: () => ipc.invoke('website-auth-get-api-url'),
+      onChanged: (listener: IpcListener<'website-auth-changed'>) =>
+        ipc.on('website-auth-changed', listener),
+    },
+
     webview: {
       onHttpError: (listener: IpcListener<'webview-http-error'>) =>
         ipc.on('webview-http-error', listener),

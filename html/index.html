@@ -103,6 +103,53 @@
                         {{ cleep.vaultStatusLabel() }}
                     </p>
                 </md-list-item>
+                <md-menu
+                    ng-if="cleep.websiteAuthAvailable"
+                    md-position-mode="target-right target"
+                    md-offset="8 0"
+                >
+                    <md-list-item
+                        ng-click="cleep.openWebsiteAuthMenu($mdMenu, $event)"
+                        title="{{ cleep.websiteAuthTitle() }}"
+                    >
+                        <md-icon
+                            class="white-icon"
+                            md-svg-icon="{{ cleep.websiteAuthIcon() }}"
+                        ></md-icon>
+                        <p style="color:white;" ng-if="!cleep.toolbarCollapsed">
+                            {{ cleep.websiteAuthLabel() }}
+                        </p>
+                    </md-list-item>
+                    <md-menu-content width="3">
+                        <md-menu-item ng-if="!cleep.websiteSession.authenticated">
+                            <md-button ng-click="cleep.openWebsiteLoginDialog()">
+                                <md-icon md-svg-icon="login"></md-icon>
+                                Sign in
+                            </md-button>
+                        </md-menu-item>
+                        <md-menu-item ng-if="cleep.websiteSession.authenticated">
+                            <md-button
+                                ng-click="cleep.openCleepWebsite()"
+                                title="Open Cleep website"
+                            >
+                                <md-icon md-svg-icon="account"></md-icon>
+                                <span class="website-auth-menu-label">
+                                    Signed in as {{ cleep.websiteDisplayName() }}
+                                </span>
+                                <md-icon md-svg-icon="open-in-new" class="website-auth-menu-external"></md-icon>
+                            </md-button>
+                        </md-menu-item>
+                        <md-menu-item ng-if="cleep.websiteSession.authenticated">
+                            <md-button
+                                ng-click="cleep.websiteLogout()"
+                                ng-disabled="cleep.websiteAuthBusy"
+                            >
+                                <md-icon md-svg-icon="logout"></md-icon>
+                                Sign out
+                            </md-button>
+                        </md-menu-item>
+                    </md-menu-content>
+                </md-menu>
             </md-list>
         </md-content>
 
@@ -297,6 +344,7 @@
     <script src="js/updates/updates.controller.js"></script>
     <script src="js/preferences/preferences.controller.js"></script>
     <script src="js/vault/vault-unlock.controller.js"></script>
+    <script src="js/website-auth/website-login.controller.js"></script>
     <script src="js/install/install.controller.js"></script>
     <script src="js/install/iso-dialog.controller.js"></script>
     <script src="js/install/drive-dialog.controller.js"></script>

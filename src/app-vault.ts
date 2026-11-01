@@ -138,6 +138,15 @@ class AppVault {
     }
   }
 
+  /** Lazy import avoids a hard module cycle with app-website-auth. */
+  private notifyWebsiteAuthUnlocked(): void {
+    void import('./app-website-auth')
+      .then(({ appWebsiteAuth }): void => {
+        appWebsiteAuth.onVaultUnlocked();
+      })
+      .catch((): undefined => undefined);
+  }
+
   public isEnabled(): boolean {
     return this.getStatus().enabled;
   }
@@ -227,6 +236,7 @@ class AppVault {
     appLogger.info('Vault enabled');
     this.resolveUnlockWaiters();
     this.emitStatusChanged();
+    this.notifyWebsiteAuthUnlocked();
 
     return {
       status: this.getStatus(),
@@ -253,6 +263,7 @@ class AppVault {
     appLogger.info('Vault unlocked');
     this.resolveUnlockWaiters();
     this.emitStatusChanged();
+    this.notifyWebsiteAuthUnlocked();
     return this.getStatus();
   }
 
@@ -340,6 +351,7 @@ class AppVault {
     appLogger.info('Vault recovered with recovery code');
     this.resolveUnlockWaiters();
     this.emitStatusChanged();
+    this.notifyWebsiteAuthUnlocked();
 
     return {
       status: this.getStatus(),

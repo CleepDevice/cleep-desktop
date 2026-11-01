@@ -138,6 +138,16 @@ export class AppSettings {
     if (!settings.hasSync('cleep.networkinterface')) {
       settings.setSync('cleep.networkinterface', DEFAULT_SETTINGS.networkInterface);
     }
+    if (!settings.hasSync('cleep.apiurl')) {
+      // Empty = hide website auth toolbar button until Preferences → Network sets a URL.
+      settings.setSync('cleep.apiurl', '');
+    }
+    if (!settings.hasSync('cleep.websiteemail')) {
+      settings.setSync('cleep.websiteemail', '');
+    }
+    if (!settings.hasSync('cleep.websitenickname')) {
+      settings.setSync('cleep.websitenickname', '');
+    }
 
     // rpi-imager section
     if (!settings.hasSync('rpiimager.version')) {

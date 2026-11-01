@@ -221,6 +221,14 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
   'vault-regenerate-recovery-codes': vaultPassphraseRequest,
   'vault-unlock': vaultPassphraseRequest,
   'vault-unlock-dialog-closed': null,
+  'website-auth-get-api-url': null,
+  'website-auth-get-session': null,
+  'website-auth-load-credentials': null,
+  'website-auth-login': z.object({
+    email: nonEmptyString,
+    password: z.string().min(1),
+  }),
+  'website-auth-logout': null,
 };
 
 export const SEND_PAYLOAD_SCHEMAS: SendSchemaMap = {

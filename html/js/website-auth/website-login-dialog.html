@@ -1,0 +1,48 @@
+<md-dialog flex="40" class="website-login-dialog">
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>Sign in to Cleep</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="ctl.cancel()" aria-label="Close">
+                <md-icon md-svg-icon="close"></md-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+
+    <md-dialog-content class="website-login-content">
+        <p class="website-login-lead">
+            Sign in with your Cleep website account.
+        </p>
+        <p class="website-login-vault-hint" ng-if="ctl.fromVault">
+            Credentials loaded from the application vault.
+        </p>
+
+        <md-input-container class="md-block">
+            <label>Email</label>
+            <input type="email"
+                   ng-model="ctl.email"
+                   ng-keydown="ctl.onKeydown($event)"
+                   autocomplete="username"
+                   autofocus>
+        </md-input-container>
+
+        <md-input-container class="md-block">
+            <label>Password</label>
+            <input type="password"
+                   ng-model="ctl.password"
+                   ng-keydown="ctl.onKeydown($event)"
+                   autocomplete="current-password">
+        </md-input-container>
+
+        <div layout="row" layout-align="end center" class="website-login-actions">
+            <md-button ng-click="ctl.cancel()" ng-disabled="ctl.busy">Cancel</md-button>
+            <md-button
+                class="md-raised md-primary"
+                ng-click="ctl.login()"
+                ng-disabled="ctl.busy || !ctl.email || !ctl.password"
+            >
+                Sign in
+            </md-button>
+        </div>
+    </md-dialog-content>
+</md-dialog>

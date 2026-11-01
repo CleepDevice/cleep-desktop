@@ -46,6 +46,11 @@ export const INVOKE_CHANNELS = [
   'vault-regenerate-recovery-codes',
   'vault-unlock',
   'vault-unlock-dialog-closed',
+  'website-auth-get-api-url',
+  'website-auth-get-session',
+  'website-auth-load-credentials',
+  'website-auth-login',
+  'website-auth-logout',
 ] as const satisfies readonly InvokeChannel[];
 
 export const SEND_CHANNELS = [
@@ -81,6 +86,7 @@ export const RECEIVE_CHANNELS = [
   'updater-rpi-imager-update-available',
   'vault-status-changed',
   'vault-unlock-required',
+  'website-auth-changed',
   'webview-http-error',
   'webview-new-window',
 ] as const satisfies readonly ReceiveChannel[];

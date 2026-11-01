@@ -292,4 +292,13 @@ angular
         onUnlockRequired: bindOn(api.vault.onUnlockRequired),
         onStatusChanged: bindOn(api.vault.onStatusChanged),
     };
+
+    self.website = {
+        getSession: bindInvoke(api.website && api.website.getSession),
+        loadCredentials: bindInvoke(api.website && api.website.loadCredentials),
+        login: bindInvoke(api.website && api.website.login),
+        logout: bindInvoke(api.website && api.website.logout),
+        getApiUrl: bindInvoke(api.website && api.website.getApiUrl),
+        onChanged: bindOn(api.website && api.website.onChanged),
+    };
 }]);

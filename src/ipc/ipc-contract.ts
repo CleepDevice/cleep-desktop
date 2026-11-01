@@ -17,6 +17,7 @@ import type { LoggerMessage } from '../app-logger';
 import type { KeyPath, KeyValue, SettingsObject, SettingsValue } from '../app-settings';
 import type { UpdateData, UpdateStatus } from '../app-updater';
 import type { VaultEnableResult, VaultStatus } from '../app-vault.types';
+import type { WebsiteAuthSession, WebsiteLoginCredentials } from '../app-website-auth';
 import type { CleebusMessageResponse, CleepbusPeerInfos } from '../cleepbus/cleepbus.types';
 import type { Drive } from '../flash-tool/flashtool.interface';
 import type { RaspiosLatestRelease } from '../iso/raspios';
@@ -197,6 +198,14 @@ export type InvokeContract = {
     request: { url: string; deviceUuid: string };
     response: IpcResult<{ ready: boolean }>;
   };
+  'website-auth-get-session': { request: void; response: IpcResult<WebsiteAuthSession> };
+  'website-auth-load-credentials': { request: void; response: IpcResult<WebsiteLoginCredentials> };
+  'website-auth-login': {
+    request: { email: string; password: string };
+    response: IpcResult<WebsiteAuthSession>;
+  };
+  'website-auth-logout': { request: void; response: IpcResult<WebsiteAuthSession> };
+  'website-auth-get-api-url': { request: void; response: IpcResult<string> };
 };
 
 /** send(channel, payload?) — fire-and-forget renderer → main */
@@ -237,6 +246,7 @@ export type ReceiveContract = {
   'updater-rpi-imager-update-available': { args: [UpdateData] };
   'vault-status-changed': { args: [VaultStatus] };
   'vault-unlock-required': { args: [] };
+  'website-auth-changed': { args: [WebsiteAuthSession] };
   'webview-http-error': {
     args: [webContentsId: number, details: { url: string; statusCode: number }];
   };

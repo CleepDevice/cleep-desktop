@@ -24,10 +24,12 @@ describe('createCleepApi', () => {
       'download',
       'install',
       'logger',
+      'news',
       'settings',
       'shell',
       'updater',
       'vault',
+      'website',
       'webview',
     ]);
   });
