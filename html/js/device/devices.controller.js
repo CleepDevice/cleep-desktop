@@ -1,34 +1,65 @@
 angular
 .module('Cleep')
-.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope', 'loggerService', 'electronService',
-function($state, devicesService, toastService, confirmService, $rootScope, logger, electron) {
+.controller('devicesController', ['$state', 'devicesService', 'toastService', 'confirmService', '$rootScope', 'loggerService', 'electronService', 'contentTabsService',
+function($state, devicesService, toastService, confirmService, $rootScope, logger, electron, contentTabs) {
     var self = this;
     self.devicesService = devicesService;
 
-    self.goDevicePage = function(device, viaGateway) {
-        $state.go('device', {
-            url: device.url,
-            hostname: device.hostname,
-            auth: device.auth,
-            deviceUuid: device.uuid,
-            viaGateway: Boolean(viaGateway),
-        });
+    self.canOpenDeviceInNewTab = function(device) {
+        if (!device) {
+            return false;
+        }
+        if (contentTabs.findTabByDeviceUuid(device.uuid)) {
+            return true;
+        }
+        return contentTabs.canOpenNewTab();
     };
 
-    self.goDeviceAuthPage = function(device) {
+    self.openDeviceInNewTab = function(device) {
+        self.openDevicePage(device, { newTab: true });
+    };
+
+    /** Middle-click → same as Open in new tab. */
+    self.onDeviceMouseDown = function($event, device) {
+        if (!$event || $event.button !== 1) {
+            return;
+        }
+        $event.preventDefault();
+        $event.stopPropagation();
+        self.openDevicePage(device, { newTab: true });
+    };
+
+    self.goDeviceAuthPage = function(device, options) {
+        options = options || {};
         $state.go('deviceAuth', {
             url: device.url,
             hostname: device.hostname,
             deviceUuid: device.uuid,
+            newTab: Boolean(options.newTab),
+            viaGateway: Boolean(options.viaGateway),
         });
     };
 
     /**
      * Open a device (LAN if online, else via house gateway public URL).
+     * @param {object} device
+     * @param {{ newTab?: boolean }} options
      */
-    self.openDevicePage = function(device) {
+    self.openDevicePage = function(device, options) {
+        options = options || {};
         if (!device) {
             toastService.error('Invalid device');
+            return;
+        }
+
+        var existing = contentTabs.findTabByDeviceUuid(device.uuid);
+        if (existing) {
+            contentTabs.activateTab(existing.id);
+            return;
+        }
+
+        if (options.newTab && !contentTabs.canOpenNewTab()) {
+            toastService.info('Maximum number of tabs reached');
             return;
         }
 
@@ -41,17 +72,17 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
         }
 
         var viaGateway = !device.online;
-        logger.debug('Open device page', { device: device, url: url, viaGateway: viaGateway });
-        self._openDeviceAtUrl(device, url, viaGateway);
+        logger.debug('Open device page', { device: device, url: url, viaGateway: viaGateway, newTab: options.newTab });
+        self._openDeviceAtUrl(device, url, viaGateway, options.newTab);
     };
 
-    self._openDeviceAtUrl = function(device, url, viaGateway) {
+    self._openDeviceAtUrl = function(device, url, viaGateway, newTab) {
         devicesService.selectDevice(device.uuid);
 
         var target = Object.assign({}, device, { url: url });
 
         if (!device.auth) {
-            self.goDevicePage(target, viaGateway);
+            contentTabs.openDevice(target, url, { newTab: Boolean(newTab), viaGateway: Boolean(viaGateway) });
             return;
         }
 
@@ -63,12 +94,12 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
                 if (result && result.ready) {
                     device.hasAuthStored = true;
                     logger.debug('Device auth ready from session/vault, opening device');
-                    self.goDevicePage(target, viaGateway);
+                    contentTabs.openDevice(target, url, { newTab: Boolean(newTab), viaGateway: Boolean(viaGateway) });
                     return;
                 }
                 logger.debug('No stored device auth, showing login form');
                 device.hasAuthStored = false;
-                self.goDeviceAuthPage(target);
+                self.goDeviceAuthPage(target, { newTab: newTab, viaGateway: viaGateway });
             })
             .catch((error) => {
                 logger.warn('Unable to prepare device auth', error);
@@ -76,7 +107,7 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
                     toastService.info('Vault unlock cancelled');
                     return;
                 }
-                self.goDeviceAuthPage(target);
+                self.goDeviceAuthPage(target, { newTab: newTab, viaGateway: viaGateway });
             });
     };
 
@@ -94,7 +125,13 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
                 () => {
                     devicesService.deleteDevice(device)
                         .then(
-                            () => { toastService.success('Device deleted successfully'); },
+                            () => {
+                                var tab = contentTabs.findTabByDeviceUuid(device.uuid);
+                                if (tab && tab.closable) {
+                                    contentTabs.closeTab(tab.id);
+                                }
+                                toastService.success('Device deleted successfully');
+                            },
                             () => { toastService.error('Error occured deleting device'); }
                         );
                 },
@@ -104,7 +141,7 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
 
     self.reloadDevicePage = function(device) {
         if (device.online || devicesService.isGatewayAccess(device)) {
-            $rootScope.$emit('reload-device-page', device.hostname);
+            contentTabs.reloadSession(device.uuid);
         }
     };
 
@@ -127,7 +164,8 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
             .then((result) => {
                 toastService.success('Remote URL updated');
                 if (result && result.publicUrl) {
-                    self._openDeviceAtUrl(device, result.publicUrl);
+                    var tab = contentTabs.findTabByDeviceUuid(device.uuid);
+                    self._openDeviceAtUrl(device, result.publicUrl, false, Boolean(tab && tab.closable));
                 }
             })
             .catch((error) => {
@@ -135,4 +173,9 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
                 toastService.error((error && error.message) || 'Unable to refresh remote URL');
             });
     };
+
+    // Keep tab icons in sync with online/auth flags.
+    $rootScope.$on('devices-updated', function() {
+        contentTabs.updateDeviceIcons();
+    });
 }]);

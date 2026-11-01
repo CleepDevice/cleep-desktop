@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.controller('deviceErrorController', ['$stateParams', '$state', 'devicesService', 'electronService', 'toastService', 'loggerService',
-function($stateParams, $state, devicesService, electron, toastService, logger) {
+.controller('deviceErrorController', ['$stateParams', '$state', 'devicesService', 'electronService', 'toastService', 'loggerService', 'contentTabsService',
+function($stateParams, $state, devicesService, electron, toastService, logger, contentTabs) {
     var self = this;
     self.hostname = $stateParams.hostname || 'unknown';
     self.deviceUuid = $stateParams.deviceUuid || null;
@@ -19,6 +19,24 @@ function($stateParams, $state, devicesService, electron, toastService, logger) {
         return devicesService.canRefreshRemoteUrl(self.getDevice());
     };
 
+    self.retryConnection = function() {
+        if (!self.deviceUuid) {
+            return;
+        }
+        var session = contentTabs.getSession(self.deviceUuid);
+        if (!session) {
+            return;
+        }
+        contentTabs.setSessionError(self.deviceUuid, false);
+        $state.go('device', {
+            url: session.url,
+            hostname: session.hostname,
+            deviceUuid: session.deviceUuid,
+            viaGateway: session.viaGateway,
+        });
+        contentTabs.reloadSession(self.deviceUuid);
+    };
+
     self.refreshRemoteUrl = function() {
         var device = self.getDevice();
         if (!device || !self.canRefresh() || self.refreshing) {
@@ -33,11 +51,10 @@ function($stateParams, $state, devicesService, electron, toastService, logger) {
                 if (!publicUrl) {
                     return;
                 }
-                $state.go('device', {
-                    url: publicUrl,
-                    hostname: device.hostname,
-                    auth: device.auth,
-                    deviceUuid: device.uuid,
+                var tab = contentTabs.findTabByDeviceUuid(device.uuid);
+                contentTabs.openDevice(device, publicUrl, {
+                    newTab: Boolean(tab && tab.closable),
+                    viaGateway: false,
                 });
             })
             .catch((error) => {

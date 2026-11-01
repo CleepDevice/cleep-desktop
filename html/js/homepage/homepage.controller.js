@@ -1,7 +1,8 @@
 angular.module('Cleep').controller('homepageController', [
     'newsService',
     'toastService',
-    function (newsService, toastService) {
+    'contentTabsService',
+    function (newsService, toastService, contentTabs) {
         const self = this;
 
         self.newsService = newsService;
@@ -10,6 +11,7 @@ angular.module('Cleep').controller('homepageController', [
         self.refreshNews = function () {
             const hadContent = newsService.articles.length > 0;
             self.loading = !hadContent;
+            contentTabs.loading = self.loading;
             // Start the hourly clock at first homepage visit (08:36 → 09:36…).
             newsService.ensureAutoRefresh();
 
@@ -22,6 +24,7 @@ angular.module('Cleep').controller('homepageController', [
                 })
                 .finally(function () {
                     self.loading = false;
+                    contentTabs.loading = false;
                 });
         };
 

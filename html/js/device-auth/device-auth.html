@@ -1,13 +1,5 @@
 <div layout="column" layout-fill class="device-auth-page">
 
-    <div md-colors="::{ background: 'primary-500' }" class="toolbar-content" layout="row" layout-align="start center">
-        <div class="toolbar-spacer"></div>
-        <div layout="row" layout-align="left center">
-            <md-icon style="color:white;" md-svg-icon="cellphone-key"></md-icon>
-            <h1 style="padding-left:5px;" class="md-title">Device sign-in</h1>
-        </div>
-    </div>
-
     <!-- Distinctive centered auth card kept as Desktop-custom chrome; fields use config-* where they fit. -->
     <md-content flex class="device-auth-content" layout="column" layout-align="center center">
         <form class="device-auth-card" ng-submit="ctl.login()" layout="column">

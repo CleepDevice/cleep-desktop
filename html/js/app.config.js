@@ -85,6 +85,8 @@
                 hostname: null,
                 deviceUuid: null,
                 errorCode: null,
+                newTab: false,
+                viaGateway: false,
             },
             controller: 'deviceAuthController',
             controllerAs: 'ctl',

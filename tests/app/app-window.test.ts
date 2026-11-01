@@ -2,10 +2,7 @@ import { BrowserWindow, dialog } from 'electron';
 import { describe, expect, it, vi } from 'vitest';
 import { createAppWindow, createSplashscreenWindow } from '../../src/app-window';
 import { appContext } from '../../src/app-context';
-import {
-  NGROK_HOST_URL_FILTERS,
-  NGROK_SKIP_BROWSER_WARNING_HEADER,
-} from '../../src/utils/ngrok';
+import { NGROK_SKIP_BROWSER_WARNING_HEADER } from '../../src/utils/ngrok';
 
 describe('app-window', () => {
   it('creates main application window and handles lifecycle events', () => {
@@ -54,7 +51,7 @@ describe('app-window', () => {
     vi.useRealTimers();
   });
 
-  it('injects ngrok skip-browser-warning header on attached webviews', () => {
+  it('injects CleepDesktop embed header on attached webviews (and ngrok extras on ngrok hosts)', () => {
     const splash = { close: vi.fn() } as unknown as BrowserWindow;
     const window = createAppWindow(splash);
 
@@ -67,7 +64,7 @@ describe('app-window', () => {
     const guestSession = {
       webRequest: { onBeforeSendHeaders: vi.fn(), onCompleted: vi.fn() },
     };
-    // Single onBeforeSendHeaders: ngrok skip-warning (+ gateway Auth/Target when bound)
+    // Single onBeforeSendHeaders: embed marker + ngrok skip/gateway when URL is ngrok
     const guestWebContents = {
       id: 42,
       session: guestSession,
@@ -77,7 +74,7 @@ describe('app-window', () => {
     attachHandler?.(undefined, guestWebContents);
 
     expect(guestSession.webRequest.onBeforeSendHeaders).toHaveBeenCalledWith(
-      { urls: NGROK_HOST_URL_FILTERS },
+      { urls: ['*://*/*'] },
       expect.any(Function),
     );
     expect(guestSession.webRequest.onCompleted).toHaveBeenCalledWith(
@@ -86,14 +83,27 @@ describe('app-window', () => {
     );
 
     const headerHandler = guestSession.webRequest.onBeforeSendHeaders.mock.calls[0][1] as (
-      details: { requestHeaders: Record<string, string> },
+      details: { url?: string; requestHeaders: Record<string, string> },
       callback: (response: { requestHeaders: Record<string, string> }) => void,
     ) => void;
     const callback = vi.fn();
-    headerHandler({ requestHeaders: { Accept: 'text/html' } }, callback);
+    headerHandler({ url: 'http://192.168.1.10/', requestHeaders: { Accept: 'text/html' } }, callback);
     expect(callback).toHaveBeenCalledWith({
       requestHeaders: {
         Accept: 'text/html',
+        'X-Cleep-Desktop': '1',
+      },
+    });
+
+    callback.mockClear();
+    headerHandler(
+      { url: 'https://abc.ngrok-free.app/', requestHeaders: { Accept: 'text/html' } },
+      callback,
+    );
+    expect(callback).toHaveBeenCalledWith({
+      requestHeaders: {
+        Accept: 'text/html',
+        'X-Cleep-Desktop': '1',
         [NGROK_SKIP_BROWSER_WARNING_HEADER]: 'CleepDesktop',
       },
     });

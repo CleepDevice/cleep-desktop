@@ -1,3 +1,47 @@
+/* No I-beam on labels/titles — default arrow everywhere except real inputs / clickables. */
+body,
+body * {
+  cursor: default;
+}
+
+/* Include descendants (icons, labels) so hover on an md-icon still shows pointer. */
+a,
+a *,
+button,
+button *,
+.md-button,
+.md-button *,
+md-button,
+md-button *,
+[ng-click],
+[ng-click] *,
+[role="button"],
+[role="button"] *,
+md-list-item,
+md-list-item *,
+md-checkbox,
+md-checkbox *,
+md-switch,
+md-switch *,
+md-radio-button,
+md-radio-button *,
+md-slider,
+md-slider *,
+.md-datepicker-input-container,
+select,
+.content-tabs:has(.content-tab:nth-child(2)) .content-tab,
+.content-tabs:has(.content-tab:nth-child(2)) .content-tab * {
+  cursor: pointer;
+}
+
+input,
+textarea,
+[contenteditable="true"],
+.CodeMirror,
+.CodeMirror * {
+  cursor: text;
+}
+
 /* left-toolbar background task indicator (above vault) */
 .toolbar-task-item md-progress-circular.toolbar-task-progress {
   margin: 8px 16px 8px 0;
@@ -95,6 +139,17 @@ div.note-important {
 }
 
 /* toast */
+/* Angular Material has no CSS for md-center — without this, "bottom center"
+   falls back visually to the left and covers the nav / devices panel. */
+md-toast.md-bottom.md-center {
+  left: 0;
+  right: 0;
+  width: fit-content;
+  max-width: calc(100% - 32px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
 md-toast.error .md-toast-content {
   background: #e53935;
   color: #fff;
@@ -167,6 +222,205 @@ md-toast.info .md-toast-content {
 
 .toolbar-spacer {
   width: 15px;
+}
+
+/* Root row must not scroll — only inner page/webview surfaces scroll. */
+md-content[ng-controller="cleepController as cleep"] {
+  overflow: hidden !important;
+}
+
+/* Shared content-area tabs (replaces per-page toolbars) */
+.content-shell {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  /* flex column child of the row md-content — do not also use layout-fill (100% + tab bar → scrollbar) */
+}
+
+/* Tabs = full-height toolbar "cells" (same chrome as a classic page title bar). */
+.content-tabs-bar {
+  flex: none;
+  padding: 0;
+}
+
+.content-tabs {
+  min-width: 0;
+  overflow: hidden;
+  height: 100%;
+}
+
+.content-tab {
+  box-sizing: border-box;
+  height: 100%;
+  /* Max 4 tabs: share the toolbar evenly (1→100%, 2→50%, … 4→25%). */
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.18);
+  /* Same white as classic toolbar titles (e.g. "Cleep devices"). */
+  color: #fff;
+  cursor: default;
+  background: transparent;
+}
+
+.content-tab:last-child {
+  border-right: 0;
+}
+
+/* Multi-tab only: pointer + hover / active chrome (label stays white). */
+.content-tabs:has(.content-tab:nth-child(2)) .content-tab {
+  cursor: pointer;
+}
+
+.content-tabs:has(.content-tab:nth-child(2)) .content-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.content-tabs:has(.content-tab:nth-child(2)) .content-tab-active {
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.content-tab-icon {
+  color: inherit !important;
+  fill: currentColor !important;
+  margin: 0;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+}
+
+.content-tab-img {
+  width: 30px;
+  height: 30px;
+  flex: none;
+}
+
+.content-tab-label {
+  margin: 0 0 0 5px !important;
+  padding: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit !important;
+  font-weight: 500;
+}
+
+.content-tab-close {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  margin: 0 0 0 4px !important;
+  padding: 0 !important;
+  flex: none;
+  border-radius: 50% !important;
+  background-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow: none !important;
+  line-height: 32px !important;
+}
+
+.content-tab-close:hover,
+.content-tab-close:focus {
+  background-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+.content-tab-close.md-focused,
+.content-tab-close.md-button.md-focused {
+  background-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+.content-tab-close .md-ripple-container {
+  border-radius: 50%;
+}
+
+.content-tab-close md-icon {
+  color: #fff !important;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+}
+
+.content-body {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.content-uiview,
+.device-webview-pool,
+.device-webview-slot {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Keep inactive layers mounted (no display:none) so Electron webviews survive. */
+.content-uiview {
+  z-index: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.content-uiview.content-layer-hidden {
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.device-webview-pool {
+  z-index: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.device-webview-pool.content-layer-active {
+  z-index: 2;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.device-webview-slot {
+  z-index: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.device-webview-slot-active {
+  z-index: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Electron <webview> defaults to inline and leaves a baseline gap (~4px) that
+   makes the host show a useless vertical scrollbar. Force a flex box. */
+.device-webview-el,
+device-webview,
+.device-webview-slot > webview {
+  display: flex !important;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  overflow: hidden;
+  vertical-align: top;
+}
+
+device-webview {
+  position: absolute;
+  inset: 0;
+}
+
+.device-webview-slot,
+.device-webview-pool {
+  overflow: hidden !important;
 }
 
 

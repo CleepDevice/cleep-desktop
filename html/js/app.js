@@ -4,11 +4,13 @@ Cleep
 .controller('cleepController', ['$scope', '$rootScope', '$state', 'toolbarTaskService', 'modalService',
                                 '$timeout', '$transitions', 'settingsService', 'devicesService',
                                 'updateService', 'installService', 'monitoringService', 'downloadService',
-                                'electronService', 'toastService',
+                                'electronService', 'toastService', 'contentTabsService',
 function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $transitions, settings,
-        devicesService, updateService, installService, monitoringService, downloadService, electron, toast) {
+        devicesService, updateService, installService, monitoringService, downloadService, electron, toast,
+        contentTabs) {
     var self = this;
     self.toolbarTask = toolbarTask;
+    self.contentTabs = contentTabs;
     self.selectedToolbarItem = null;
     self.toolbarCollapsed = true;
     self._vaultUnlockDialog = null;
@@ -374,9 +376,43 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         devicesService.destroy();
     });
 
+    self.showDeviceWebviews = function() {
+        if (!contentTabs.isShowingDevice()) {
+            return false;
+        }
+        var name = $state.current && $state.current.name;
+        if (name === 'deviceAuth' || name === 'deviceError') {
+            return false;
+        }
+        var session = contentTabs.getActiveSession();
+        return Boolean(session && !session.error);
+    };
+
+    self.isActiveDeviceSession = function(session) {
+        if (!session || session.error) {
+            return false;
+        }
+        var active = contentTabs.getActiveSession();
+        return Boolean(active && active.deviceUuid === session.deviceUuid);
+    };
+
+    self.closeContentTab = function($event, tabId) {
+        if ($event) {
+            $event.preventDefault();
+            $event.stopPropagation();
+        }
+        contentTabs.closeTab(tabId);
+    };
+
     // open page
     self.openPage = function(page, params) {
         devicesService.selectDevice(null);
+        contentTabs.showPage(page);
+        // Avoid reloading the page when it is already the active ui-router state
+        // (e.g. returning from a device tab that never left this state).
+        if ($state.current && $state.current.name === page) {
+            return;
+        }
         $state.go(page, params || {});
     };
 
@@ -394,10 +430,20 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         return modalService.open(controllerName, templateUrl, data || {});
     };
 
-    // toolbar
+    // toolbar + content tab titles
     $transitions.onEnter({}, (_trans, state) => {
         self.selectedToolbarItem = state.name;
         toolbarTask.clearForPage(state.name);
+        if (state.name === 'device') {
+            return;
+        }
+        if (state.name === 'deviceAuth' || state.name === 'deviceError') {
+            // Keep device sessions; only swap the header title for the overlay page.
+            contentTabs.overlayMainTitle(state.name);
+            return;
+        }
+        // Desktop pages always use the main tab.
+        contentTabs.showPage(state.name);
     });
 
     self.toggleToolbar = function() {

@@ -1,22 +1,5 @@
 <div layout="column" layout-fill class="app-page">
 
-    <div md-colors="::{ background: 'primary-500' }" class="toolbar-content" layout="row" layout-align="start center">
-        <div class="toolbar-spacer"></div>
-        <div layout="row" layout-align="left center">
-            <md-icon style="color:white;" md-svg-icon="message-text-outline"></md-icon>
-            <h1 style="padding-left:5px;" class="md-title">Messages received from devices</h1>
-        </div>
-        <span flex></span>
-        <md-button
-            class="md-icon-button"
-            ng-if="ctl.monitoring.messages.length>0"
-            ng-click="ctl.monitoring.clearMessages()"
-            title="Clear messages"
-        >
-            <md-icon style="color:white;" md-svg-icon="delete-outline"></md-icon>
-        </md-button>
-    </div>
-
     <md-content flex class="app-page-content">
         <div class="app-page-lead" layout="row" layout-align="start center">
             <div class="app-page-lead-badge" layout="row" layout-align="center center" aria-hidden="true">
@@ -28,6 +11,14 @@
                     This area will display messages received from your devices during current session. When CleepDesktop is closed, all messages are lost.
                 </p>
             </div>
+            <md-button
+                class="md-icon-button"
+                ng-if="ctl.monitoring.messages.length>0"
+                ng-click="ctl.monitoring.clearMessages()"
+                title="Clear messages"
+            >
+                <md-icon md-svg-icon="delete-outline"></md-icon>
+            </md-button>
         </div>
 
         <div class="app-page-panel">

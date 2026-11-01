@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.service('devicesService', ['electronService', 'loggerService', 'ipcLifecycle',
-function(electron, logger, ipcLifecycle) {
+.service('devicesService', ['electronService', 'loggerService', 'ipcLifecycle', '$rootScope',
+function(electron, logger, ipcLifecycle, $rootScope) {
     var self = this;
     self.devices = [];
     self.messageBusError = '';
@@ -75,6 +75,7 @@ function(electron, logger, ipcLifecycle) {
                 delete self.deferredAuthPromptUuids[device.uuid];
             }
         });
+        $rootScope.$emit('devices-updated');
     };
 
     self.shouldDeferAuthPrompt = function(deviceUuid) {

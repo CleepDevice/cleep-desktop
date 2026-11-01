@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.controller('deviceAuthController', ['loggerService', 'electronService', '$stateParams', '$state', 'toastService', 'modalService',
-function(logger, electron, $stateParams, $state, toast, modalService) {
+.controller('deviceAuthController', ['loggerService', 'electronService', '$stateParams', '$state', 'toastService', 'modalService', 'contentTabsService', 'devicesService',
+function(logger, electron, $stateParams, $state, toast, modalService, contentTabs, devicesService) {
     var self = this;
     logger.debug('deviceAuthController stateParams', $stateParams);
 
@@ -9,6 +9,8 @@ function(logger, electron, $stateParams, $state, toast, modalService) {
     self.url = $stateParams.url;
     self.deviceUuid = $stateParams.deviceUuid;
     self.errorCode = $stateParams.errorCode;
+    self.newTab = Boolean($stateParams.newTab);
+    self.viaGateway = Boolean($stateParams.viaGateway);
     self.account = null;
     self.password = null;
     self.saveToVault = true;
@@ -67,11 +69,16 @@ function(logger, electron, $stateParams, $state, toast, modalService) {
 
         electron.devices.updateAuth(params)
             .then(() => {
-                $state.go('device', {
-                    url: self.url,
+                var device = devicesService.findDevice(self.deviceUuid) || {
+                    uuid: self.deviceUuid,
                     hostname: self.hostname,
-                    deviceUuid: self.deviceUuid,
+                    url: self.url,
                     auth: true,
+                };
+                device.auth = true;
+                contentTabs.openDevice(device, self.url, {
+                    newTab: self.newTab,
+                    viaGateway: self.viaGateway,
                 });
             })
             .catch((error) => {

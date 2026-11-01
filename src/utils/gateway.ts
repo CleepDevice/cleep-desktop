@@ -1,8 +1,9 @@
 import type { Session } from 'electron';
 import {
-  NGROK_HOST_URL_FILTERS,
-  NGROK_SKIP_BROWSER_WARNING_HEADER,
-} from './ngrok';
+  CLEEP_DESKTOP_EMBED_HEADER,
+  CLEEP_DESKTOP_EMBED_VALUE,
+} from './cleep-desktop-embed';
+import { NGROK_SKIP_BROWSER_WARNING_HEADER } from './ngrok';
 
 export const GATEWAY_AUTH_HEADER = 'X-Cleep-Gateway-Auth';
 export const GATEWAY_TARGET_HEADER = 'X-Cleep-Gateway-Target';
@@ -29,24 +30,48 @@ export function getGatewayWebviewBinding(webContentsId: number): GatewayWebviewB
   return bindings.get(webContentsId);
 }
 
+function isNgrokUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return (
+      host === 'ngrok-free.app' ||
+      host.endsWith('.ngrok-free.app') ||
+      host === 'ngrok-free.dev' ||
+      host.endsWith('.ngrok-free.dev') ||
+      host === 'ngrok.app' ||
+      host.endsWith('.ngrok.app') ||
+      host === 'ngrok.io' ||
+      host.endsWith('.ngrok.io')
+    );
+  } catch {
+    return false;
+  }
+}
+
 /**
- * Single onBeforeSendHeaders for ngrok hosts: always skip the free interstitial,
- * and when the webview is gateway-bound inject Auth + Target.
+ * Single onBeforeSendHeaders for device webviews:
+ * - always mark the request as CleepDesktop-embedded
+ * - on ngrok hosts: skip free interstitial + optional gateway Auth/Target
  *
- * Must be the only listener on these URL filters (Electron keeps one handler).
+ * Must be the only listener (Electron keeps one handler per session filter set).
  */
 export function installGatewayHeaders(session: Session): void {
-  session.webRequest.onBeforeSendHeaders({ urls: NGROK_HOST_URL_FILTERS }, (details, callback) => {
+  session.webRequest.onBeforeSendHeaders({ urls: ['*://*/*'] }, (details, callback) => {
     const requestHeaders: Record<string, string> = {
       ...details.requestHeaders,
-      [NGROK_SKIP_BROWSER_WARNING_HEADER]: 'CleepDesktop',
+      [CLEEP_DESKTOP_EMBED_HEADER]: CLEEP_DESKTOP_EMBED_VALUE,
     };
-    const binding =
-      typeof details.webContentsId === 'number' ? bindings.get(details.webContentsId) : undefined;
-    if (binding?.gatewayToken) {
-      requestHeaders[GATEWAY_AUTH_HEADER] = binding.gatewayToken;
-      requestHeaders[GATEWAY_TARGET_HEADER] = binding.deviceUuid;
+
+    if (isNgrokUrl(details.url)) {
+      requestHeaders[NGROK_SKIP_BROWSER_WARNING_HEADER] = 'CleepDesktop';
+      const binding =
+        typeof details.webContentsId === 'number' ? bindings.get(details.webContentsId) : undefined;
+      if (binding?.gatewayToken) {
+        requestHeaders[GATEWAY_AUTH_HEADER] = binding.gatewayToken;
+        requestHeaders[GATEWAY_TARGET_HEADER] = binding.deviceUuid;
+      }
     }
+
     callback({ requestHeaders });
   });
 }
