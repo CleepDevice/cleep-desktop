@@ -1,4 +1,4 @@
-/* No I-beam on labels/titles — default arrow everywhere except real inputs / clickables. */
+/* No I-beam on labels/titles - default arrow everywhere except real inputs / clickables. */
 body,
 body * {
   cursor: default;
@@ -139,7 +139,7 @@ div.note-important {
 }
 
 /* toast */
-/* Angular Material has no CSS for md-center — without this, "bottom center"
+/* Angular Material has no CSS for md-center - without this, "bottom center"
    falls back visually to the left and covers the nav / devices panel. */
 md-toast.md-bottom.md-center {
   left: 0;
@@ -224,7 +224,7 @@ md-toast.info .md-toast-content {
   width: 15px;
 }
 
-/* Root row must not scroll — only inner page/webview surfaces scroll. */
+/* Root row must not scroll - only inner page/webview surfaces scroll. */
 md-content[ng-controller="cleepController as cleep"] {
   overflow: hidden !important;
 }
@@ -234,7 +234,7 @@ md-content[ng-controller="cleepController as cleep"] {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  /* flex column child of the row md-content — do not also use layout-fill (100% + tab bar → scrollbar) */
+  /* flex column child of the row md-content - do not also use layout-fill (100% + tab bar → scrollbar) */
 }
 
 /* Tabs = full-height toolbar "cells" (same chrome as a classic page title bar). */
@@ -252,7 +252,7 @@ md-content[ng-controller="cleepController as cleep"] {
 .content-tab {
   box-sizing: border-box;
   height: 100%;
-  /* Max 4 tabs: share the toolbar evenly (1→100%, 2→50%, … 4→25%). */
+  /* Max 4 tabs: share the toolbar evenly (1→100%, 2→50%, ... 4→25%). */
   flex: 1 1 0;
   min-width: 0;
   margin: 0;
@@ -828,7 +828,7 @@ device-webview {
   }
 }
 
-/* Homepage news cards — horizontal tile */
+/* Homepage news cards - horizontal tile */
 .news-cards {
   display: flex;
   flex-direction: column;

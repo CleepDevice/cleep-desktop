@@ -21,7 +21,7 @@ function($rootScope, $state, devicesService, logger) {
      */
     self.sessions = [];
 
-    /** Global header loader — last loading session / page wins. */
+    /** Global header loader - last loading session / page wins. */
     self.loading = false;
 
     var PAGE_META = {
@@ -331,7 +331,7 @@ function($rootScope, $state, devicesService, logger) {
         self.activeTabId = tabId;
         if (found.kind === 'device' && found.deviceUuid) {
             devicesService.selectDevice(found.deviceUuid);
-            // Webview pool is toggled via activeTabId — do not touch ui-router.
+            // Webview pool is toggled via activeTabId - do not touch ui-router.
         } else if (found.kind === 'page' && self._mainPage.state) {
             devicesService.selectDevice(null);
             // Restore page only if ui-view is stuck on a device placeholder state.

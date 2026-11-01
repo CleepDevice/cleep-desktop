@@ -125,7 +125,7 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
             nickname: '',
             authenticated: false,
         };
-        // Older sessions may lack nickname — fall back to email for display.
+        // Older sessions may lack nickname - fall back to email for display.
         if (self.websiteSession.authenticated && !self.websiteSession.nickname) {
             self.websiteSession.nickname = self.websiteSession.email || '';
         }
@@ -227,7 +227,7 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         if (self._websiteLoginDialog || self.websiteAuthBusy) {
             return;
         }
-        // Unseal vault first (if enabled) — stored creds can sign in without a form.
+        // Unseal vault first (if enabled) - stored creds can sign in without a form.
         var loadCreds = (electron.website && electron.website.loadCredentials)
             ? electron.website.loadCredentials()
             : Promise.resolve({

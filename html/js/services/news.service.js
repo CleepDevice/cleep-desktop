@@ -26,7 +26,7 @@ angular.module('Cleep').service('newsService', [
 
         /**
          * Start a recurring sync every hour from the first call
-         * (e.g. open at 08:36 → next sync at 09:36, 10:36, …).
+         * (e.g. open at 08:36 → next sync at 09:36, 10:36, ...).
          * Idempotent for the lifetime of the renderer.
          */
         self.ensureAutoRefresh = function () {
@@ -39,7 +39,7 @@ angular.module('Cleep').service('newsService', [
         };
 
         /**
-         * Stable content key — ignore data: cover URLs so cache vs remote compare cleanly.
+         * Stable content key - ignore data: cover URLs so cache vs remote compare cleanly.
          * @param {Array} articles
          * @returns {string}
          */
@@ -99,7 +99,7 @@ angular.module('Cleep').service('newsService', [
                 })
                 .catch(function (err) {
                     if (self.articles.length) {
-                        // Offline / Pages down — keep last good snapshot.
+                        // Offline / Pages down - keep last good snapshot.
                         self.fromCache = true;
                         self.error = null;
                         logger.warn('newsService.sync: using cache after remote failure', err);

@@ -12,7 +12,7 @@ angular.module('Cleep').controller('homepageController', [
             const hadContent = newsService.articles.length > 0;
             self.loading = !hadContent;
             contentTabs.loading = self.loading;
-            // Start the hourly clock at first homepage visit (08:36 → 09:36…).
+            // Start the hourly clock at first homepage visit (08:36 → 09:36...).
             newsService.ensureAutoRefresh();
 
             return newsService
