@@ -24,7 +24,7 @@ angular
             $mdToast.simple()
                 .textContent(message)
                 .toastClass(class_ || 'info')
-                .position('bottom left')
+                .position('bottom center')
                 .hideDelay(duration)
         );
     };
@@ -32,7 +32,7 @@ angular
     self.loading = function(message, class_) {
         $mdToast.show({
             template: '<md-toast><span class="md-toast-text">'+message+'</span><md-progress-circular md-mode="indeterminate" md-diameter="30" class="md-accent"></md-progress-circular></md-toast>',
-            position: 'bottom left',
+            position: 'bottom center',
             toastClass: class_ || 'info',
             hideDelay: 0
         });

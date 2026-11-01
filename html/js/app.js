@@ -25,7 +25,6 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         email: '',
         nickname: '',
         authenticated: false,
-        persisted: false,
     };
 
     self.refreshVaultStatus = function(status) {
@@ -123,7 +122,6 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
             email: '',
             nickname: '',
             authenticated: false,
-            persisted: false,
         };
         // Older sessions may lack nickname — fall back to email for display.
         if (self.websiteSession.authenticated && !self.websiteSession.nickname) {
@@ -193,11 +191,41 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
             .catch(angular.noop);
     };
 
-    self.openWebsiteLoginDialog = function() {
+    self._showWebsiteLoginDialog = function(creds) {
         if (self._websiteLoginDialog) {
             return;
         }
-        // Unseal vault first (if enabled) to autofill stored website credentials.
+        self._websiteLoginDialog = self.openModal(
+            'websiteLoginController',
+            'js/website-auth/website-login-dialog.html',
+            {
+                email: (creds && creds.email) || self.websiteSession.email || '',
+                password: (creds && creds.password) || '',
+                fromVault: Boolean(creds && creds.fromVault),
+            }
+        );
+        if (!self._websiteLoginDialog || typeof self._websiteLoginDialog.finally !== 'function') {
+            self._websiteLoginDialog = null;
+            return;
+        }
+        self._websiteLoginDialog
+            .then(function(session) {
+                if (session) {
+                    self.applyWebsiteSession(session);
+                }
+            })
+            .catch(angular.noop)
+            .finally(function() {
+                self._websiteLoginDialog = null;
+                self.refreshWebsiteSession();
+            });
+    };
+
+    self.openWebsiteLoginDialog = function() {
+        if (self._websiteLoginDialog || self.websiteAuthBusy) {
+            return;
+        }
+        // Unseal vault first (if enabled) — stored creds can sign in without a form.
         var loadCreds = (electron.website && electron.website.loadCredentials)
             ? electron.website.loadCredentials()
             : Promise.resolve({
@@ -206,6 +234,7 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
                 fromVault: false,
             });
 
+        self.websiteAuthBusy = true;
         loadCreds
             .catch(function() {
                 return {
@@ -215,30 +244,32 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
                 };
             })
             .then(function(creds) {
-                self._websiteLoginDialog = self.openModal(
-                    'websiteLoginController',
-                    'js/website-auth/website-login-dialog.html',
-                    {
-                        email: (creds && creds.email) || self.websiteSession.email || '',
-                        password: (creds && creds.password) || '',
-                        fromVault: Boolean(creds && creds.fromVault),
+                // Vault unlock may have restored a Bearer session (OS/vault fallback).
+                return self.refreshWebsiteSession().then(function() {
+                    if (self.websiteSession.authenticated) {
+                        toast.success('Signed in');
+                        return;
                     }
-                );
-                if (!self._websiteLoginDialog || typeof self._websiteLoginDialog.finally !== 'function') {
-                    self._websiteLoginDialog = null;
-                    return;
-                }
-                self._websiteLoginDialog
-                    .then(function(session) {
-                        if (session) {
-                            self.applyWebsiteSession(session);
-                        }
-                    })
-                    .catch(angular.noop)
-                    .finally(function() {
-                        self._websiteLoginDialog = null;
-                        self.refreshWebsiteSession();
-                    });
+
+                    var email = (creds && creds.email) || '';
+                    var password = (creds && creds.password) || '';
+                    if (creds && creds.fromVault && email && password && electron.website && electron.website.login) {
+                        return electron.website.login(email, password)
+                            .then(function(session) {
+                                self.applyWebsiteSession(session);
+                                toast.success('Signed in');
+                            })
+                            .catch(function(error) {
+                                toast.error((error && error.message) || 'Sign-in failed');
+                                self._showWebsiteLoginDialog(creds);
+                            });
+                    }
+
+                    self._showWebsiteLoginDialog(creds);
+                });
+            })
+            .finally(function() {
+                self.websiteAuthBusy = false;
             });
     };
 

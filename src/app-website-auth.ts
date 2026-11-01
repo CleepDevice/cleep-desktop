@@ -1,20 +1,19 @@
 import axios from 'axios';
-import { app, BrowserWindow, safeStorage } from 'electron';
-import fs from 'fs';
-import path from 'path';
+import { BrowserWindow } from 'electron';
 import { appLogger } from './app-logger';
 import { appSettings } from './app-settings';
 import { appVault } from './app-vault';
 import { VaultError } from './app-vault.types';
 import { handleInvoke, ipcErr, ipcOk, sendToRenderer } from './ipc/ipc-main';
+import {
+  clearWebsiteSessionStores,
+  loadWebsiteSession,
+  logSafeStorageStatus,
+  saveWebsiteSession,
+  type WebsiteSessionSecret,
+} from './website-session-store';
 
-/**
- * Legacy vault key (pre safeStorage). Migrated once when vault unlocks, then deleted.
- * Website session Bearer lives outside the vault so startup restore needs no unseal.
- */
-const LEGACY_VAULT_KEY = 'website-auth';
-
-/** Email/password for website login — vault only (unseal on Sign in). */
+/** Email/password for website login autofill — Cleep vault only. */
 const VAULT_CREDS_KEY = 'website-credentials';
 
 export type WebsiteAuthSession = {
@@ -24,13 +23,6 @@ export type WebsiteAuthSession = {
   jti: string;
   /** True when the Bearer token is loaded in memory. */
   authenticated: boolean;
-  /**
-   * True when the session was persisted with OS safeStorage (outside the vault).
-   * Credentials (email/password) live in the vault separately.
-   */
-  persisted: boolean;
-  /** @deprecated use persisted */
-  storedInVault?: boolean;
 };
 
 /** Prefill payload for the Sign in dialog (from vault after unseal). */
@@ -46,14 +38,6 @@ type WebsiteCredentialsSecret = {
   password: string;
 };
 
-type WebsiteAuthSecret = {
-  accessToken: string;
-  email: string;
-  nickname: string;
-  role: string;
-  jti: string;
-};
-
 type DesktopLoginResponse = {
   accessToken: string;
   expiresIn: number;
@@ -64,18 +48,14 @@ type DesktopLoginResponse = {
 };
 
 class AppWebsiteAuth {
-  private session: WebsiteAuthSecret | null = null;
+  private session: WebsiteSessionSecret | null = null;
   private window: BrowserWindow | null = null;
-  private sessionPersisted = false;
-
-  private sessionFilePath(): string {
-    return path.join(app.getPath('userData'), 'website-session.enc');
-  }
 
   public configure(window: BrowserWindow): void {
     this.window = window;
     this.addIpcs();
-    this.hydrateFromDisk();
+    logSafeStorageStatus();
+    this.hydrateSession();
   }
 
   /** Absolute API base from Preferences → Network (empty if not configured). */
@@ -95,8 +75,6 @@ class AppWebsiteAuth {
         role: this.session.role,
         jti: this.session.jti,
         authenticated: true,
-        persisted: this.sessionPersisted,
-        storedInVault: this.sessionPersisted,
       };
     }
     const email = (appSettings.get<string>('cleep.websiteemail') || '').trim();
@@ -107,8 +85,6 @@ class AppWebsiteAuth {
       role: '',
       jti: '',
       authenticated: false,
-      persisted: false,
-      storedInVault: false,
     };
   }
 
@@ -169,15 +145,9 @@ class AppWebsiteAuth {
     appSettings.set('cleep.websiteemail', data.email);
     appSettings.set('cleep.websitenickname', nickname);
 
-    this.sessionPersisted = this.persistToDisk(this.session);
-    if (!this.sessionPersisted) {
-      appLogger.warn('Website session kept in memory only (OS encryption unavailable)');
-    }
-
-    // Drop any legacy vault copy so vault is no longer required for website session.
-    this.clearLegacyVaultEntryLazy();
-
-    // Store email/password in vault for next Sign in (prompts unseal if needed).
+    // Bearer: OS safeStorage first, Cleep vault fallback. Creds: vault only.
+    const backend = await saveWebsiteSession(this.session);
+    appLogger.info('Website session persisted', { backend });
     await this.saveCredentialsToVault(email.trim(), password);
 
     const session = this.getSession();
@@ -186,8 +156,8 @@ class AppWebsiteAuth {
   }
 
   /**
-   * Unseal vault if enabled and return stored website credentials for the login dialog.
-   * Does not prompt when vault is disabled. Cancelled unlock → empty password + settings email.
+   * Unseal vault if enabled (creds autofill). Also restores Bearer from vault when
+   * OS safeStorage did not hold a session (fallback path).
    */
   public async loadCredentialsForLogin(): Promise<WebsiteLoginCredentials> {
     const fallbackEmail = (appSettings.get<string>('cleep.websiteemail') || '').trim();
@@ -212,6 +182,9 @@ class AppWebsiteAuth {
       return empty;
     }
 
+    // Vault unlock may expose a fallback-stored Bearer.
+    this.hydrateSession();
+
     try {
       if (!appVault.hasSecret(VAULT_CREDS_KEY)) {
         return empty;
@@ -229,22 +202,6 @@ class AppWebsiteAuth {
       }
       appLogger.warn('Unable to read website credentials from vault', { error });
       return empty;
-    }
-  }
-
-  private async saveCredentialsToVault(email: string, password: string): Promise<void> {
-    if (!appVault.isEnabled() || !email || !password) {
-      return;
-    }
-    try {
-      await appVault.putSecretAsync(VAULT_CREDS_KEY, { email, password } satisfies WebsiteCredentialsSecret);
-      appLogger.debug('Website credentials saved to vault');
-    } catch (error) {
-      if (error instanceof VaultError && error.code === 'VAULT_UNLOCK_CANCELLED') {
-        appLogger.info('Website credentials not saved (vault unlock cancelled)');
-        return;
-      }
-      appLogger.warn('Unable to save website credentials to vault', { error });
     }
   }
 
@@ -277,131 +234,52 @@ class AppWebsiteAuth {
     return session;
   }
 
-  private clearLocal(): void {
-    // Clear session only — vault credentials stay for the next Sign in autofill.
-    this.session = null;
-    this.sessionPersisted = false;
-    appSettings.set('cleep.websitenickname', '');
-    this.clearDisk();
-    this.clearLegacyVaultEntryLazy();
-  }
-
-  /** Restore Bearer session from OS-encrypted file (no vault unseal). */
-  private hydrateFromDisk(): void {
-    try {
-      const secret = this.loadFromDisk();
-      if (!secret?.accessToken || !secret.email || !secret.jti) {
-        return;
-      }
-      const nickname = (secret.nickname || '').trim() || secret.email;
-      this.session = {
-        accessToken: secret.accessToken,
-        email: secret.email,
-        nickname,
-        role: secret.role || 'user',
-        jti: secret.jti,
-      };
-      this.sessionPersisted = true;
-      appSettings.set('cleep.websiteemail', secret.email);
-      appSettings.set('cleep.websitenickname', nickname);
-      this.emitChanged(this.getSession());
-      appLogger.debug('Website session restored from safeStorage');
-    } catch (error) {
-      appLogger.warn('Unable to restore website session from disk', { error });
-      this.clearDisk();
-    }
-  }
-
-  /**
-   * After vault unlock: migrate legacy vault-stored website token to safeStorage once.
-   */
+  /** Called when vault becomes unlocked — restore Bearer if stored as vault fallback. */
   public onVaultUnlocked(): void {
+    this.hydrateSession();
+  }
+
+  private clearLocal(): void {
+    // Clear Bearer stores; vault login credentials stay for autofill.
+    this.session = null;
+    appSettings.set('cleep.websitenickname', '');
+    clearWebsiteSessionStores();
+  }
+
+  private hydrateSession(): void {
     if (this.session) {
       return;
     }
+    const secret = loadWebsiteSession();
+    if (!secret?.accessToken || !secret.email || !secret.jti) {
+      return;
+    }
+    const nickname = (secret.nickname || '').trim() || secret.email;
+    this.session = {
+      accessToken: secret.accessToken,
+      email: secret.email,
+      nickname,
+      role: secret.role || 'user',
+      jti: secret.jti,
+    };
+    appSettings.set('cleep.websiteemail', secret.email);
+    appSettings.set('cleep.websitenickname', nickname);
+    this.emitChanged(this.getSession());
+  }
+
+  private async saveCredentialsToVault(email: string, password: string): Promise<void> {
+    if (!appVault.isEnabled() || !email || !password) {
+      return;
+    }
     try {
-      if (!appVault.isEnabled() || !appVault.isUnlocked() || !appVault.hasSecret(LEGACY_VAULT_KEY)) {
-        return;
-      }
-      const secret = appVault.getSecret(LEGACY_VAULT_KEY) as WebsiteAuthSecret;
-      if (!secret?.accessToken || !secret.email || !secret.jti) {
-        return;
-      }
-      const nickname = (secret.nickname || '').trim() || secret.email;
-      this.session = {
-        accessToken: secret.accessToken,
-        email: secret.email,
-        nickname,
-        role: secret.role || 'user',
-        jti: secret.jti,
-      };
-      appSettings.set('cleep.websiteemail', secret.email);
-      appSettings.set('cleep.websitenickname', nickname);
-      this.sessionPersisted = this.persistToDisk(this.session);
-      try {
-        appVault.deleteSecret(LEGACY_VAULT_KEY);
-      } catch {
-        /* ignore */
-      }
-      this.emitChanged(this.getSession());
-      appLogger.info('Migrated legacy website session from vault to safeStorage');
+      await appVault.putSecretAsync(VAULT_CREDS_KEY, { email, password } satisfies WebsiteCredentialsSecret);
+      appLogger.debug('Website credentials saved to vault');
     } catch (error) {
-      appLogger.debug('Legacy website vault migrate skipped', { error });
-    }
-  }
-
-  private persistToDisk(secret: WebsiteAuthSecret): boolean {
-    try {
-      if (!safeStorage.isEncryptionAvailable()) {
-        return false;
-      }
-      const payload = Buffer.from(JSON.stringify(secret), 'utf8');
-      const encrypted = safeStorage.encryptString(payload.toString('utf8'));
-      fs.writeFileSync(this.sessionFilePath(), encrypted);
-      return true;
-    } catch (error) {
-      appLogger.warn('Unable to persist website session', { error });
-      return false;
-    }
-  }
-
-  private loadFromDisk(): WebsiteAuthSecret | null {
-    const filePath = this.sessionFilePath();
-    if (!fs.existsSync(filePath)) {
-      return null;
-    }
-    if (!safeStorage.isEncryptionAvailable()) {
-      return null;
-    }
-    const encrypted = fs.readFileSync(filePath);
-    const json = safeStorage.decryptString(encrypted);
-    const parsed = JSON.parse(json) as WebsiteAuthSecret;
-    return parsed;
-  }
-
-  private clearDisk(): void {
-    try {
-      const filePath = this.sessionFilePath();
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    } catch (error) {
-      appLogger.warn('Unable to clear website session file', { error });
-    }
-  }
-
-  private clearLegacyVaultEntryLazy(): void {
-    try {
-      if (!appVault.isEnabled() || !appVault.hasSecret(LEGACY_VAULT_KEY)) {
+      if (error instanceof VaultError && error.code === 'VAULT_UNLOCK_CANCELLED') {
+        appLogger.info('Website credentials not saved (vault unlock cancelled)');
         return;
       }
-      if (appVault.isUnlocked()) {
-        appVault.deleteSecret(LEGACY_VAULT_KEY);
-        return;
-      }
-      // Do not prompt unlock just to delete legacy key.
-    } catch {
-      /* ignore */
+      appLogger.warn('Unable to save website credentials to vault', { error });
     }
   }
 
@@ -437,9 +315,7 @@ class AppWebsiteAuth {
 
   private addIpcs(): void {
     handleInvoke('website-auth-get-session', () => {
-      if (!this.session) {
-        this.hydrateFromDisk();
-      }
+      this.hydrateSession();
       return ipcOk(this.getSession());
     });
 

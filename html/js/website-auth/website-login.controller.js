@@ -27,11 +27,7 @@ function(closeModal, modalData, electron, toast) {
         electron.website.login(self.email, self.password)
             .then(function(session) {
                 self.password = '';
-                if (session.persisted || session.storedInVault) {
-                    toast.info('Signed in. Session saved on this device.');
-                } else {
-                    toast.info('Signed in. Session is memory-only (OS encryption unavailable).');
-                }
+                toast.success('Signed in');
                 closeModal(session);
             })
             .catch(function(error) {

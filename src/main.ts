@@ -6,6 +6,7 @@ import { createAppMenu } from './app-menu';
 import { createAppWindow, createSplashscreenWindow } from './app-window';
 import { parseArgs } from './utils/app.helpers';
 import { appLogger } from './app-logger';
+import { preferLinuxLibsecretPasswordStore } from './os-password-store';
 import { appUpdater } from './app-updater';
 import { appFileDownload } from './app-file-download';
 import { appIso } from './app-iso';
@@ -26,6 +27,9 @@ if (isE2e) {
   // Isolate settings/cache from the developer profile during Playwright runs.
   app.setPath('userData', path.join(os.tmpdir(), `cleep-desktop-e2e-${process.pid}`));
 }
+
+// Before ready: fix Electron Linux password-store detection (e.g. MATE → basic_text).
+preferLinuxLibsecretPasswordStore();
 
 // Dynamic import keeps chokidar (devDependency) out of the packaged app graph.
 if (!isE2e && !app.isPackaged) {
