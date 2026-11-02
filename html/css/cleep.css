@@ -34,6 +34,31 @@ select,
   cursor: pointer;
 }
 
+/* Disabled controls must not look clickable (overrides the pointer rules above). */
+.md-button[disabled],
+.md-button[disabled] *,
+md-button[disabled],
+md-button[disabled] *,
+md-checkbox[disabled],
+md-checkbox[disabled] *,
+md-checkbox.md-disabled,
+md-checkbox.md-disabled *,
+md-switch[disabled],
+md-switch[disabled] *,
+md-switch.md-disabled,
+md-switch.md-disabled *,
+md-radio-button[disabled],
+md-radio-button[disabled] *,
+md-radio-button.md-disabled,
+md-radio-button.md-disabled *,
+md-slider[disabled],
+md-slider[disabled] *,
+md-slider.md-disabled,
+md-slider.md-disabled *,
+select:disabled {
+  cursor: default;
+}
+
 input,
 textarea,
 [contenteditable="true"],
@@ -550,6 +575,33 @@ device-webview {
   background: #f0f4f7;
   border-color: #b0bec5;
   outline: none;
+}
+
+.developer-sync-event {
+  cursor: default;
+}
+
+.developer-sync-event:hover,
+.developer-sync-event:focus {
+  background: #fafafa;
+  border-color: #e0e0e0;
+  outline: none;
+}
+
+.developer-sync-event-detail {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.62);
+  word-break: break-word;
+}
+
+.developer-sync-event--error .monitoring-event-icon svg path {
+  fill: #e57373;
+}
+
+.developer-sync-event--success .monitoring-event-icon svg path {
+  fill: #81c784;
 }
 
 .monitoring-event-header {
@@ -1358,6 +1410,32 @@ a.md-button.cl-button-sm {
     height: 48px;
     min-width: 48px;
     min-height: 48px;
+}
+
+.config-checkbox-control {
+  gap: 8px;
+}
+
+.config-checkbox-caption-front {
+  font-size: 12px;
+  line-height: 1.3;
+  color: rgba(0, 0, 0, 0.54);
+  text-align: right;
+}
+
+.config-checkbox-control:has(md-checkbox[disabled]) .config-checkbox-caption-front,
+.config-checkbox-control:has(md-checkbox.md-disabled) .config-checkbox-caption-front {
+  color: rgba(0, 0, 0, 0.28);
+}
+
+/* Compact config-item rows for developer app sync picker */
+.developer-apps-list .config-item {
+  padding: 4px 8px;
+  margin-bottom: 0;
+}
+
+.developer-apps-list config-item-desc > div[layout="column"] {
+  min-height: 32px !important;
 }
 
 /********** config-item ***********/

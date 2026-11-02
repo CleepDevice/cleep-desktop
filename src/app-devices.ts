@@ -18,7 +18,12 @@ import {
   storeRemoteRefreshSecret,
 } from './remote-url-refresh';
 import { parseGatewayAccess, readGatewayAccess, storeGatewayAccess } from './gateway-access';
-import { bindGatewayWebview, unbindGatewayWebview } from './utils/gateway';
+import {
+  bindDeveloperNoCacheWebview,
+  bindGatewayWebview,
+  unbindDeveloperNoCacheWebview,
+  unbindGatewayWebview,
+} from './utils/gateway';
 
 function normalizeRemoteAccessUrls(raw: unknown): Record<string, string> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -277,6 +282,9 @@ class AppDevices {
   }
 
   private emitDevicesUpdated(): void {
+    void import('./app-developer').then(({ appDeveloper }) => {
+      void appDeveloper.reconcileWatcher();
+    });
     if (!this.window || this.window.isDestroyed?.()) {
       return;
     }
@@ -634,6 +642,16 @@ class AppDevices {
 
     handleInvoke('devices-bind-webview', async (_event, request) => {
       const { webContentsId, deviceUuid, gatewayDeviceUuid } = request;
+
+      // Force no-cache on the selected developer device so synced UI sources reload.
+      const developerEnabled = Boolean(appSettings.get<boolean>('cleep.developer'));
+      const developerDeviceUuid = String(appSettings.get<string>('cleep.developerdevice') || '').trim();
+      if (developerEnabled && developerDeviceUuid && deviceUuid === developerDeviceUuid) {
+        bindDeveloperNoCacheWebview(webContentsId);
+      } else {
+        unbindDeveloperNoCacheWebview(webContentsId);
+      }
+
       if (gatewayDeviceUuid) {
         const access = await readGatewayAccess(gatewayDeviceUuid);
         if (access?.token) {

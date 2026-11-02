@@ -16,7 +16,8 @@ import type { InstallData } from '../app-iso';
 import type { LoggerMessage } from '../app-logger';
 import type { KeyPath, KeyValue, SettingsObject, SettingsValue } from '../app-settings';
 import type { UpdateData, UpdateStatus } from '../app-updater';
-import type { DeveloperStatus } from '../app-developer';
+import type { DeveloperStatus, DeveloperSyncLogEntry } from '../app-developer';
+import type { DeveloperAppEntry } from '../developer-apps';
 import type { VaultEnableResult, VaultStatus } from '../app-vault.types';
 import type { WebsiteAuthSession, WebsiteLoginCredentials } from '../app-website-auth';
 import type { CleebusMessageResponse, CleepbusPeerInfos } from '../cleepbus/cleepbus.types';
@@ -162,6 +163,19 @@ export type InvokeContract = {
     response: IpcResult<null>;
   };
   'developer-get-status': { request: void; response: IpcResult<DeveloperStatus> };
+  'developer-list-apps': { request: void; response: IpcResult<DeveloperAppEntry[]> };
+  'developer-save-ssh': {
+    request: { deviceUuid: string; password: string; username?: string };
+    response: IpcResult<DeveloperStatus>;
+  };
+  'developer-clear-ssh': {
+    request: { deviceUuid: string };
+    response: IpcResult<DeveloperStatus>;
+  };
+  'developer-sync-now': {
+    request: { folderNames?: string[] } | void;
+    response: IpcResult<DeveloperStatus>;
+  };
   'get-changelog': { request: void; response: IpcResult<string> };
   'get-electron-log-path': { request: void; response: IpcResult<string> };
   'iso-get-drives': { request: void; response: IpcResult<IsoDrivesPayload> };
@@ -248,6 +262,8 @@ export type ReceiveContract = {
   'updater-rpi-imager-update-available': { args: [UpdateData] };
   'vault-status-changed': { args: [VaultStatus] };
   'vault-unlock-required': { args: [] };
+  'developer-status-changed': { args: [DeveloperStatus] };
+  'developer-sync-log': { args: [DeveloperSyncLogEntry] };
   'website-auth-changed': { args: [WebsiteAuthSession] };
   'webview-http-error': {
     args: [webContentsId: number, details: { url: string; statusCode: number }];

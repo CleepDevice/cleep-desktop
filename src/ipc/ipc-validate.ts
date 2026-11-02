@@ -194,6 +194,20 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
     gatewayDeviceUuid: z.string().optional(),
   }),
   'developer-get-status': null,
+  'developer-list-apps': null,
+  'developer-save-ssh': z.object({
+    deviceUuid: nonEmptyString,
+    password: z.string().min(1),
+    username: z.string().optional(),
+  }),
+  'developer-clear-ssh': z.object({
+    deviceUuid: nonEmptyString,
+  }),
+  'developer-sync-now': z
+    .object({
+      folderNames: z.array(z.string()).optional(),
+    })
+    .optional(),
   'get-changelog': null,
   'get-electron-log-path': null,
   'iso-get-drives': null,

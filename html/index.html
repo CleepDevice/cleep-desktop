@@ -48,6 +48,48 @@
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Monitoring</p>
                 </md-list-item>
 
+                <md-menu
+                    ng-if="cleep.developerStatus.enabled"
+                    md-position-mode="target-right target"
+                    md-offset="8 0"
+                >
+                    <md-list-item
+                        ng-click="cleep.openDeveloperMenu($mdMenu, $event)"
+                        title="{{ cleep.developerStatusTitle() }}"
+                    >
+                        <md-icon
+                            md-svg-icon="code-braces"
+                            ng-class="cleep.selectedToolbarItem=='developerSync' ? 'md-accent' : cleep.developerStatusIconClass()"
+                        ></md-icon>
+                        <p style="color:white;" ng-if="!cleep.toolbarCollapsed">
+                            {{ cleep.developerStatusLabel() }}
+                        </p>
+                    </md-list-item>
+                    <md-menu-content width="3">
+                        <md-menu-item>
+                            <md-button ng-click="cleep.openPage('developerSync')">
+                                <md-icon md-svg-icon="text-box-outline"></md-icon>
+                                Sync logs
+                            </md-button>
+                        </md-menu-item>
+                        <md-menu-item>
+                            <md-button
+                                ng-click="cleep.syncDeveloperAppsNow()"
+                                ng-disabled="cleep.developerSyncBusy"
+                            >
+                                <md-icon md-svg-icon="sync"></md-icon>
+                                Force sync all
+                            </md-button>
+                        </md-menu-item>
+                        <md-menu-item>
+                            <md-button ng-click="cleep.openDeveloperPreferences()">
+                                <md-icon md-svg-icon="cog"></md-icon>
+                                Preferences
+                            </md-button>
+                        </md-menu-item>
+                    </md-menu-content>
+                </md-menu>
+
                 <md-divider></md-divider>
 
                 <md-list-item ng-click="cleep.openModal('preferencesController', 'js/preferences/preferences-dialog.html')" title="Preferences">
@@ -89,19 +131,6 @@
                     ></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">
                         {{ cleep.toolbarTask.display.label }}
-                    </p>
-                </md-list-item>
-                <md-list-item
-                    ng-if="cleep.developerStatus.enabled"
-                    ng-click="cleep.onDeveloperToolbarClick()"
-                    title="{{ cleep.developerStatusTitle() }}"
-                >
-                    <md-icon
-                        md-svg-icon="code-braces"
-                        ng-class="cleep.developerStatusIconClass()"
-                    ></md-icon>
-                    <p style="color:white;" ng-if="!cleep.toolbarCollapsed">
-                        {{ cleep.developerStatusLabel() }}
                     </p>
                 </md-list-item>
                 <md-list-item
@@ -431,6 +460,7 @@
     <script src="js/services/content-tabs.service.js"></script>
     <script src="js/services/download.service.js"></script>
     <script src="js/services/monitoring.service.js"></script>
+    <script src="js/services/developer-sync-log.service.js"></script>
     <script src="js/services/news.service.js"></script>
     <script src="js/homepage/homepage.controller.js"></script>
     <script src="js/updates/updates.controller.js"></script>
@@ -448,6 +478,7 @@
     <script src="js/device-auth/device-auth.controller.js"></script>
     <script src="js/device-error/device-error.controller.js"></script>
     <script src="js/monitoring/monitoring.controller.js"></script>
+    <script src="js/developer/developer-sync.controller.js"></script>
     <script src="js/about/about.controller.js"></script>
     <script src="js/support/support.controller.js"></script>
     <script src="js/help/help-dialog.controller.js"></script>

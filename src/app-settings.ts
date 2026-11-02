@@ -82,6 +82,9 @@ export class AppSettings {
 
     handleInvoke('settings-set-all', (_event, arg) => {
       this.setAll(arg);
+      void import('./app-developer').then(({ appDeveloper }) => {
+        void appDeveloper.reconcileWatcher();
+      });
       return ipcOk(true as const);
     });
 
@@ -97,6 +100,11 @@ export class AppSettings {
 
     onRendererSend('settings-set', (_event, arg) => {
       this.set(arg.key, arg.value);
+      if (String(arg.key).startsWith('cleep.developer')) {
+        void import('./app-developer').then(({ appDeveloper }) => {
+          void appDeveloper.reconcileWatcher();
+        });
+      }
     });
 
     handleInvoke('settings-filepath', () => ipcOk(this.filepath()));
@@ -159,6 +167,10 @@ export class AppSettings {
     }
     if (!settings.hasSync('cleep.developerdevice')) {
       settings.setSync('cleep.developerdevice', DEFAULT_SETTINGS.developerDevice);
+    }
+    // Selected local app folders for sync — empty by default (opt-in per app).
+    if (!settings.hasSync('cleep.developerapps')) {
+      settings.setSync('cleep.developerapps', []);
     }
 
     // rpi-imager section

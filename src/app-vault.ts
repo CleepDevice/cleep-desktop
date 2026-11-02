@@ -145,6 +145,12 @@ class AppVault {
         appWebsiteAuth.onVaultUnlocked();
       })
       .catch((): undefined => undefined);
+    // Developer sync needs the vault for SSH secrets; resume watch sync after unlock.
+    void import('./app-developer')
+      .then(({ appDeveloper }): void => {
+        appDeveloper.onVaultUnlocked();
+      })
+      .catch((): undefined => undefined);
   }
 
   public isEnabled(): boolean {

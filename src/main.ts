@@ -151,6 +151,7 @@ app.on('ready', async function () {
     // configure modules
     appAuth.configure(mainWindow);
     appVault.setWindow(mainWindow);
+    appDeveloper.setWindow(mainWindow);
     appWebsiteAuth.configure(mainWindow);
     appUpdater.configure(mainWindow);
     appFileDownload.configure(mainWindow);

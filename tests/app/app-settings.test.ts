@@ -29,6 +29,7 @@ describe('AppSettings', () => {
     expect(appSettings.get<boolean>('cleep.developer')).toBe(false);
     expect(appSettings.get<string>('cleep.developersources')).toBe('');
     expect(appSettings.get<string>('cleep.developerdevice')).toBe('');
+    expect(appSettings.get<string[]>('cleep.developerapps')).toEqual([]);
     expect(appSettings.has('rpiimager.version')).toBe(true);
     expect(appSettings.get<number>('remote.wsport')).toBe(5610);
     expect(appSettings.get<string>('proxy.mode')).toBe('noproxy');

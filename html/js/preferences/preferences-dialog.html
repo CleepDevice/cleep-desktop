@@ -243,7 +243,17 @@
                 ></config-switch>
 
                 <div ng-if="ctl.settings.cleep.developer" layout="column">
-                    <config-section cl-title="Development configuration" cl-icon="code-braces"></config-section>
+                    <config-section cl-title="Development configuration" cl-icon="cog"></config-section>
+                    <config-text
+                        cl-title="Cleep applications sources folder"
+                        cl-subtitle="Choose the parent folder that contains your application sources."
+                        cl-model="ctl.settings.cleep.developersources"
+                        cl-readonly="true"
+                        cl-btn-icon="folder-open"
+                        cl-btn-tooltip="Select folder"
+                        cl-btn-style="md-raised md-primary"
+                        cl-click="ctl.selectDeveloperSourcesFolder()"
+                    ></config-text>
                     <config-note
                         ng-if="!ctl.hasDeveloperDevice"
                         cl-type="warning"
@@ -258,16 +268,53 @@
                         cl-empty="Select a device"
                         cl-disabled="!ctl.hasDeveloperDevice"
                     ></config-select>
+                    <config-note
+                        ng-if="ctl.settings.cleep.developerdevice && ctl.developerSyncUnsupported"
+                        cl-type="warning"
+                        cl-note="Source sync over rsync is not supported on Windows yet."
+                    ></config-note>
                     <config-text
-                        cl-title="Cleep applications sources folder"
-                        cl-subtitle="Choose the parent folder that contains your application sources."
-                        cl-model="ctl.settings.cleep.developersources"
-                        cl-readonly="true"
-                        cl-btn-icon="folder-open"
-                        cl-btn-tooltip="Select folder"
+                        ng-if="ctl.settings.cleep.developerdevice"
+                        cl-title="Root SSH password"
+                        cl-subtitle="{{ ctl.developerSshSubtitle() }}"
+                        cl-password="true"
+                        cl-placeholder="password"
+                        cl-model="ctl.developerSshPassword"
+                        cl-btn-icon="content-save"
+                        cl-btn-tooltip="Save SSH password"
                         cl-btn-style="md-raised md-primary"
-                        cl-click="ctl.selectDeveloperSourcesFolder()"
+                        cl-click="ctl.saveDeveloperSshPassword()"
                     ></config-text>
+
+                    <config-section
+                        ng-if="ctl.settings.cleep.developersources"
+                        cl-title="Applications to synchronize"
+                        cl-icon="puzzle"
+                    ></config-section>
+                    <config-note
+                        ng-if="ctl.settings.cleep.developersources && !ctl.developerAppEntries.length"
+                        cl-type="info"
+                        cl-note="No folders found in the sources directory."
+                    ></config-note>
+                    <config-note
+                        ng-if="ctl.settings.cleep.developersources && ctl.developerAppEntries.length && !ctl.hasValidDeveloperApp"
+                        cl-type="warning"
+                        cl-note="No Cleep application was detected in this folder. Each app needs a backend Python class inheriting from CleepModule."
+                    ></config-note>
+                    <div
+                        class="developer-apps-list"
+                        ng-if="ctl.settings.cleep.developersources && ctl.developerAppEntries.length"
+                    >
+                        <config-checkbox
+                            ng-repeat="app in ctl.developerAppEntries track by app.folderName"
+                            cl-title="{{ app.label }}"
+                            cl-caption="{{ app.valid ? ('Sync to /root/cleep-dev/modules/' + app.moduleName + '/') : 'Not a Cleep application' }}"
+                            cl-front="true"
+                            cl-model="ctl.developerAppChecks[app.folderName]"
+                            cl-disabled="!app.valid"
+                            cl-click="ctl.onDeveloperAppCheck(app, value)"
+                        ></config-checkbox>
+                    </div>
                 </div>
             </config-tab>
 

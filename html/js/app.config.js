@@ -109,6 +109,12 @@
             controllerAs: 'ctl',
             templateUrl: 'js/monitoring/monitoring.html'
         })
+        .state('developerSync', {
+            url: '/developer/sync',
+            controller: 'developerSyncController',
+            controllerAs: 'ctl',
+            templateUrl: 'js/developer/developer-sync.html'
+        })
         .state('devPlayground', {
             url: '/dev/playground',
             controller: 'devPlaygroundController',

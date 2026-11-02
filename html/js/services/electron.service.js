@@ -207,6 +207,12 @@ angular
 
     self.developer = {
         getStatus: bindInvoke(api.developer && api.developer.getStatus),
+        listApps: bindInvoke(api.developer && api.developer.listApps),
+        saveSsh: bindInvoke(api.developer && api.developer.saveSsh),
+        clearSsh: bindInvoke(api.developer && api.developer.clearSsh),
+        syncNow: bindInvoke(api.developer && api.developer.syncNow), // optional folderNames[]
+        onStatusChanged: bindOn(api.developer && api.developer.onStatusChanged),
+        onSyncLog: bindOn(api.developer && api.developer.onSyncLog),
     };
 
     self.devices = {

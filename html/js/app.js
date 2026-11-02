@@ -3,11 +3,11 @@ var Cleep = angular.module('Cleep', ['ngMaterial', 'ngAnimate', 'ngMessages', 'u
 Cleep
 .controller('cleepController', ['$scope', '$rootScope', '$state', 'toolbarTaskService', 'modalService',
                                 '$timeout', '$transitions', 'settingsService', 'devicesService',
-                                'updateService', 'installService', 'monitoringService', 'downloadService',
-                                'electronService', 'toastService', 'contentTabsService',
+                                'updateService', 'installService', 'monitoringService', 'developerSyncLogService',
+                                'downloadService', 'electronService', 'toastService', 'contentTabsService',
 function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $transitions, settings,
-        devicesService, updateService, installService, monitoringService, downloadService, electron, toast,
-        contentTabs) {
+        devicesService, updateService, installService, monitoringService, developerSyncLog, downloadService,
+        electron, toast, contentTabs) {
     var self = this;
     self.toolbarTask = toolbarTask;
     self.contentTabs = contentTabs;
@@ -27,6 +27,14 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         deviceUuid: '',
         deviceOk: false,
         hasDeveloperDevice: false,
+        selectedApps: [],
+        appsOk: false,
+        sshConfigured: false,
+        syncSupported: true,
+        syncSupport: 'supported',
+        syncStatus: 'idle',
+        syncError: '',
+        lastSyncAt: null,
     };
     self.websiteAuthAvailable = false;
     self.websiteAuthBusy = false;
@@ -125,6 +133,14 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
             deviceUuid: '',
             deviceOk: false,
             hasDeveloperDevice: false,
+            selectedApps: [],
+            appsOk: false,
+            sshConfigured: false,
+            syncSupported: true,
+            syncSupport: 'supported',
+            syncStatus: 'idle',
+            syncError: '',
+            lastSyncAt: null,
         };
     };
 
@@ -141,13 +157,19 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
 
     self.developerHasProblem = function() {
         var status = self.developerStatus;
-        return Boolean(
-            status.enabled
-            && (!status.hasDeveloperDevice || !status.deviceOk || !status.sourcesOk)
-        );
+        if (!status.enabled) {
+            return false;
+        }
+        if (!status.hasDeveloperDevice || !status.deviceOk || !status.sourcesOk || !status.appsOk || !status.sshConfigured || !status.syncSupported) {
+            return true;
+        }
+        return status.syncStatus === 'failed';
     };
 
     self.developerStatusIconClass = function() {
+        if (self.developerStatus.enabled && self.developerStatus.syncStatus === 'syncing') {
+            return 'white-icon';
+        }
         if (self.developerHasProblem()) {
             return 'toolbar-developer-icon-warning';
         }
@@ -157,6 +179,9 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
     self.developerStatusLabel = function() {
         if (!self.developerStatus.enabled) {
             return 'Developer';
+        }
+        if (!self.developerStatus.syncSupported) {
+            return 'Sync unsupported';
         }
         if (!self.developerStatus.hasDeveloperDevice) {
             return 'No developer device';
@@ -170,12 +195,27 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         if (!self.developerStatus.sourcesOk) {
             return 'Sources unavailable';
         }
+        if (!self.developerStatus.appsOk) {
+            return 'Select apps';
+        }
+        if (!self.developerStatus.sshConfigured) {
+            return 'SSH missing';
+        }
+        if (self.developerStatus.syncStatus === 'syncing') {
+            return 'Syncing';
+        }
+        if (self.developerStatus.syncStatus === 'failed') {
+            return 'Sync failed';
+        }
         return 'Developer';
     };
 
     self.developerStatusTitle = function() {
         if (!self.developerStatus.enabled) {
             return 'Developer mode';
+        }
+        if (!self.developerStatus.syncSupported) {
+            return 'Developer mode: source sync is not supported on this platform';
         }
         if (!self.developerStatus.hasDeveloperDevice) {
             return 'Developer mode: install cleepapp-developer on a device';
@@ -189,13 +229,53 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         if (!self.developerStatus.sourcesOk) {
             return 'Developer mode: sources folder unavailable';
         }
+        if (!self.developerStatus.appsOk) {
+            return 'Developer mode: select at least one application to synchronize';
+        }
+        if (!self.developerStatus.sshConfigured) {
+            return 'Developer mode: configure SSH password';
+        }
+        if (self.developerStatus.syncStatus === 'syncing') {
+            return 'Developer mode: synchronizing sources';
+        }
+        if (self.developerStatus.syncStatus === 'failed') {
+            return 'Developer mode: ' + (self.developerStatus.syncError || 'sync failed');
+        }
         return 'Developer mode';
     };
 
-    self.onDeveloperToolbarClick = function() {
+    self.developerSyncBusy = false;
+
+    self.openDeveloperMenu = function($mdMenu, $event) {
+        $mdMenu.open($event);
+    };
+
+    self.openDeveloperPreferences = function() {
         self.openModal('preferencesController', 'js/preferences/preferences-dialog.html', {
             tab: 'developer',
         });
+    };
+
+    /** Force rsync of all selected developer apps (toolbar shortcut). */
+    self.syncDeveloperAppsNow = function() {
+        if (self.developerSyncBusy || !electron.developer || !electron.developer.syncNow) {
+            return;
+        }
+        self.developerSyncBusy = true;
+        electron.developer.syncNow()
+            .then(function(status) {
+                if (status && status.syncStatus === 'failed') {
+                    toast.warning(status.syncError || 'Synchronization failed');
+                    return;
+                }
+                toast.success('Applications synchronized');
+            })
+            .catch(function(error) {
+                toast.warning((error && error.message) || 'Unable to synchronize');
+            })
+            .finally(function() {
+                self.developerSyncBusy = false;
+            });
     };
 
     self.refreshWebsiteAuthAvailability = function() {
@@ -386,6 +466,7 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         // init services (idempotent - safe if called again)
         downloadService.init();
         monitoringService.init();
+        developerSyncLog.init();
         updateService.init();
         installService.init();
         devicesService.init();
@@ -431,6 +512,14 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
             }),
         );
 
+        if (electron.developer && electron.developer.onStatusChanged) {
+            self._unsubscribers.push(
+                electron.developer.onStatusChanged(function(_event, status) {
+                    self.refreshDeveloperStatus(status);
+                }),
+            );
+        }
+
         if (electron.website && electron.website.onChanged) {
             self._unsubscribers.push(
                 electron.website.onChanged(function(_event, session) {
@@ -466,6 +555,7 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         self._unsubscribers = [];
         downloadService.destroy();
         monitoringService.destroy();
+        developerSyncLog.destroy();
         updateService.destroy();
         installService.destroy();
         devicesService.destroy();

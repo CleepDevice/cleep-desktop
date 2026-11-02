@@ -3,9 +3,12 @@ import { CLEEP_DESKTOP_EMBED_HEADER } from '../../src/utils/cleep-desktop-embed'
 import {
   GATEWAY_AUTH_HEADER,
   GATEWAY_TARGET_HEADER,
+  bindDeveloperNoCacheWebview,
   bindGatewayWebview,
   getGatewayWebviewBinding,
   installGatewayHeaders,
+  isDeveloperNoCacheWebview,
+  unbindDeveloperNoCacheWebview,
   unbindGatewayWebview,
 } from '../../src/utils/gateway';
 import { NGROK_SKIP_BROWSER_WARNING_HEADER } from '../../src/utils/ngrok';
@@ -20,6 +23,13 @@ describe('gateway utils', () => {
     expect(getGatewayWebviewBinding(7)?.deviceUuid).toBe('peer-1');
     unbindGatewayWebview(7);
     expect(getGatewayWebviewBinding(7)).toBeUndefined();
+  });
+
+  it('binds and unbinds developer no-cache webviews', () => {
+    bindDeveloperNoCacheWebview(11);
+    expect(isDeveloperNoCacheWebview(11)).toBe(true);
+    unbindDeveloperNoCacheWebview(11);
+    expect(isDeveloperNoCacheWebview(11)).toBe(false);
   });
 
   it('injects CleepDesktop embed header on LAN requests', () => {
@@ -75,5 +85,35 @@ describe('gateway utils', () => {
         [GATEWAY_TARGET_HEADER]: 'peer-1',
       },
     });
+  });
+
+  it('injects Cache-Control/Pragma no-cache for developer device webviews', () => {
+    const onBeforeSendHeaders = vi.fn();
+    const session = { webRequest: { onBeforeSendHeaders } } as unknown as Electron.Session;
+    bindDeveloperNoCacheWebview(9);
+    installGatewayHeaders(session);
+
+    const handler = onBeforeSendHeaders.mock.calls[0][1] as (
+      details: { url?: string; webContentsId?: number; requestHeaders: Record<string, string> },
+      callback: (response: { requestHeaders: Record<string, string> }) => void,
+    ) => void;
+    const callback = vi.fn();
+    handler(
+      {
+        url: 'https://192.168.1.228/',
+        webContentsId: 9,
+        requestHeaders: { Accept: 'text/html' },
+      },
+      callback,
+    );
+    expect(callback).toHaveBeenCalledWith({
+      requestHeaders: {
+        Accept: 'text/html',
+        [CLEEP_DESKTOP_EMBED_HEADER]: '1',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+      },
+    });
+    unbindDeveloperNoCacheWebview(9);
   });
 });

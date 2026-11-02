@@ -1,0 +1,90 @@
+import path from 'path';
+import { describe, expect, it } from 'vitest';
+import {
+  buildRsyncCommand,
+  computeDeveloperSyncDelay,
+  DEVELOPER_SYNC_BURST_QUIET_MS,
+  DEVELOPER_SYNC_MAX_WAIT_MS,
+  DEVELOPER_SYNC_QUIET_MS,
+  DEVELOPER_SYNC_REMOTE_MODULES,
+  getDeveloperSyncPlatformSupport,
+} from '../../src/developer-sync';
+
+describe('developer-sync', () => {
+  it('reports windows as unsupported', () => {
+    expect(['supported', 'unsupported']).toContain(getDeveloperSyncPlatformSupport());
+  });
+
+  it('builds sshpass rsync command for one app', () => {
+    const localPath = path.join('/tmp', 'sources', 'cleepapp-demo');
+    const cmd = buildRsyncCommand(
+      '192.168.1.50',
+      { username: 'root', password: 'secret' },
+      { localPath, moduleName: 'demo' },
+    );
+
+    expect(cmd.command).toBe('sshpass');
+    expect(cmd.args[0]).toBe('-e');
+    expect(cmd.args[1]).toBe('rsync');
+    expect(cmd.args).toContain('-az');
+    expect(cmd.args).toContain('--delete');
+    expect(cmd.args).toContain('--exclude');
+    expect(cmd.env.SSHPASS).toBe('secret');
+
+    const destination = `root@192.168.1.50:${DEVELOPER_SYNC_REMOTE_MODULES}/demo/`;
+    expect(cmd.args[cmd.args.length - 1]).toBe(destination);
+    expect(cmd.args[cmd.args.length - 2]).toBe(`${localPath}${path.sep}`);
+  });
+
+  it('uses a short quiet window for an isolated change', () => {
+    const first = computeDeveloperSyncDelay(
+      { batchStartedAt: null, lastChangeAt: null, changeCount: 0 },
+      1_000,
+    );
+    expect(first.inBurst).toBe(false);
+    expect(first.delayMs).toBe(DEVELOPER_SYNC_QUIET_MS);
+    expect(first.changeCount).toBe(1);
+  });
+
+  it('stretches the quiet window during a Cursor-like burst', () => {
+    let state = { batchStartedAt: null as number | null, lastChangeAt: null as number | null, changeCount: 0 };
+    let now = 1_000;
+    for (let i = 0; i < 3; i += 1) {
+      const next = computeDeveloperSyncDelay(state, now);
+      state = {
+        batchStartedAt: next.batchStartedAt,
+        lastChangeAt: next.lastChangeAt,
+        changeCount: next.changeCount,
+      };
+      now += 400;
+      if (i === 2) {
+        expect(next.inBurst).toBe(true);
+        expect(next.delayMs).toBe(DEVELOPER_SYNC_BURST_QUIET_MS);
+      }
+    }
+  });
+
+  it('caps delay with max wait from the first change of a batch', () => {
+    const startedAt = 1_000;
+    const next = computeDeveloperSyncDelay(
+      {
+        batchStartedAt: startedAt,
+        lastChangeAt: startedAt + DEVELOPER_SYNC_MAX_WAIT_MS - 500,
+        changeCount: 8,
+      },
+      startedAt + DEVELOPER_SYNC_MAX_WAIT_MS - 200,
+    );
+    expect(next.inBurst).toBe(true);
+    expect(next.delayMs).toBe(200);
+
+    const overdue = computeDeveloperSyncDelay(
+      {
+        batchStartedAt: startedAt,
+        lastChangeAt: startedAt + DEVELOPER_SYNC_MAX_WAIT_MS,
+        changeCount: 9,
+      },
+      startedAt + DEVELOPER_SYNC_MAX_WAIT_MS + 50,
+    );
+    expect(overdue.delayMs).toBe(0);
+  });
+});

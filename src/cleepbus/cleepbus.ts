@@ -409,6 +409,13 @@ export class Cleepbus {
     peerInfos.extra.configured =
       Boolean(peerInfos.hostname?.trim()) && peerInfos.hostname !== UNCONFIGURED_DEVICE_HOSTNAME;
 
+    // After a device restart, ZRE allocates a new peer UUID while the old peer is
+    // still in the map until it expires. Drop those stale idents now so a later
+    // EXIT does not mark the device offline while the new peer is live.
+    if (peerInfos.uuid) {
+      this.dropStalePeersForDevice(peerInfos.uuid, event.peerUuid);
+    }
+
     this.peers.set(event.peerUuid, peerInfos);
     appLogger.info('Peer connected', { uuid: peerInfos.uuid, hostname: peerInfos.hostname, ip: peerInfos.ip });
     this.peerConnectedCallback?.(peerInfos);
@@ -421,13 +428,48 @@ export class Cleepbus {
 
     const peerInfos = this.peers.get(event.peerUuid);
     if (peerInfos) {
-      peerInfos.online = false;
       this.peers.delete(event.peerUuid);
     }
+
+    // Belt-and-suspenders: ignore EXIT when another live peer still represents
+    // the same device (restart/rejoin race if stale cleanup on ENTER was missed).
+    if (peerInfos?.uuid && this.hasLivePeerForDevice(peerInfos.uuid)) {
+      appLogger.info('Ignore stale peer EXIT (device still online via newer peer)', {
+        peerUuid: event.peerUuid,
+        uuid: peerInfos.uuid,
+      });
+      return;
+    }
+
     appLogger.info('Peer disconnected', { peerUuid: event.peerUuid, uuid: peerInfos?.uuid });
     if (peerInfos) {
+      peerInfos.online = false;
       this.peerDisconnectedCallback?.(peerInfos);
     }
+  }
+
+  /** Remove previous ZRE idents for this device uuid, keeping ``keepPeerUuid``. */
+  private dropStalePeersForDevice(deviceUuid: string, keepPeerUuid: string): void {
+    for (const [peerUuid, info] of [...this.peers.entries()]) {
+      if (peerUuid === keepPeerUuid || info.uuid !== deviceUuid) {
+        continue;
+      }
+      this.peers.delete(peerUuid);
+      appLogger.debug('Dropped stale peer after device rejoin', {
+        peerUuid,
+        uuid: deviceUuid,
+        keepPeerUuid,
+      });
+    }
+  }
+
+  private hasLivePeerForDevice(deviceUuid: string): boolean {
+    for (const info of this.peers.values()) {
+      if (info.uuid === deviceUuid) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private onBusMessage(event: ShoutEvent | WhisperEvent): void {

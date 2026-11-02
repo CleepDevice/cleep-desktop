@@ -1,0 +1,123 @@
+<div layout="column" layout-fill class="app-page">
+
+    <md-content flex class="app-page-content">
+        <div class="app-page-lead" layout="row" layout-align="start center">
+            <div class="app-page-lead-badge" layout="row" layout-align="center center" aria-hidden="true">
+                <md-icon md-svg-icon="text-box-outline"></md-icon>
+            </div>
+            <div flex layout="column">
+                <div class="app-page-lead-title">Developer sync activity</div>
+                <p class="app-page-lead-text">
+                    SSH synchronization events for the current CleepDesktop session. Messages are cleared when the application closes.
+                </p>
+            </div>
+            <md-menu md-position-mode="target-right target">
+                <md-button
+                    class="md-icon-button"
+                    ng-click="$mdMenu.open($event)"
+                    ng-disabled="ctl.syncBusy || !ctl.syncTargets.length"
+                    title="Force sync"
+                >
+                    <md-icon md-svg-icon="sync"></md-icon>
+                </md-button>
+                <md-menu-content width="3">
+                    <md-menu-item>
+                        <md-button ng-click="ctl.syncNow()" ng-disabled="ctl.syncBusy">
+                            <md-icon md-svg-icon="sync"></md-icon>
+                            Force sync all
+                        </md-button>
+                    </md-menu-item>
+                    <md-menu-divider ng-if="ctl.syncTargets.length"></md-menu-divider>
+                    <md-menu-item ng-repeat="app in ctl.syncTargets track by app.folderName">
+                        <md-button
+                            ng-click="ctl.syncNow(app.folderName)"
+                            ng-disabled="ctl.syncBusy"
+                        >
+                            <md-icon md-svg-icon="puzzle"></md-icon>
+                            {{ app.label }}
+                        </md-button>
+                    </md-menu-item>
+                </md-menu-content>
+            </md-menu>
+            <md-button
+                class="md-icon-button"
+                ng-if="ctl.syncLog.messages.length>0"
+                ng-click="ctl.syncLog.clearMessages()"
+                title="Clear messages"
+            >
+                <md-icon md-svg-icon="delete-outline"></md-icon>
+            </md-button>
+        </div>
+
+        <div class="app-page-panel">
+            <div
+                class="monitoring-empty"
+                ng-if="ctl.syncLog.messages.length===0"
+                layout="column"
+                layout-align="center center"
+            >
+                <div class="monitoring-empty-visual" aria-hidden="true">
+                    <span class="monitoring-empty-ring monitoring-empty-ring--outer"></span>
+                    <span class="monitoring-empty-ring monitoring-empty-ring--inner"></span>
+                    <md-icon class="monitoring-empty-icon" md-svg-icon="text-box-outline"></md-icon>
+                </div>
+                <h2 class="monitoring-empty-title">Waiting for sync activity</h2>
+                <p class="monitoring-empty-text">
+                    Synchronization events will appear here once developer mode starts syncing applications.
+                </p>
+            </div>
+
+            <div class="monitoring-feed" ng-if="ctl.syncLog.messages.length>0">
+                <div
+                    class="monitoring-event developer-sync-event"
+                    ng-repeat="message in ctl.syncLog.messages track by message.id"
+                    ng-class="'developer-sync-event--' + message.level"
+                >
+                    <div class="monitoring-event-header" layout="row" layout-align="start center">
+                        <md-icon
+                            class="monitoring-event-icon"
+                            md-svg-icon="{{ ctl.syncLog.levelIcon(message.level) }}"
+                        ></md-icon>
+                        <div class="monitoring-event-title" flex>
+                            <span class="monitoring-event-name">{{ message.title }}</span>
+                            <span class="monitoring-event-device" ng-if="message.deviceHostname || message.deviceIp">
+                                {{ message.deviceHostname || message.deviceIp }}
+                                <span class="monitoring-event-ip" ng-if="message.deviceHostname && message.deviceIp">
+                                    ({{ message.deviceIp }})
+                                </span>
+                            </span>
+                        </div>
+                        <time
+                            class="monitoring-event-time"
+                            title="{{ message.timestamp | hrDatetime }}"
+                        >{{ message.timestamp | hrTimestamp }}</time>
+                    </div>
+                    <div
+                        class="monitoring-event-summary"
+                        ng-if="message.detail || message.apps.length || message.reason"
+                    >
+                        <span
+                            class="monitoring-event-chip"
+                            ng-if="ctl.syncLog.reasonLabel(message.reason)"
+                        >
+                            <span class="monitoring-event-chip-key">trigger</span>
+                            <span class="monitoring-event-chip-value">{{ ctl.syncLog.reasonLabel(message.reason) }}</span>
+                        </span>
+                        <span
+                            class="monitoring-event-chip"
+                            ng-repeat="app in message.apps track by app"
+                        >
+                            <span class="monitoring-event-chip-key">app</span>
+                            <span class="monitoring-event-chip-value">{{ app }}</span>
+                        </span>
+                    </div>
+                    <div
+                        class="developer-sync-event-detail"
+                        ng-if="message.detail"
+                    >{{ message.detail }}</div>
+                </div>
+            </div>
+        </div>
+    </md-content>
+
+</div>

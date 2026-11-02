@@ -70,6 +70,16 @@ export function createCleepApi(ipc: IpcPrimitives) {
 
     developer: {
       getStatus: () => ipc.invoke('developer-get-status'),
+      listApps: () => ipc.invoke('developer-list-apps'),
+      saveSsh: (deviceUuid: string, password: string, username?: string) =>
+        ipc.invoke('developer-save-ssh', { deviceUuid, password, username }),
+      clearSsh: (deviceUuid: string) => ipc.invoke('developer-clear-ssh', { deviceUuid }),
+      syncNow: (folderNames?: string[]) =>
+        ipc.invoke('developer-sync-now', folderNames ? { folderNames } : {}),
+      onStatusChanged: (listener: IpcListener<'developer-status-changed'>) =>
+        ipc.on('developer-status-changed', listener),
+      onSyncLog: (listener: IpcListener<'developer-sync-log'>) =>
+        ipc.on('developer-sync-log', listener),
     },
 
     devices: {

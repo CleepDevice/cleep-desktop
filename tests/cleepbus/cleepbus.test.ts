@@ -197,6 +197,62 @@ describe('Cleepbus', () => {
     expect(peerDisconnected).toHaveBeenCalledWith(expect.objectContaining({ uuid: 'device-uuid', online: false }));
   });
 
+  it('ignores stale EXIT after the same device rejoins with a new peer uuid', async () => {
+    const peerConnected = vi.fn();
+    const peerDisconnected = vi.fn();
+    cleepbus.setCleepbusCallbacks(vi.fn(), vi.fn(), vi.fn(), vi.fn(), peerConnected, peerDisconnected);
+    await cleepbus.start();
+    const pyre = pyreInstances[0] as MockPyreInstance;
+
+    const headers = {
+      uuid: 'device-uuid',
+      hostname: 'cleepdev4',
+      port: '443',
+      ssl: '1',
+      auth: '0',
+      remoteaccess: '{}',
+      cleepdesktop: '0',
+      macs: JSON.stringify(['B8:27:EB:62:24:18']),
+      version: '0.2.0',
+      apps: 'network,ngrok',
+    };
+
+    pyre.emit('ENTER', {
+      type: 'ENTER',
+      peerUuid: 'old-ident',
+      peerName: 'CLEEP',
+      endpoint: 'tcp://192.168.1.228:5670',
+      headers,
+    } satisfies EnterEvent);
+    await flushBusQueue();
+    expect(peerConnected).toHaveBeenCalledTimes(1);
+
+    // Device restarted: new ZRE identity, same device uuid.
+    pyre.emit('ENTER', {
+      type: 'ENTER',
+      peerUuid: 'new-ident',
+      peerName: 'CLEEP',
+      endpoint: 'tcp://192.168.1.228:5670',
+      headers,
+    } satisfies EnterEvent);
+    await flushBusQueue();
+    expect(peerConnected).toHaveBeenCalledTimes(2);
+    expect(peerConnected.mock.calls[1][0].ident).toBe('new-ident');
+
+    // Old peer expires after rejoin — must not mark the device offline.
+    pyre.emit('EXIT', { type: 'EXIT', peerUuid: 'old-ident', peerName: 'CLEEP' } satisfies ExitEvent);
+    await flushBusQueue();
+    expect(peerDisconnected).not.toHaveBeenCalled();
+
+    // Real leave of the live peer still disconnects.
+    pyre.emit('EXIT', { type: 'EXIT', peerUuid: 'new-ident', peerName: 'CLEEP' } satisfies ExitEvent);
+    await flushBusQueue();
+    expect(peerDisconnected).toHaveBeenCalledTimes(1);
+    expect(peerDisconnected).toHaveBeenCalledWith(
+      expect.objectContaining({ uuid: 'device-uuid', ident: 'new-ident', online: false }),
+    );
+  });
+
   it('ignores other cleep-desktop peers and foreign buses', async () => {
     const peerConnected = vi.fn();
     cleepbus.setCleepbusCallbacks(vi.fn(), vi.fn(), vi.fn(), vi.fn(), peerConnected, vi.fn());

@@ -19,6 +19,13 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
     self.developerDeviceOptions = [];
     self.hasDeveloperDevice = false;
     self.DEVELOPER_APP_NAME = 'developer';
+    self.developerAppEntries = [];
+    self.developerAppChecks = {};
+    self.hasValidDeveloperApp = false;
+    self.DEVELOPER_SSH_MASK = '********';
+    self.developerSshPassword = '';
+    self.developerSshConfigured = false;
+    self.developerSyncUnsupported = false;
     self.vaultStatus = {
         enabled: false,
         unlocked: false,
@@ -56,8 +63,14 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
         } else if (tabId === 'cache') {
             self.getCacheInfos();
         } else if (tabId === 'developer') {
-            self.refreshDeveloperDeviceOptions();
+            self.refreshDeveloperPanel();
         }
+    };
+
+    self.refreshDeveloperPanel = function() {
+        self.refreshDeveloperDeviceOptions();
+        self.refreshDeveloperApps();
+        self.refreshDeveloperSshStatus();
     };
 
     self.deviceHasDeveloperApp = function(device) {
@@ -103,6 +116,154 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
                 self.settings.cleep.developerdevice = '';
             }
         }
+        self.refreshDeveloperSshStatus();
+    };
+
+    self.refreshDeveloperApps = function() {
+        if (!electron.developer || !electron.developer.listApps) {
+            self.developerAppEntries = [];
+            self.developerAppChecks = {};
+            self.hasValidDeveloperApp = false;
+            return Promise.resolve();
+        }
+        if (!self.settings.cleep || !self.settings.cleep.developersources) {
+            self.developerAppEntries = [];
+            self.developerAppChecks = {};
+            self.hasValidDeveloperApp = false;
+            return Promise.resolve();
+        }
+
+        return electron.developer.listApps()
+            .then(function(entries) {
+                self.developerAppEntries = entries || [];
+                self.hasValidDeveloperApp = self.developerAppEntries.some(function(entry) {
+                    return entry.valid;
+                });
+
+                var selected = {};
+                var saved = (self.settings.cleep && self.settings.cleep.developerapps) || [];
+                if (!Array.isArray(saved)) {
+                    saved = [];
+                }
+                var savedSet = {};
+                saved.forEach(function(name) {
+                    savedSet[name] = true;
+                });
+
+                var nextSelected = [];
+                self.developerAppEntries.forEach(function(entry) {
+                    // Default: no app synchronized. Keep only previously saved valid picks.
+                    var checked = Boolean(entry.valid && savedSet[entry.folderName]);
+                    selected[entry.folderName] = checked;
+                    if (checked) {
+                        nextSelected.push(entry.folderName);
+                    }
+                });
+                self.developerAppChecks = selected;
+                if (self.settings.cleep) {
+                    self.settings.cleep.developerapps = nextSelected;
+                }
+            })
+            .catch(function() {
+                self.developerAppEntries = [];
+                self.developerAppChecks = {};
+                self.hasValidDeveloperApp = false;
+                toast.warning('Unable to scan application sources');
+            });
+    };
+
+    self.onDeveloperAppCheck = function(app, value) {
+        if (!app || !app.valid || !self.settings.cleep) {
+            return;
+        }
+        // config-checkbox = binding syncs to the parent on a later digest; apply the
+        // clicked value immediately so we persist the selection the user just made.
+        if (typeof value !== 'undefined') {
+            self.developerAppChecks[app.folderName] = Boolean(value);
+        }
+        var selected = [];
+        Object.keys(self.developerAppChecks || {}).forEach(function(folderName) {
+            if (self.developerAppChecks[folderName]) {
+                selected.push(folderName);
+            }
+        });
+        self.settings.cleep.developerapps = selected;
+    };
+
+    self.applyDeveloperSshField = function(configured) {
+        self.developerSshConfigured = Boolean(configured);
+        // Show masked value when a vault password exists; empty + placeholder otherwise.
+        self.developerSshPassword = self.developerSshConfigured ? self.DEVELOPER_SSH_MASK : '';
+    };
+
+    self.refreshDeveloperSshStatus = function() {
+        if (!electron.developer || !electron.developer.getStatus) {
+            self.applyDeveloperSshField(false);
+            self.developerSyncUnsupported = false;
+            return Promise.resolve();
+        }
+        return electron.developer.getStatus()
+            .then(function(status) {
+                self.applyDeveloperSshField(status && status.sshConfigured);
+                self.developerSyncUnsupported = Boolean(status && !status.syncSupported);
+            })
+            .catch(function() {
+                self.applyDeveloperSshField(false);
+                self.developerSyncUnsupported = false;
+            });
+    };
+
+    self.developerSshSubtitle = function() {
+        var base = 'Stored in the vault. Required to rsync sources to the device.';
+        if (self.developerSshConfigured) {
+            return base + ' Clear to reset.';
+        }
+        return base;
+    };
+
+    self.saveDeveloperSshPassword = function() {
+        var deviceUuid = self.settings.cleep && self.settings.cleep.developerdevice;
+        if (!deviceUuid) {
+            toast.warning('Select a development device first');
+            return;
+        }
+
+        var value = self.developerSshPassword || '';
+
+        // Mask unchanged → keep current vault password.
+        if (value === self.DEVELOPER_SSH_MASK) {
+            return;
+        }
+
+        // Empty field + already configured → clear stored SSH password.
+        if (!value) {
+            if (!self.developerSshConfigured) {
+                toast.warning('Enter the SSH password');
+                return;
+            }
+            electron.developer.clearSsh(deviceUuid)
+                .then(function(status) {
+                    self.applyDeveloperSshField(status && status.sshConfigured);
+                    toast.success('SSH password cleared');
+                })
+                .catch(function(error) {
+                    toast.warning((error && error.message) || 'Unable to clear SSH password');
+                });
+            return;
+        }
+
+        electron.developer.saveSsh(deviceUuid, value)
+            .then(function(status) {
+                self.applyDeveloperSshField(status && status.sshConfigured);
+                toast.success('SSH password saved');
+            })
+            .catch(function(error) {
+                var message = (error && error.message) || 'Unable to save SSH password';
+                if (typeof message === 'string' && message.indexOf('Vault') !== -1) {
+                    message = 'Enable and unlock the vault before saving SSH credentials';
+                }
+                toast.warning(message);
+            });
     };
 
     self.openDiscord = function() {
@@ -125,8 +286,28 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
         },
         function(enabled) {
             if (enabled) {
-                self.refreshDeveloperDeviceOptions();
+                self.refreshDeveloperPanel();
             }
+        },
+    );
+
+    $scope.$watch(
+        function() {
+            return self.settings.cleep && self.settings.cleep.developersources;
+        },
+        function(sourcesDir, previous) {
+            if (sourcesDir !== previous) {
+                self.refreshDeveloperApps();
+            }
+        },
+    );
+
+    $scope.$watch(
+        function() {
+            return self.settings.cleep && self.settings.cleep.developerdevice;
+        },
+        function() {
+            self.refreshDeveloperSshStatus();
         },
     );
 
@@ -235,8 +416,14 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
         settingsService.getAll()
             .then((settings) => {
                 Object.assign(this.settings, settings);
-                if (this.settings.cleep && this.settings.cleep.developer) {
-                    this.refreshDeveloperDeviceOptions();
+                if (!this.settings.cleep) {
+                    return;
+                }
+                if (!Array.isArray(this.settings.cleep.developerapps)) {
+                    this.settings.cleep.developerapps = [];
+                }
+                if (this.settings.cleep.developer) {
+                    this.refreshDeveloperPanel();
                 }
             });
     }

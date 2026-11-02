@@ -626,9 +626,20 @@ angular.module('Cleep').component('configCheckbox', {
             cl-model="$ctrl.clModel" cl-meta="$ctrl.clMeta" cl-btn-disabled="$ctrl.clDisabled"
             cl-btn-style="$ctrl.clBtnStyle" cl-btn-icon="$ctrl.clBtnIcon" cl-btn-tooltip="$ctrl.clBtnTooltip"
         >
-            <md-checkbox ng-change="$ctrl.onClick($event)" ng-model="$ctrl.clModel" ng-disabled="$ctrl.clDisabled">
-                {{ $ctrl.clCaption }}
-            </md-checkbox>
+            <div layout="row" layout-align="end center" class="config-checkbox-control">
+                <span
+                    ng-if="$ctrl.front && $ctrl.clCaption"
+                    class="config-checkbox-caption config-checkbox-caption-front"
+                >{{ $ctrl.clCaption }}</span>
+                <md-checkbox
+                    aria-label="{{ $ctrl.clCaption || $ctrl.clTitle || 'checkbox' }}"
+                    ng-change="$ctrl.onClick($event)"
+                    ng-model="$ctrl.clModel"
+                    ng-disabled="$ctrl.clDisabled"
+                >
+                    <span ng-if="!$ctrl.front">{{ $ctrl.clCaption }}</span>
+                </md-checkbox>
+            </div>
         </config-basic>
     `,
     bindings: {
@@ -639,6 +650,8 @@ angular.module('Cleep').component('configCheckbox', {
         clIconStyle: '@',
         clModel: '=',
         clCaption: '@',
+        /** When true, render cl-caption before the checkbox instead of after. */
+        clFront: '<?',
         clSelectedValue: '@',
         clUnselectedValue: '@',
         clMeta: '<',
@@ -647,9 +660,17 @@ angular.module('Cleep').component('configCheckbox', {
     },
     controller: function () {
         const ctrl = this;
+        ctrl.front = false;
 
         ctrl.$onInit = function() {
             ctrl.noForm = ctrl.clNoForm ?? false;
+            ctrl.front = !!ctrl.clFront;
+        };
+
+        ctrl.$onChanges = function (changes) {
+            if (changes.clFront) {
+                ctrl.front = !!changes.clFront.currentValue;
+            }
         };
 
         ctrl.onClick = ($event) => {

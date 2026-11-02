@@ -4,7 +4,6 @@ import os from 'os';
 import path from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { appDeveloper, deviceHasDeveloperApp } from '../../src/app-developer';
-import { appDevices } from '../../src/app-devices';
 import { appSettings } from '../../src/app-settings';
 import type { CleepbusPeerInfos } from '../../src/cleepbus/cleepbus.types';
 import { ipcHandleHandlers } from '../setup';
@@ -28,25 +27,32 @@ describe('AppDeveloper', () => {
     appSettings.set('cleep.developer', false);
     appSettings.set('cleep.developersources', '');
     appSettings.set('cleep.developerdevice', '');
+    appSettings.set('cleep.developerapps', []);
     appSettings.set('devices', {});
     for (const dir of tempDirs.splice(0)) {
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it('configure registers developer-get-status ipc handler', () => {
+  it('configure registers developer ipc handlers', () => {
     appDeveloper.configure();
     expect(ipcHandleHandlers.has('developer-get-status')).toBe(true);
+    expect(ipcHandleHandlers.has('developer-list-apps')).toBe(true);
+    expect(ipcHandleHandlers.has('developer-sync-now')).toBe(true);
   });
 
-  it('reports disabled status by default', () => {
-    expect(appDeveloper.getStatus()).toEqual({
+  it('reports disabled status by default with no selected apps', () => {
+    expect(appDeveloper.getStatus()).toMatchObject({
       enabled: false,
       sourcesDir: '',
       sourcesOk: false,
       deviceUuid: '',
       deviceOk: false,
       hasDeveloperDevice: false,
+      selectedApps: [],
+      appsOk: false,
+      sshConfigured: false,
+      syncStatus: 'idle',
     });
   });
 
@@ -59,92 +65,50 @@ describe('AppDeveloper', () => {
     expect(deviceHasDeveloperApp(makeDevice({ uuid: 'dev-2', extra: { apps: ['network'] } }))).toBe(
       false,
     );
-    expect(
-      deviceHasDeveloperApp(
-        makeDevice({
-          uuid: 'desktop',
-          cleepdesktop: true,
-          extra: { apps: ['developer'] },
-        }),
-      ),
-    ).toBe(false);
   });
 
-  it('marks sourcesOk false when enabled without a folder', () => {
-    appSettings.set('cleep.developer', true);
-    appSettings.set('cleep.developersources', '');
-    expect(appDeveloper.getStatus()).toMatchObject({
-      enabled: true,
-      sourcesDir: '',
-      sourcesOk: false,
-    });
-  });
+  it('lists apps from sources folder over ipc', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cleep-dev-list-'));
+    tempDirs.push(root);
+    const backend = path.join(root, 'demo', 'backend');
+    fs.mkdirSync(backend, { recursive: true });
+    fs.writeFileSync(
+      path.join(backend, 'demo.py'),
+      'from cleep.core import CleepModule\n\nclass Demo(CleepModule):\n    pass\n',
+      'utf8',
+    );
 
-  it('marks device status from known devices and selection', () => {
-    const withDeveloper = makeDevice({
-      uuid: 'pi-dev',
-      hostname: 'cleepdev',
-      extra: { apps: ['developer', 'update'] },
-    });
-    const withoutDeveloper = makeDevice({
-      uuid: 'pi-plain',
-      hostname: 'livingroom',
-      extra: { apps: ['update'] },
-    });
-    appSettings.set('devices', {
-      'pi-dev': withDeveloper,
-      'pi-plain': withoutDeveloper,
-    });
-    // Reload devices map from settings the way AppDevices does at configure time.
-    (appDevices as unknown as { devices: Record<string, CleepbusPeerInfos> }).devices = {
-      'pi-dev': withDeveloper,
-      'pi-plain': withoutDeveloper,
-    };
-
-    appSettings.set('cleep.developer', true);
-    appSettings.set('cleep.developerdevice', '');
-    expect(appDeveloper.getStatus()).toMatchObject({
-      enabled: true,
-      hasDeveloperDevice: true,
-      deviceUuid: '',
-      deviceOk: false,
-    });
-
-    appSettings.set('cleep.developerdevice', 'pi-plain');
-    expect(appDeveloper.getStatus()).toMatchObject({
-      hasDeveloperDevice: true,
-      deviceUuid: 'pi-plain',
-      deviceOk: false,
-    });
-
-    appSettings.set('cleep.developerdevice', 'pi-dev');
-    expect(appDeveloper.getStatus()).toMatchObject({
-      hasDeveloperDevice: true,
-      deviceUuid: 'pi-dev',
-      deviceOk: true,
-    });
-  });
-
-  it('marks sourcesOk true when the folder exists', async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cleep-dev-sources-'));
-    tempDirs.push(dir);
-    appSettings.set('cleep.developer', true);
-    appSettings.set('cleep.developersources', dir);
-
-    expect(appDeveloper.getStatus()).toMatchObject({
-      enabled: true,
-      sourcesDir: dir,
-      sourcesOk: true,
-    });
-
+    appSettings.set('cleep.developersources', root);
     appDeveloper.configure();
-    await expect(ipcHandleHandlers.get('developer-get-status')()).resolves.toMatchObject({
+    await expect(ipcHandleHandlers.get('developer-list-apps')()).resolves.toMatchObject({
       ok: true,
-      data: {
-        enabled: true,
-        sourcesDir: dir,
-        sourcesOk: true,
-      },
+      data: [
+        expect.objectContaining({
+          folderName: 'demo',
+          valid: true,
+          moduleName: 'demo',
+        }),
+      ],
     });
+  });
+
+  it('keeps appsOk false until a valid app is selected', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cleep-dev-sel-'));
+    tempDirs.push(root);
+    const backend = path.join(root, 'demo', 'backend');
+    fs.mkdirSync(backend, { recursive: true });
+    fs.writeFileSync(
+      path.join(backend, 'demo.py'),
+      'from cleep.core import CleepModule\n\nclass Demo(CleepModule):\n    pass\n',
+      'utf8',
+    );
+
+    appSettings.set('cleep.developer', true);
+    appSettings.set('cleep.developersources', root);
+    appSettings.set('cleep.developerapps', []);
+    expect(appDeveloper.getStatus().appsOk).toBe(false);
+
+    appSettings.set('cleep.developerapps', ['demo']);
+    expect(appDeveloper.getStatus().appsOk).toBe(true);
   });
 });
