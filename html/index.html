@@ -92,6 +92,19 @@
                     </p>
                 </md-list-item>
                 <md-list-item
+                    ng-if="cleep.developerStatus.enabled"
+                    ng-click="cleep.onDeveloperToolbarClick()"
+                    title="{{ cleep.developerStatusTitle() }}"
+                >
+                    <md-icon
+                        md-svg-icon="code-braces"
+                        ng-class="cleep.developerStatusIconClass()"
+                    ></md-icon>
+                    <p style="color:white;" ng-if="!cleep.toolbarCollapsed">
+                        {{ cleep.developerStatusLabel() }}
+                    </p>
+                </md-list-item>
+                <md-list-item
                     ng-click="cleep.onVaultToolbarClick()"
                     title="{{ cleep.vaultStatusTitle() }}"
                 >
@@ -237,9 +250,11 @@
                             ng-mousedown="ctl.onDeviceMouseDown($event, device)"
                             md-colors="device.uuid === ctl.devicesService.selectedDeviceUuid ? { background: 'accent-100' } : { background: 'background' }"
                         >
-                            <md-icon ng-if="device.online && !device.auth" md-svg-icon="cellphone" class="icon-margin"></md-icon>
-                            <md-icon ng-if="device.online && device.auth" md-svg-icon="cellphone-lock" class="icon-margin"></md-icon>
-                            <md-icon ng-if="!device.online" md-svg-icon="cellphone-off" class="icon-margin md-accent"></md-icon>
+                            <md-icon
+                                md-svg-icon="{{ ctl.devicesService.getDeviceIcon(device) }}"
+                                class="icon-margin"
+                                ng-class="{'md-accent': !device.online}"
+                            ></md-icon>
                             <p>
                                 {{ device.hostname }}
                                 <span class="device-remote-apps" ng-if="ctl.devicesService.getRemoteAccessApps(device)">

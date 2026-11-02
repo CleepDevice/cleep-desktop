@@ -205,6 +205,10 @@ angular
         saveCache: bindInvoke(api.news && api.news.saveCache),
     };
 
+    self.developer = {
+        getStatus: bindInvoke(api.developer && api.developer.getStatus),
+    };
+
     self.devices = {
         getUiState: bindInvoke(api.devices.getUiState),
         deleteDevice: bindInvoke(api.devices.deleteDevice),

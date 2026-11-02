@@ -20,6 +20,7 @@ describe('createCleepApi', () => {
       'app',
       'bus',
       'cache',
+      'developer',
       'devices',
       'download',
       'install',

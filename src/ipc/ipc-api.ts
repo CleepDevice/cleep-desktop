@@ -68,6 +68,10 @@ export function createCleepApi(ipc: IpcPrimitives) {
       saveCache: (articles: NewsCacheIncomingArticle[]) => ipc.invoke('news-cache-save', articles),
     },
 
+    developer: {
+      getStatus: () => ipc.invoke('developer-get-status'),
+    },
+
     devices: {
       getUiState: () => ipc.invoke('devices-get-ui-state'),
       deleteDevice: (deviceUuid: string) => ipc.invoke('devices-delete-device', deviceUuid),

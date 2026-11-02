@@ -174,8 +174,11 @@ function($state, devicesService, toastService, confirmService, $rootScope, logge
             });
     };
 
-    // Keep tab icons in sync with online/auth flags.
+    // Keep tab icons in sync with online/auth/developer flags.
     $rootScope.$on('devices-updated', function() {
+        contentTabs.updateDeviceIcons();
+    });
+    $rootScope.$on('developer-device-changed', function() {
         contentTabs.updateDeviceIcons();
     });
 }]);

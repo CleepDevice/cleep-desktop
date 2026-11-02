@@ -185,6 +185,11 @@ md-toast.info .md-toast-content {
   fill: white;
 }
 
+/* developer toolbar warning (missing / unavailable sources folder) */
+.toolbar-developer-icon-warning svg path {
+  fill: #ffb74d;
+}
+
 /* rounded icons */
 .rounded-icon {
   color: white;

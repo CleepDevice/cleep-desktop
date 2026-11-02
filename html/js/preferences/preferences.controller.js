@@ -1,7 +1,7 @@
 angular
 .module('Cleep')
-.controller('preferencesController', ['$scope', '$rootScope', '$filter', 'debounceService', 'toastService', 'settingsService', 'electronService', 'confirmService', 'closeModal', 'modalData',
-function($scope, $rootScope, $filter, debounce, toast, settingsService, electron, confirm, closeModal, modalData) {
+.controller('preferencesController', ['$scope', '$rootScope', '$filter', 'debounceService', 'toastService', 'settingsService', 'electronService', 'devicesService', 'confirmService', 'closeModal', 'modalData',
+function($scope, $rootScope, $filter, debounce, toast, settingsService, electron, devicesService, confirm, closeModal, modalData) {
     var self = this;
     // Prefer modalData.tab immediately so config-tabs can open on the right panel.
     self.selectedTabId = (modalData && modalData.tab) || 'general';
@@ -16,6 +16,9 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
     self.networkConfig = {};
     self.networkApplying = false;
     self.networkPollTimer = null;
+    self.developerDeviceOptions = [];
+    self.hasDeveloperDevice = false;
+    self.DEVELOPER_APP_NAME = 'developer';
     self.vaultStatus = {
         enabled: false,
         unlocked: false,
@@ -52,6 +55,53 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
             self.loadNetworkConfig();
         } else if (tabId === 'cache') {
             self.getCacheInfos();
+        } else if (tabId === 'developer') {
+            self.refreshDeveloperDeviceOptions();
+        }
+    };
+
+    self.deviceHasDeveloperApp = function(device) {
+        if (!device || device.cleepdesktop) {
+            return false;
+        }
+        var apps = device.extra && device.extra.apps;
+        return Array.isArray(apps) && apps.indexOf(self.DEVELOPER_APP_NAME) !== -1;
+    };
+
+    self.refreshDeveloperDeviceOptions = function() {
+        var devices = (devicesService.devices || []).filter(function(device) {
+            return !device.cleepdesktop;
+        });
+        self.hasDeveloperDevice = devices.some(function(device) {
+            return self.deviceHasDeveloperApp(device);
+        });
+        self.developerDeviceOptions = devices
+            .slice()
+            .sort(function(a, b) {
+                return String(a.hostname || a.uuid).localeCompare(String(b.hostname || b.uuid));
+            })
+            .map(function(device) {
+                var hasDeveloper = self.deviceHasDeveloperApp(device);
+                var label = device.hostname || device.uuid;
+                if (!hasDeveloper) {
+                    label += ' (Developer app missing)';
+                }
+                return {
+                    value: device.uuid,
+                    label: label,
+                    disabled: !hasDeveloper,
+                };
+            });
+
+        // Drop a stale selection when that device disappeared or lost the app.
+        var selected = self.settings.cleep && self.settings.cleep.developerdevice;
+        if (selected) {
+            var selectedOption = self.developerDeviceOptions.find(function(option) {
+                return option.value === selected;
+            });
+            if (!selectedOption || selectedOption.disabled) {
+                self.settings.cleep.developerdevice = '';
+            }
         }
     };
 
@@ -62,6 +112,23 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
     $scope.$on('config-tabs:shown', function(_event, tabId) {
         self.onPreferencesTabShown(tabId);
     });
+
+    var unwatchDevices = $rootScope.$on('devices-updated', function() {
+        if (self.selectedTabId === 'developer' || (self.settings.cleep && self.settings.cleep.developer)) {
+            self.refreshDeveloperDeviceOptions();
+        }
+    });
+
+    $scope.$watch(
+        function() {
+            return self.settings.cleep && self.settings.cleep.developer;
+        },
+        function(enabled) {
+            if (enabled) {
+                self.refreshDeveloperDeviceOptions();
+            }
+        },
+    );
 
     self.buildNetworkInterfaceOptions = function(interfaces) {
         self.networkInterfaceOptions = (interfaces || []).map(function(iface) {
@@ -161,12 +228,16 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
         if (self.networkPollTimer) {
             clearInterval(self.networkPollTimer);
         }
+        unwatchDevices();
     });
 
     self.getSettings = function() {
         settingsService.getAll()
             .then((settings) => {
                 Object.assign(this.settings, settings);
+                if (this.settings.cleep && this.settings.cleep.developer) {
+                    this.refreshDeveloperDeviceOptions();
+                }
             });
     }
 
@@ -203,6 +274,26 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
 
     self.openElectronLogs = function() {
         electron.logger.openLogs();
+    };
+
+    self.selectDeveloperSourcesFolder = function() {
+        electron.shell.openDialog({
+            title: 'Select applications sources folder',
+            properties: ['openDirectory', 'createDirectory'],
+            openDirectory: true,
+        })
+            .then(function(result) {
+                if (!result || !result.length) {
+                    return;
+                }
+                if (!self.settings.cleep) {
+                    self.settings.cleep = {};
+                }
+                self.settings.cleep.developersources = result[0];
+            })
+            .catch(function() {
+                toast.warning('Unable to select sources folder');
+            });
     };
 
     self.deleteCachedFile = function(filename) {

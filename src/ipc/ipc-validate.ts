@@ -193,6 +193,7 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
     deviceUuid: nonEmptyString,
     gatewayDeviceUuid: z.string().optional(),
   }),
+  'developer-get-status': null,
   'get-changelog': null,
   'get-electron-log-path': null,
   'iso-get-drives': null,

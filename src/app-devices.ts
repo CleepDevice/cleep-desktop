@@ -417,6 +417,11 @@ class AppDevices {
     return this.devices[deviceUuid];
   }
 
+  /** All known devices (online and offline). */
+  public getDevices(): CleepbusPeerInfos[] {
+    return this.devicesObjectToArray();
+  }
+
   /** Lookup a known device by IP / hostname / remote-access host (HTTP auth host). */
   public findByHost(host: string): CleepbusPeerInfos | undefined {
     const needle = (host || '').trim().toLowerCase();

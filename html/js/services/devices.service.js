@@ -8,6 +8,8 @@ function(electron, logger, ipcLifecycle, $rootScope) {
     self.selectedDeviceUuid = null;
     // When auth turns on while viewing a device, defer the login screen until leave.
     self.deferredAuthPromptUuids = {};
+    self.developerEnabled = false;
+    self.developerDeviceUuid = '';
 
     // status:
     // - CONNECTED: when connected to cleepbus
@@ -29,8 +31,51 @@ function(electron, logger, ipcLifecycle, $rootScope) {
         );
     };
 
+    self.refreshDeveloperSettings = function() {
+        return electron.settings.getSelected(['cleep.developer', 'cleep.developerdevice'])
+            .then(function(settings) {
+                self.developerEnabled = Boolean(settings && settings['cleep.developer']);
+                self.developerDeviceUuid = String((settings && settings['cleep.developerdevice']) || '').trim();
+                $rootScope.$emit('developer-device-changed');
+            })
+            .catch(function(error) {
+                logger.warn('Unable to load developer device settings', error);
+            });
+    };
+
+    /** True when this device is the selected development target. */
+    self.isDeveloperDevice = function(device) {
+        return Boolean(
+            device
+            && self.developerEnabled
+            && self.developerDeviceUuid
+            && device.uuid === self.developerDeviceUuid
+        );
+    };
+
+    /**
+     * Device list / tab icon.
+     * Offline icon always wins over the developer icon.
+     */
+    self.getDeviceIcon = function(device) {
+        if (!device) {
+            return 'cellphone';
+        }
+        if (!device.online) {
+            return 'cellphone-off';
+        }
+        if (self.isDeveloperDevice(device)) {
+            return 'code-braces';
+        }
+        if (device.auth) {
+            return 'cellphone-lock';
+        }
+        return 'cellphone';
+    };
+
     ipcLifecycle.attach(self, self.addIpcs, function() {
         // Pull current state after listeners are registered (covers startup + html hot-reload).
+        self.refreshDeveloperSettings();
         electron.devices.getUiState()
             .then((state) => {
                 self.onDevicesUpdated(null, state.devices || []);
@@ -39,6 +84,10 @@ function(electron, logger, ipcLifecycle, $rootScope) {
             .catch((error) => {
                 logger.error('Unable to load devices ui state', error);
             });
+    });
+
+    $rootScope.$on('cleep-settings-saved', function() {
+        self.refreshDeveloperSettings();
     });
 
     self.onDevicesUpdated = function(_event, devices) {

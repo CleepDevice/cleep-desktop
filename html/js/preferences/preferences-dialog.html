@@ -232,6 +232,45 @@
                 ></config-list>
             </config-tab>
 
+            <config-tab cl-id="developer" cl-label="Developer" cl-icon="code-braces">
+                <config-note
+                    cl-type="note"
+                    cl-note="Developer mode lets you develop Cleep applications on a Raspberry Pi from this computer."
+                ></config-note>
+                <config-switch
+                    cl-title="Enable developer mode"
+                    cl-model="ctl.settings.cleep.developer"
+                ></config-switch>
+
+                <div ng-if="ctl.settings.cleep.developer" layout="column">
+                    <config-section cl-title="Development configuration" cl-icon="code-braces"></config-section>
+                    <config-note
+                        ng-if="!ctl.hasDeveloperDevice"
+                        cl-type="warning"
+                        cl-icon="alert"
+                        cl-note="No device has the Developer application installed. Install cleepapp-developer on a Raspberry Pi to use developer mode."
+                    ></config-note>
+                    <config-select
+                        cl-title="Development device"
+                        cl-subtitle="Only devices with the Developer application installed can be selected."
+                        cl-model="ctl.settings.cleep.developerdevice"
+                        cl-options="ctl.developerDeviceOptions"
+                        cl-empty="Select a device"
+                        cl-disabled="!ctl.hasDeveloperDevice"
+                    ></config-select>
+                    <config-text
+                        cl-title="Cleep applications sources folder"
+                        cl-subtitle="Choose the parent folder that contains your application sources."
+                        cl-model="ctl.settings.cleep.developersources"
+                        cl-readonly="true"
+                        cl-btn-icon="folder-open"
+                        cl-btn-tooltip="Select folder"
+                        cl-btn-style="md-raised md-primary"
+                        cl-click="ctl.selectDeveloperSourcesFolder()"
+                    ></config-text>
+                </div>
+            </config-tab>
+
             <config-tab cl-id="advanced" cl-label="Advanced" cl-icon="tune">
                 <config-section cl-title="Installation images" cl-icon="download"></config-section>
                 <config-switch

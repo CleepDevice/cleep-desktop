@@ -18,6 +18,7 @@ export const INVOKE_CHANNELS = [
   'devices-get-ui-state',
   'devices-prepare-auth',
   'devices-refresh-remote-url',
+  'developer-get-status',
   'get-changelog',
   'get-electron-log-path',
   'iso-get-drives',

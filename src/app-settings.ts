@@ -20,6 +20,9 @@ const DEFAULT_SETTINGS: {
   networkInterface: '',
   uuid: null,
   devices: {},
+  developer: false,
+  developerSources: '',
+  developerDevice: '',
 };
 
 // copied from electron-settings that not exports those types
@@ -147,6 +150,15 @@ export class AppSettings {
     }
     if (!settings.hasSync('cleep.websitenickname')) {
       settings.setSync('cleep.websitenickname', '');
+    }
+    if (!settings.hasSync('cleep.developer')) {
+      settings.setSync('cleep.developer', DEFAULT_SETTINGS.developer);
+    }
+    if (!settings.hasSync('cleep.developersources')) {
+      settings.setSync('cleep.developersources', DEFAULT_SETTINGS.developerSources);
+    }
+    if (!settings.hasSync('cleep.developerdevice')) {
+      settings.setSync('cleep.developerdevice', DEFAULT_SETTINGS.developerDevice);
     }
 
     // rpi-imager section

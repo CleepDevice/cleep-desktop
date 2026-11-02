@@ -86,16 +86,7 @@ function($rootScope, $state, devicesService, logger) {
     };
 
     self._deviceIcon = function(device) {
-        if (!device) {
-            return 'cellphone';
-        }
-        if (!device.online) {
-            return 'cellphone-off';
-        }
-        if (device.auth) {
-            return 'cellphone-lock';
-        }
-        return 'cellphone';
+        return devicesService.getDeviceIcon(device);
     };
 
     self.getSession = function(deviceUuid) {

@@ -14,6 +14,7 @@ import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
 import { appAuth, MAX_AUTH_ATTEMPTS } from './app-auth';
 import { appVault } from './app-vault';
+import { appDeveloper } from './app-developer';
 import { appWebsiteAuth } from './app-website-auth';
 import { appNewsCache } from './app-news-cache';
 import { handleInvoke, ipcOk, onRendererSend, sendToRenderer } from './ipc/ipc-main';
@@ -41,6 +42,7 @@ let splashScreenWindow: BrowserWindow;
 
 appSettings.configure(app);
 appVault.configure(app);
+appDeveloper.configure();
 appContext.configure();
 
 app.on('will-quit', function () {

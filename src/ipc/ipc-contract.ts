@@ -16,6 +16,7 @@ import type { InstallData } from '../app-iso';
 import type { LoggerMessage } from '../app-logger';
 import type { KeyPath, KeyValue, SettingsObject, SettingsValue } from '../app-settings';
 import type { UpdateData, UpdateStatus } from '../app-updater';
+import type { DeveloperStatus } from '../app-developer';
 import type { VaultEnableResult, VaultStatus } from '../app-vault.types';
 import type { WebsiteAuthSession, WebsiteLoginCredentials } from '../app-website-auth';
 import type { CleebusMessageResponse, CleepbusPeerInfos } from '../cleepbus/cleepbus.types';
@@ -160,6 +161,7 @@ export type InvokeContract = {
     };
     response: IpcResult<null>;
   };
+  'developer-get-status': { request: void; response: IpcResult<DeveloperStatus> };
   'get-changelog': { request: void; response: IpcResult<string> };
   'get-electron-log-path': { request: void; response: IpcResult<string> };
   'iso-get-drives': { request: void; response: IpcResult<IsoDrivesPayload> };

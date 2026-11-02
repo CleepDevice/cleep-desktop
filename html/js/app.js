@@ -20,6 +20,14 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         unlocked: false,
         recoveryCodesRemaining: 0,
     };
+    self.developerStatus = {
+        enabled: false,
+        sourcesDir: '',
+        sourcesOk: false,
+        deviceUuid: '',
+        deviceOk: false,
+        hasDeveloperDevice: false,
+    };
     self.websiteAuthAvailable = false;
     self.websiteAuthBusy = false;
     self._websiteLoginDialog = null;
@@ -107,6 +115,87 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
             return;
         }
         self.openVaultUnlockDialog();
+    };
+
+    self.refreshDeveloperStatus = function(status) {
+        self.developerStatus = status || {
+            enabled: false,
+            sourcesDir: '',
+            sourcesOk: false,
+            deviceUuid: '',
+            deviceOk: false,
+            hasDeveloperDevice: false,
+        };
+    };
+
+    self.loadDeveloperStatus = function() {
+        if (!electron.developer || !electron.developer.getStatus) {
+            return Promise.resolve();
+        }
+        return electron.developer.getStatus()
+            .then(function(status) {
+                self.refreshDeveloperStatus(status);
+            })
+            .catch(angular.noop);
+    };
+
+    self.developerHasProblem = function() {
+        var status = self.developerStatus;
+        return Boolean(
+            status.enabled
+            && (!status.hasDeveloperDevice || !status.deviceOk || !status.sourcesOk)
+        );
+    };
+
+    self.developerStatusIconClass = function() {
+        if (self.developerHasProblem()) {
+            return 'toolbar-developer-icon-warning';
+        }
+        return 'white-icon';
+    };
+
+    self.developerStatusLabel = function() {
+        if (!self.developerStatus.enabled) {
+            return 'Developer';
+        }
+        if (!self.developerStatus.hasDeveloperDevice) {
+            return 'No developer device';
+        }
+        if (!self.developerStatus.deviceOk) {
+            return 'Select device';
+        }
+        if (!self.developerStatus.sourcesDir) {
+            return 'Sources missing';
+        }
+        if (!self.developerStatus.sourcesOk) {
+            return 'Sources unavailable';
+        }
+        return 'Developer';
+    };
+
+    self.developerStatusTitle = function() {
+        if (!self.developerStatus.enabled) {
+            return 'Developer mode';
+        }
+        if (!self.developerStatus.hasDeveloperDevice) {
+            return 'Developer mode: install cleepapp-developer on a device';
+        }
+        if (!self.developerStatus.deviceOk) {
+            return 'Developer mode: select a development device';
+        }
+        if (!self.developerStatus.sourcesDir) {
+            return 'Developer mode: select a sources folder';
+        }
+        if (!self.developerStatus.sourcesOk) {
+            return 'Developer mode: sources folder unavailable';
+        }
+        return 'Developer mode';
+    };
+
+    self.onDeveloperToolbarClick = function() {
+        self.openModal('preferencesController', 'js/preferences/preferences-dialog.html', {
+            tab: 'developer',
+        });
     };
 
     self.refreshWebsiteAuthAvailability = function() {
@@ -301,6 +390,7 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         installService.init();
         devicesService.init();
         self.loadVaultStatus();
+        self.loadDeveloperStatus();
         self.refreshWebsiteAuthAvailability();
         self.refreshWebsiteSession();
 
@@ -351,6 +441,11 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
 
         $scope.$on('cleep-settings-saved', function() {
             self.refreshWebsiteAuthAvailability();
+            self.loadDeveloperStatus();
+        });
+
+        $rootScope.$on('devices-updated', function() {
+            self.loadDeveloperStatus();
         });
 
         // first run? open application help
