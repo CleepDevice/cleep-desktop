@@ -294,37 +294,70 @@ export type DealerOptions = {
   linger?: number;
   sendHighWaterMark?: number;
   sendTimeout?: number;
+  /** TCP+ZMTP handshake deadline (ms). */
+  connectTimeoutMs?: number;
 };
+
+const DEFAULT_CONNECT_TIMEOUT_MS = 5_000;
 
 export class Dealer {
   routingId: Buffer | null = null;
+  /** Fired when the underlying TCP/ZMTP connection drops (after connect or mid-flight). */
+  onClose: (() => void) | null = null;
   private conn: ZmtpConnection | null = null;
   private ready: Promise<void> = Promise.resolve();
+  private readySettled = true;
 
-  constructor(_options: DealerOptions = {}) {}
+  constructor(private readonly options: DealerOptions = {}) {}
 
   connect(endpoint: string): void {
     const { host, port } = parseTcpEndpoint(endpoint);
+    const timeoutMs = this.options.connectTimeoutMs ?? DEFAULT_CONNECT_TIMEOUT_MS;
+    this.readySettled = false;
     this.ready = new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const settle = (fn: () => void): void => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        this.readySettled = true;
+        clearTimeout(timer);
+        fn();
+      };
+
       const socket = createConnection({ host, port });
       const conn = new ZmtpConnection(socket);
       this.conn = conn;
+
+      const timer = setTimeout(() => {
+        settle(() => reject(new Error(`Dealer connect timeout after ${timeoutMs}ms`)));
+        conn.close();
+      }, timeoutMs);
+
       conn.onClose = () => {
         if (this.conn === conn) {
           this.conn = null;
+          this.onClose?.();
         }
+        // destroy()/close before "connect" emits "close" without "error" — must reject
+        // or Peer.sendQueue awaits this.ready forever.
+        settle(() => reject(new Error("Dealer connection closed")));
       };
+
       socket.once("connect", () => {
         void conn
           .handshake("DEALER", this.routingId ?? undefined)
-          .then(() => resolve())
+          .then(() => settle(() => resolve()))
           .catch((err: Error) => {
-            reject(err);
+            settle(() => reject(err));
             conn.close();
           });
       });
-      socket.once("error", (err) => reject(err));
+      socket.once("error", (err) => settle(() => reject(err)));
     });
+    // Avoid unhandled rejection if close() races before the first send awaits ready.
+    void this.ready.catch((): undefined => undefined);
   }
 
   async send(frames: Buffer[]): Promise<void> {
@@ -336,7 +369,12 @@ export class Dealer {
   }
 
   close(): void {
-    this.conn?.close();
+    const conn = this.conn;
     this.conn = null;
+    if (conn) {
+      conn.close();
+    } else if (!this.readySettled) {
+      // No conn object yet should be rare; ready rejection is handled via onClose path.
+    }
   }
 }

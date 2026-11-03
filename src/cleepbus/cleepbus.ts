@@ -1,4 +1,4 @@
-import { hostname } from 'os';
+import { hostname, networkInterfaces } from 'os';
 import { v4 as uuidv4 } from 'uuid';
 import { appLogger } from '../app-logger';
 import { appSettings } from '../app-settings';
@@ -6,6 +6,7 @@ import { getError } from '../utils/app.helpers';
 import { IToolUpdateStatus, OnUpdateAvailableCallback } from '../app-updater';
 import { OnDownloadProgressCallback } from '../utils/download';
 import { Pyre, type EnterEvent, type ExitEvent, type ShoutEvent, type WhisperEvent } from '../pyre';
+import { isVirtualIfaceName } from '../pyre/iface';
 import {
   CleebusMessageResponse,
   CleepbusPeerInfos,
@@ -22,7 +23,7 @@ import {
 } from './message-bus.types';
 
 /** Built-in message bus version (pyre-ts), replaces external cleepbus binary versioning. */
-export const CLEEPBUS_VERSION = '0.1.0';
+export const CLEEPBUS_VERSION = '0.1.1';
 
 const BUS_NAME = 'CLEEP';
 const BUS_CHANNEL = 'CLEEP';
@@ -32,6 +33,9 @@ const MAX_QUEUED_EVENTS = 500;
 const RESTART_DELAY_INITIAL_MS = 1000;
 const RESTART_DELAY_MAX_MS = 30_000;
 const METRICS_LOG_INTERVAL_MS = 60_000;
+const NETWORK_WATCH_INTERVAL_MS = 5_000;
+/** Delay after OS resume so DHCP/Wi-Fi can settle before restarting the bus. */
+const RESUME_RESTART_DELAY_MS = 5_000;
 
 function str2bool(value: string | undefined, fallback = false): boolean {
   if (value === undefined || value === null) {
@@ -79,7 +83,9 @@ type QueuedBusEvent =
  *
  * Resilience:
  * - unexpected STOP / start failure → automatic restart with backoff
- * - event handlers run via setImmediate so ZRE I/O is not blocked by JSON/IPC
+ * - OS resume + network interface changes → restart (avoids frozen UDP / stale IP)
+ * - event handlers run via batched setImmediate so ZRE I/O is not blocked by JSON/IPC
+ * - EXIT+ENTER same peerUuid in one batch → no false offline flicker
  * - SHOUT/WHISPER dropped when the deferred queue is saturated (ENTER/EXIT kept)
  */
 const COMMAND_RESPONSE_EVENT = 'external.command.response';
@@ -103,10 +109,18 @@ export class Cleepbus {
   private forcedStop = false;
   private restartTimer: NodeJS.Timeout | null = null;
   private metricsTimer: NodeJS.Timeout | null = null;
+  private networkWatchTimer: NodeJS.Timeout | null = null;
+  private resumeRestartTimer: NodeJS.Timeout | null = null;
   private restartDelayMs = RESTART_DELAY_INITIAL_MS;
-  private queuedEvents = 0;
+  private eventQueue: QueuedBusEvent[] = [];
+  private flushScheduled = false;
   private droppedMessages = 0;
   private processedEvents = 0;
+  private startEpoch = 0;
+  private lastNetworkSignature = '';
+  private powerResumeHandler: (() => void) | null = null;
+  /** Avoid spamming the UI on every backoff retry while Wi-Fi/DHCP comes back. */
+  private startFailureNotified = false;
 
   public async start(): Promise<void> {
     // Explicit start always clears a previous intentional stop.
@@ -115,6 +129,7 @@ export class Cleepbus {
       return;
     }
     this.starting = true;
+    const epoch = ++this.startEpoch;
     let startFailed = false;
 
     try {
@@ -148,21 +163,34 @@ export class Cleepbus {
       await this.pyre.join(BUS_CHANNEL);
       await this.pyre.start();
 
+      if (this.forcedStop || epoch !== this.startEpoch) {
+        await this.pyre.stop().catch((): undefined => undefined);
+        this.pyre = null;
+        return;
+      }
+
       this.restartDelayMs = RESTART_DELAY_INITIAL_MS;
+      this.startFailureNotified = false;
       this.startMetricsTimer();
+      this.startNetworkWatch();
       appLogger.info(`Cleepbus (pyre-ts ${CLEEPBUS_VERSION}) started on ${this.pyre.endpoint()}`);
       this.messageBusConnectedCallback?.(true);
     } catch (error) {
       startFailed = true;
-      appLogger.error('Fatal error starting cleepbus', { error });
-      this.messageBusErrorCallback?.(getError(error as Error));
+      const message = getError(error as Error);
+      appLogger.error('Fatal error starting cleepbus', { error: message });
+      // One UI notification per failure streak — retries only log until start succeeds.
+      if (!this.startFailureNotified) {
+        this.startFailureNotified = true;
+        this.messageBusErrorCallback?.(message);
+      }
       await this.pyre?.stop().catch((): undefined => undefined);
       this.pyre = null;
     } finally {
       this.starting = false;
     }
 
-    if (startFailed) {
+    if (startFailed && !this.forcedStop) {
       this.scheduleRestart('start failed');
     }
   }
@@ -178,8 +206,13 @@ export class Cleepbus {
 
   private async shutdown(): Promise<void> {
     this.forcedStop = true;
+    const shutdownEpoch = ++this.startEpoch;
     this.clearRestartTimer();
+    this.stopNetworkWatch();
     this.stopMetricsTimer();
+    this.rejectAllPendingCommands(new Error('Message bus shutting down'));
+    this.eventQueue = [];
+    this.flushScheduled = false;
     const node = this.pyre;
     this.pyre = null;
     this.peers.clear();
@@ -188,7 +221,10 @@ export class Cleepbus {
         appLogger.error('Error stopping cleepbus', { error: getError(error) });
       });
     }
-    this.messageBusConnectedCallback?.(false);
+    // A newer restart/start may have taken over while we awaited node.stop().
+    if (this.startEpoch === shutdownEpoch && !this.pyre) {
+      this.messageBusConnectedCallback?.(false);
+    }
   }
 
   public async checkForUpdates(_force = false): Promise<IToolUpdateStatus> {
@@ -281,7 +317,7 @@ export class Cleepbus {
   /** Test/diagnostics helper. */
   public getBusStats(): { queuedEvents: number; droppedMessages: number; processedEvents: number; peers: number } {
     return {
-      queuedEvents: this.queuedEvents,
+      queuedEvents: this.eventQueue.length,
       droppedMessages: this.droppedMessages,
       processedEvents: this.processedEvents,
       peers: this.peers.size,
@@ -306,22 +342,50 @@ export class Cleepbus {
   /**
    * Defer application work off the pyre event path so UDP/TCP stay responsive.
    * Critical events (ENTER/EXIT) are always queued; messages may be dropped under load.
+   * Events are flushed in one setImmediate batch so EXIT+ENTER for the same peerUuid
+   * in the same pyre turn does not flicker the UI offline.
    */
   private enqueue(item: QueuedBusEvent, critical: boolean): void {
-    if (!critical && this.queuedEvents >= MAX_QUEUED_EVENTS) {
+    if (!critical && this.eventQueue.length >= MAX_QUEUED_EVENTS) {
       this.droppedMessages += 1;
       if (this.droppedMessages === 1 || this.droppedMessages % 50 === 0) {
         appLogger.warn('Cleepbus message queue saturated, dropping SHOUT/WHISPER', {
-          queuedEvents: this.queuedEvents,
+          queuedEvents: this.eventQueue.length,
           droppedMessages: this.droppedMessages,
         });
       }
       return;
     }
 
-    this.queuedEvents += 1;
-    setImmediate(() => {
-      this.queuedEvents = Math.max(0, this.queuedEvents - 1);
+    this.eventQueue.push(item);
+    if (!this.flushScheduled) {
+      this.flushScheduled = true;
+      setImmediate(() => this.flushEventQueue());
+    }
+  }
+
+  private flushEventQueue(): void {
+    this.flushScheduled = false;
+    const batch = this.eventQueue.splice(0, this.eventQueue.length);
+    const skipExitIndexes = new Set<number>();
+    for (let i = 0; i < batch.length; i += 1) {
+      const item = batch[i];
+      if (item.kind !== 'ENTER') {
+        continue;
+      }
+      for (let j = 0; j < i; j += 1) {
+        const prior = batch[j];
+        if (prior.kind === 'EXIT' && prior.event.peerUuid === item.event.peerUuid) {
+          skipExitIndexes.add(j);
+        }
+      }
+    }
+
+    for (let i = 0; i < batch.length; i += 1) {
+      if (skipExitIndexes.has(i)) {
+        continue;
+      }
+      const item = batch[i];
       try {
         if (item.kind === 'ENTER') {
           this.onPeerEnter(item.event);
@@ -334,7 +398,7 @@ export class Cleepbus {
       } catch (error) {
         appLogger.error('Unhandled error in cleepbus event handler', { error: getError(error as Error) });
       }
-    });
+    }
   }
 
   private onPyreStopped(): void {
@@ -344,9 +408,114 @@ export class Cleepbus {
     appLogger.error('Cleepbus stopped unexpectedly, scheduling restart');
     this.pyre = null;
     this.peers.clear();
+    this.stopNetworkWatch();
     this.stopMetricsTimer();
+    this.rejectAllPendingCommands(new Error('Message bus stopped unexpectedly'));
     this.messageBusConnectedCallback?.(false);
     this.scheduleRestart('unexpected stop');
+  }
+
+  private rejectAllPendingCommands(error: Error): void {
+    for (const pending of this.pendingCommands.values()) {
+      clearTimeout(pending.timer);
+      pending.reject(error);
+    }
+    this.pendingCommands.clear();
+  }
+
+  private computeNetworkSignature(): string {
+    const nets = networkInterfaces();
+    const parts: string[] = [];
+    for (const name of Object.keys(nets).sort()) {
+      // Ignore Docker/WSL/VPN tunnels — their flap must not restart the CLEEP bus.
+      if (isVirtualIfaceName(name)) {
+        continue;
+      }
+      for (const addr of nets[name] ?? []) {
+        const family = String(addr.family);
+        if ((family === 'IPv4' || family === '4') && !addr.internal && addr.address) {
+          parts.push(`${name}:${addr.address}`);
+        }
+      }
+    }
+    return parts.join('|');
+  }
+
+  private startNetworkWatch(): void {
+    this.stopNetworkWatch();
+    this.lastNetworkSignature = this.computeNetworkSignature();
+    this.networkWatchTimer = setInterval(() => {
+      if (this.forcedStop || this.starting || !this.pyre) {
+        return;
+      }
+      const signature = this.computeNetworkSignature();
+      if (signature === this.lastNetworkSignature) {
+        return;
+      }
+      const previous = this.lastNetworkSignature;
+      this.lastNetworkSignature = signature;
+      // Wi-Fi down → empty signature: wait until a usable LAN address returns.
+      if (!signature) {
+        appLogger.warn('Usable LAN addresses gone; deferring cleepbus restart until network returns', {
+          from: previous,
+        });
+        return;
+      }
+      appLogger.warn('Network interfaces changed, restarting cleepbus', {
+        from: previous,
+        to: signature,
+      });
+      void this.restart();
+    }, NETWORK_WATCH_INTERVAL_MS);
+
+    try {
+      // Electron main process only; absent in unit tests.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const electron = require('electron') as { powerMonitor?: { on: (event: string, cb: () => void) => void; off?: (event: string, cb: () => void) => void } };
+      if (electron.powerMonitor?.on) {
+        this.powerResumeHandler = () => {
+          if (this.forcedStop) {
+            return;
+          }
+          if (this.resumeRestartTimer) {
+            clearTimeout(this.resumeRestartTimer);
+          }
+          this.resumeRestartTimer = setTimeout(() => {
+            this.resumeRestartTimer = null;
+            if (this.forcedStop || this.starting) {
+              return;
+            }
+            appLogger.warn('System resume detected, restarting cleepbus');
+            void this.restart();
+          }, RESUME_RESTART_DELAY_MS);
+        };
+        electron.powerMonitor.on('resume', this.powerResumeHandler);
+      }
+    } catch {
+      // non-electron environment
+    }
+  }
+
+  private stopNetworkWatch(): void {
+    if (this.networkWatchTimer) {
+      clearInterval(this.networkWatchTimer);
+      this.networkWatchTimer = null;
+    }
+    if (this.resumeRestartTimer) {
+      clearTimeout(this.resumeRestartTimer);
+      this.resumeRestartTimer = null;
+    }
+    if (this.powerResumeHandler) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const electron = require('electron') as { powerMonitor?: { removeListener?: (event: string, cb: () => void) => void; off?: (event: string, cb: () => void) => void } };
+        electron.powerMonitor?.removeListener?.('resume', this.powerResumeHandler);
+        electron.powerMonitor?.off?.('resume', this.powerResumeHandler);
+      } catch {
+        // ignore
+      }
+      this.powerResumeHandler = null;
+    }
   }
 
   private scheduleRestart(reason: string): void {

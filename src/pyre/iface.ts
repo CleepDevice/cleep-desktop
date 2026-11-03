@@ -12,7 +12,35 @@ export type IfaceInfo = {
   multicast: boolean;
 };
 
-const MULTICAST_GROUP = "225.25.25.25";
+/** Align with pyre-gevent zbeacon._VIRTUAL_IFACE_PREFIXES (+ common desktop tunnels). */
+const VIRTUAL_IFACE_PREFIXES = [
+  "docker",
+  "br-",
+  "veth",
+  "virbr",
+  "tun",
+  "tap",
+  "wg",
+  "vnet",
+  "vmnet",
+  "zt",
+  "lxc",
+  "cni",
+  "flannel",
+  "cbr",
+  "utun",
+  "vethernet",
+] as const;
+
+export function isVirtualIfaceName(name: string): boolean {
+  const lname = name.toLowerCase();
+  return VIRTUAL_IFACE_PREFIXES.some((prefix) => lname.startsWith(prefix));
+}
+
+function isCgnatIPv4(ip: string): boolean {
+  const [a, b] = ip.split(".").map(Number);
+  return a === 100 && b >= 64 && b <= 127;
+}
 
 function ipv4ToInt(ip: string): number {
   return ip.split(".").reduce((acc, octet) => (acc << 8) + Number(octet), 0) >>> 0;
@@ -192,6 +220,10 @@ function collectCandidates(
 
   for (let sortKey = 0; sortKey < orderedNames.length; sortKey += 1) {
     const name = orderedNames[sortKey];
+    // Forced interface name bypasses the virtual filter (manual Preferences bind).
+    if (!interfaceName && isVirtualIfaceName(name)) {
+      continue;
+    }
     const addrs = nets[name];
     if (!addrs) {
       continue;
@@ -233,28 +265,19 @@ function collectCandidates(
   return candidates;
 }
 
-function loopbackFallback(): IfaceInfo {
-  return {
-    name: "loopback",
-    address: "127.0.0.1",
-    broadcast: MULTICAST_GROUP,
-    multicast: true,
-  };
-}
-
-/**
- * Pick the LAN interface for ZRE beacons and advertised TCP endpoint.
- * Mirrors pyre-gevent zbeacon._prepare_socket when no interface is forced.
- */
 /**
  * All local network interfaces (for manual bus binding in Preferences).
  */
 export function listNetworkInterfaces(): ListedNetworkInterface[] {
   const defaultNames = getDefaultInterfaceNames();
   const defaultSet = new Set(defaultNames);
+  // Include virtual NICs in the list UI, but only non-virtual ones are usableForBus.
   const usableCandidates = collectCandidates(undefined, defaultNames, { allInterfaces: true });
   const bestUsableByName = new Map<string, IPv4Candidate>();
   for (const candidate of usableCandidates) {
+    if (isVirtualIfaceName(candidate.name)) {
+      continue;
+    }
     const existing = bestUsableByName.get(candidate.name);
     if (!existing || candidate.sortKey < existing.sortKey) {
       bestUsableByName.set(candidate.name, candidate);
@@ -297,13 +320,29 @@ export function listNetworkInterfaces(): ListedNetworkInterface[] {
   return listed;
 }
 
+/**
+ * Pick the LAN interface for ZRE beacons and advertised TCP endpoint.
+ * Mirrors pyre-gevent zbeacon._prepare_socket when no interface is forced.
+ *
+ * Never falls back to 127.0.0.1 — callers (cleepbus) must retry when the network
+ * is not ready yet (Wi-Fi association / DHCP after resume).
+ */
 export function selectInterface(interfaceName?: string): IfaceInfo {
   const defaultNames = getDefaultInterfaceNames();
-  const candidates = collectCandidates(interfaceName, defaultNames);
+  let candidates = collectCandidates(interfaceName, defaultNames);
+
+  // Default route may be a VPN tunnel with no usable private broadcast address —
+  // fall back to any non-virtual LAN iface (zbeacon other_candidates behavior).
+  if (candidates.length === 0 && !interfaceName && defaultNames.length > 0) {
+    candidates = collectCandidates(undefined, [], { allInterfaces: true });
+  }
 
   if (candidates.length > 0) {
-    candidates.sort((a, b) => a.sortKey - b.sortKey);
-    const chosen = candidates[0];
+    // Prefer classic RFC1918 over CGNAT/Tailscale 100.64/10 when both exist.
+    const preferred = candidates.filter((candidate) => !isCgnatIPv4(candidate.address));
+    const pool = preferred.length > 0 ? preferred : candidates;
+    pool.sort((a, b) => a.sortKey - b.sortKey);
+    const chosen = pool[0];
     return {
       name: chosen.name,
       address: chosen.address,
@@ -317,5 +356,5 @@ export function selectInterface(interfaceName?: string): IfaceInfo {
     throw new Error(`No usable IPv4 address found on interface ${interfaceName}`);
   }
 
-  return loopbackFallback();
+  throw new Error("No usable LAN interface for ZRE discovery (network not ready)");
 }

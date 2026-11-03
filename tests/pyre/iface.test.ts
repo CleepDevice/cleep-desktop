@@ -126,22 +126,16 @@ describe('pyre iface', () => {
       usableForBus: true,
       onDefaultRoute: true,
     });
-    expect(listed.find((item) => item.name === 'docker0')?.usableForBus).toBe(true);
+    expect(listed.find((item) => item.name === 'docker0')?.usableForBus).toBe(false);
     expect(listed.find((item) => item.name === 'veth0')?.usableForBus).toBe(false);
   });
 
-  it('falls back to multicast loopback when no candidate exists', async () => {
+  it('throws when no LAN candidate exists (no loopback zombie start)', async () => {
     const fs = await import('node:fs');
     vi.mocked(fs.readFileSync).mockReturnValue('Iface\tDestination\n');
 
     const { selectInterface } = await import('../../src/pyre/iface');
-    const iface = selectInterface();
-    expect(iface).toMatchObject({
-      name: 'loopback',
-      address: '127.0.0.1',
-      broadcast: '225.25.25.25',
-      multicast: true,
-    });
+    expect(() => selectInterface()).toThrow(/No usable LAN interface/);
   });
 
   it('selects default-route interface on darwin via route get default', async () => {

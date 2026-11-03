@@ -6,10 +6,12 @@ import { Group } from "./group";
 import { selectInterface, type IfaceInfo } from "./iface";
 import { Peer } from "./peer";
 import type { Headers, Logger, MessageContent, PyreEvent, PyreOptions } from "./types";
-import { asBuffer, sleep, toFrames, wrapStatus } from "./util";
+import { asBuffer, monoNow, sleep, toFrames, wrapStatus } from "./util";
 import { bytesToUuid, identityFromRoutingId, randomUuid } from "./uuid";
 
 const REAP_INTERVAL_MS = 1000;
+/** Wall-clock gap larger than this between reap ticks ⇒ likely sleep/wake; reset mailboxes. */
+const WALL_CLOCK_JUMP_MS = 15_000;
 
 export class PyreNode {
   readonly uuid: string;
@@ -29,6 +31,7 @@ export class PyreNode {
   private running = false;
   private reaper: NodeJS.Timeout | null = null;
   private inboxLoop: Promise<void> | null = null;
+  private lastReapWallMs = 0;
   private readonly emitEvent: (event: PyreEvent) => void;
   private readonly logger: Logger;
   private readonly options: Required<Pick<PyreOptions, "port" | "interval">> & PyreOptions;
@@ -276,7 +279,8 @@ export class PyreNode {
     if (beacon.port) {
       const endpoint = `tcp://${msg.address}:${beacon.port}`;
       const peer = this.requirePeer(peerUuid, endpoint);
-      peer.refresh();
+      // Presence only — leave evasiveAt alone so TCP PING still runs on a dead mailbox.
+      peer.refreshExpiry();
     } else {
       const peer = this.peers.get(peerUuid);
       if (peer) {
@@ -308,6 +312,10 @@ export class PyreNode {
           this.removePeer(peer);
         } else if (peer.endpoint === this.endpoint) {
           return;
+        } else {
+          // Mailbox was dropped (ready=false) without EXIT — clear stale group membership
+          // before re-ENTER so JOIN events match the new HELLO group list.
+          this.clearPeerGroupMembership(peer);
         }
       }
       peer = this.requirePeer(id, msg.endpoint);
@@ -380,10 +388,24 @@ export class PyreNode {
   private requirePeer(identity: string, endpoint: string): Peer {
     let peer = this.peers.get(identity);
     if (peer) {
+      // Mailbox may have been dropped on send failure while UDP beacons still refresh
+      // timers — reopen and re-handshake instead of waiting for a full expire/EXIT cycle.
+      const endpointChanged = Boolean(endpoint && peer.endpoint && peer.endpoint !== endpoint);
+      if (!peer.connected || endpointChanged) {
+        this.logger.debug(
+          `(${this.name}) reconnect peer name=${peer.name} endpoint=${endpoint}` +
+            `${endpointChanged ? " (endpoint changed)" : ""}`,
+        );
+        if (peer.connected) {
+          peer.disconnect();
+        }
+        peer.connect(endpoint);
+        this.sendHello(peer);
+      }
       return peer;
     }
     for (const existing of [...this.peers.values()]) {
-      if (existing.endpoint === endpoint) {
+      if (existing.endpoint === endpoint || existing.lastEndpoint === endpoint) {
         this.removePeer(existing);
         existing.disconnect();
       }
@@ -391,6 +413,11 @@ export class PyreNode {
     peer = new Peer(identity, this.uuidBytes, this.logger);
     this.peers.set(identity, peer);
     peer.connect(endpoint);
+    this.sendHello(peer);
+    return peer;
+  }
+
+  private sendHello(peer: Peer): void {
     void peer.send({
       id: ZreMsgId.HELLO,
       endpoint: this.endpoint,
@@ -399,15 +426,22 @@ export class PyreNode {
       name: this.name,
       headers: { ...this.headers },
     });
-    return peer;
+  }
+
+  private clearPeerGroupMembership(peer: Peer): void {
+    for (const group of this.peerGroups.values()) {
+      group.peers.delete(peer.uuid);
+    }
   }
 
   private removePeer(peer: Peer): void {
+    // Always emit EXIT (zyre/pyre behavior). ready may already be false after a mailbox
+    // drop; cleepbus ignores EXIT for peer UUIDs that never ENTER'd.
     this.emitEvent({ type: "EXIT", peerUuid: peer.uuid, peerName: peer.name });
-    this.logger.debug(`(${this.name}) EXIT name=${peer.name} endpoint=${peer.endpoint}`);
-    for (const group of this.peerGroups.values()) {
-      group.leave(peer);
-    }
+    this.logger.debug(
+      `(${this.name}) EXIT name=${peer.name} endpoint=${peer.endpoint || peer.lastEndpoint}`,
+    );
+    this.clearPeerGroupMembership(peer);
     this.peers.delete(peer.uuid);
     peer.disconnect();
   }
@@ -446,16 +480,39 @@ export class PyreNode {
   }
 
   private reap(): void {
-    const now = Date.now();
+    // Wall clock only for sleep/NTP jump detection; peer deadlines use monoNow().
+    const wallNow = Date.now();
+    if (this.lastReapWallMs > 0 && wallNow - this.lastReapWallMs > WALL_CLOCK_JUMP_MS) {
+      this.logger.warn(
+        `(${this.name}) wall-clock jump ${wallNow - this.lastReapWallMs}ms — resetting peer mailboxes`,
+      );
+      for (const peer of this.peers.values()) {
+        peer.disconnect();
+        // Monotonic expiry is usually still valid after sleep; refresh anyway and
+        // force evasive reconnect + HELLO (TCP often dies across suspend).
+        peer.refreshExpiry();
+        peer.evasiveAt = 0;
+      }
+    }
+    this.lastReapWallMs = wallNow;
+
+    const now = monoNow();
     for (const peer of [...this.peers.values()]) {
-      // expiredAt is forced to 0 when a mailbox send fails, so EXIT follows within
-      // one reap interval after a silent power-off (instead of waiting PEER_EXPIRED_MS).
       if (now > peer.expiredAt) {
-        this.logger.debug(`(${this.name}) peer expired name=${peer.name} endpoint=${peer.endpoint}`);
+        this.logger.debug(
+          `(${this.name}) peer expired name=${peer.name} endpoint=${peer.endpoint || peer.lastEndpoint}`,
+        );
         this.removePeer(peer);
       } else if (now > peer.evasiveAt) {
         this.logger.debug(`(${this.name}) peer seems dead/slow name=${peer.name}`);
-        void peer.send({ id: ZreMsgId.PING });
+        const endpoint = peer.endpoint || peer.lastEndpoint;
+        if (!peer.connected && endpoint) {
+          // Prefer reopening the mailbox over a PING that cannot leave a dead socket.
+          peer.connect(endpoint);
+          this.sendHello(peer);
+        } else {
+          void peer.send({ id: ZreMsgId.PING });
+        }
       }
     }
   }

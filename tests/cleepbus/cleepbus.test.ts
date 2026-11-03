@@ -197,6 +197,52 @@ describe('Cleepbus', () => {
     expect(peerDisconnected).toHaveBeenCalledWith(expect.objectContaining({ uuid: 'device-uuid', online: false }));
   });
 
+  it('does not flicker offline on EXIT+ENTER for the same peerUuid in one batch', async () => {
+    const peerConnected = vi.fn();
+    const peerDisconnected = vi.fn();
+    cleepbus.setCleepbusCallbacks(vi.fn(), vi.fn(), vi.fn(), vi.fn(), peerConnected, peerDisconnected);
+    await cleepbus.start();
+    const pyre = pyreInstances[0] as MockPyreInstance;
+
+    const headers = {
+      uuid: 'device-uuid',
+      hostname: 'pi',
+      port: '80',
+      ssl: '0',
+      auth: '0',
+      remoteaccess: '{}',
+      cleepdesktop: '0',
+      macs: JSON.stringify(['11:22:33:44:55:66']),
+      version: '0.2.0',
+      apps: 'network',
+    };
+
+    pyre.emit('ENTER', {
+      type: 'ENTER',
+      peerUuid: 'same-ident',
+      peerName: 'CLEEP',
+      endpoint: 'tcp://10.0.0.8:5670',
+      headers,
+    } satisfies EnterEvent);
+    await flushBusQueue();
+    peerConnected.mockClear();
+    peerDisconnected.mockClear();
+
+    // Re-handshake: pyre emits EXIT then ENTER synchronously for the same ZRE uuid.
+    pyre.emit('EXIT', { type: 'EXIT', peerUuid: 'same-ident', peerName: 'CLEEP' } satisfies ExitEvent);
+    pyre.emit('ENTER', {
+      type: 'ENTER',
+      peerUuid: 'same-ident',
+      peerName: 'CLEEP',
+      endpoint: 'tcp://10.0.0.8:5670',
+      headers,
+    } satisfies EnterEvent);
+    await flushBusQueue();
+
+    expect(peerDisconnected).not.toHaveBeenCalled();
+    expect(peerConnected).toHaveBeenCalledTimes(1);
+  });
+
   it('ignores stale EXIT after the same device rejoins with a new peer uuid', async () => {
     const peerConnected = vi.fn();
     const peerDisconnected = vi.fn();

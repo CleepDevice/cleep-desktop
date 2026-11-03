@@ -40,3 +40,11 @@ export function wrapSequence(n: number): number {
 export function wrapStatus(n: number): number {
   return n & 0xff;
 }
+
+/**
+ * Monotonic clock in ms (Node ``performance.now``), aligned with pyre-gevent
+ * ``time.monotonic()`` usage for peer evasive/expired deadlines.
+ */
+export function monoNow(): number {
+  return performance.now();
+}
