@@ -12,6 +12,11 @@ import {
   type DeveloperAppEntry,
 } from './developer-apps';
 import {
+  CLEEP_CORE_FOLDER_NAME,
+  DEVELOPER_CORE_SYNC_TOKEN,
+  detectCleepCoreDir,
+} from './developer-core';
+import {
   deleteDeveloperSshSecret,
   getDeveloperSshSecret,
   hasDeveloperSshSecret,
@@ -21,6 +26,7 @@ import {
   computeDeveloperSyncDelay,
   getDeveloperSyncPlatformSupport,
   rsyncDeveloperApps,
+  rsyncDeveloperCore,
   type DeveloperSyncDelayState,
   type DeveloperSyncPlatformSupport,
 } from './developer-sync';
@@ -29,6 +35,9 @@ import { VaultError } from './app-vault.types';
 
 /** Module name advertised in peer `apps` when cleepapp-developer is installed. */
 export const DEVELOPER_APP_NAME = 'developer';
+
+/** Label used in sync logs for the Cleep core target. */
+export const DEVELOPER_CORE_LOG_LABEL = 'cleep';
 
 export type DeveloperSyncState = 'idle' | 'syncing' | 'ok' | 'failed';
 
@@ -64,6 +73,14 @@ export type DeveloperStatus = {
   selectedApps: string[];
   /** True when at least one valid selected app remains. */
   appsOk: boolean;
+  /** Absolute path to sources/cleep when valid, else null. */
+  corePath: string | null;
+  /** True when a valid Cleep core checkout exists under sources. */
+  coreAvailable: boolean;
+  /** User opt-in to sync Cleep core (cleep.developercore). */
+  coreEnabled: boolean;
+  /** True when core is available and enabled. */
+  coreOk: boolean;
   sshConfigured: boolean;
   syncSupported: boolean;
   syncSupport: DeveloperSyncPlatformSupport;
@@ -86,6 +103,10 @@ function readSelectedApps(): string[] {
     return [];
   }
   return raw.map((item) => String(item || '').trim()).filter(Boolean);
+}
+
+function readCoreEnabled(): boolean {
+  return Boolean(appSettings.get<boolean>('cleep.developercore'));
 }
 
 class AppDeveloper {
@@ -122,14 +143,7 @@ class AppDeveloper {
     }
     void this.reconcileWatcher().then(() => {
       const status = this.getStatus();
-      if (
-        status.enabled &&
-        status.sourcesOk &&
-        status.deviceOk &&
-        status.appsOk &&
-        status.sshConfigured &&
-        status.syncSupported
-      ) {
+      if (this.isSyncReady(status)) {
         this.scheduleSync('start');
       }
     });
@@ -140,6 +154,7 @@ class AppDeveloper {
     const sourcesDir = String(appSettings.get<string>('cleep.developersources') || '').trim();
     const deviceUuid = String(appSettings.get<string>('cleep.developerdevice') || '').trim();
     const selectedApps = readSelectedApps();
+    const coreEnabled = readCoreEnabled();
     const devices = appDevices.getDevices();
     const hasDeveloperDevice = devices.some((device) => deviceHasDeveloperApp(device));
     const selected = deviceUuid ? appDevices.getDevice(deviceUuid) : undefined;
@@ -147,6 +162,8 @@ class AppDeveloper {
     const sourcesOk = enabled ? this.isSourcesDirectory(sourcesDir) : false;
     const resolvedApps =
       sourcesOk ? resolveSelectedDeveloperApps(sourcesDir, selectedApps) : [];
+    const corePath = sourcesOk ? detectCleepCoreDir(sourcesDir) : null;
+    const coreAvailable = Boolean(corePath);
     const syncSupport = getDeveloperSyncPlatformSupport();
 
     return {
@@ -158,6 +175,10 @@ class AppDeveloper {
       hasDeveloperDevice,
       selectedApps,
       appsOk: resolvedApps.length > 0,
+      corePath,
+      coreAvailable,
+      coreEnabled,
+      coreOk: coreAvailable && coreEnabled,
       sshConfigured: deviceUuid ? hasDeveloperSshSecret(deviceUuid) : false,
       syncSupported: syncSupport === 'supported',
       syncSupport,
@@ -170,15 +191,7 @@ class AppDeveloper {
   /** Call after settings or devices change so watch/sync follow config. */
   public async reconcileWatcher(): Promise<void> {
     const status = this.getStatus();
-    const ready =
-      status.enabled &&
-      status.sourcesOk &&
-      status.deviceOk &&
-      status.appsOk &&
-      status.sshConfigured &&
-      status.syncSupported;
-
-    if (!ready) {
+    if (!this.isSyncReady(status)) {
       await this.stopWatcher();
       return;
     }
@@ -190,10 +203,11 @@ class AppDeveloper {
     }
 
     const apps = resolveSelectedDeveloperApps(status.sourcesDir, status.selectedApps);
-    const pathsKey = apps
-      .map((app) => app.absolutePath)
-      .sort()
-      .join('|');
+    const watchPaths = [
+      ...apps.map((app) => app.absolutePath),
+      ...(status.coreOk && status.corePath ? [status.corePath] : []),
+    ];
+    const pathsKey = watchPaths.slice().sort().join('|');
 
     if (this.watcher && this.watchedPathsKey === pathsKey) {
       return;
@@ -201,22 +215,20 @@ class AppDeveloper {
 
     await this.stopWatcher();
     this.watchedPathsKey = pathsKey;
-    this.watcher = chokidar.watch(
-      apps.map((app) => app.absolutePath),
-      {
-        ignoreInitial: true,
-        // Cursor/editor saves often rewrite via temp+rename; wait for the file to settle.
-        awaitWriteFinish: { stabilityThreshold: 500, pollInterval: 100 },
-        ignored: [
-          /(^|[/\\])\../,
-          /node_modules/,
-          /\.git/,
-          /__pycache__/,
-          /\.venv/,
-          /venv/,
-        ],
-      },
-    );
+    this.watcher = chokidar.watch(watchPaths, {
+      ignoreInitial: true,
+      // Cursor/editor saves often rewrite via temp+rename; wait for the file to settle.
+      awaitWriteFinish: { stabilityThreshold: 500, pollInterval: 100 },
+      ignored: [
+        /(^|[/\\])\../,
+        /node_modules/,
+        /\.git/,
+        /__pycache__/,
+        /\.venv/,
+        /venv/,
+        /\/modules(\/|$)/,
+      ],
+    });
 
     const onChange = () => {
       this.scheduleSync('watch');
@@ -232,19 +244,46 @@ class AppDeveloper {
       });
     });
 
+    const logTargets = [
+      ...apps.map((app) => app.moduleName),
+      ...(status.coreOk ? [DEVELOPER_CORE_LOG_LABEL] : []),
+    ];
     appLogger.info('Developer sources watcher started', {
       apps: apps.map((app) => app.moduleName),
+      core: status.coreOk,
     });
     this.emitSyncLog({
       level: 'info',
-      title: 'Watching application sources',
-      detail: `Watching ${apps.length} application${apps.length === 1 ? '' : 's'} for changes`,
+      title: 'Watching developer sources',
+      detail: this.watchDetail(apps.length, status.coreOk),
       deviceHostname: device.hostname || '',
       deviceIp: device.ip || '',
-      apps: apps.map((app) => app.moduleName),
+      apps: logTargets,
       reason: 'start',
     });
     this.scheduleSync('start');
+  }
+
+  private isSyncReady(status: DeveloperStatus): boolean {
+    return (
+      status.enabled &&
+      status.sourcesOk &&
+      status.deviceOk &&
+      status.sshConfigured &&
+      status.syncSupported &&
+      (status.appsOk || status.coreOk)
+    );
+  }
+
+  private watchDetail(appCount: number, coreOk: boolean): string {
+    const parts: string[] = [];
+    if (appCount > 0) {
+      parts.push(`${appCount} application${appCount === 1 ? '' : 's'}`);
+    }
+    if (coreOk) {
+      parts.push(CLEEP_CORE_FOLDER_NAME);
+    }
+    return `Watching ${parts.join(' and ')} for changes`;
   }
 
   private addIpcs(): void {
@@ -352,14 +391,7 @@ class AppDeveloper {
     }
 
     const status = this.getStatus();
-    if (
-      !status.enabled ||
-      !status.sourcesOk ||
-      !status.deviceOk ||
-      !status.appsOk ||
-      !status.sshConfigured ||
-      !status.syncSupported
-    ) {
+    if (!this.isSyncReady(status)) {
       return;
     }
 
@@ -379,14 +411,21 @@ class AppDeveloper {
       return;
     }
 
-    // Optional subset for manual "sync this app" — still limited to selected apps.
-    const selectedFolderNames =
-      folderNames && folderNames.length
-        ? status.selectedApps.filter((name) => folderNames.includes(name))
-        : status.selectedApps;
+    const includeCore =
+      status.coreOk &&
+      (!folderNames?.length ||
+        folderNames.includes(DEVELOPER_CORE_SYNC_TOKEN) ||
+        folderNames.includes(CLEEP_CORE_FOLDER_NAME));
+
+    const selectedFolderNames = folderNames?.length
+      ? status.selectedApps.filter((name) => folderNames.includes(name))
+      : status.selectedApps;
     const apps = resolveSelectedDeveloperApps(status.sourcesDir, selectedFolderNames);
-    if (!apps.length) {
-      const message = 'No applications selected for sync';
+
+    if (!apps.length && !includeCore) {
+      const message = folderNames?.length
+        ? 'No applications selected for sync'
+        : 'Nothing selected for sync';
       this.setSyncState('failed', message);
       this.emitSyncLog({
         level: 'error',
@@ -400,7 +439,10 @@ class AppDeveloper {
       return;
     }
 
-    const appNames = apps.map((app) => app.moduleName);
+    const logLabels = [
+      ...apps.map((app) => app.moduleName),
+      ...(includeCore ? [DEVELOPER_CORE_LOG_LABEL] : []),
+    ];
 
     // Watch/start must not open a vault unlock dialog: a dismissed prompt can leave
     // ensureUnlocked pending forever, which stuck syncing=true and ignored file changes.
@@ -413,7 +455,7 @@ class AppDeveloper {
         detail: message,
         deviceHostname: device.hostname || '',
         deviceIp: device.ip || '',
-        apps: appNames,
+        apps: logLabels,
         reason,
       });
       return;
@@ -424,10 +466,10 @@ class AppDeveloper {
     this.emitSyncLog({
       level: 'info',
       title: this.syncStartTitle(reason),
-      detail: `Syncing ${appNames.join(', ')} to ${device.hostname || device.ip}`,
+      detail: `Syncing ${logLabels.join(', ')} to ${device.hostname || device.ip}`,
       deviceHostname: device.hostname || '',
       deviceIp: device.ip || '',
-      apps: appNames,
+      apps: logLabels,
       reason,
     });
     try {
@@ -435,16 +477,25 @@ class AppDeveloper {
       if (!ssh) {
         throw new Error('SSH credentials are not configured');
       }
-      await rsyncDeveloperApps({ host: device.ip, ssh, apps });
+
+      const jobs: Promise<void>[] = [];
+      if (apps.length) {
+        jobs.push(rsyncDeveloperApps({ host: device.ip, ssh, apps }));
+      }
+      if (includeCore && status.corePath) {
+        jobs.push(rsyncDeveloperCore({ host: device.ip, ssh, localCorePath: status.corePath }));
+      }
+      await Promise.all(jobs);
+
       this.lastSyncAt = Date.now();
       this.setSyncState('ok', '');
       this.emitSyncLog({
         level: 'success',
         title: 'Synchronization completed',
-        detail: `Synced ${appNames.join(', ')} to ${device.hostname || device.ip}`,
+        detail: `Synced ${logLabels.join(', ')} to ${device.hostname || device.ip}`,
         deviceHostname: device.hostname || '',
         deviceIp: device.ip || '',
-        apps: appNames,
+        apps: logLabels,
         reason,
       });
     } catch (error) {
@@ -457,7 +508,7 @@ class AppDeveloper {
         detail: message,
         deviceHostname: device.hostname || '',
         deviceIp: device.ip || '',
-        apps: appNames,
+        apps: logLabels,
         reason,
       });
       throw error;

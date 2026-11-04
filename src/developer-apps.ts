@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { CLEEP_CORE_FOLDER_NAME, isCleepCoreDir } from './developer-core';
 
 /** One immediate child of the configured sources folder. */
 export type DeveloperAppEntry = {
@@ -101,6 +102,10 @@ export function listDeveloperApps(sourcesDir: string): DeveloperAppEntry[] {
       continue;
     }
     if (!isDir) {
+      continue;
+    }
+    // Cleep core lives beside apps under sources; synced separately, not as a module.
+    if (folderName === CLEEP_CORE_FOLDER_NAME || isCleepCoreDir(absolutePath)) {
       continue;
     }
 

@@ -22,6 +22,7 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
     self.developerAppEntries = [];
     self.developerAppChecks = {};
     self.hasValidDeveloperApp = false;
+    self.developerCoreAvailable = false;
     self.DEVELOPER_SSH_MASK = '********';
     self.developerSshPassword = '';
     self.developerSshConfigured = false;
@@ -124,21 +125,32 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
             self.developerAppEntries = [];
             self.developerAppChecks = {};
             self.hasValidDeveloperApp = false;
+            self.developerCoreAvailable = false;
             return Promise.resolve();
         }
         if (!self.settings.cleep || !self.settings.cleep.developersources) {
             self.developerAppEntries = [];
             self.developerAppChecks = {};
             self.hasValidDeveloperApp = false;
+            self.developerCoreAvailable = false;
             return Promise.resolve();
         }
 
-        return electron.developer.listApps()
-            .then(function(entries) {
-                self.developerAppEntries = entries || [];
+        return Promise.all([
+            electron.developer.listApps(),
+            electron.developer.getStatus ? electron.developer.getStatus() : Promise.resolve({}),
+        ])
+            .then(function(results) {
+                var entries = results[0] || [];
+                var status = results[1] || {};
+                self.developerAppEntries = entries;
                 self.hasValidDeveloperApp = self.developerAppEntries.some(function(entry) {
                     return entry.valid;
                 });
+                self.developerCoreAvailable = Boolean(status.coreAvailable);
+                if (self.settings.cleep && typeof self.settings.cleep.developercore === 'undefined') {
+                    self.settings.cleep.developercore = Boolean(status.coreEnabled);
+                }
 
                 var selected = {};
                 var saved = (self.settings.cleep && self.settings.cleep.developerapps) || [];
@@ -168,6 +180,7 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
                 self.developerAppEntries = [];
                 self.developerAppChecks = {};
                 self.hasValidDeveloperApp = false;
+                self.developerCoreAvailable = false;
                 toast.warning('Unable to scan application sources');
             });
     };
@@ -421,6 +434,9 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
                 }
                 if (!Array.isArray(this.settings.cleep.developerapps)) {
                     this.settings.cleep.developerapps = [];
+                }
+                if (typeof this.settings.cleep.developercore !== 'boolean') {
+                    this.settings.cleep.developercore = false;
                 }
                 if (this.settings.cleep.developer) {
                     this.refreshDeveloperPanel();

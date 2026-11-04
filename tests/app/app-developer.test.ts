@@ -28,6 +28,7 @@ describe('AppDeveloper', () => {
     appSettings.set('cleep.developersources', '');
     appSettings.set('cleep.developerdevice', '');
     appSettings.set('cleep.developerapps', []);
+    appSettings.set('cleep.developercore', false);
     appSettings.set('devices', {});
     for (const dir of tempDirs.splice(0)) {
       fs.rmSync(dir, { recursive: true, force: true });
@@ -51,6 +52,10 @@ describe('AppDeveloper', () => {
       hasDeveloperDevice: false,
       selectedApps: [],
       appsOk: false,
+      corePath: null,
+      coreAvailable: false,
+      coreEnabled: false,
+      coreOk: false,
       sshConfigured: false,
       syncStatus: 'idle',
     });
@@ -110,5 +115,31 @@ describe('AppDeveloper', () => {
 
     appSettings.set('cleep.developerapps', ['demo']);
     expect(appDeveloper.getStatus().appsOk).toBe(true);
+  });
+
+  it('reports coreAvailable and coreOk when cleep checkout is enabled', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cleep-dev-core-'));
+    tempDirs.push(root);
+    const core = path.join(root, 'cleep');
+    fs.mkdirSync(path.join(core, 'cleep'), { recursive: true });
+    fs.writeFileSync(path.join(core, 'setup.py'), 'from setuptools import setup\n', 'utf8');
+
+    appSettings.set('cleep.developer', true);
+    appSettings.set('cleep.developersources', root);
+    appSettings.set('cleep.developercore', false);
+    expect(appDeveloper.getStatus()).toMatchObject({
+      coreAvailable: true,
+      coreEnabled: false,
+      coreOk: false,
+      corePath: core,
+    });
+
+    appSettings.set('cleep.developercore', true);
+    expect(appDeveloper.getStatus()).toMatchObject({
+      coreAvailable: true,
+      coreEnabled: true,
+      coreOk: true,
+      corePath: core,
+    });
   });
 });

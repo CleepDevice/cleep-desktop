@@ -172,6 +172,10 @@ export class AppSettings {
     if (!settings.hasSync('cleep.developerapps')) {
       settings.setSync('cleep.developerapps', []);
     }
+    // Opt-in sync of local cleep/ core → /root/cleep-dev/ (never touches modules/).
+    if (!settings.hasSync('cleep.developercore')) {
+      settings.setSync('cleep.developercore', false);
+    }
 
     // rpi-imager section
     if (!settings.hasSync('rpiimager.version')) {

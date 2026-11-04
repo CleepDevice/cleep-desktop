@@ -1,12 +1,16 @@
 import path from 'path';
 import { describe, expect, it } from 'vitest';
 import {
+  buildCoreRsyncCommand,
   buildRsyncCommand,
   computeDeveloperSyncDelay,
+  DEVELOPER_CORE_SYNC_DIRS,
+  DEVELOPER_CORE_SYNC_FILES,
   DEVELOPER_SYNC_BURST_QUIET_MS,
   DEVELOPER_SYNC_MAX_WAIT_MS,
   DEVELOPER_SYNC_QUIET_MS,
   DEVELOPER_SYNC_REMOTE_MODULES,
+  DEVELOPER_SYNC_REMOTE_ROOT,
   getDeveloperSyncPlatformSupport,
 } from '../../src/developer-sync';
 
@@ -32,6 +36,44 @@ describe('developer-sync', () => {
     expect(cmd.env.SSHPASS).toBe('secret');
 
     const destination = `root@192.168.1.50:${DEVELOPER_SYNC_REMOTE_MODULES}/demo/`;
+    expect(cmd.args[cmd.args.length - 1]).toBe(destination);
+    expect(cmd.args[cmd.args.length - 2]).toBe(`${localPath}${path.sep}`);
+  });
+
+  it('builds core rsync with modules excluded and allowlisted paths', () => {
+    const localPath = path.join('/tmp', 'sources', 'cleep');
+    const cmd = buildCoreRsyncCommand(
+      '192.168.1.50',
+      { username: 'root', password: 'secret' },
+      localPath,
+    );
+
+    expect(cmd.command).toBe('sshpass');
+    expect(cmd.args[0]).toBe('-e');
+    expect(cmd.args[1]).toBe('rsync');
+    expect(cmd.args).toContain('-az');
+    expect(cmd.args).toContain('--delete');
+    expect(cmd.env.SSHPASS).toBe('secret');
+
+    // modules exclude must appear before --delete is meaningless for order of flags,
+    // but must be present so remote apps under modules/ are preserved.
+    const excludeIdx = cmd.args.indexOf('--exclude');
+    expect(excludeIdx).toBeGreaterThan(-1);
+    expect(cmd.args.slice(excludeIdx, excludeIdx + 4)).toEqual(
+      expect.arrayContaining(['--exclude', 'modules/']),
+    );
+    expect(cmd.args).toContain('modules/');
+    expect(cmd.args).toContain('modules');
+
+    for (const dir of DEVELOPER_CORE_SYNC_DIRS) {
+      expect(cmd.args).toContain(`${dir}/`);
+      expect(cmd.args).toContain(`${dir}/***`);
+    }
+    for (const file of DEVELOPER_CORE_SYNC_FILES) {
+      expect(cmd.args).toContain(file);
+    }
+
+    const destination = `root@192.168.1.50:${DEVELOPER_SYNC_REMOTE_ROOT}/`;
     expect(cmd.args[cmd.args.length - 1]).toBe(destination);
     expect(cmd.args[cmd.args.length - 2]).toBe(`${localPath}${path.sep}`);
   });

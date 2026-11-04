@@ -112,4 +112,15 @@ describe('developer-apps', () => {
       resolveSelectedDeveloperApps(root, ['beta', 'junk']).map((entry) => entry.moduleName),
     ).toEqual(['beta']);
   });
+
+  it('skips the cleep core checkout when listing apps', () => {
+    const root = makeSourcesRoot();
+    writeApp(root, 'cleepapp-demo', 'Demo');
+    const core = path.join(root, 'cleep');
+    fs.mkdirSync(path.join(core, 'cleep'), { recursive: true });
+    fs.writeFileSync(path.join(core, 'setup.py'), 'from setuptools import setup\n', 'utf8');
+
+    const entries = listDeveloperApps(root);
+    expect(entries.map((entry) => entry.folderName)).toEqual(['cleepapp-demo']);
+  });
 });

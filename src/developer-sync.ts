@@ -8,6 +8,36 @@ import { appLogger } from './app-logger';
 const execFileAsync = promisify(execFile);
 
 export const DEVELOPER_SYNC_REMOTE_MODULES = '/root/cleep-dev/modules';
+/** Remote root for Cleep core (apps stay under modules/). */
+export const DEVELOPER_SYNC_REMOTE_ROOT = '/root/cleep-dev';
+
+/** Directories synced from local cleep/ into DEVELOPER_SYNC_REMOTE_ROOT. */
+export const DEVELOPER_CORE_SYNC_DIRS = [
+  'bin',
+  'cleep',
+  'debian',
+  'html',
+  'medias',
+  'scripts',
+  'conf',
+] as const;
+
+/** Root build/meta files synced with the core tree. */
+export const DEVELOPER_CORE_SYNC_FILES = [
+  'requirements.txt',
+  'requirements-test.txt',
+  'setup.py',
+  'MANIFEST.in',
+  'packages.list',
+  'Dockerfile',
+  'LICENSE',
+  'README.md',
+  'CHANGES',
+  'COPYING',
+  'pytest.ini',
+  '.pylintrc',
+] as const;
+
 /** Quiet window after an isolated change before syncing. */
 export const DEVELOPER_SYNC_QUIET_MS = 2000;
 /** Quiet window while a save burst is still raining (Cursor multi-file writes). */
@@ -146,6 +176,53 @@ export function buildRsyncCommand(
   };
 }
 
+/**
+ * Build rsync for Cleep core → /root/cleep-dev/.
+ * Always excludes ``modules/`` before --delete so remote apps are preserved.
+ * Allowlists known dirs/files; everything else at the root is skipped.
+ */
+export function buildCoreRsyncCommand(
+  host: string,
+  ssh: DeveloperSshSecret,
+  localCorePath: string,
+): { command: string; args: string[]; env: NodeJS.ProcessEnv } {
+  const local = localCorePath.endsWith(path.sep)
+    ? localCorePath
+    : `${localCorePath}${path.sep}`;
+  const destination = buildSshDestination(
+    host,
+    ssh.username,
+    `${DEVELOPER_SYNC_REMOTE_ROOT}/`,
+  );
+
+  // Exclude modules first so --delete never removes remote apps.
+  const rsyncArgs = ['-az', '--delete', '--exclude', 'modules/', '--exclude', 'modules'];
+  for (const pattern of RSYNC_EXCLUDES) {
+    rsyncArgs.push('--exclude', pattern);
+  }
+  for (const dir of DEVELOPER_CORE_SYNC_DIRS) {
+    rsyncArgs.push('--include', `${dir}/`, '--include', `${dir}/***`);
+  }
+  for (const file of DEVELOPER_CORE_SYNC_FILES) {
+    rsyncArgs.push('--include', file);
+  }
+  rsyncArgs.push('--exclude', '*');
+  rsyncArgs.push(
+    '-e',
+    'ssh -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no',
+  );
+  rsyncArgs.push(local, destination);
+
+  return {
+    command: 'sshpass',
+    args: ['-e', 'rsync', ...rsyncArgs],
+    env: {
+      ...process.env,
+      SSHPASS: ssh.password,
+    },
+  };
+}
+
 function runCommand(
   command: string,
   args: string[],
@@ -212,4 +289,28 @@ export async function rsyncDeveloperApps(options: {
       await runCommand(cmd.command, cmd.args, cmd.env);
     }),
   );
+}
+
+export async function rsyncDeveloperCore(options: {
+  host: string;
+  ssh: DeveloperSshSecret;
+  localCorePath: string;
+}): Promise<void> {
+  await assertSyncToolsAvailable();
+  const host = String(options.host || '').trim();
+  if (!host) {
+    throw new Error('Development device has no IP address');
+  }
+  const localCorePath = String(options.localCorePath || '').trim();
+  if (!localCorePath) {
+    throw new Error('Cleep core path is missing');
+  }
+
+  const cmd = buildCoreRsyncCommand(host, options.ssh, localCorePath);
+  appLogger.info('Developer sync rsync core', {
+    localPath: localCorePath,
+    remoteRoot: DEVELOPER_SYNC_REMOTE_ROOT,
+    host,
+  });
+  await runCommand(cmd.command, cmd.args, cmd.env);
 }

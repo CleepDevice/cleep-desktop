@@ -8,11 +8,14 @@ angular
     var self = this;
     self.syncLog = developerSyncLogService;
     self.syncTargets = [];
+    self.coreSyncAvailable = false;
     self.syncBusy = false;
+    self.CORE_SYNC_TOKEN = '__cleep_core__';
 
     self.refreshSyncTargets = function() {
         if (!electron.developer || !electron.developer.getStatus || !electron.developer.listApps) {
             self.syncTargets = [];
+            self.coreSyncAvailable = false;
             return Promise.resolve();
         }
         return Promise.all([electron.developer.getStatus(), electron.developer.listApps()])
@@ -26,10 +29,16 @@ angular
                 self.syncTargets = entries.filter(function(entry) {
                     return entry.valid && selected[entry.folderName];
                 });
+                self.coreSyncAvailable = Boolean(status.coreOk);
             })
             .catch(function() {
                 self.syncTargets = [];
+                self.coreSyncAvailable = false;
             });
+    };
+
+    self.hasSyncTargets = function() {
+        return self.coreSyncAvailable || self.syncTargets.length > 0;
     };
 
     self.syncNow = function(folderName) {
@@ -44,7 +53,13 @@ angular
                     toast.warning(status.syncError || 'Synchronization failed');
                     return;
                 }
-                toast.success(folderName ? 'Application synchronized' : 'Applications synchronized');
+                if (folderName === self.CORE_SYNC_TOKEN) {
+                    toast.success('cleep synchronized');
+                } else if (folderName) {
+                    toast.success('Application synchronized');
+                } else {
+                    toast.success('Sources synchronized');
+                }
             })
             .catch(function(error) {
                 toast.warning((error && error.message) || 'Unable to synchronize');

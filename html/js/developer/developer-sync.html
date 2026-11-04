@@ -15,7 +15,7 @@
                 <md-button
                     class="md-icon-button"
                     ng-click="$mdMenu.open($event)"
-                    ng-disabled="ctl.syncBusy || !ctl.syncTargets.length"
+                    ng-disabled="ctl.syncBusy || !ctl.hasSyncTargets()"
                     title="Force sync"
                 >
                     <md-icon md-svg-icon="sync"></md-icon>
@@ -27,7 +27,16 @@
                             Force sync all
                         </md-button>
                     </md-menu-item>
-                    <md-menu-divider ng-if="ctl.syncTargets.length"></md-menu-divider>
+                    <md-menu-divider ng-if="ctl.coreSyncAvailable || ctl.syncTargets.length"></md-menu-divider>
+                    <md-menu-item ng-if="ctl.coreSyncAvailable">
+                        <md-button
+                            ng-click="ctl.syncNow(ctl.CORE_SYNC_TOKEN)"
+                            ng-disabled="ctl.syncBusy"
+                        >
+                            <md-icon md-svg-icon="code-braces"></md-icon>
+                            cleep
+                        </md-button>
+                    </md-menu-item>
                     <md-menu-item ng-repeat="app in ctl.syncTargets track by app.folderName">
                         <md-button
                             ng-click="ctl.syncNow(app.folderName)"
@@ -63,7 +72,7 @@
                 </div>
                 <h2 class="monitoring-empty-title">Waiting for sync activity</h2>
                 <p class="monitoring-empty-text">
-                    Synchronization events will appear here once developer mode starts syncing applications.
+                    Synchronization events will appear here once developer mode starts syncing sources.
                 </p>
             </div>
 
@@ -107,7 +116,7 @@
                             class="monitoring-event-chip"
                             ng-repeat="app in message.apps track by app"
                         >
-                            <span class="monitoring-event-chip-key">app</span>
+                            <span class="monitoring-event-chip-key">{{ app === 'cleep' ? 'core' : 'app' }}</span>
                             <span class="monitoring-event-chip-value">{{ app }}</span>
                         </span>
                     </div>

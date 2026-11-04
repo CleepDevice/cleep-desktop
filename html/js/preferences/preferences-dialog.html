@@ -288,13 +288,26 @@
 
                     <config-section
                         ng-if="ctl.settings.cleep.developersources"
-                        cl-title="Applications to synchronize"
+                        cl-title="Sources to synchronize"
                         cl-icon="puzzle"
                     ></config-section>
+                    <config-checkbox
+                        ng-if="ctl.settings.cleep.developersources && ctl.developerCoreAvailable"
+                        cl-title="cleep"
+                        cl-icon="cleep"
+                        cl-caption="Sync to /root/cleep-dev/ (modules/ left untouched)"
+                        cl-front="true"
+                        cl-model="ctl.settings.cleep.developercore"
+                    ></config-checkbox>
+                    <config-note
+                        ng-if="ctl.settings.cleep.developersources && !ctl.developerCoreAvailable"
+                        cl-type="info"
+                        cl-note="No Cleep core repository found (expected a cleep/ folder with setup.py)."
+                    ></config-note>
                     <config-note
                         ng-if="ctl.settings.cleep.developersources && !ctl.developerAppEntries.length"
                         cl-type="info"
-                        cl-note="No folders found in the sources directory."
+                        cl-note="No application folders found in the sources directory."
                     ></config-note>
                     <config-note
                         ng-if="ctl.settings.cleep.developersources && ctl.developerAppEntries.length && !ctl.hasValidDeveloperApp"

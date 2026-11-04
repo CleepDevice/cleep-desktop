@@ -18,7 +18,9 @@
  * MDI font configuration
  */
  angular.module('Cleep').config(['$mdIconProvider', function($mdIconProvider) {
-    $mdIconProvider.defaultIconSet('fonts/mdi.svg')
+    $mdIconProvider.defaultIconSet('fonts/mdi.svg');
+    // Monochrome Cleep mark (currentColor) — same tone as MDI config icons.
+    $mdIconProvider.icon('cleep', 'images/cleep-mark.svg');
 }]);
 
 /**
