@@ -23,18 +23,26 @@ function($stateParams, $state, devicesService, electron, toastService, logger, c
         if (!self.deviceUuid) {
             return;
         }
-        var session = contentTabs.getSession(self.deviceUuid);
-        if (!session) {
+        var tab = contentTabs.findTabByDeviceUuid(self.deviceUuid);
+        contentTabs.retrySession(self.deviceUuid);
+        // Leave the legacy deviceError ui-view without retitling/stealing focus.
+        if (tab && tab.closable) {
+            var pageState = contentTabs.getMainPageState();
+            if (pageState && pageState !== 'deviceError' && pageState !== 'deviceAuth' && pageState !== 'device') {
+                $state.go(pageState);
+            } else {
+                $state.go('default');
+            }
+            contentTabs.activateTab(tab.id);
             return;
         }
-        contentTabs.setSessionError(self.deviceUuid, false);
+        var session = contentTabs.getSession(self.deviceUuid);
         $state.go('device', {
-            url: session.url,
-            hostname: session.hostname,
-            deviceUuid: session.deviceUuid,
-            viaGateway: session.viaGateway,
+            url: (session && session.url) || self.url,
+            hostname: (session && session.hostname) || self.hostname,
+            deviceUuid: self.deviceUuid,
+            viaGateway: Boolean(session && session.viaGateway),
         });
-        contentTabs.reloadSession(self.deviceUuid);
     };
 
     self.refreshRemoteUrl = function() {
@@ -56,6 +64,23 @@ function($stateParams, $state, devicesService, electron, toastService, logger, c
                     newTab: Boolean(tab && tab.closable),
                     viaGateway: false,
                 });
+                contentTabs.retrySession(device.uuid);
+                if (tab && tab.closable) {
+                    var pageState = contentTabs.getMainPageState();
+                    if (pageState && pageState !== 'deviceError' && pageState !== 'deviceAuth' && pageState !== 'device') {
+                        $state.go(pageState);
+                    } else {
+                        $state.go('default');
+                    }
+                    contentTabs.activateTab(tab.id);
+                } else {
+                    $state.go('device', {
+                        url: publicUrl,
+                        hostname: device.hostname,
+                        deviceUuid: device.uuid,
+                        viaGateway: false,
+                    });
+                }
             })
             .catch((error) => {
                 logger.warn('Unable to refresh remote URL from error page', error);

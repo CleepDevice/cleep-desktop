@@ -142,11 +142,18 @@ function($rootScope, $state, devicesService, logger) {
 
     /**
      * Update main-tab chrome title while keeping the current main kind/device
-     * (used for deviceAuth / deviceError overlays).
+     * (used for deviceAuth / deviceError overlays on the main tab only).
+     * Never steals focus from a secondary device tab.
      */
     self.overlayMainTitle = function(stateName) {
         var meta = PAGE_META[stateName];
         if (!meta) {
+            return;
+        }
+        var active = self.getActiveTab();
+        // Secondary device tabs own their chrome; ui-router overlays must not
+        // retitle/activate the main tab or the error/auth page hijacks Desktop.
+        if (active && active.closable && active.kind === 'device') {
             return;
         }
         self._mainPage.title = meta.title;
@@ -156,6 +163,14 @@ function($rootScope, $state, devicesService, logger) {
         self._rebuildTabs();
         self.loading = false;
         self._notify();
+    };
+
+    /** Underlying Desktop page state restored when leaving deviceError/deviceAuth. */
+    self.getMainPageState = function() {
+        if (self._mainPage.kind === 'page' && self._mainPage.state) {
+            return self._mainPage.state;
+        }
+        return self._mainPage.underlyingState || 'default';
     };
 
     self._notify = function() {
@@ -395,16 +410,9 @@ function($rootScope, $state, devicesService, logger) {
         session.loading = false;
         self._refreshLoading();
         self._notify();
-        if (isError) {
-            var tab = self.findTabByDeviceUuid(deviceUuid);
-            if (tab && self.activeTabId === tab.id) {
-                $state.go('deviceError', {
-                    hostname: session.hostname,
-                    url: session.url,
-                    deviceUuid: deviceUuid,
-                });
-            }
-        }
+        // Keep errors on the session/webview slot. Never $state.go('deviceError'):
+        // that shared ui-view + overlayMainTitle would retitle the main tab and
+        // leave Retry stranded on a white device placeholder.
     };
 
     self.reloadSession = function(deviceUuid) {
@@ -417,6 +425,23 @@ function($rootScope, $state, devicesService, logger) {
         self._refreshLoading();
         $rootScope.$emit('content-tabs-reload-session', deviceUuid);
         self._notify();
+    };
+
+    /**
+     * Clear session error and reload the webview, staying on the device tab.
+     * Safe for secondary tabs (does not touch ui-router / main tab title).
+     */
+    self.retrySession = function(deviceUuid) {
+        var session = self.getSession(deviceUuid);
+        if (!session) {
+            return false;
+        }
+        var tab = self.findTabByDeviceUuid(deviceUuid);
+        if (tab && self.activeTabId !== tab.id) {
+            self.activateTab(tab.id);
+        }
+        self.reloadSession(deviceUuid);
+        return true;
     };
 
     self.updateDeviceIcons = function() {

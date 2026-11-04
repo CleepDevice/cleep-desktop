@@ -566,19 +566,57 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
             return false;
         }
         var name = $state.current && $state.current.name;
-        if (name === 'deviceAuth' || name === 'deviceError') {
+        // Auth still uses the shared ui-view; connection errors stay on the
+        // webview slot overlay so secondary tabs do not hijack the main tab.
+        if (name === 'deviceAuth') {
             return false;
         }
-        var session = contentTabs.getActiveSession();
-        return Boolean(session && !session.error);
+        return Boolean(contentTabs.getActiveSession());
     };
 
     self.isActiveDeviceSession = function(session) {
-        if (!session || session.error) {
+        if (!session) {
             return false;
         }
         var active = contentTabs.getActiveSession();
         return Boolean(active && active.deviceUuid === session.deviceUuid);
+    };
+
+    self.retryDeviceSession = function(deviceUuid) {
+        contentTabs.retrySession(deviceUuid);
+    };
+
+    self.canRefreshDeviceSession = function(deviceUuid) {
+        var device = devicesService.findDevice(deviceUuid);
+        return devicesService.canRefreshRemoteUrl(device);
+    };
+
+    self.refreshDeviceSessionRemoteUrl = function(deviceUuid) {
+        var device = devicesService.findDevice(deviceUuid);
+        if (!device || !devicesService.canRefreshRemoteUrl(device) || self._refreshingDeviceUuid) {
+            return;
+        }
+        self._refreshingDeviceUuid = deviceUuid;
+        electron.devices.refreshRemoteUrl({ deviceUuid: device.uuid })
+            .then(function(result) {
+                toast.success('Remote URL updated');
+                var publicUrl = result && result.publicUrl;
+                if (!publicUrl) {
+                    return;
+                }
+                var tab = contentTabs.findTabByDeviceUuid(device.uuid);
+                contentTabs.openDevice(device, publicUrl, {
+                    newTab: Boolean(tab && tab.closable),
+                    viaGateway: false,
+                });
+                contentTabs.retrySession(device.uuid);
+            })
+            .catch(function(error) {
+                toast.error((error && error.message) || 'Unable to refresh remote URL');
+            })
+            .finally(function() {
+                self._refreshingDeviceUuid = null;
+            });
     };
 
     self.closeContentTab = function($event, tabId) {

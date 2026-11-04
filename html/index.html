@@ -214,13 +214,16 @@
                 <!-- not connected to message bus -->
                 <div ng-if="ctl.devicesService.busStatus != 'CONNECTED'">
 
-                    <!-- connecting to message bus -->
+                    <!-- connecting / waiting for LAN after resume or slow DHCP -->
                     <div layout="column" layout-padding layout-align="center center" ng-if="ctl.devicesService.busStatus == 'CONNECTING'">
                         <br/>
                         <div>
                             <md-progress-circular md-mode="indeterminate"></md-progress-circular>
                         </div>
                         <br/>
+                        <div>
+                            Waiting for network…
+                        </div>
                         <div>
                             Connecting to Cleep network
                         </div>
@@ -411,6 +414,41 @@
                         ng-class="{ 'device-webview-slot-active': cleep.isActiveDeviceSession(session) }"
                     >
                         <device-webview session="session"></device-webview>
+                        <div
+                            class="device-session-error"
+                            ng-if="session.error && cleep.isActiveDeviceSession(session)"
+                            layout="column"
+                            layout-align="center center"
+                        >
+                            <div class="device-error-card" layout="column">
+                                <div class="device-error-art">
+                                    <img ng-src="images/device-error.png" alt="Connection failed" class="device-error-img">
+                                </div>
+                                <div class="device-error-body" layout="column" layout-align="center center">
+                                    <div class="device-error-title">
+                                        Unable to connect to "{{ session.hostname }}" device
+                                    </div>
+                                    <p class="device-error-hint">
+                                        Check that the device is powered on and reachable on the network.
+                                    </p>
+                                    <md-button
+                                        class="md-raised md-primary device-error-action"
+                                        ng-click="cleep.retryDeviceSession(session.deviceUuid)"
+                                    >
+                                        <md-icon md-svg-icon="reload"></md-icon>
+                                        Retry
+                                    </md-button>
+                                    <md-button
+                                        class="md-raised device-error-action"
+                                        ng-click="cleep.refreshDeviceSessionRemoteUrl(session.deviceUuid)"
+                                        ng-disabled="!cleep.canRefreshDeviceSession(session.deviceUuid) || cleep._refreshingDeviceUuid === session.deviceUuid"
+                                    >
+                                        <md-icon md-svg-icon="refresh"></md-icon>
+                                        {{ cleep._refreshingDeviceUuid === session.deviceUuid ? 'Refreshing...' : 'Refresh remote URL' }}
+                                    </md-button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
