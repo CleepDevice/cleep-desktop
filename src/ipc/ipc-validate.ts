@@ -208,6 +208,13 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
       folderNames: z.array(z.string()).optional(),
     })
     .optional(),
+  'developer-list-remote-apps': null,
+  'developer-pull-now': z
+    .object({
+      moduleNames: z.array(z.string()).optional(),
+      includeCore: z.boolean().optional(),
+    })
+    .optional(),
   'get-changelog': null,
   'get-electron-log-path': null,
   'iso-get-drives': null,

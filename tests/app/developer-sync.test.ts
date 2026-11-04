@@ -12,6 +12,7 @@ import {
   DEVELOPER_SYNC_REMOTE_MODULES,
   DEVELOPER_SYNC_REMOTE_ROOT,
   getDeveloperSyncPlatformSupport,
+  parseRemoteModulesListing,
 } from '../../src/developer-sync';
 
 describe('developer-sync', () => {
@@ -38,6 +39,20 @@ describe('developer-sync', () => {
     const destination = `root@192.168.1.50:${DEVELOPER_SYNC_REMOTE_MODULES}/demo/`;
     expect(cmd.args[cmd.args.length - 1]).toBe(destination);
     expect(cmd.args[cmd.args.length - 2]).toBe(`${localPath}${path.sep}`);
+  });
+
+  it('builds pull rsync with remote as source', () => {
+    const localPath = path.join('/tmp', 'sources', 'cleepapp-demo');
+    const cmd = buildRsyncCommand(
+      '192.168.1.50',
+      { username: 'root', password: 'secret' },
+      { localPath, moduleName: 'demo' },
+      'pull',
+    );
+
+    const remote = `root@192.168.1.50:${DEVELOPER_SYNC_REMOTE_MODULES}/demo/`;
+    expect(cmd.args[cmd.args.length - 2]).toBe(remote);
+    expect(cmd.args[cmd.args.length - 1]).toBe(`${localPath}${path.sep}`);
   });
 
   it('builds core rsync with modules excluded and allowlisted paths', () => {
@@ -76,6 +91,28 @@ describe('developer-sync', () => {
     const destination = `root@192.168.1.50:${DEVELOPER_SYNC_REMOTE_ROOT}/`;
     expect(cmd.args[cmd.args.length - 1]).toBe(destination);
     expect(cmd.args[cmd.args.length - 2]).toBe(`${localPath}${path.sep}`);
+  });
+
+  it('builds core pull rsync with remote as source', () => {
+    const localPath = path.join('/tmp', 'sources', 'cleep');
+    const cmd = buildCoreRsyncCommand(
+      '192.168.1.50',
+      { username: 'root', password: 'secret' },
+      localPath,
+      'pull',
+    );
+    const remote = `root@192.168.1.50:${DEVELOPER_SYNC_REMOTE_ROOT}/`;
+    expect(cmd.args).toContain('modules/');
+    expect(cmd.args[cmd.args.length - 2]).toBe(remote);
+    expect(cmd.args[cmd.args.length - 1]).toBe(`${localPath}${path.sep}`);
+  });
+
+  it('parses remote modules listing', () => {
+    expect(parseRemoteModulesListing('audio\ncharts\n.cleep\naudio\n')).toEqual([
+      'audio',
+      'charts',
+    ]);
+    expect(parseRemoteModulesListing('')).toEqual([]);
   });
 
   it('uses a short quiet window for an isolated change', () => {

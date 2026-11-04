@@ -40,6 +40,8 @@ describe('AppDeveloper', () => {
     expect(ipcHandleHandlers.has('developer-get-status')).toBe(true);
     expect(ipcHandleHandlers.has('developer-list-apps')).toBe(true);
     expect(ipcHandleHandlers.has('developer-sync-now')).toBe(true);
+    expect(ipcHandleHandlers.has('developer-list-remote-apps')).toBe(true);
+    expect(ipcHandleHandlers.has('developer-pull-now')).toBe(true);
   });
 
   it('reports disabled status by default with no selected apps', () => {

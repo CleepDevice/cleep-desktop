@@ -176,6 +176,10 @@ export class AppSettings {
     if (!settings.hasSync('cleep.developercore')) {
       settings.setSync('cleep.developercore', false);
     }
+    // Upload selected sources when Desktop starts (prompts vault unlock). Off by default.
+    if (!settings.hasSync('cleep.developersynconload')) {
+      settings.setSync('cleep.developersynconload', false);
+    }
 
     // rpi-imager section
     if (!settings.hasSync('rpiimager.version')) {

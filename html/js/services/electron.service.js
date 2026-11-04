@@ -211,6 +211,8 @@ angular
         saveSsh: bindInvoke(api.developer && api.developer.saveSsh),
         clearSsh: bindInvoke(api.developer && api.developer.clearSsh),
         syncNow: bindInvoke(api.developer && api.developer.syncNow), // optional folderNames[]
+        listRemoteApps: bindInvoke(api.developer && api.developer.listRemoteApps),
+        pullNow: bindInvoke(api.developer && api.developer.pullNow), // { moduleNames?, includeCore? }
         onStatusChanged: bindOn(api.developer && api.developer.onStatusChanged),
         onSyncLog: bindOn(api.developer && api.developer.onSyncLog),
     };

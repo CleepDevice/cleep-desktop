@@ -438,6 +438,9 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
                 if (typeof this.settings.cleep.developercore !== 'boolean') {
                     this.settings.cleep.developercore = false;
                 }
+                if (typeof this.settings.cleep.developersynconload !== 'boolean') {
+                    this.settings.cleep.developersynconload = false;
+                }
                 if (this.settings.cleep.developer) {
                     this.refreshDeveloperPanel();
                 }

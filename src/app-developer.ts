@@ -8,6 +8,7 @@ import { appVault } from './app-vault';
 import type { CleepbusPeerInfos } from './cleepbus/cleepbus.types';
 import {
   listDeveloperApps,
+  resolveLocalPathForModule,
   resolveSelectedDeveloperApps,
   type DeveloperAppEntry,
 } from './developer-apps';
@@ -25,9 +26,11 @@ import {
 import {
   computeDeveloperSyncDelay,
   getDeveloperSyncPlatformSupport,
+  listRemoteDeveloperModules,
   rsyncDeveloperApps,
   rsyncDeveloperCore,
   type DeveloperSyncDelayState,
+  type DeveloperSyncDirection,
   type DeveloperSyncPlatformSupport,
 } from './developer-sync';
 import { handleInvoke, ipcOk, ipcErr, sendToRenderer } from './ipc/ipc-main';
@@ -135,7 +138,7 @@ class AppDeveloper {
     void this.reconcileWatcher();
   }
 
-  /** Vault just unlocked: retry sync if developer mode is armed (SSH secret readable). */
+  /** Vault just unlocked: retry launch upload if sync-on-load is enabled. */
   public onVaultUnlocked(): void {
     if (this.syncing) {
       // In-flight sync is waiting on ensureUnlocked and will resume by itself.
@@ -143,7 +146,7 @@ class AppDeveloper {
     }
     void this.reconcileWatcher().then(() => {
       const status = this.getStatus();
-      if (this.isSyncReady(status)) {
+      if (this.isSyncReady(status) && this.isSyncOnLoadEnabled()) {
         this.scheduleSync('start');
       }
     });
@@ -261,7 +264,13 @@ class AppDeveloper {
       apps: logTargets,
       reason: 'start',
     });
-    this.scheduleSync('start');
+    if (this.isSyncOnLoadEnabled()) {
+      this.scheduleSync('start');
+    }
+  }
+
+  private isSyncOnLoadEnabled(): boolean {
+    return Boolean(appSettings.get<boolean>('cleep.developersynconload'));
   }
 
   private isSyncReady(status: DeveloperStatus): boolean {
@@ -318,19 +327,176 @@ class AppDeveloper {
 
     handleInvoke('developer-sync-now', async (_event, request) => {
       try {
-        const rawFolderNames =
-          request && typeof request === 'object' && Array.isArray(request.folderNames)
-            ? request.folderNames
-            : undefined;
-        const folderNames = rawFolderNames
-          ? rawFolderNames.map((name: string) => String(name || '').trim()).filter(Boolean)
-          : undefined;
-        await this.syncNow('manual', folderNames);
+        const folderNames = this.parseStringList(request, 'folderNames');
+        await this.syncNow('manual', folderNames, 'push');
         return ipcOk(this.getStatus());
       } catch (error) {
         return this.failFromError(error, 'Developer sync failed');
       }
     });
+
+    handleInvoke('developer-list-remote-apps', async () => {
+      try {
+        const modules = await this.listRemoteApps();
+        return ipcOk(modules);
+      } catch (error) {
+        return this.failFromError(error, 'Unable to list remote applications');
+      }
+    });
+
+    handleInvoke('developer-pull-now', async (_event, request) => {
+      try {
+        const moduleNames = this.parseStringList(request, 'moduleNames') || [];
+        const includeCore = Boolean(
+          request &&
+            typeof request === 'object' &&
+            (request as { includeCore?: unknown }).includeCore,
+        );
+        await this.pullFromDevice(moduleNames, includeCore);
+        return ipcOk(this.getStatus());
+      } catch (error) {
+        return this.failFromError(error, 'Developer pull failed');
+      }
+    });
+  }
+
+  private parseStringList(request: unknown, key: string): string[] | undefined {
+    if (!request || typeof request !== 'object') {
+      return undefined;
+    }
+    const raw = (request as Record<string, unknown>)[key];
+    if (!Array.isArray(raw)) {
+      return undefined;
+    }
+    return raw.map((name) => String(name || '').trim()).filter(Boolean);
+  }
+
+  private async listRemoteApps(): Promise<string[]> {
+    const status = this.getStatus();
+    if (!status.enabled || !status.deviceOk || !status.sshConfigured || !status.syncSupported) {
+      throw new Error('Developer sync is not ready');
+    }
+    const device = appDevices.getDevice(status.deviceUuid);
+    if (!device?.online || !device.ip) {
+      throw new Error('Development device is offline');
+    }
+    const ssh = await getDeveloperSshSecret(status.deviceUuid);
+    if (!ssh) {
+      throw new Error('SSH credentials are not configured');
+    }
+    return listRemoteDeveloperModules({ host: device.ip, ssh });
+  }
+
+  /** Pull remote modules (and optionally core) into the local sources directory. */
+  private async pullFromDevice(moduleNames: string[], includeCore: boolean): Promise<void> {
+    if (this.syncing) {
+      return;
+    }
+
+    const status = this.getStatus();
+    if (
+      !status.enabled ||
+      !status.sourcesOk ||
+      !status.deviceOk ||
+      !status.sshConfigured ||
+      !status.syncSupported
+    ) {
+      return;
+    }
+
+    const pullCore = includeCore && status.coreOk && Boolean(status.corePath);
+    const modules = moduleNames.map((name) => String(name || '').trim()).filter(Boolean);
+    if (!modules.length && !pullCore) {
+      throw new Error('Nothing selected to download');
+    }
+
+    const device = appDevices.getDevice(status.deviceUuid);
+    if (!device?.online || !device.ip) {
+      throw new Error('Development device is offline');
+    }
+
+    const apps: DeveloperAppEntry[] = modules.map((moduleName) => {
+      const absolutePath = resolveLocalPathForModule(status.sourcesDir, moduleName);
+      fs.mkdirSync(absolutePath, { recursive: true });
+      return {
+        folderName: moduleName,
+        absolutePath,
+        valid: true,
+        moduleName,
+        label: moduleName,
+        icon: 'puzzle',
+      };
+    });
+
+    const logLabels = [
+      ...apps.map((app) => app.moduleName as string),
+      ...(pullCore ? [DEVELOPER_CORE_LOG_LABEL] : []),
+    ];
+    const hostLabel = device.hostname || device.ip;
+
+    this.syncing = true;
+    this.setSyncState('syncing', '');
+    this.emitSyncLog({
+      level: 'info',
+      title: 'Download started',
+      detail: `Downloading ${logLabels.join(', ')} from ${hostLabel}`,
+      deviceHostname: device.hostname || '',
+      deviceIp: device.ip || '',
+      apps: logLabels,
+      reason: 'manual',
+    });
+    try {
+      const ssh = await getDeveloperSshSecret(status.deviceUuid);
+      if (!ssh) {
+        throw new Error('SSH credentials are not configured');
+      }
+      const jobs: Promise<void>[] = [];
+      if (apps.length) {
+        jobs.push(rsyncDeveloperApps({ host: device.ip, ssh, apps, direction: 'pull' }));
+      }
+      if (pullCore && status.corePath) {
+        jobs.push(
+          rsyncDeveloperCore({
+            host: device.ip,
+            ssh,
+            localCorePath: status.corePath,
+            direction: 'pull',
+          }),
+        );
+      }
+      await Promise.all(jobs);
+      this.lastSyncAt = Date.now();
+      this.setSyncState('ok', '');
+      this.emitSyncLog({
+        level: 'success',
+        title: 'Download completed',
+        detail: `Downloaded ${logLabels.join(', ')} from ${hostLabel}`,
+        deviceHostname: device.hostname || '',
+        deviceIp: device.ip || '',
+        apps: logLabels,
+        reason: 'manual',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Developer pull failed';
+      appLogger.warn('Developer pull failed', { message });
+      this.setSyncState('failed', message);
+      this.emitSyncLog({
+        level: 'error',
+        title: 'Download failed',
+        detail: message,
+        deviceHostname: device.hostname || '',
+        deviceIp: device.ip || '',
+        apps: logLabels,
+        reason: 'manual',
+      });
+      throw error;
+    } finally {
+      this.syncing = false;
+      if (this.syncQueued) {
+        this.syncQueued = false;
+        this.scheduleSync('queued');
+      }
+    }
   }
 
   private failFromError(error: unknown, fallback: string) {
@@ -384,9 +550,16 @@ class AppDeveloper {
     };
   }
 
-  private async syncNow(reason: DeveloperSyncReason, folderNames?: string[]): Promise<void> {
+  private async syncNow(
+    reason: DeveloperSyncReason,
+    folderNames?: string[],
+    direction: DeveloperSyncDirection = 'push',
+  ): Promise<void> {
     if (this.syncing) {
-      this.syncQueued = true;
+      // Only queue automatic pushes; manual pull/push must not pile behind watch sync.
+      if (reason !== 'manual' && direction === 'push') {
+        this.syncQueued = true;
+      }
       return;
     }
 
@@ -401,7 +574,7 @@ class AppDeveloper {
       this.setSyncState('failed', message);
       this.emitSyncLog({
         level: 'error',
-        title: 'Synchronization failed',
+        title: direction === 'pull' ? 'Download failed' : 'Upload failed',
         detail: message,
         deviceHostname: device?.hostname || '',
         deviceIp: device?.ip || '',
@@ -429,7 +602,7 @@ class AppDeveloper {
       this.setSyncState('failed', message);
       this.emitSyncLog({
         level: 'error',
-        title: 'Synchronization failed',
+        title: direction === 'pull' ? 'Download failed' : 'Upload failed',
         detail: message,
         deviceHostname: device.hostname || '',
         deviceIp: device.ip || '',
@@ -444,9 +617,28 @@ class AppDeveloper {
       ...(includeCore ? [DEVELOPER_CORE_LOG_LABEL] : []),
     ];
 
-    // Watch/start must not open a vault unlock dialog: a dismissed prompt can leave
+    // Watch must not open a vault unlock dialog: a dismissed prompt can leave
     // ensureUnlocked pending forever, which stuck syncing=true and ignored file changes.
-    if (reason !== 'manual' && !appVault.isUnlocked()) {
+    // Launch upload (sync-on-load) may prompt, but only before syncing=true is set.
+    if (reason === 'start' && this.isSyncOnLoadEnabled() && !appVault.isUnlocked()) {
+      try {
+        await appVault.ensureUnlocked();
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Vault unlock cancelled';
+        this.setSyncState('failed', message);
+        this.emitSyncLog({
+          level: 'error',
+          title: 'Upload waiting for vault',
+          detail: message,
+          deviceHostname: device.hostname || '',
+          deviceIp: device.ip || '',
+          apps: logLabels,
+          reason,
+        });
+        return;
+      }
+    } else if (reason !== 'manual' && !appVault.isUnlocked()) {
       const message = 'Vault is locked — unlock it to synchronize sources';
       this.setSyncState('failed', message);
       this.emitSyncLog({
@@ -461,12 +653,16 @@ class AppDeveloper {
       return;
     }
 
+    const hostLabel = device.hostname || device.ip;
+    const actionVerb = direction === 'pull' ? 'Downloading' : 'Uploading';
+    const prep = direction === 'pull' ? 'from' : 'to';
+
     this.syncing = true;
     this.setSyncState('syncing', '');
     this.emitSyncLog({
       level: 'info',
-      title: this.syncStartTitle(reason),
-      detail: `Syncing ${logLabels.join(', ')} to ${device.hostname || device.ip}`,
+      title: this.syncStartTitle(reason, direction),
+      detail: `${actionVerb} ${logLabels.join(', ')} ${prep} ${hostLabel}`,
       deviceHostname: device.hostname || '',
       deviceIp: device.ip || '',
       apps: logLabels,
@@ -480,10 +676,17 @@ class AppDeveloper {
 
       const jobs: Promise<void>[] = [];
       if (apps.length) {
-        jobs.push(rsyncDeveloperApps({ host: device.ip, ssh, apps }));
+        jobs.push(rsyncDeveloperApps({ host: device.ip, ssh, apps, direction }));
       }
       if (includeCore && status.corePath) {
-        jobs.push(rsyncDeveloperCore({ host: device.ip, ssh, localCorePath: status.corePath }));
+        jobs.push(
+          rsyncDeveloperCore({
+            host: device.ip,
+            ssh,
+            localCorePath: status.corePath,
+            direction,
+          }),
+        );
       }
       await Promise.all(jobs);
 
@@ -491,8 +694,8 @@ class AppDeveloper {
       this.setSyncState('ok', '');
       this.emitSyncLog({
         level: 'success',
-        title: 'Synchronization completed',
-        detail: `Synced ${logLabels.join(', ')} to ${device.hostname || device.ip}`,
+        title: direction === 'pull' ? 'Download completed' : 'Upload completed',
+        detail: `${direction === 'pull' ? 'Downloaded' : 'Uploaded'} ${logLabels.join(', ')} ${prep} ${hostLabel}`,
         deviceHostname: device.hostname || '',
         deviceIp: device.ip || '',
         apps: logLabels,
@@ -500,11 +703,11 @@ class AppDeveloper {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Developer sync failed';
-      appLogger.warn('Developer sync failed', { message });
+      appLogger.warn('Developer sync failed', { message, direction });
       this.setSyncState('failed', message);
       this.emitSyncLog({
         level: 'error',
-        title: 'Synchronization failed',
+        title: direction === 'pull' ? 'Download failed' : 'Upload failed',
         detail: message,
         deviceHostname: device.hostname || '',
         deviceIp: device.ip || '',
@@ -521,14 +724,17 @@ class AppDeveloper {
     }
   }
 
-  private syncStartTitle(reason: DeveloperSyncReason): string {
+  private syncStartTitle(reason: DeveloperSyncReason, direction: DeveloperSyncDirection): string {
+    if (direction === 'pull') {
+      return 'Download started';
+    }
     if (reason === 'manual') {
-      return 'Manual synchronization started';
+      return 'Upload started';
     }
     if (reason === 'start') {
-      return 'Initial synchronization started';
+      return 'Initial upload started';
     }
-    return 'Synchronization started';
+    return 'Upload started';
   }
 
   private setSyncState(status: DeveloperSyncState, error: string): void {

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   detectModuleName,
   listDeveloperApps,
+  resolveLocalPathForModule,
   resolveSelectedDeveloperApps,
 } from '../../src/developer-apps';
 
@@ -23,7 +24,13 @@ describe('developer-apps', () => {
     return dir;
   }
 
-  function writeApp(root: string, folderName: string, className: string, fileName?: string): string {
+  function writeApp(
+    root: string,
+    folderName: string,
+    className: string,
+    fileName?: string,
+    icon?: string,
+  ): string {
     const appDir = path.join(root, folderName);
     const backend = path.join(appDir, 'backend');
     fs.mkdirSync(backend, { recursive: true });
@@ -39,6 +46,11 @@ describe('developer-apps', () => {
       ].join('\n'),
       'utf8',
     );
+    if (icon) {
+      const frontend = path.join(appDir, 'frontend');
+      fs.mkdirSync(frontend, { recursive: true });
+      fs.writeFileSync(path.join(frontend, 'desc.json'), JSON.stringify({ icon }), 'utf8');
+    }
     return appDir;
   }
 
@@ -79,7 +91,7 @@ describe('developer-apps', () => {
 
   it('lists folders and marks invalid ones', () => {
     const root = makeSourcesRoot();
-    writeApp(root, 'cleepapp-charts', 'Charts');
+    writeApp(root, 'cleepapp-charts', 'Charts', undefined, 'chart-bar');
     fs.mkdirSync(path.join(root, 'notes'), { recursive: true });
     fs.writeFileSync(path.join(root, 'notes', 'readme.txt'), 'hello');
 
@@ -92,12 +104,20 @@ describe('developer-apps', () => {
       valid: true,
       moduleName: 'charts',
       label: 'cleepapp-charts → charts',
+      icon: 'chart-bar',
     });
     expect(notes).toMatchObject({
       valid: false,
       moduleName: null,
       label: 'notes',
+      icon: 'puzzle',
     });
+  });
+
+  it('falls back to puzzle when desc.json has no icon', () => {
+    const root = makeSourcesRoot();
+    writeApp(root, 'cleepapp-demo', 'Demo');
+    expect(listDeveloperApps(root)[0].icon).toBe('puzzle');
   });
 
   it('resolves only selected valid apps', () => {
@@ -122,5 +142,14 @@ describe('developer-apps', () => {
 
     const entries = listDeveloperApps(root);
     expect(entries.map((entry) => entry.folderName)).toEqual(['cleepapp-demo']);
+  });
+
+  it('resolves local path for a remote module name', () => {
+    const root = makeSourcesRoot();
+    writeApp(root, 'cleepapp-audio', 'Audio');
+    expect(resolveLocalPathForModule(root, 'audio')).toBe(
+      path.join(root, 'cleepapp-audio'),
+    );
+    expect(resolveLocalPathForModule(root, 'brandnew')).toBe(path.join(root, 'brandnew'));
   });
 });

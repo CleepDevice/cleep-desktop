@@ -15,16 +15,16 @@
                 <md-button
                     class="md-icon-button"
                     ng-click="$mdMenu.open($event)"
-                    ng-disabled="ctl.syncBusy || !ctl.hasSyncTargets()"
-                    title="Force sync"
+                    ng-disabled="ctl.syncBusy || !ctl.hasUploadTargets()"
+                    title="Upload sources"
                 >
-                    <md-icon md-svg-icon="sync"></md-icon>
+                    <md-icon md-svg-icon="upload"></md-icon>
                 </md-button>
                 <md-menu-content width="3">
                     <md-menu-item>
                         <md-button ng-click="ctl.syncNow()" ng-disabled="ctl.syncBusy">
-                            <md-icon md-svg-icon="sync"></md-icon>
-                            Force sync all
+                            <md-icon md-svg-icon="upload"></md-icon>
+                            Upload all
                         </md-button>
                     </md-menu-item>
                     <md-menu-divider ng-if="ctl.coreSyncAvailable || ctl.syncTargets.length"></md-menu-divider>
@@ -33,7 +33,7 @@
                             ng-click="ctl.syncNow(ctl.CORE_SYNC_TOKEN)"
                             ng-disabled="ctl.syncBusy"
                         >
-                            <md-icon md-svg-icon="code-braces"></md-icon>
+                            <md-icon md-svg-icon="cleep"></md-icon>
                             cleep
                         </md-button>
                     </md-menu-item>
@@ -42,16 +42,71 @@
                             ng-click="ctl.syncNow(app.folderName)"
                             ng-disabled="ctl.syncBusy"
                         >
-                            <md-icon md-svg-icon="puzzle"></md-icon>
+                            <md-icon md-svg-icon="{{ app.icon || 'puzzle' }}"></md-icon>
                             {{ app.label }}
+                        </md-button>
+                    </md-menu-item>
+                </md-menu-content>
+            </md-menu>
+            <md-menu md-position-mode="target-right target">
+                <md-button
+                    class="md-icon-button"
+                    ng-click="$mdMenu.open($event)"
+                    ng-disabled="ctl.syncBusy"
+                    title="Download sources"
+                >
+                    <md-icon md-svg-icon="download"></md-icon>
+                </md-button>
+                <md-menu-content width="4">
+                    <md-menu-item>
+                        <md-button
+                            ng-click="ctl.refreshRemoteApps($event)"
+                            ng-disabled="ctl.remoteAppsBusy || ctl.syncBusy"
+                            md-prevent-menu-close
+                        >
+                            <md-icon md-svg-icon="{{ ctl.remoteAppsBusy ? 'loading' : 'refresh' }}"></md-icon>
+                            Refresh apps from Pi
+                        </md-button>
+                    </md-menu-item>
+                    <md-menu-divider></md-menu-divider>
+                    <md-menu-item ng-if="ctl.coreSyncAvailable">
+                        <md-button
+                            ng-click="ctl.pullNow(ctl.CORE_SYNC_TOKEN)"
+                            ng-disabled="ctl.syncBusy"
+                        >
+                            <md-icon md-svg-icon="cleep"></md-icon>
+                            cleep
+                        </md-button>
+                    </md-menu-item>
+                    <md-menu-item ng-if="ctl.remoteApps.length || ctl.coreSyncAvailable">
+                        <md-button
+                            ng-click="ctl.pullNow()"
+                            ng-disabled="ctl.syncBusy"
+                        >
+                            <md-icon md-svg-icon="download"></md-icon>
+                            Download all
+                        </md-button>
+                    </md-menu-item>
+                    <md-menu-item ng-if="ctl.remoteAppsLoaded && !ctl.remoteApps.length">
+                        <md-button ng-disabled="true">
+                            No remote apps
+                        </md-button>
+                    </md-menu-item>
+                    <md-menu-item ng-repeat="moduleName in ctl.remoteApps track by moduleName">
+                        <md-button
+                            ng-click="ctl.pullNow(moduleName)"
+                            ng-disabled="ctl.syncBusy"
+                        >
+                            <md-icon md-svg-icon="folder"></md-icon>
+                            {{ moduleName }}
                         </md-button>
                     </md-menu-item>
                 </md-menu-content>
             </md-menu>
             <md-button
                 class="md-icon-button"
-                ng-if="ctl.syncLog.messages.length>0"
                 ng-click="ctl.syncLog.clearMessages()"
+                ng-disabled="!ctl.syncLog.messages.length"
                 title="Clear messages"
             >
                 <md-icon md-svg-icon="delete-outline"></md-icon>

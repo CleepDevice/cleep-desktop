@@ -95,6 +95,9 @@ export type RsyncAppTarget = {
   moduleName: string;
 };
 
+/** push = local → Pi (default watch/upload); pull = Pi → local. */
+export type DeveloperSyncDirection = 'push' | 'pull';
+
 const RSYNC_EXCLUDES = [
   '.git',
   '.gitignore',
@@ -145,16 +148,82 @@ function buildSshDestination(host: string, username: string, remotePath: string)
   return `${username}@${host}:${remotePath}`;
 }
 
+function buildSshpassEnv(ssh: DeveloperSshSecret): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    SSHPASS: ssh.password,
+  };
+}
+
+const SSH_PASSWORD_ARGS = [
+  '-o',
+  'StrictHostKeyChecking=accept-new',
+  '-o',
+  'PreferredAuthentications=password',
+  '-o',
+  'PubkeyAuthentication=no',
+] as const;
+
+/** Parse ``ls -1`` output of remote modules dir into sorted module names. */
+export function parseRemoteModulesListing(stdout: string): string[] {
+  const names = String(stdout || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((name) => Boolean(name) && !name.startsWith('.') && !name.includes('/'));
+  return [...new Set(names)].sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * List module folder names under ``/root/cleep-dev/modules`` on the device.
+ */
+export async function listRemoteDeveloperModules(options: {
+  host: string;
+  ssh: DeveloperSshSecret;
+}): Promise<string[]> {
+  await assertSyncToolsAvailable();
+  const host = String(options.host || '').trim();
+  if (!host) {
+    throw new Error('Development device has no IP address');
+  }
+  const remote = `${options.ssh.username}@${host}`;
+  const result = await runSshpassCommand(
+    'sshpass',
+    [
+      '-e',
+      'ssh',
+      ...SSH_PASSWORD_ARGS,
+      remote,
+      `ls -1 ${DEVELOPER_SYNC_REMOTE_MODULES} 2>/dev/null || true`,
+    ],
+    buildSshpassEnv(options.ssh),
+  );
+  return parseRemoteModulesListing(result.stdout);
+}
+
+function appendTransferArgs(
+  rsyncArgs: string[],
+  local: string,
+  remote: string,
+  direction: DeveloperSyncDirection,
+): void {
+  if (direction === 'pull') {
+    rsyncArgs.push(remote, local);
+  } else {
+    rsyncArgs.push(local, remote);
+  }
+}
+
 export function buildRsyncCommand(
   host: string,
   ssh: DeveloperSshSecret,
   target: RsyncAppTarget,
+  direction: DeveloperSyncDirection = 'push',
 ): { command: string; args: string[]; env: NodeJS.ProcessEnv } {
   const local = target.localPath.endsWith(path.sep)
     ? target.localPath
     : `${target.localPath}${path.sep}`;
   const remotePath = `${DEVELOPER_SYNC_REMOTE_MODULES}/${target.moduleName}/`;
-  const destination = buildSshDestination(host, ssh.username, remotePath);
+  const remote = buildSshDestination(host, ssh.username, remotePath);
 
   const rsyncArgs = ['-az', '--delete'];
   for (const pattern of RSYNC_EXCLUDES) {
@@ -164,7 +233,7 @@ export function buildRsyncCommand(
     '-e',
     'ssh -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no',
   );
-  rsyncArgs.push(local, destination);
+  appendTransferArgs(rsyncArgs, local, remote, direction);
 
   return {
     command: 'sshpass',
@@ -177,25 +246,26 @@ export function buildRsyncCommand(
 }
 
 /**
- * Build rsync for Cleep core → /root/cleep-dev/.
- * Always excludes ``modules/`` before --delete so remote apps are preserved.
+ * Build rsync for Cleep core ↔ /root/cleep-dev/.
+ * Always excludes ``modules/`` before --delete so remote/local modules stay untouched.
  * Allowlists known dirs/files; everything else at the root is skipped.
  */
 export function buildCoreRsyncCommand(
   host: string,
   ssh: DeveloperSshSecret,
   localCorePath: string,
+  direction: DeveloperSyncDirection = 'push',
 ): { command: string; args: string[]; env: NodeJS.ProcessEnv } {
   const local = localCorePath.endsWith(path.sep)
     ? localCorePath
     : `${localCorePath}${path.sep}`;
-  const destination = buildSshDestination(
+  const remote = buildSshDestination(
     host,
     ssh.username,
     `${DEVELOPER_SYNC_REMOTE_ROOT}/`,
   );
 
-  // Exclude modules first so --delete never removes remote apps.
+  // Exclude modules first so --delete never removes apps under modules/.
   const rsyncArgs = ['-az', '--delete', '--exclude', 'modules/', '--exclude', 'modules'];
   for (const pattern of RSYNC_EXCLUDES) {
     rsyncArgs.push('--exclude', pattern);
@@ -211,7 +281,7 @@ export function buildCoreRsyncCommand(
     '-e',
     'ssh -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no',
   );
-  rsyncArgs.push(local, destination);
+  appendTransferArgs(rsyncArgs, local, remote, direction);
 
   return {
     command: 'sshpass',
@@ -255,10 +325,35 @@ function runCommand(
   });
 }
 
+/**
+ * Serialize all sshpass traffic to the Pi.
+ * Startup used to fire one rsync SSH per app in parallel (+ optional remote ls),
+ * which trips sshd MaxStartups (``Connection reset by peer`` / rsync 255).
+ */
+let developerSshLock: Promise<void> = Promise.resolve();
+
+function withDeveloperSshLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = developerSshLock.then(fn, fn);
+  developerSshLock = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
+function runSshpassCommand(
+  command: string,
+  args: string[],
+  env: NodeJS.ProcessEnv,
+): Promise<{ stdout: string; stderr: string }> {
+  return withDeveloperSshLock(() => runCommand(command, args, env));
+}
+
 export async function rsyncDeveloperApps(options: {
   host: string;
   ssh: DeveloperSshSecret;
   apps: DeveloperAppEntry[];
+  direction?: DeveloperSyncDirection;
 }): Promise<void> {
   await assertSyncToolsAvailable();
   const host = String(options.host || '').trim();
@@ -268,33 +363,39 @@ export async function rsyncDeveloperApps(options: {
   if (!options.apps.length) {
     throw new Error('No applications selected for sync');
   }
+  const direction = options.direction || 'push';
 
   const targets = options.apps.filter((app) => app.valid && app.moduleName);
   if (!targets.length) {
     throw new Error('No valid applications to sync');
   }
 
-  // Sync selected apps in parallel (one rsync process per module).
-  await Promise.all(
-    targets.map(async (app) => {
-      const cmd = buildRsyncCommand(host, options.ssh, {
+  // One SSH at a time — parallel rsync storms reset sshd on the Pi.
+  for (const app of targets) {
+    const cmd = buildRsyncCommand(
+      host,
+      options.ssh,
+      {
         localPath: app.absolutePath,
-        moduleName: app.moduleName,
-      });
-      appLogger.info('Developer sync rsync', {
-        moduleName: app.moduleName,
-        localPath: app.absolutePath,
-        host,
-      });
-      await runCommand(cmd.command, cmd.args, cmd.env);
-    }),
-  );
+        moduleName: app.moduleName!,
+      },
+      direction,
+    );
+    appLogger.info('Developer sync rsync', {
+      moduleName: app.moduleName,
+      localPath: app.absolutePath,
+      host,
+      direction,
+    });
+    await runSshpassCommand(cmd.command, cmd.args, cmd.env);
+  }
 }
 
 export async function rsyncDeveloperCore(options: {
   host: string;
   ssh: DeveloperSshSecret;
   localCorePath: string;
+  direction?: DeveloperSyncDirection;
 }): Promise<void> {
   await assertSyncToolsAvailable();
   const host = String(options.host || '').trim();
@@ -305,12 +406,14 @@ export async function rsyncDeveloperCore(options: {
   if (!localCorePath) {
     throw new Error('Cleep core path is missing');
   }
+  const direction = options.direction || 'push';
 
-  const cmd = buildCoreRsyncCommand(host, options.ssh, localCorePath);
+  const cmd = buildCoreRsyncCommand(host, options.ssh, localCorePath, direction);
   appLogger.info('Developer sync rsync core', {
     localPath: localCorePath,
     remoteRoot: DEVELOPER_SYNC_REMOTE_ROOT,
     host,
+    direction,
   });
-  await runCommand(cmd.command, cmd.args, cmd.env);
+  await runSshpassCommand(cmd.command, cmd.args, cmd.env);
 }

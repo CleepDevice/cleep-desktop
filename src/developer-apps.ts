@@ -13,6 +13,8 @@ export type DeveloperAppEntry = {
   moduleName: string | null;
   /** Human label, e.g. "cleepapp-developer → developer". */
   label: string;
+  /** MDI icon name from ``frontend/desc.json`` (fallback ``puzzle``). */
+  icon: string;
 };
 
 /** App base classes from cleep.core (explicit allowlist; not a bare Cleep* prefix). */
@@ -72,6 +74,20 @@ export function isValidCleepAppDir(appDir: string): boolean {
   return detectModuleName(appDir) !== null;
 }
 
+const DEFAULT_APP_ICON = 'puzzle';
+
+/** MDI icon declared in ``frontend/desc.json``, else null. */
+export function detectAppIcon(appDir: string): string | null {
+  const descPath = path.join(appDir, 'frontend', 'desc.json');
+  try {
+    const raw = JSON.parse(fs.readFileSync(descPath, 'utf8')) as { icon?: unknown };
+    const icon = typeof raw.icon === 'string' ? raw.icon.trim() : '';
+    return icon || null;
+  } catch {
+    return null;
+  }
+}
+
 /** List immediate subfolders of sourcesDir and classify each as cleepapp or not. */
 export function listDeveloperApps(sourcesDir: string): DeveloperAppEntry[] {
   const root = String(sourcesDir || '').trim();
@@ -115,6 +131,7 @@ export function listDeveloperApps(sourcesDir: string): DeveloperAppEntry[] {
       valid && moduleName && moduleName !== folderName.toLowerCase()
         ? `${folderName} → ${moduleName}`
         : folderName;
+    const icon = (valid ? detectAppIcon(absolutePath) : null) || DEFAULT_APP_ICON;
 
     entries.push({
       folderName,
@@ -122,6 +139,7 @@ export function listDeveloperApps(sourcesDir: string): DeveloperAppEntry[] {
       valid,
       moduleName,
       label,
+      icon,
     });
   }
 
@@ -141,4 +159,23 @@ export function resolveSelectedDeveloperApps(
   return listDeveloperApps(sourcesDir).filter(
     (entry) => entry.valid && entry.moduleName && selected.has(entry.folderName),
   );
+}
+
+/**
+ * Local folder for a remote module name.
+ * Prefers an existing valid app whose moduleName matches; otherwise ``<sources>/<moduleName>``.
+ */
+export function resolveLocalPathForModule(sourcesDir: string, moduleName: string): string {
+  const root = String(sourcesDir || '').trim();
+  const module = String(moduleName || '').trim();
+  if (!root || !module) {
+    throw new Error('Sources directory and module name are required');
+  }
+  const existing = listDeveloperApps(root).find(
+    (entry) => entry.valid && entry.moduleName === module,
+  );
+  if (existing) {
+    return existing.absolutePath;
+  }
+  return path.join(root, module);
 }

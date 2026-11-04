@@ -76,6 +76,9 @@ export function createCleepApi(ipc: IpcPrimitives) {
       clearSsh: (deviceUuid: string) => ipc.invoke('developer-clear-ssh', { deviceUuid }),
       syncNow: (folderNames?: string[]) =>
         ipc.invoke('developer-sync-now', folderNames ? { folderNames } : {}),
+      listRemoteApps: () => ipc.invoke('developer-list-remote-apps'),
+      pullNow: (request?: { moduleNames?: string[]; includeCore?: boolean }) =>
+        ipc.invoke('developer-pull-now', request || {}),
       onStatusChanged: (listener: IpcListener<'developer-status-changed'>) =>
         ipc.on('developer-status-changed', listener),
       onSyncLog: (listener: IpcListener<'developer-sync-log'>) =>

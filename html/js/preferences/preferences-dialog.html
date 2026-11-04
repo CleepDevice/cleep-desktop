@@ -254,6 +254,11 @@
                         cl-btn-style="md-raised md-primary"
                         cl-click="ctl.selectDeveloperSourcesFolder()"
                     ></config-text>
+                    <config-switch
+                        cl-title="Upload sources when CleepDesktop starts"
+                        cl-subtitle="When enabled, selected sources are uploaded at launch and the vault unlock dialog is shown if needed."
+                        cl-model="ctl.settings.cleep.developersynconload"
+                    ></config-switch>
                     <config-note
                         ng-if="!ctl.hasDeveloperDevice"
                         cl-type="warning"
@@ -321,6 +326,7 @@
                         <config-checkbox
                             ng-repeat="app in ctl.developerAppEntries track by app.folderName"
                             cl-title="{{ app.label }}"
+                            cl-icon="{{ app.icon }}"
                             cl-caption="{{ app.valid ? ('Sync to /root/cleep-dev/modules/' + app.moduleName + '/') : 'Not a Cleep application' }}"
                             cl-front="true"
                             cl-model="ctl.developerAppChecks[app.folderName]"

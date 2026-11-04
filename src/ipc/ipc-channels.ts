@@ -23,6 +23,8 @@ export const INVOKE_CHANNELS = [
   'developer-save-ssh',
   'developer-clear-ssh',
   'developer-sync-now',
+  'developer-list-remote-apps',
+  'developer-pull-now',
   'get-changelog',
   'get-electron-log-path',
   'iso-get-drives',

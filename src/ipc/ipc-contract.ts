@@ -176,6 +176,14 @@ export type InvokeContract = {
     request: { folderNames?: string[] } | void;
     response: IpcResult<DeveloperStatus>;
   };
+  'developer-list-remote-apps': {
+    request: void;
+    response: IpcResult<string[]>;
+  };
+  'developer-pull-now': {
+    request: { moduleNames?: string[]; includeCore?: boolean } | void;
+    response: IpcResult<DeveloperStatus>;
+  };
   'get-changelog': { request: void; response: IpcResult<string> };
   'get-electron-log-path': { request: void; response: IpcResult<string> };
   'iso-get-drives': { request: void; response: IpcResult<IsoDrivesPayload> };

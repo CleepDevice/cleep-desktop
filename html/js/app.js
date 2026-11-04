@@ -256,7 +256,7 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         });
     };
 
-    /** Force rsync of all selected developer apps (toolbar shortcut). */
+    /** Push selected developer sources to the device (toolbar shortcut). */
     self.syncDeveloperAppsNow = function() {
         if (self.developerSyncBusy || !electron.developer || !electron.developer.syncNow) {
             return;
@@ -265,13 +265,13 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         electron.developer.syncNow()
             .then(function(status) {
                 if (status && status.syncStatus === 'failed') {
-                    toast.warning(status.syncError || 'Synchronization failed');
+                    toast.warning(status.syncError || 'Upload failed');
                     return;
                 }
-                toast.success('Applications synchronized');
+                toast.success('Sources uploaded');
             })
             .catch(function(error) {
-                toast.warning((error && error.message) || 'Unable to synchronize');
+                toast.warning((error && error.message) || 'Unable to upload sources');
             })
             .finally(function() {
                 self.developerSyncBusy = false;
