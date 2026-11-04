@@ -43,9 +43,9 @@ Devices (`pyre-gevent`):
    Multi-homed hosts might need simultaneous beacons on several subnets, not a
    single chosen iface.
 
-3. **Explicit “network not ready” UX**  
-   Auto-restart backoff works, but Preferences could show “waiting for LAN…”
-   when start fails for no usable iface.
+3. ~~**Explicit “network not ready” UX**~~ — done: transient LAN wait uses
+   `CONNECTING` (“Waiting for network…”) instead of hard `ERROR`; real failures
+   still surface as `ERROR`.
 
 ### Transport
 
@@ -53,9 +53,8 @@ Devices (`pyre-gevent`):
    Default OS keepalive can leave half-open sockets for a long time. Shorter
    keepalive / user timeout would detect dead peers without waiting for a send.
 
-5. **Propagate send errors to `whisper()` callers**  
-   Soft: `sendCommandToPeer` still hits the full timeout if the mailbox dies
-   after queueing; surfacing the disconnect would fail fast.
+5. ~~**Propagate send errors to `whisper()` callers**~~ — done: WHISPER/SHOUT
+   send failures (and unknown peer) reject so `sendCommandToPeer` fails fast.
 
 6. **WHISPER under queue pressure**  
    Non-critical queue drop can discard `external.command.response`. Prefer

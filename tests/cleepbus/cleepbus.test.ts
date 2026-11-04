@@ -385,6 +385,25 @@ describe('Cleepbus', () => {
     vi.useRealTimers();
   });
 
+  it('treats network-not-ready as waiting (CONNECTING), not hard ERROR', async () => {
+    vi.useFakeTimers();
+    const errorCb = vi.fn();
+    const connected = vi.fn();
+    cleepbus.setCleepbusCallbacks(errorCb, connected, vi.fn(), vi.fn(), vi.fn(), vi.fn());
+    mockState.startImpl = async () => {
+      throw new Error('No usable LAN interface for ZRE discovery (network not ready)');
+    };
+
+    await cleepbus.start();
+    expect(errorCb).not.toHaveBeenCalled();
+    expect(connected).toHaveBeenCalledWith(false);
+
+    mockState.startImpl = async (): Promise<void> => undefined;
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(connected).toHaveBeenCalledWith(true);
+    vi.useRealTimers();
+  });
+
   it('restarts after unexpected STOP', async () => {
     vi.useFakeTimers();
     const connected = vi.fn();

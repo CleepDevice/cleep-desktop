@@ -13,9 +13,9 @@ function(electron, logger, ipcLifecycle, $rootScope) {
 
     // status:
     // - CONNECTED: when connected to cleepbus
-    // - CONNECTING: when connecting
+    // - CONNECTING: starting / waiting for LAN (resume, DHCP) — not a hard failure
     // - UPDATING: when cleepbus is installing/updating
-    // - ERROR: when error occured
+    // - ERROR: when a non-transient error occured
     // connected at startup to not display loader
     self.busStatus = 'CONNECTED';
 
@@ -181,11 +181,17 @@ function(electron, logger, ipcLifecycle, $rootScope) {
     };
 
     self.onMessageBusConnected = function(_event, connected) {
-        if (self.busStatus === 'ERROR') {
-            // do not overwrite error status
+        if (connected) {
+            // Success always clears a previous ERROR / CONNECTING state.
+            self.busStatus = 'CONNECTED';
+            self.messageBusError = '';
             return;
         }
-        self.busStatus = connected ? 'CONNECTED' : 'CONNECTING';
+        if (self.busStatus === 'ERROR') {
+            // Keep hard error until a successful connect.
+            return;
+        }
+        self.busStatus = 'CONNECTING';
         self.messageBusError = '';
     }
 

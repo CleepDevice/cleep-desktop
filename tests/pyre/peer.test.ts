@@ -16,7 +16,7 @@ vi.mock('../../src/pyre/zmq', () => ({
 
 vi.mock('../../src/pyre/codec', () => ({
   encodeZre: vi.fn(() => [Buffer.from('frame')]),
-  ZreMsgId: { HELLO: 1, PING: 6 },
+  ZreMsgId: { HELLO: 1, WHISPER: 2, SHOUT: 3, PING: 6 },
 }));
 
 describe('pyre Peer mailbox recovery', () => {
@@ -66,6 +66,7 @@ describe('pyre Peer mailbox recovery', () => {
     expect(peer.lastEndpoint).toBe('tcp://192.168.1.10:5600');
 
     sendMock.mockRejectedValueOnce(new Error('dealer closed'));
+    // Protocol traffic (PING) still swallows the error after disconnect.
     await peer.send({ id: 6 } as never);
 
     expect(peer.connected).toBe(false);
@@ -75,6 +76,27 @@ describe('pyre Peer mailbox recovery', () => {
     expect(peer.expiredAt).toBe(expiredAt);
     expect(peer.expiredAt).toBeGreaterThan(performance.now());
     expect(peer.expiredAt - performance.now()).toBeLessThanOrEqual(PEER_EXPIRED_MS);
+  });
+
+  it('rejects WHISPER send failures so callers can fail fast', async () => {
+    const { Peer } = await import('../../src/pyre/peer');
+    const peer = new Peer('peer-uuid', Buffer.alloc(16, 5), {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    });
+
+    peer.connect('tcp://192.168.1.10:5600');
+    sendMock.mockRejectedValueOnce(new Error('dealer closed'));
+    await expect(peer.send({ id: 2, content: [Buffer.from('x')] } as never)).rejects.toThrow(
+      'dealer closed',
+    );
+    expect(peer.connected).toBe(false);
+
+    await expect(peer.send({ id: 2, content: [Buffer.from('y')] } as never)).rejects.toThrow(
+      /not connected/,
+    );
   });
 
   it('resets ZRE sequences when reconnecting the mailbox', async () => {

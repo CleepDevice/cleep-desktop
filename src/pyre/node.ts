@@ -203,7 +203,7 @@ export class PyreNode {
   async whisper(peerUuid: string, content: MessageContent): Promise<void> {
     const peer = this.peers.get(peerUuid);
     if (!peer) {
-      return;
+      throw new Error(`Unknown peer ${peerUuid}`);
     }
     await peer.send({ id: ZreMsgId.WHISPER, content: toFrames(content) });
   }

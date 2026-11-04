@@ -94,11 +94,20 @@ export class Peer {
     await this.sendQueue;
   }
 
+  private isApplicationTraffic(message: OutgoingZreMessage): boolean {
+    return message.id === ZreMsgId.WHISPER || message.id === ZreMsgId.SHOUT;
+  }
+
   private async sendNow(message: OutgoingZreMessage): Promise<void> {
     const mailbox = this.mailbox;
     const generation = this.mailboxGeneration;
     if (!this.connected || !mailbox) {
       this.logger.debug(`Peer ${this.uuid} is not connected`);
+      // Application traffic must fail the caller (e.g. sendCommandToPeer) instead of
+      // resolving and leaving them on an 8s response timeout.
+      if (this.isApplicationTraffic(message)) {
+        throw new Error(`Peer ${this.uuid} is not connected`);
+      }
       return;
     }
     this.sentSequence = wrapSequence(this.sentSequence + 1);
@@ -114,6 +123,9 @@ export class Peer {
       // Only tear down if this failure belongs to the current mailbox generation.
       if (this.mailboxGeneration === generation) {
         this.disconnect();
+      }
+      if (this.isApplicationTraffic(message)) {
+        throw err instanceof Error ? err : new Error(String(err));
       }
     }
   }

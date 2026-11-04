@@ -73,6 +73,13 @@ function parseEndpointIp(endpoint: string): string {
   }
 }
 
+/** Transient: Wi-Fi/DHCP not ready yet (resume, cold start) — UI should show CONNECTING, not ERROR. */
+export function isNetworkNotReadyError(message: string): boolean {
+  return /network not ready|No usable LAN interface|No usable IPv4 address found on interface/i.test(
+    message,
+  );
+}
+
 type QueuedBusEvent =
   | { kind: 'ENTER'; event: EnterEvent }
   | { kind: 'EXIT'; event: ExitEvent }
@@ -178,14 +185,21 @@ export class Cleepbus {
     } catch (error) {
       startFailed = true;
       const message = getError(error as Error);
-      appLogger.error('Fatal error starting cleepbus', { error: message });
-      // One UI notification per failure streak — retries only log until start succeeds.
-      if (!this.startFailureNotified) {
-        this.startFailureNotified = true;
-        this.messageBusErrorCallback?.(message);
-      }
       await this.pyre?.stop().catch((): undefined => undefined);
       this.pyre = null;
+
+      if (isNetworkNotReadyError(message)) {
+        // Resume / slow DHCP: keep UI in CONNECTING while backoff retries.
+        appLogger.warn('Cleepbus waiting for network', { error: message });
+        this.messageBusConnectedCallback?.(false);
+      } else {
+        appLogger.error('Fatal error starting cleepbus', { error: message });
+        // One UI ERROR per failure streak — retries only log until start succeeds.
+        if (!this.startFailureNotified) {
+          this.startFailureNotified = true;
+          this.messageBusErrorCallback?.(message);
+        }
+      }
     } finally {
       this.starting = false;
     }
