@@ -1013,6 +1013,44 @@ device-webview {
   line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.developer-device-log-context {
+  position: fixed;
+  z-index: 100;
+  min-width: 160px;
+  padding: 4px 0;
+  background: #fff;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  box-shadow:
+    0 2px 4px rgb(0 0 0 / 8%),
+    0 8px 24px rgb(55 71 79 / 18%);
+}
+
+.developer-device-log-context-item {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 8px 14px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+  color: rgb(0 0 0 / 87%);
+  cursor: pointer;
+}
+
+.developer-device-log-context-item:hover:not(:disabled) {
+  background: #eceff1;
+}
+
+.developer-device-log-context-item:disabled {
+  color: rgb(0 0 0 / 38%);
+  cursor: default;
 }
 
 /* Full-line highlight (WARNING/ERROR/CRITICAL + sticky traceback lines). */

@@ -213,6 +213,14 @@
                     <div class="developer-sync-pane-actions" layout="row" layout-align="end center">
                         <md-button
                             class="md-icon-button"
+                            ng-click="ctl.jumpDeviceLogToBottom()"
+                            ng-disabled="ctl.deviceLogStickToBottom"
+                            title="Scroll to latest and resume auto-scroll"
+                        >
+                            <md-icon md-svg-icon="arrow-collapse-down"></md-icon>
+                        </md-button>
+                        <md-button
+                            class="md-icon-button"
                             ng-click="ctl.toggleDeviceLogFollow()"
                             ng-attr-title="{{ ctl.deviceLogFollow ? 'Pause live refresh' : 'Resume live refresh' }}"
                         >
@@ -233,10 +241,31 @@
                     id="developer-device-log"
                     class="developer-device-log developer-sync-pane-scroll"
                     flex
+                    tabindex="0"
                     ng-bind-html="(ctl.deviceLogContent || 'Waiting for device logs…') | deviceLogHtml"
                 ></pre>
             </div>
         </div>
     </md-content>
+
+    <div
+        class="developer-device-log-context"
+        ng-if="ctl.deviceLogCtx.open"
+        ng-style="{ top: ctl.deviceLogCtx.y + 'px', left: ctl.deviceLogCtx.x + 'px' }"
+        role="menu"
+    >
+        <button
+            type="button"
+            class="developer-device-log-context-item"
+            ng-click="ctl.copyDeviceLogSelection()"
+            ng-disabled="!ctl.deviceLogCtx.hasSelection"
+        >Copy selection</button>
+        <button
+            type="button"
+            class="developer-device-log-context-item"
+            ng-click="ctl.copyAllDeviceLogs()"
+            ng-disabled="!ctl.deviceLogContent"
+        >Copy all logs</button>
+    </div>
 
 </div>

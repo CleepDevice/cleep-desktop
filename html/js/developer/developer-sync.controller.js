@@ -29,6 +29,15 @@ angular
     self.deviceLogError = '';
     self.deviceLogBusy = false;
     self.deviceLogFollow = false;
+    /** When true, new log content pins the view to the bottom. Cleared by scrolling up. */
+    self.deviceLogStickToBottom = true;
+    self.deviceLogCtx = {
+        open: false,
+        x: 0,
+        y: 0,
+        hasSelection: false,
+        selectedText: '',
+    };
 
     self.refreshSyncTargets = function() {
         if (!electron.developer || !electron.developer.getStatus || !electron.developer.listApps) {
@@ -166,17 +175,128 @@ angular
             });
     };
 
+    function getDeviceLogEl() {
+        return document.getElementById('developer-device-log');
+    }
+
+    function isDeviceLogNearBottom(el) {
+        if (!el) {
+            return true;
+        }
+        return el.scrollTop + el.clientHeight >= el.scrollHeight - 24;
+    }
+
     function scrollDeviceLogToBottom() {
         // Wait for Angular to paint the new text, then pin to bottom.
         $timeout(function() {
             requestAnimationFrame(function() {
-                var el = document.getElementById('developer-device-log');
+                var el = getDeviceLogEl();
                 if (el) {
                     el.scrollTop = el.scrollHeight;
+                    self.deviceLogStickToBottom = true;
                 }
             });
         }, 0);
     }
+
+    function onDeviceLogScroll() {
+        var stuck = isDeviceLogNearBottom(getDeviceLogEl());
+        if (stuck === self.deviceLogStickToBottom) {
+            return;
+        }
+        self.deviceLogStickToBottom = stuck;
+        $scope.$applyAsync();
+    }
+
+    function bindDeviceLogScroll() {
+        var el = getDeviceLogEl();
+        if (!el || el._cleepScrollBound) {
+            return;
+        }
+        el._cleepScrollBound = true;
+        el.addEventListener('scroll', onDeviceLogScroll, { passive: true });
+        el.addEventListener('contextmenu', onDeviceLogContextMenu);
+        $scope.$on('$destroy', function() {
+            el.removeEventListener('scroll', onDeviceLogScroll);
+            el.removeEventListener('contextmenu', onDeviceLogContextMenu);
+            document.removeEventListener('mousedown', onDocumentMouseDownForLogCtx, true);
+        });
+    }
+
+    function getDeviceLogSelection() {
+        var el = getDeviceLogEl();
+        var sel = window.getSelection && window.getSelection();
+        if (!el || !sel || !sel.rangeCount) {
+            return '';
+        }
+        if (!sel.anchorNode || !el.contains(sel.anchorNode)) {
+            return '';
+        }
+        return String(sel.toString() || '');
+    }
+
+    function onDeviceLogContextMenu(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var selected = getDeviceLogSelection();
+        var menuWidth = 180;
+        var menuHeight = 80;
+        var x = Math.min(event.clientX, window.innerWidth - menuWidth - 8);
+        var y = Math.min(event.clientY, window.innerHeight - menuHeight - 8);
+        self.deviceLogCtx = {
+            open: true,
+            x: Math.max(8, x),
+            y: Math.max(8, y),
+            hasSelection: selected.length > 0,
+            selectedText: selected,
+        };
+        $scope.$applyAsync();
+    }
+
+    function onDocumentMouseDownForLogCtx(event) {
+        if (!self.deviceLogCtx.open) {
+            return;
+        }
+        var menu = document.querySelector('.developer-device-log-context');
+        if (menu && menu.contains(event.target)) {
+            return;
+        }
+        self.closeDeviceLogCtx();
+        $scope.$applyAsync();
+    }
+
+    function copyTextToClipboard(text, successMessage) {
+        var value = String(text || '');
+        if (!value) {
+            toast.info('Nothing to copy');
+            return Promise.resolve();
+        }
+        var write = navigator.clipboard && navigator.clipboard.writeText
+            ? navigator.clipboard.writeText(value)
+            : Promise.reject(new Error('clipboard unavailable'));
+        return write
+            .then(function() {
+                toast.info(successMessage || 'Copied to clipboard');
+            })
+            .catch(function() {
+                toast.warning('Unable to copy to clipboard');
+            });
+    }
+
+    self.closeDeviceLogCtx = function() {
+        self.deviceLogCtx.open = false;
+    };
+
+    self.copyDeviceLogSelection = function() {
+        var text = self.deviceLogCtx.selectedText;
+        self.closeDeviceLogCtx();
+        return copyTextToClipboard(text, 'Selection copied');
+    };
+
+    self.copyAllDeviceLogs = function() {
+        self.closeDeviceLogCtx();
+        return copyTextToClipboard(self.deviceLogContent, 'Logs copied');
+    };
 
     function scheduleDeviceLogPoll() {
         if (deviceLogTimer) {
@@ -208,14 +328,24 @@ angular
         self.deviceLogFollow = !self.deviceLogFollow;
         persistDeviceLogFollow();
         if (self.deviceLogFollow) {
-            self.refreshDeviceLogs(true).finally(scheduleDeviceLogPoll);
+            self.refreshDeviceLogs(true, true).finally(scheduleDeviceLogPoll);
         } else if (deviceLogTimer) {
             $timeout.cancel(deviceLogTimer);
             deviceLogTimer = null;
         }
     };
 
-    self.refreshDeviceLogs = function(force) {
+    /** Jump to latest lines and re-enable auto-scroll on new content. */
+    self.jumpDeviceLogToBottom = function() {
+        self.deviceLogStickToBottom = true;
+        scrollDeviceLogToBottom();
+    };
+
+    /**
+     * @param {boolean} force reload even if size unchanged
+     * @param {boolean} [pinToBottom] force pin + scroll (initial load / resume live)
+     */
+    self.refreshDeviceLogs = function(force, pinToBottom) {
         if (!electron.developer || !electron.developer.fetchDeviceLogs) {
             self.deviceLogError = 'Device logs unavailable';
             return Promise.resolve();
@@ -241,7 +371,10 @@ angular
                 deviceLogSize = size;
                 deviceLogContentSeen = content;
                 self.deviceLogContent = content;
-                if (force || changed) {
+                if (pinToBottom) {
+                    self.deviceLogStickToBottom = true;
+                    scrollDeviceLogToBottom();
+                } else if ((force || changed) && self.deviceLogStickToBottom) {
                     scrollDeviceLogToBottom();
                 }
             })
@@ -250,10 +383,12 @@ angular
             })
             .finally(function() {
                 self.deviceLogBusy = false;
+                bindDeviceLogScroll();
             });
     };
 
     self.$onInit = function() {
+        document.addEventListener('mousedown', onDocumentMouseDownForLogCtx, true);
         self.refreshSyncTargets();
         if (electron.developer && electron.developer.onStatusChanged) {
             $scope.$on('$destroy', electron.developer.onStatusChanged(function(_event, status) {
@@ -274,7 +409,7 @@ angular
         }
         livePref.then(function(live) {
             self.deviceLogFollow = live;
-            return self.refreshDeviceLogs(true).finally(function() {
+            return self.refreshDeviceLogs(true, true).finally(function() {
                 if (self.deviceLogFollow) {
                     scheduleDeviceLogPoll();
                 }
