@@ -2,11 +2,12 @@ angular
 .module('Cleep')
 .controller('developerSyncController', [
     '$scope',
+    '$rootScope',
     '$timeout',
     'developerSyncLogService',
     'electronService',
     'toastService',
-    function($scope, $timeout, developerSyncLogService, electron, toast) {
+    function($scope, $rootScope, $timeout, developerSyncLogService, electron, toast) {
     var self = this;
     var DEVICE_LOG_POLL_MS = 3000;
     var deviceLogTimer = null;
@@ -50,6 +51,10 @@ angular
                 self.syncTargets = [];
                 self.coreSyncAvailable = false;
             });
+    };
+
+    self.openDeveloperPreferences = function() {
+        $rootScope.$emit('open-preferences', { tab: 'developer' });
     };
 
     self.hasUploadTargets = function() {

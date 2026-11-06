@@ -60,48 +60,20 @@
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Monitoring</p>
                 </md-list-item>
 
-                <md-menu
+                <md-list-item
                     ng-if="cleep.developerStatus.enabled"
-                    md-position-mode="target-right target"
-                    md-offset="8 0"
+                    ng-click="cleep.openPage('developerSync')"
+                    ng-mousedown="cleep.onToolbarPageMouseDown($event, 'developerSync')"
+                    title="{{ cleep.developerStatusTitle() }}"
                 >
-                    <md-list-item
-                        ng-click="cleep.openDeveloperMenu($mdMenu, $event)"
-                        ng-mousedown="cleep.onDeveloperToolbarMouseDown($event)"
-                        title="{{ cleep.developerStatusTitle() }}"
-                    >
-                        <md-icon
-                            md-svg-icon="code-braces"
-                            ng-class="cleep.isToolbarItemSelected('developerSync') ? 'md-accent' : cleep.developerStatusIconClass()"
-                        ></md-icon>
-                        <p style="color:white;" ng-if="!cleep.toolbarCollapsed">
-                            {{ cleep.developerStatusLabel() }}
-                        </p>
-                    </md-list-item>
-                    <md-menu-content width="3">
-                        <md-menu-item>
-                            <md-button ng-click="cleep.openPage('developerSync')">
-                                <md-icon md-svg-icon="text-box-outline"></md-icon>
-                                Sync logs
-                            </md-button>
-                        </md-menu-item>
-                        <md-menu-item>
-                            <md-button
-                                ng-click="cleep.syncDeveloperAppsNow()"
-                                ng-disabled="cleep.developerSyncBusy"
-                            >
-                                <md-icon md-svg-icon="upload"></md-icon>
-                                Upload all
-                            </md-button>
-                        </md-menu-item>
-                        <md-menu-item>
-                            <md-button ng-click="cleep.openDeveloperPreferences()">
-                                <md-icon md-svg-icon="cog"></md-icon>
-                                Preferences
-                            </md-button>
-                        </md-menu-item>
-                    </md-menu-content>
-                </md-menu>
+                    <md-icon
+                        md-svg-icon="code-braces"
+                        ng-class="cleep.isToolbarItemSelected('developerSync') ? 'md-accent' : cleep.developerStatusIconClass()"
+                    ></md-icon>
+                    <p style="color:white;" ng-if="!cleep.toolbarCollapsed">
+                        {{ cleep.developerStatusLabel() }}
+                    </p>
+                </md-list-item>
 
                 <md-divider></md-divider>
 
