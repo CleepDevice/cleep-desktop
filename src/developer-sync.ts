@@ -1,4 +1,6 @@
 import { execFile, spawn } from 'child_process';
+import fs from 'fs';
+import os from 'os';
 import { promisify } from 'util';
 import path from 'path';
 import type { DeveloperAppEntry } from './developer-apps';
@@ -146,6 +148,7 @@ export async function assertSyncToolsAvailable(): Promise<void> {
   if (!hasSshpass) {
     throw new Error('sshpass is required for developer sync (install sshpass)');
   }
+  ensureDeveloperSshControlDir();
 }
 
 function buildSshDestination(host: string, username: string, remotePath: string): string {
@@ -159,6 +162,17 @@ function buildSshpassEnv(ssh: DeveloperSshSecret): NodeJS.ProcessEnv {
   };
 }
 
+/** Shared ControlMaster sockets for developer sync (one multiplexed SSH per host). */
+const DEVELOPER_SSH_CONTROL_DIR = path.join(os.tmpdir(), 'cleep-desktop-ssh');
+
+function ensureDeveloperSshControlDir(): void {
+  fs.mkdirSync(DEVELOPER_SSH_CONTROL_DIR, { recursive: true, mode: 0o700 });
+}
+
+/**
+ * Common ssh options for password auth via sshpass.
+ * ControlMaster reuses one TCP session across rsync/ls/log calls (lock still serializes).
+ */
 const SSH_PASSWORD_ARGS = [
   '-o',
   'StrictHostKeyChecking=accept-new',
@@ -166,7 +180,26 @@ const SSH_PASSWORD_ARGS = [
   'PreferredAuthentications=password',
   '-o',
   'PubkeyAuthentication=no',
+  '-o',
+  'ForwardAgent=no',
+  '-o',
+  'ConnectTimeout=10',
+  '-o',
+  'ServerAliveInterval=15',
+  '-o',
+  'ServerAliveCountMax=3',
+  '-o',
+  'ControlMaster=auto',
+  '-o',
+  'ControlPersist=60',
+  '-o',
+  `ControlPath=${path.join(DEVELOPER_SSH_CONTROL_DIR, '%C')}`,
 ] as const;
+
+/** rsync ``-e`` remote shell string (same options as direct ssh). */
+function buildSshRemoteShellCommand(): string {
+  return ['ssh', ...SSH_PASSWORD_ARGS].join(' ');
+}
 
 /** Parse ``ls -1`` output of remote modules dir into sorted module names. */
 export function parseRemoteModulesListing(stdout: string): string[] {
@@ -285,10 +318,7 @@ export function buildRsyncCommand(
   for (const pattern of RSYNC_EXCLUDES) {
     rsyncArgs.push('--exclude', pattern);
   }
-  rsyncArgs.push(
-    '-e',
-    'ssh -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no',
-  );
+  rsyncArgs.push('-e', buildSshRemoteShellCommand());
   appendTransferArgs(rsyncArgs, local, remote, direction);
 
   return {
@@ -333,10 +363,7 @@ export function buildCoreRsyncCommand(
     rsyncArgs.push('--include', file);
   }
   rsyncArgs.push('--exclude', '*');
-  rsyncArgs.push(
-    '-e',
-    'ssh -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no',
-  );
+  rsyncArgs.push('-e', buildSshRemoteShellCommand());
   appendTransferArgs(rsyncArgs, local, remote, direction);
 
   return {
@@ -402,6 +429,7 @@ function runSshpassCommand(
   args: string[],
   env: NodeJS.ProcessEnv,
 ): Promise<{ stdout: string; stderr: string }> {
+  ensureDeveloperSshControlDir();
   return withDeveloperSshLock(() => runCommand(command, args, env));
 }
 

@@ -38,6 +38,14 @@ describe('developer-sync', () => {
     expect(cmd.args).toContain('--exclude');
     expect(cmd.env.SSHPASS).toBe('secret');
 
+    const eIdx = cmd.args.indexOf('-e', 2);
+    expect(eIdx).toBeGreaterThan(-1);
+    const remoteShell = cmd.args[eIdx + 1];
+    expect(remoteShell).toContain('ControlMaster=auto');
+    expect(remoteShell).toContain('ForwardAgent=no');
+    expect(remoteShell).toContain('ControlPersist=60');
+    expect(remoteShell).toContain('ConnectTimeout=10');
+
     const destination = `root@192.168.1.50:${DEVELOPER_SYNC_REMOTE_MODULES}/demo/`;
     expect(cmd.args[cmd.args.length - 1]).toBe(destination);
     expect(cmd.args[cmd.args.length - 2]).toBe(`${localPath}${path.sep}`);
