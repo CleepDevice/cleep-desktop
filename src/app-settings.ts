@@ -180,6 +180,10 @@ export class AppSettings {
     if (!settings.hasSync('cleep.developersynconload')) {
       settings.setSync('cleep.developersynconload', false);
     }
+    // Live SSH poll of device logs on the sync page. Off by default.
+    if (!settings.hasSync('cleep.developerdevicelogslive')) {
+      settings.setSync('cleep.developerdevicelogslive', false);
+    }
 
     // rpi-imager section
     if (!settings.hasSync('rpiimager.version')) {

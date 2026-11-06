@@ -25,10 +25,12 @@ import {
 } from './developer-ssh';
 import {
   computeDeveloperSyncDelay,
+  fetchDeveloperDeviceLogTail,
   getDeveloperSyncPlatformSupport,
   listRemoteDeveloperModules,
   rsyncDeveloperApps,
   rsyncDeveloperCore,
+  type DeveloperDeviceLogTail,
   type DeveloperSyncDelayState,
   type DeveloperSyncDirection,
   type DeveloperSyncPlatformSupport,
@@ -344,6 +346,15 @@ class AppDeveloper {
       }
     });
 
+    handleInvoke('developer-fetch-device-logs', async () => {
+      try {
+        const payload = await this.fetchDeviceLogs();
+        return ipcOk(payload);
+      } catch (error) {
+        return this.failFromError(error, 'Unable to fetch device logs');
+      }
+    });
+
     handleInvoke('developer-pull-now', async (_event, request) => {
       try {
         const moduleNames = this.parseStringList(request, 'moduleNames') || [];
@@ -385,6 +396,22 @@ class AppDeveloper {
       throw new Error('SSH credentials are not configured');
     }
     return listRemoteDeveloperModules({ host: device.ip, ssh });
+  }
+
+  private async fetchDeviceLogs(): Promise<DeveloperDeviceLogTail> {
+    const status = this.getStatus();
+    if (!status.enabled || !status.deviceOk || !status.sshConfigured || !status.syncSupported) {
+      throw new Error('Developer sync is not ready');
+    }
+    const device = appDevices.getDevice(status.deviceUuid);
+    if (!device?.online || !device.ip) {
+      throw new Error('Development device is offline');
+    }
+    const ssh = await getDeveloperSshSecret(status.deviceUuid);
+    if (!ssh) {
+      throw new Error('SSH credentials are not configured');
+    }
+    return fetchDeveloperDeviceLogTail({ host: device.ip, ssh });
   }
 
   /** Pull remote modules (and optionally core) into the local sources directory. */

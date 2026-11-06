@@ -604,6 +604,57 @@ device-webview {
   fill: #81c784;
 }
 
+/* Developer sync split pane chrome (height lock lives after .app-page-panel). */
+.developer-sync-pane-header {
+  gap: 8px;
+  margin-bottom: 6px;
+  flex: none;
+  min-height: 40px;
+}
+
+.developer-sync-pane-title {
+  flex: none;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #546e7a;
+  line-height: 40px;
+}
+
+.developer-sync-pane-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.developer-sync-pane-badge--error {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.developer-sync-pane-actions {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
+  gap: 0;
+}
+
+.developer-sync-pane-actions .md-icon-button {
+  margin: 0;
+}
+
 .monitoring-event-header {
   gap: 10px;
   min-width: 0;
@@ -872,6 +923,91 @@ device-webview {
     0 1px 2px rgb(0 0 0 / 5%),
     0 8px 24px rgb(55 71 79 / 8%);
   animation: app-page-panel-in 0.45s ease-out 0.05s both;
+}
+
+/*
+ * Developer sync: lock both panes to the content-shell height so the page itself
+ * does not scroll — only the sync feed and device log scroll internally.
+ * Selectors must beat .app-page-content / .app-page-panel (same file, later).
+ */
+.app-page.developer-sync-root,
+.app-page-content.developer-sync-page {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-page-content.developer-sync-page {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.developer-sync-split {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.app-page-panel.developer-sync-pane {
+  flex: 1 1 0;
+  /* height:0 + flex:1 forces equal panes inside the remaining viewport */
+  height: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.developer-sync-pane-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  height: 0;
+  overflow: auto;
+}
+
+.developer-sync-pane-empty {
+  min-height: 0;
+}
+
+.developer-device-log {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #263238;
+  color: #cfd8dc;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.developer-device-log-level {
+  font-weight: 700;
+}
+
+.developer-device-log-level--debug {
+  color: #90a4ae;
+}
+
+.developer-device-log-level--info {
+  color: #81d4fa;
+}
+
+.developer-device-log-level--warning {
+  color: #ffb74d;
+}
+
+.developer-device-log-level--error {
+  color: #ef9a9a;
+}
+
+.developer-device-log-level--critical {
+  color: #ff5252;
 }
 
 @keyframes app-page-lead-in {

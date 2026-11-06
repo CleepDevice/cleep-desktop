@@ -273,3 +273,57 @@ angular.module('Cleep').filter('prettyJsonHtml', ['$sce', function($sce) {
         }
     };
 }]);
+
+/**
+ * Colorize Cleep device log text (level tokens) for the developer sync pane.
+ */
+angular.module('Cleep').filter('deviceLogHtml', ['$sce', function($sce) {
+    var LEVELS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'];
+
+    function escapeHtml(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function detectLevel(line) {
+        for (var i = 0; i < LEVELS.length; i += 1) {
+            var level = LEVELS[i];
+            var token = ' ' + level + ' ';
+            if (line.indexOf(token) !== -1) {
+                return level;
+            }
+        }
+        return null;
+    }
+
+    function colorizeLine(rawLine) {
+        var escaped = escapeHtml(rawLine);
+        var level = detectLevel(rawLine);
+        if (!level) {
+            return escaped;
+        }
+        var cls = 'developer-device-log-level developer-device-log-level--' + level.toLowerCase();
+        var token = ' ' + level + ' ';
+        var idx = escaped.indexOf(token);
+        if (idx === -1) {
+            return escaped;
+        }
+        return (
+            escaped.slice(0, idx + 1) +
+            '<span class="' + cls + '">' + level + '</span>' +
+            escaped.slice(idx + 1 + level.length)
+        );
+    }
+
+    return function(value) {
+        var text = value == null ? '' : String(value);
+        if (!text) {
+            return $sce.trustAsHtml('');
+        }
+        var lines = text.split('\n');
+        var html = lines.map(colorizeLine).join('\n');
+        return $sce.trustAsHtml(html);
+    };
+}]);

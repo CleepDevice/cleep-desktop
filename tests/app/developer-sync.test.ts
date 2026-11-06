@@ -9,9 +9,11 @@ import {
   DEVELOPER_SYNC_BURST_QUIET_MS,
   DEVELOPER_SYNC_MAX_WAIT_MS,
   DEVELOPER_SYNC_QUIET_MS,
+  DEVELOPER_DEVICE_LOG_SPLIT,
   DEVELOPER_SYNC_REMOTE_MODULES,
   DEVELOPER_SYNC_REMOTE_ROOT,
   getDeveloperSyncPlatformSupport,
+  parseDeveloperDeviceLogPayload,
   parseRemoteModulesListing,
 } from '../../src/developer-sync';
 
@@ -113,6 +115,15 @@ describe('developer-sync', () => {
       'charts',
     ]);
     expect(parseRemoteModulesListing('')).toEqual([]);
+  });
+
+  it('parses device log SSH payload', () => {
+    const payload = `12345\n${DEVELOPER_DEVICE_LOG_SPLIT}\nline1\nline2\n`;
+    expect(parseDeveloperDeviceLogPayload(payload)).toEqual({
+      size: 12345,
+      content: 'line1\nline2\n',
+    });
+    expect(parseDeveloperDeviceLogPayload('orphan')).toEqual({ size: 0, content: 'orphan' });
   });
 
   it('uses a short quiet window for an isolated change', () => {

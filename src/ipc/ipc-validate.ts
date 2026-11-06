@@ -209,6 +209,7 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
     })
     .optional(),
   'developer-list-remote-apps': null,
+  'developer-fetch-device-logs': null,
   'developer-pull-now': z
     .object({
       moduleNames: z.array(z.string()).optional(),

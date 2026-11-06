@@ -77,6 +77,7 @@ export function createCleepApi(ipc: IpcPrimitives) {
       syncNow: (folderNames?: string[]) =>
         ipc.invoke('developer-sync-now', folderNames ? { folderNames } : {}),
       listRemoteApps: () => ipc.invoke('developer-list-remote-apps'),
+      fetchDeviceLogs: () => ipc.invoke('developer-fetch-device-logs'),
       pullNow: (request?: { moduleNames?: string[]; includeCore?: boolean }) =>
         ipc.invoke('developer-pull-now', request || {}),
       onStatusChanged: (listener: IpcListener<'developer-status-changed'>) =>

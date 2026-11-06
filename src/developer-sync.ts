@@ -10,6 +10,10 @@ const execFileAsync = promisify(execFile);
 export const DEVELOPER_SYNC_REMOTE_MODULES = '/root/cleep-dev/modules';
 /** Remote root for Cleep core (apps stay under modules/). */
 export const DEVELOPER_SYNC_REMOTE_ROOT = '/root/cleep-dev';
+/** Device Cleep log file tailed for the developer sync page. */
+export const DEVELOPER_DEVICE_LOG_PATH = '/var/log/cleep.log';
+/** Max lines returned by the device log tail. */
+export const DEVELOPER_DEVICE_LOG_LINES = 400;
 
 /** Directories synced from local cleep/ into DEVELOPER_SYNC_REMOTE_ROOT. */
 export const DEVELOPER_CORE_SYNC_DIRS = [
@@ -200,6 +204,58 @@ export async function listRemoteDeveloperModules(options: {
   return parseRemoteModulesListing(result.stdout);
 }
 
+export const DEVELOPER_DEVICE_LOG_SPLIT = '__CLEEP_DEVICE_LOG__';
+
+export type DeveloperDeviceLogTail = {
+  /** Remote log byte size (``stat``), used to skip unchanged UI updates. */
+  size: number;
+  /** Last N lines of the log (may be empty). */
+  content: string;
+};
+
+/** Parse combined ``stat`` + ``tail`` SSH payload. */
+export function parseDeveloperDeviceLogPayload(stdout: string): DeveloperDeviceLogTail {
+  const raw = String(stdout || '');
+  const marker = `\n${DEVELOPER_DEVICE_LOG_SPLIT}\n`;
+  const idx = raw.indexOf(marker);
+  if (idx < 0) {
+    // Fallback when the marker is missing (treat whole payload as content).
+    return { size: 0, content: raw };
+  }
+  const size = Number.parseInt(raw.slice(0, idx).trim(), 10) || 0;
+  const content = raw.slice(idx + marker.length);
+  return { size, content };
+}
+
+/**
+ * Fetch last lines of ``/var/log/cleep.log`` over SSH in one round-trip.
+ */
+export async function fetchDeveloperDeviceLogTail(options: {
+  host: string;
+  ssh: DeveloperSshSecret;
+  lines?: number;
+}): Promise<DeveloperDeviceLogTail> {
+  await assertSyncToolsAvailable();
+  const host = String(options.host || '').trim();
+  if (!host) {
+    throw new Error('Development device has no IP address');
+  }
+  const lines = Math.max(1, Math.min(2000, Number(options.lines) || DEVELOPER_DEVICE_LOG_LINES));
+  const remote = `${options.ssh.username}@${host}`;
+  const remoteCmd = [
+    `stat -c%s ${DEVELOPER_DEVICE_LOG_PATH} 2>/dev/null || echo 0`,
+    `echo ${DEVELOPER_DEVICE_LOG_SPLIT}`,
+    `tail -n ${lines} ${DEVELOPER_DEVICE_LOG_PATH} 2>/dev/null || true`,
+  ].join('; ');
+
+  const result = await runSshpassCommand(
+    'sshpass',
+    ['-e', 'ssh', ...SSH_PASSWORD_ARGS, remote, remoteCmd],
+    buildSshpassEnv(options.ssh),
+  );
+  return parseDeveloperDeviceLogPayload(result.stdout);
+}
+
 function appendTransferArgs(
   rsyncArgs: string[],
   local: string,
@@ -335,8 +391,8 @@ let developerSshLock: Promise<void> = Promise.resolve();
 function withDeveloperSshLock<T>(fn: () => Promise<T>): Promise<T> {
   const run = developerSshLock.then(fn, fn);
   developerSshLock = run.then(
-    () => undefined,
-    () => undefined,
+    (): void => undefined,
+    (): void => undefined,
   );
   return run;
 }

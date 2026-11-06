@@ -18,6 +18,7 @@ import type { KeyPath, KeyValue, SettingsObject, SettingsValue } from '../app-se
 import type { UpdateData, UpdateStatus } from '../app-updater';
 import type { DeveloperStatus, DeveloperSyncLogEntry } from '../app-developer';
 import type { DeveloperAppEntry } from '../developer-apps';
+import type { DeveloperDeviceLogTail } from '../developer-sync';
 import type { VaultEnableResult, VaultStatus } from '../app-vault.types';
 import type { WebsiteAuthSession, WebsiteLoginCredentials } from '../app-website-auth';
 import type { CleebusMessageResponse, CleepbusPeerInfos } from '../cleepbus/cleepbus.types';
@@ -179,6 +180,10 @@ export type InvokeContract = {
   'developer-list-remote-apps': {
     request: void;
     response: IpcResult<string[]>;
+  };
+  'developer-fetch-device-logs': {
+    request: void;
+    response: IpcResult<DeveloperDeviceLogTail>;
   };
   'developer-pull-now': {
     request: { moduleNames?: string[]; includeCore?: boolean } | void;
