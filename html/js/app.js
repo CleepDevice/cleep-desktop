@@ -250,6 +250,11 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         $mdMenu.open($event);
     };
 
+    /** Middle-click Developer → Sync logs, keep main device as a secondary tab. */
+    self.onDeveloperToolbarMouseDown = function($event) {
+        self.onToolbarPageMouseDown($event, 'developerSync');
+    };
+
     self.openDeveloperPreferences = function() {
         self.openModal('preferencesController', 'js/preferences/preferences-dialog.html', {
             tab: 'developer',
@@ -640,15 +645,33 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
     };
 
     // open page
-    self.openPage = function(page, params) {
+    self.openPage = function(page, params, options) {
+        options = options || {};
+        var result = contentTabs.showPage(page, null, options);
+        if (result === 'full') {
+            toast.info('Maximum number of tabs reached');
+            return;
+        }
         devicesService.selectDevice(null);
-        contentTabs.showPage(page);
         // Avoid reloading the page when it is already the active ui-router state
         // (e.g. returning from a device tab that never left this state).
         if ($state.current && $state.current.name === page) {
             return;
         }
         $state.go(page, params || {});
+    };
+
+    /**
+     * Middle-click a Desktop toolbar page: keep the main-tab device open as a
+     * secondary tab, then open the page on the main tab.
+     */
+    self.onToolbarPageMouseDown = function($event, page, params) {
+        if (!$event || $event.button !== 1) {
+            return;
+        }
+        $event.preventDefault();
+        $event.stopPropagation();
+        self.openPage(page, params || {}, { keepMainDevice: true });
     };
 
     $rootScope.$on('open-page', (_event, data) => {

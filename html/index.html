@@ -29,21 +29,33 @@
 
                 <md-divider></md-divider>
 
-                <md-list-item ng-click="cleep.openPage('default')" title="Homepage" title="Homepage">
+                <md-list-item
+                    ng-click="cleep.openPage('default')"
+                    ng-mousedown="cleep.onToolbarPageMouseDown($event, 'default')"
+                    title="Homepage"
+                >
                     <md-icon md-svg-icon="home" ng-class="cleep.isToolbarItemSelected('default') ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Homepage</p>
                 </md-list-item>
 
                 <md-divider></md-divider>
 
-                <md-list-item ng-click="cleep.openPage('installAuto')" title="Install">
+                <md-list-item
+                    ng-click="cleep.openPage('installAuto')"
+                    ng-mousedown="cleep.onToolbarPageMouseDown($event, 'installAuto')"
+                    title="Install"
+                >
                     <md-icon md-svg-icon="sd" ng-class="cleep.isToolbarItemSelected('installAuto') ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Cleep install</p>
                 </md-list-item>
 
                 <md-divider></md-divider>
                 
-                <md-list-item ng-click="cleep.openPage('monitoring')" title="Monitoring">
+                <md-list-item
+                    ng-click="cleep.openPage('monitoring')"
+                    ng-mousedown="cleep.onToolbarPageMouseDown($event, 'monitoring')"
+                    title="Monitoring"
+                >
                     <md-icon md-svg-icon="message-text" ng-class="cleep.isToolbarItemSelected('monitoring') ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Monitoring</p>
                 </md-list-item>
@@ -55,6 +67,7 @@
                 >
                     <md-list-item
                         ng-click="cleep.openDeveloperMenu($mdMenu, $event)"
+                        ng-mousedown="cleep.onDeveloperToolbarMouseDown($event)"
                         title="{{ cleep.developerStatusTitle() }}"
                     >
                         <md-icon

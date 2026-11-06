@@ -178,8 +178,42 @@ function($rootScope, $state, devicesService, logger) {
         $rootScope.$applyAsync();
     };
 
-    /** Desktop page navigation → focus main, drop main device session if unused. */
-    self.showPage = function(stateName, overrides) {
+    /**
+     * If the main tab is a device, pin it as a secondary tab so showPage keeps it.
+     * @returns {'ok'|'noop'|'full'} ok=pinned, noop=main was not a device, full=max tabs
+     */
+    self.pinMainDeviceAsSecondary = function() {
+        if (self._mainPage.kind !== 'device' || !self._mainPage.deviceUuid) {
+            return 'noop';
+        }
+        // After pin, tabs become [page main] + all sessions → need sessions.length < MAX_TABS.
+        if (self.sessions.length >= self.MAX_TABS) {
+            return 'full';
+        }
+        var session = self.getSession(self._mainPage.deviceUuid);
+        if (!session) {
+            return 'noop';
+        }
+        session.pinnedSecondary = true;
+        return 'ok';
+    };
+
+    /**
+     * Desktop page navigation → focus main, drop main device session if unused.
+     * @param {string} stateName
+     * @param {object} [overrides]
+     * @param {{ keepMainDevice?: boolean }} [options] when true, pin main device as secondary first
+     * @returns {'ok'|'full'} full only when keepMainDevice was requested and tabs are full
+     */
+    self.showPage = function(stateName, overrides, options) {
+        options = options || {};
+        if (options.keepMainDevice) {
+            var pin = self.pinMainDeviceAsSecondary();
+            if (pin === 'full') {
+                return 'full';
+            }
+        }
+
         var meta = PAGE_META[stateName] || { title: stateName, icon: 'file' };
         var prevMainUuid = self._mainPage.kind === 'device' ? self._mainPage.deviceUuid : null;
 
@@ -196,6 +230,7 @@ function($rootScope, $state, devicesService, logger) {
         self._rebuildTabs();
         self._refreshLoading();
         self._notify();
+        return 'ok';
     };
 
     self._pruneOrphanSessions = function(candidateUuid) {
