@@ -275,16 +275,40 @@ angular.module('Cleep').filter('prettyJsonHtml', ['$sce', function($sce) {
 }]);
 
 /**
- * Colorize Cleep device log text (level tokens) for the developer sync pane.
+ * Colorize Cleep device logs like cleepapp-system's CodeMirror cleeplog mode:
+ * level token colors + full-line highlight for WARNING/ERROR (sticky across
+ * traceback continuation lines until the next timestamped log header).
  */
 angular.module('Cleep').filter('deviceLogHtml', ['$sce', function($sce) {
-    var LEVELS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'];
+    // Longest-first so WARNING wins over WARN if both somehow appear.
+    var LEVELS = ['CRITICAL', 'FATAL', 'ERROR', 'WARNING', 'WARN', 'INFO', 'DEBUG', 'TRACE'];
 
     function escapeHtml(text) {
         return String(text)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
+    }
+
+    function levelClass(level) {
+        if (level === 'WARN') {
+            return 'warning';
+        }
+        if (level === 'FATAL' || level === 'CRITICAL') {
+            return 'critical';
+        }
+        if (level === 'TRACE') {
+            return 'debug';
+        }
+        return String(level || '').toLowerCase();
+    }
+
+    function isHighlightedLevel(cls) {
+        return cls === 'warning' || cls === 'error' || cls === 'critical';
+    }
+
+    function isLogHeader(line) {
+        return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(line);
     }
 
     function detectLevel(line) {
@@ -298,13 +322,11 @@ angular.module('Cleep').filter('deviceLogHtml', ['$sce', function($sce) {
         return null;
     }
 
-    function colorizeLine(rawLine) {
-        var escaped = escapeHtml(rawLine);
-        var level = detectLevel(rawLine);
+    function colorizeLevelToken(escaped, level) {
         if (!level) {
             return escaped;
         }
-        var cls = 'developer-device-log-level developer-device-log-level--' + level.toLowerCase();
+        var cls = 'developer-device-log-level developer-device-log-level--' + levelClass(level);
         var token = ' ' + level + ' ';
         var idx = escaped.indexOf(token);
         if (idx === -1) {
@@ -317,13 +339,45 @@ angular.module('Cleep').filter('deviceLogHtml', ['$sce', function($sce) {
         );
     }
 
+    function colorizeLine(rawLine, stickyLevel) {
+        var level = detectLevel(rawLine);
+        var header = isLogHeader(rawLine);
+        var nextSticky = stickyLevel;
+
+        if (level) {
+            nextSticky = level;
+        } else if (header) {
+            // New log entry without a recognized level token.
+            nextSticky = null;
+        }
+
+        var lineLevel = level || (!header ? stickyLevel : null);
+        var lineCls = lineLevel ? levelClass(lineLevel) : null;
+        var inner = colorizeLevelToken(escapeHtml(rawLine), level) || '&nbsp;';
+        var classes = 'developer-device-log-line';
+        if (lineCls && isHighlightedLevel(lineCls)) {
+            classes += ' developer-device-log-line--' + lineCls;
+        }
+        return {
+            html: '<span class="' + classes + '">' + inner + '</span>',
+            sticky: nextSticky,
+        };
+    }
+
     return function(value) {
         var text = value == null ? '' : String(value);
         if (!text) {
             return $sce.trustAsHtml('');
         }
         var lines = text.split('\n');
-        var html = lines.map(colorizeLine).join('\n');
-        return $sce.trustAsHtml(html);
+        var sticky = null;
+        var out = [];
+        for (var i = 0; i < lines.length; i += 1) {
+            var result = colorizeLine(lines[i], sticky);
+            sticky = result.sticky;
+            out.push(result.html);
+        }
+        // Block lines — no joining newlines (avoids double spacing in <pre>).
+        return $sce.trustAsHtml(out.join(''));
     };
 }]);

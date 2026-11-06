@@ -986,16 +986,36 @@ device-webview {
   word-break: break-word;
 }
 
+/* Full-line highlight (WARNING/ERROR/CRITICAL + sticky traceback lines). */
+.developer-device-log-line {
+  display: block;
+  margin: 0 -12px;
+  padding: 0 12px;
+  min-height: 1.45em;
+}
+
+.developer-device-log-line--warning {
+  background: rgb(255 167 38 / 22%);
+}
+
+.developer-device-log-line--error {
+  background: rgb(239 83 80 / 24%);
+}
+
+.developer-device-log-line--critical {
+  background: rgb(255 82 82 / 28%);
+}
+
 .developer-device-log-level {
   font-weight: 700;
 }
 
 .developer-device-log-level--debug {
-  color: #90a4ae;
+  color: #81c784;
 }
 
 .developer-device-log-level--info {
-  color: #81d4fa;
+  color: #64b5f6;
 }
 
 .developer-device-log-level--warning {
@@ -1007,7 +1027,7 @@ device-webview {
 }
 
 .developer-device-log-level--critical {
-  color: #ff5252;
+  color: #ff8a80;
 }
 
 @keyframes app-page-lead-in {
