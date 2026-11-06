@@ -23,7 +23,16 @@
         <div class="developer-sync-split" flex layout="column">
             <div class="app-page-panel developer-sync-pane" layout="column">
                 <div class="developer-sync-pane-header" layout="row" layout-align="start center">
-                    <div class="developer-sync-pane-title">Sync activity</div>
+                    <div class="developer-sync-pane-heading" layout="column" flex>
+                        <div class="developer-sync-pane-title">Sync activity</div>
+                        <div
+                            class="developer-sync-pane-device"
+                            ng-if="ctl.deviceHostname || ctl.deviceIp"
+                        >
+                            {{ ctl.deviceHostname || ctl.deviceIp }}
+                            <span ng-if="ctl.deviceHostname && ctl.deviceIp">({{ ctl.deviceIp }})</span>
+                        </div>
+                    </div>
                     <div class="developer-sync-pane-actions" layout="row" layout-align="end center">
                         <md-menu md-position-mode="target-right target">
                             <md-button
@@ -159,12 +168,10 @@
                             ></md-icon>
                             <div class="monitoring-event-title" flex>
                                 <span class="monitoring-event-name">{{ message.title }}</span>
-                                <span class="monitoring-event-device" ng-if="message.deviceHostname || message.deviceIp">
-                                    {{ message.deviceHostname || message.deviceIp }}
-                                    <span class="monitoring-event-ip" ng-if="message.deviceHostname && message.deviceIp">
-                                        ({{ message.deviceIp }})
-                                    </span>
-                                </span>
+                                <span
+                                    class="monitoring-event-subtitle"
+                                    ng-if="ctl.syncLog.reasonLabel(message.reason)"
+                                >{{ ctl.syncLog.reasonLabel(message.reason) }}</span>
                             </div>
                             <time
                                 class="monitoring-event-time"
@@ -173,15 +180,8 @@
                         </div>
                         <div
                             class="monitoring-event-summary"
-                            ng-if="message.detail || message.apps.length || message.reason"
+                            ng-if="message.apps.length"
                         >
-                            <span
-                                class="monitoring-event-chip"
-                                ng-if="ctl.syncLog.reasonLabel(message.reason)"
-                            >
-                                <span class="monitoring-event-chip-key">trigger</span>
-                                <span class="monitoring-event-chip-value">{{ ctl.syncLog.reasonLabel(message.reason) }}</span>
-                            </span>
                             <span
                                 class="monitoring-event-chip"
                                 ng-repeat="app in message.apps track by app"
@@ -192,7 +192,7 @@
                         </div>
                         <div
                             class="developer-sync-event-detail"
-                            ng-if="message.detail"
+                            ng-if="ctl.syncLog.shouldShowDetail(message)"
                         >{{ message.detail }}</div>
                     </div>
                 </div>

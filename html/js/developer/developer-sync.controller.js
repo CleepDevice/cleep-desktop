@@ -17,6 +17,8 @@ angular
     self.syncLog = developerSyncLogService;
     self.syncTargets = [];
     self.coreSyncAvailable = false;
+    self.deviceHostname = '';
+    self.deviceIp = '';
     self.remoteApps = [];
     self.remoteAppsLoaded = false;
     self.remoteAppsBusy = false;
@@ -32,6 +34,8 @@ angular
         if (!electron.developer || !electron.developer.getStatus || !electron.developer.listApps) {
             self.syncTargets = [];
             self.coreSyncAvailable = false;
+            self.deviceHostname = '';
+            self.deviceIp = '';
             return Promise.resolve();
         }
         return Promise.all([electron.developer.getStatus(), electron.developer.listApps()])
@@ -46,10 +50,14 @@ angular
                     return entry.valid && selected[entry.folderName];
                 });
                 self.coreSyncAvailable = Boolean(status.coreOk);
+                self.deviceHostname = status.deviceHostname || '';
+                self.deviceIp = status.deviceIp || '';
             })
             .catch(function() {
                 self.syncTargets = [];
                 self.coreSyncAvailable = false;
+                self.deviceHostname = '';
+                self.deviceIp = '';
             });
     };
 
@@ -247,6 +255,13 @@ angular
 
     self.$onInit = function() {
         self.refreshSyncTargets();
+        if (electron.developer && electron.developer.onStatusChanged) {
+            $scope.$on('$destroy', electron.developer.onStatusChanged(function(_event, status) {
+                self.deviceHostname = (status && status.deviceHostname) || '';
+                self.deviceIp = (status && status.deviceIp) || '';
+                self.coreSyncAvailable = Boolean(status && status.coreOk);
+            }));
+        }
         var livePref = Promise.resolve(false);
         if (electron.settings && electron.settings.get) {
             livePref = electron.settings.get('cleep.developerdevicelogslive')

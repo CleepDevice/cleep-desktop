@@ -54,6 +54,24 @@ function(logger, electron, ipcLifecycle) {
         if (reason === 'watch') {
             return 'file change';
         }
+        if (reason === 'queued') {
+            return 'queued';
+        }
         return '';
+    };
+
+    /** Detail is mostly redundant with title + app chips; keep errors and unusual notes. */
+    self.shouldShowDetail = function(message) {
+        if (!message || !message.detail) {
+            return false;
+        }
+        if (message.level === 'error') {
+            return true;
+        }
+        // No target chips → detail carries the meaning (e.g. empty selection).
+        if (!message.apps || !message.apps.length) {
+            return true;
+        }
+        return false;
     };
 }]);

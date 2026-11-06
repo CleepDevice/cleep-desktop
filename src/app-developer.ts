@@ -1,5 +1,6 @@
 import { BrowserWindow } from 'electron';
 import fs from 'fs';
+import path from 'path';
 import chokidar, { type FSWatcher } from 'chokidar';
 import { appDevices } from './app-devices';
 import { appLogger } from './app-logger';
@@ -72,6 +73,10 @@ export type DeveloperStatus = {
   deviceUuid: string;
   /** True when the selected device exists and has cleepapp-developer installed. */
   deviceOk: boolean;
+  /** Hostname of the selected development device (empty when none). */
+  deviceHostname: string;
+  /** IP of the selected development device (empty when none). */
+  deviceIp: string;
   /** True when at least one known device has cleepapp-developer installed. */
   hasDeveloperDevice: boolean;
   /** Folder names selected for sync (empty by default). */
@@ -125,6 +130,8 @@ class AppDeveloper {
   private lastSyncAt: number | null = null;
   private watchedPathsKey = '';
   private syncLogSeq = 0;
+  /** Folder names / core token accumulated during a watch debounce window. */
+  private pendingWatchTargets = new Set<string>();
   private syncDelayState: DeveloperSyncDelayState = {
     batchStartedAt: null,
     lastChangeAt: null,
@@ -177,6 +184,8 @@ class AppDeveloper {
       sourcesOk,
       deviceUuid,
       deviceOk: enabled ? deviceOk : false,
+      deviceHostname: selected?.hostname || '',
+      deviceIp: selected?.ip || '',
       hasDeveloperDevice,
       selectedApps,
       appsOk: resolvedApps.length > 0,
@@ -235,7 +244,11 @@ class AppDeveloper {
       ],
     });
 
-    const onChange = () => {
+    const onChange = (changedPath: string) => {
+      const target = this.resolveWatchTarget(changedPath);
+      if (target) {
+        this.pendingWatchTargets.add(target);
+      }
       this.scheduleSync('watch');
     };
     this.watcher.on('add', onChange);
@@ -534,6 +547,38 @@ class AppDeveloper {
     return ipcErr('DEVELOPER_SYNC_FAILED', message);
   }
 
+  /**
+   * Map a changed filesystem path to a sync target (app folderName or core token).
+   */
+  private resolveWatchTarget(changedPath: string): string | null {
+    const status = this.getStatus();
+    const normalized = path.resolve(changedPath);
+
+    if (status.coreOk && status.corePath) {
+      const coreRoot = path.resolve(status.corePath);
+      if (normalized === coreRoot || normalized.startsWith(coreRoot + path.sep)) {
+        const rel = normalized.slice(coreRoot.length);
+        // modules/ under core is excluded from rsync; ignore those events.
+        if (rel === `${path.sep}modules` || rel.startsWith(`${path.sep}modules${path.sep}`)) {
+          return null;
+        }
+        return DEVELOPER_CORE_SYNC_TOKEN;
+      }
+    }
+
+    if (!status.sourcesOk || !status.selectedApps.length) {
+      return null;
+    }
+    const apps = resolveSelectedDeveloperApps(status.sourcesDir, status.selectedApps);
+    for (const app of apps) {
+      const root = path.resolve(app.absolutePath);
+      if (normalized === root || normalized.startsWith(root + path.sep)) {
+        return app.folderName;
+      }
+    }
+    return null;
+  }
+
   private scheduleSync(reason: 'start' | 'watch' | 'queued'): void {
     if (this.quietTimer) {
       clearTimeout(this.quietTimer);
@@ -562,8 +607,19 @@ class AppDeveloper {
     this.quietTimer = setTimeout(() => {
       this.quietTimer = null;
       this.resetSyncDelayState();
-      const syncReason: DeveloperSyncReason = reason === 'start' ? 'start' : 'watch';
-      void this.syncNow(syncReason).catch(() => {
+      if (reason === 'start') {
+        void this.syncNow('start').catch(() => {
+          /* status already updated */
+        });
+        return;
+      }
+      // watch + queued: only sync paths that actually changed.
+      const folderNames = Array.from(this.pendingWatchTargets);
+      this.pendingWatchTargets.clear();
+      if (!folderNames.length) {
+        return;
+      }
+      void this.syncNow('watch', folderNames).catch(() => {
         /* status already updated */
       });
     }, delayMs);
@@ -805,6 +861,7 @@ class AppDeveloper {
       this.quietTimer = null;
     }
     this.resetSyncDelayState();
+    this.pendingWatchTargets.clear();
     this.watchedPathsKey = '';
     if (!this.watcher) {
       return;
