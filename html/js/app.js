@@ -627,6 +627,18 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         contentTabs.closeTab(tabId);
     };
 
+    /**
+     * Toolbar accent for desktop pages.
+     * Device tabs keep the previous ui-router state underneath, so we must not
+     * leave the last page icon highlighted while a device webview is active.
+     */
+    self.isToolbarItemSelected = function(page) {
+        if (contentTabs.isShowingDevice()) {
+            return false;
+        }
+        return self.selectedToolbarItem === page;
+    };
+
     // open page
     self.openPage = function(page, params) {
         devicesService.selectDevice(null);

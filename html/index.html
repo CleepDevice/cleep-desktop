@@ -30,21 +30,21 @@
                 <md-divider></md-divider>
 
                 <md-list-item ng-click="cleep.openPage('default')" title="Homepage" title="Homepage">
-                    <md-icon md-svg-icon="home" ng-class="cleep.selectedToolbarItem=='default' ? 'md-accent' : 'white-icon'"></md-icon>
+                    <md-icon md-svg-icon="home" ng-class="cleep.isToolbarItemSelected('default') ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Homepage</p>
                 </md-list-item>
 
                 <md-divider></md-divider>
 
                 <md-list-item ng-click="cleep.openPage('installAuto')" title="Install">
-                    <md-icon md-svg-icon="sd" ng-class="cleep.selectedToolbarItem=='installAuto' ? 'md-accent' : 'white-icon'"></md-icon>
+                    <md-icon md-svg-icon="sd" ng-class="cleep.isToolbarItemSelected('installAuto') ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Cleep install</p>
                 </md-list-item>
 
                 <md-divider></md-divider>
                 
                 <md-list-item ng-click="cleep.openPage('monitoring')" title="Monitoring">
-                    <md-icon md-svg-icon="message-text" ng-class="cleep.selectedToolbarItem=='monitoring' ? 'md-accent' : 'white-icon'"></md-icon>
+                    <md-icon md-svg-icon="message-text" ng-class="cleep.isToolbarItemSelected('monitoring') ? 'md-accent' : 'white-icon'"></md-icon>
                     <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Monitoring</p>
                 </md-list-item>
 
@@ -59,7 +59,7 @@
                     >
                         <md-icon
                             md-svg-icon="code-braces"
-                            ng-class="cleep.selectedToolbarItem=='developerSync' ? 'md-accent' : cleep.developerStatusIconClass()"
+                            ng-class="cleep.isToolbarItemSelected('developerSync') ? 'md-accent' : cleep.developerStatusIconClass()"
                         ></md-icon>
                         <p style="color:white;" ng-if="!cleep.toolbarCollapsed">
                             {{ cleep.developerStatusLabel() }}
