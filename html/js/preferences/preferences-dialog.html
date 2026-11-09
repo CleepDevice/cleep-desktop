@@ -237,9 +237,16 @@
                     cl-type="note"
                     cl-note="Developer mode lets you develop Cleep applications on a Raspberry Pi from this computer."
                 ></config-note>
+                <config-note
+                    ng-if="ctl.developerToolsMissing"
+                    cl-type="warning"
+                    cl-icon="alert"
+                    cl-note="{{ ctl.developerToolsMessage }}"
+                ></config-note>
                 <config-switch
                     cl-title="Enable developer mode"
                     cl-model="ctl.settings.cleep.developer"
+                    cl-disabled="ctl.developerToolsMissing"
                 ></config-switch>
 
                 <div ng-if="ctl.settings.cleep.developer" layout="column">
@@ -273,11 +280,6 @@
                         cl-empty="Select a device"
                         cl-disabled="!ctl.hasDeveloperDevice"
                     ></config-select>
-                    <config-note
-                        ng-if="ctl.settings.cleep.developerdevice && ctl.developerSyncUnsupported"
-                        cl-type="warning"
-                        cl-note="Source sync over rsync is not supported on Windows yet."
-                    ></config-note>
                     <config-text
                         ng-if="ctl.settings.cleep.developerdevice"
                         cl-title="Root SSH password"

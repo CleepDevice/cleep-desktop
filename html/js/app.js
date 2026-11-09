@@ -32,6 +32,16 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         sshConfigured: false,
         syncSupported: true,
         syncSupport: 'supported',
+        syncTools: {
+            probed: false,
+            supported: false,
+            viaWsl: false,
+            hasWsl: false,
+            hasRsync: false,
+            hasSshpass: false,
+            missing: [],
+            message: '',
+        },
         syncStatus: 'idle',
         syncError: '',
         lastSyncAt: null,
@@ -138,6 +148,16 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
             sshConfigured: false,
             syncSupported: true,
             syncSupport: 'supported',
+            syncTools: {
+                probed: false,
+                supported: false,
+                viaWsl: false,
+                hasWsl: false,
+                hasRsync: false,
+                hasSshpass: false,
+                missing: [],
+                message: '',
+            },
             syncStatus: 'idle',
             syncError: '',
             lastSyncAt: null,
@@ -181,7 +201,7 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
             return 'Developer';
         }
         if (!self.developerStatus.syncSupported) {
-            return 'Sync unsupported';
+            return 'Sync tools missing';
         }
         if (!self.developerStatus.hasDeveloperDevice) {
             return 'No developer device';
@@ -215,7 +235,8 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
             return 'Developer mode';
         }
         if (!self.developerStatus.syncSupported) {
-            return 'Developer mode: source sync is not supported on this platform';
+            var toolsMessage = self.developerStatus.syncTools && self.developerStatus.syncTools.message;
+            return toolsMessage || 'Developer mode: rsync and sshpass are required (WSL on Windows)';
         }
         if (!self.developerStatus.hasDeveloperDevice) {
             return 'Developer mode: install cleepapp-developer on a device';

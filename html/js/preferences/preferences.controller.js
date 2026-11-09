@@ -26,7 +26,9 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
     self.DEVELOPER_SSH_MASK = '********';
     self.developerSshPassword = '';
     self.developerSshConfigured = false;
-    self.developerSyncUnsupported = false;
+    /** True when rsync/sshpass (or WSL on Windows) are missing — blocks developer mode. */
+    self.developerToolsMissing = false;
+    self.developerToolsMessage = '';
     self.vaultStatus = {
         enabled: false,
         unlocked: false,
@@ -69,6 +71,7 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
     };
 
     self.refreshDeveloperPanel = function() {
+        // Always probe sync tools (banner + switch), even when developer mode is off.
         self.refreshDeveloperDeviceOptions();
         self.refreshDeveloperApps();
         self.refreshDeveloperSshStatus();
@@ -209,20 +212,35 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
         self.developerSshPassword = self.developerSshConfigured ? self.DEVELOPER_SSH_MASK : '';
     };
 
+    self.applyDeveloperToolsStatus = function(status) {
+        var tools = status && status.syncTools;
+        var missing = Boolean(tools && tools.probed && !tools.supported);
+        self.developerToolsMissing = missing;
+        self.developerToolsMessage = missing
+            ? (tools.message || 'Developer sync tools are missing (rsync / sshpass).')
+            : '';
+        if (missing && self.settings.cleep && self.settings.cleep.developer) {
+            // Force off — saved via the settings deep watch.
+            self.settings.cleep.developer = false;
+        }
+    };
+
     self.refreshDeveloperSshStatus = function() {
         if (!electron.developer || !electron.developer.getStatus) {
             self.applyDeveloperSshField(false);
-            self.developerSyncUnsupported = false;
+            self.developerToolsMissing = false;
+            self.developerToolsMessage = '';
             return Promise.resolve();
         }
         return electron.developer.getStatus()
             .then(function(status) {
                 self.applyDeveloperSshField(status && status.sshConfigured);
-                self.developerSyncUnsupported = Boolean(status && !status.syncSupported);
+                self.applyDeveloperToolsStatus(status);
             })
             .catch(function() {
                 self.applyDeveloperSshField(false);
-                self.developerSyncUnsupported = false;
+                self.developerToolsMissing = false;
+                self.developerToolsMessage = '';
             });
     };
 

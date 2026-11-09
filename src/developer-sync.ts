@@ -57,6 +57,23 @@ export const DEVELOPER_SYNC_MAX_WAIT_MS = 12000;
 
 export type DeveloperSyncPlatformSupport = 'supported' | 'unsupported';
 
+/** Result of probing rsync/sshpass (and WSL on Windows). */
+export type DeveloperSyncToolsStatus = {
+  /** Probe finished at least once. */
+  probed: boolean;
+  /** Tools required for sync are available. */
+  supported: boolean;
+  /** Commands run through ``wsl.exe`` (Windows only). */
+  viaWsl: boolean;
+  hasWsl: boolean;
+  hasRsync: boolean;
+  hasSshpass: boolean;
+  /** Human-readable missing tool names (``wsl``, ``rsync``, ``sshpass``). */
+  missing: string[];
+  /** Orange banner / toast copy when unsupported. */
+  message: string;
+};
+
 export type DeveloperSyncDelayState = {
   batchStartedAt: number | null;
   lastChangeAt: number | null;
@@ -121,11 +138,89 @@ const RSYNC_EXCLUDES = [
   'build',
 ];
 
-export function getDeveloperSyncPlatformSupport(): DeveloperSyncPlatformSupport {
-  return process.platform === 'win32' ? 'unsupported' : 'supported';
+/** Shared ControlMaster sockets (native). WSL uses ``WSL_SSH_CONTROL_DIR`` instead. */
+const DEVELOPER_SSH_CONTROL_DIR = path.join(os.tmpdir(), 'cleep-desktop-ssh');
+const WSL_SSH_CONTROL_DIR = '/tmp/cleep-desktop-ssh';
+
+const DEFAULT_SYNC_TOOLS: DeveloperSyncToolsStatus = {
+  probed: false,
+  supported: false,
+  viaWsl: false,
+  hasWsl: false,
+  hasRsync: false,
+  hasSshpass: false,
+  missing: [],
+  message: '',
+};
+
+let cachedSyncTools: DeveloperSyncToolsStatus = { ...DEFAULT_SYNC_TOOLS };
+let syncToolsProbe: Promise<DeveloperSyncToolsStatus> | null = null;
+
+export function getDeveloperSyncToolsStatus(): DeveloperSyncToolsStatus {
+  return { ...cachedSyncTools };
 }
 
-export async function commandExists(command: string): Promise<boolean> {
+/**
+ * Until the first probe completes: Linux/macOS assumed usable, Windows not
+ * (WSL required). After probe, mirrors ``cachedSyncTools.supported``.
+ */
+export function getDeveloperSyncPlatformSupport(): DeveloperSyncPlatformSupport {
+  if (!cachedSyncTools.probed) {
+    return process.platform === 'win32' ? 'unsupported' : 'supported';
+  }
+  return cachedSyncTools.supported ? 'supported' : 'unsupported';
+}
+
+/** Map ``C:\\Users\\…`` → ``/mnt/c/Users/…`` for rsync inside WSL. */
+export function windowsPathToWslPath(windowsPath: string): string {
+  const normalized = String(windowsPath || '').replace(/\\/g, '/');
+  const match = /^([A-Za-z]):\/(.*)$/.exec(normalized);
+  if (!match) {
+    return normalized;
+  }
+  return `/mnt/${match[1].toLowerCase()}/${match[2]}`;
+}
+
+function buildSyncToolsMessage( partial: {
+  viaWsl: boolean;
+  hasWsl: boolean;
+  hasRsync: boolean;
+  hasSshpass: boolean;
+  missing: string[];
+}): string {
+  if (partial.missing.length === 0) {
+    return '';
+  }
+  if (process.platform === 'win32') {
+    if (!partial.hasWsl) {
+      return (
+        'Developer mode on Windows requires WSL with rsync and sshpass. ' +
+        'Install WSL (wsl --install), open a WSL terminal, then run: sudo apt install rsync sshpass'
+      );
+    }
+    const pkgs = partial.missing.filter((name) => name !== 'wsl').join(' ');
+    return (
+      'WSL is available but developer sync tools are missing (' +
+      partial.missing.join(', ') +
+      '). In WSL run: sudo apt install ' +
+      (pkgs || 'rsync sshpass')
+    );
+  }
+  if (process.platform === 'darwin') {
+    return (
+      'Developer mode requires rsync and sshpass (' +
+      partial.missing.join(', ') +
+      ' missing). Install with Homebrew: brew install rsync sshpass'
+    );
+  }
+  return (
+    'Developer mode requires rsync and sshpass (' +
+    partial.missing.join(', ') +
+    ' missing). Install them with your package manager, e.g. sudo apt install rsync sshpass'
+  );
+}
+
+async function hostCommandExists(command: string): Promise<boolean> {
   try {
     await execFileAsync('which', [command]);
     return true;
@@ -134,71 +229,217 @@ export async function commandExists(command: string): Promise<boolean> {
   }
 }
 
+async function wslAvailable(): Promise<boolean> {
+  try {
+    await execFileAsync('wsl.exe', ['-e', 'true'], { windowsHide: true, timeout: 20000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function wslCommandExists(command: string): Promise<boolean> {
+  try {
+    await execFileAsync('wsl.exe', ['-e', 'which', command], {
+      windowsHide: true,
+      timeout: 20000,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function commandExists(command: string): Promise<boolean> {
+  if (process.platform === 'win32') {
+    if (!(await wslAvailable())) {
+      return false;
+    }
+    return wslCommandExists(command);
+  }
+  return hostCommandExists(command);
+}
+
+export async function probeDeveloperSyncTools(
+  options: { force?: boolean } = {},
+): Promise<DeveloperSyncToolsStatus> {
+  if (!options.force && cachedSyncTools.probed) {
+    return getDeveloperSyncToolsStatus();
+  }
+  if (syncToolsProbe && !options.force) {
+    return syncToolsProbe;
+  }
+
+  syncToolsProbe = (async () => {
+    let hasWsl = false;
+    let viaWsl = false;
+    let hasRsync = false;
+    let hasSshpass = false;
+    const missing: string[] = [];
+
+    if (process.platform === 'win32') {
+      viaWsl = true;
+      hasWsl = await wslAvailable();
+      if (!hasWsl) {
+        missing.push('wsl');
+      } else {
+        hasRsync = await wslCommandExists('rsync');
+        hasSshpass = await wslCommandExists('sshpass');
+        if (!hasRsync) {
+          missing.push('rsync');
+        }
+        if (!hasSshpass) {
+          missing.push('sshpass');
+        }
+      }
+    } else {
+      hasRsync = await hostCommandExists('rsync');
+      hasSshpass = await hostCommandExists('sshpass');
+      if (!hasRsync) {
+        missing.push('rsync');
+      }
+      if (!hasSshpass) {
+        missing.push('sshpass');
+      }
+    }
+
+    const supported = missing.length === 0;
+    cachedSyncTools = {
+      probed: true,
+      supported,
+      viaWsl,
+      hasWsl,
+      hasRsync,
+      hasSshpass,
+      missing,
+      message: buildSyncToolsMessage({ viaWsl, hasWsl, hasRsync, hasSshpass, missing }),
+    };
+    return getDeveloperSyncToolsStatus();
+  })();
+
+  try {
+    return await syncToolsProbe;
+  } finally {
+    syncToolsProbe = null;
+  }
+}
+
 export async function assertSyncToolsAvailable(): Promise<void> {
-  if (getDeveloperSyncPlatformSupport() === 'unsupported') {
-    throw new Error('Source sync is not supported on Windows yet');
+  const tools = await probeDeveloperSyncTools();
+  if (!tools.supported) {
+    throw new Error(tools.message || 'Developer sync tools are not available');
   }
-  const [hasRsync, hasSshpass] = await Promise.all([
-    commandExists('rsync'),
-    commandExists('sshpass'),
-  ]);
-  if (!hasRsync) {
-    throw new Error('rsync is required for developer sync (install rsync)');
-  }
-  if (!hasSshpass) {
-    throw new Error('sshpass is required for developer sync (install sshpass)');
-  }
-  ensureDeveloperSshControlDir();
+  await ensureDeveloperSshControlDir();
 }
 
 function buildSshDestination(host: string, username: string, remotePath: string): string {
   return `${username}@${host}:${remotePath}`;
 }
 
+function usesWslSync(): boolean {
+  return process.platform === 'win32' && cachedSyncTools.viaWsl && cachedSyncTools.supported;
+}
+
+function toSyncLocalPath(localPath: string): string {
+  if (!usesWslSync()) {
+    return localPath;
+  }
+  return windowsPathToWslPath(localPath);
+}
+
 function buildSshpassEnv(ssh: DeveloperSshSecret): NodeJS.ProcessEnv {
-  return {
+  const env: NodeJS.ProcessEnv = {
     ...process.env,
     SSHPASS: ssh.password,
   };
+  if (usesWslSync()) {
+    // Forward SSHPASS into the WSL environment without putting it on argv.
+    const existing = String(env.WSLENV || '')
+      .split(':')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .filter((part) => !/^SSHPASS(\/.*)?$/i.test(part));
+    existing.push('SSHPASS/u');
+    env.WSLENV = existing.join(':');
+  }
+  return env;
 }
 
-/** Shared ControlMaster sockets for developer sync (one multiplexed SSH per host). */
-const DEVELOPER_SSH_CONTROL_DIR = path.join(os.tmpdir(), 'cleep-desktop-ssh');
-
-function ensureDeveloperSshControlDir(): void {
+function ensureDeveloperSshControlDirNative(): void {
   fs.mkdirSync(DEVELOPER_SSH_CONTROL_DIR, { recursive: true, mode: 0o700 });
+}
+
+async function ensureDeveloperSshControlDir(): Promise<void> {
+  if (usesWslSync()) {
+    await execFileAsync('wsl.exe', ['-e', 'mkdir', '-p', '-m', '700', WSL_SSH_CONTROL_DIR], {
+      windowsHide: true,
+      timeout: 20000,
+    });
+    return;
+  }
+  ensureDeveloperSshControlDirNative();
+}
+
+function sshControlPath(): string {
+  if (usesWslSync()) {
+    return `${WSL_SSH_CONTROL_DIR}/%C`;
+  }
+  return path.join(DEVELOPER_SSH_CONTROL_DIR, '%C');
 }
 
 /**
  * Common ssh options for password auth via sshpass.
  * ControlMaster reuses one TCP session across rsync/ls/log calls (lock still serializes).
  */
-const SSH_PASSWORD_ARGS = [
-  '-o',
-  'StrictHostKeyChecking=accept-new',
-  '-o',
-  'PreferredAuthentications=password',
-  '-o',
-  'PubkeyAuthentication=no',
-  '-o',
-  'ForwardAgent=no',
-  '-o',
-  'ConnectTimeout=10',
-  '-o',
-  'ServerAliveInterval=15',
-  '-o',
-  'ServerAliveCountMax=3',
-  '-o',
-  'ControlMaster=auto',
-  '-o',
-  'ControlPersist=60',
-  '-o',
-  `ControlPath=${path.join(DEVELOPER_SSH_CONTROL_DIR, '%C')}`,
-] as const;
+function buildSshPasswordArgs(): string[] {
+  return [
+    '-o',
+    'StrictHostKeyChecking=accept-new',
+    '-o',
+    'PreferredAuthentications=password',
+    '-o',
+    'PubkeyAuthentication=no',
+    '-o',
+    'ForwardAgent=no',
+    '-o',
+    'ConnectTimeout=10',
+    '-o',
+    'ServerAliveInterval=15',
+    '-o',
+    'ServerAliveCountMax=3',
+    '-o',
+    'ControlMaster=auto',
+    '-o',
+    'ControlPersist=60',
+    '-o',
+    `ControlPath=${sshControlPath()}`,
+  ];
+}
 
 /** rsync ``-e`` remote shell string (same options as direct ssh). */
 function buildSshRemoteShellCommand(): string {
-  return ['ssh', ...SSH_PASSWORD_ARGS].join(' ');
+  return ['ssh', ...buildSshPasswordArgs()].join(' ');
+}
+
+/**
+ * Build ``sshpass …`` or ``wsl.exe -e sshpass …`` for the current platform.
+ */
+function wrapSshpassInvocation(
+  sshpassArgs: string[],
+  env: NodeJS.ProcessEnv,
+): { command: string; args: string[]; env: NodeJS.ProcessEnv } {
+  if (usesWslSync()) {
+    return {
+      command: 'wsl.exe',
+      args: ['-e', 'sshpass', ...sshpassArgs],
+      env,
+    };
+  }
+  return {
+    command: 'sshpass',
+    args: sshpassArgs,
+    env,
+  };
 }
 
 /** Parse ``ls -1`` output of remote modules dir into sorted module names. */
@@ -223,17 +464,12 @@ export async function listRemoteDeveloperModules(options: {
     throw new Error('Development device has no IP address');
   }
   const remote = `${options.ssh.username}@${host}`;
-  const result = await runSshpassCommand(
-    'sshpass',
-    [
-      '-e',
-      'ssh',
-      ...SSH_PASSWORD_ARGS,
-      remote,
-      `ls -1 ${DEVELOPER_SYNC_REMOTE_MODULES} 2>/dev/null || true`,
-    ],
-    buildSshpassEnv(options.ssh),
+  const env = buildSshpassEnv(options.ssh);
+  const wrapped = wrapSshpassInvocation(
+    ['-e', 'ssh', ...buildSshPasswordArgs(), remote, `ls -1 ${DEVELOPER_SYNC_REMOTE_MODULES} 2>/dev/null || true`],
+    env,
   );
+  const result = await runSshpassCommand(wrapped.command, wrapped.args, wrapped.env);
   return parseRemoteModulesListing(result.stdout);
 }
 
@@ -281,11 +517,12 @@ export async function fetchDeveloperDeviceLogTail(options: {
     `tail -n ${lines} ${DEVELOPER_DEVICE_LOG_PATH} 2>/dev/null || true`,
   ].join('; ');
 
-  const result = await runSshpassCommand(
-    'sshpass',
-    ['-e', 'ssh', ...SSH_PASSWORD_ARGS, remote, remoteCmd],
-    buildSshpassEnv(options.ssh),
+  const env = buildSshpassEnv(options.ssh);
+  const wrapped = wrapSshpassInvocation(
+    ['-e', 'ssh', ...buildSshPasswordArgs(), remote, remoteCmd],
+    env,
   );
+  const result = await runSshpassCommand(wrapped.command, wrapped.args, wrapped.env);
   return parseDeveloperDeviceLogPayload(result.stdout);
 }
 
@@ -308,9 +545,10 @@ export function buildRsyncCommand(
   target: RsyncAppTarget,
   direction: DeveloperSyncDirection = 'push',
 ): { command: string; args: string[]; env: NodeJS.ProcessEnv } {
-  const local = target.localPath.endsWith(path.sep)
+  const localNative = target.localPath.endsWith(path.sep)
     ? target.localPath
     : `${target.localPath}${path.sep}`;
+  const local = toSyncLocalPath(localNative);
   const remotePath = `${DEVELOPER_SYNC_REMOTE_MODULES}/${target.moduleName}/`;
   const remote = buildSshDestination(host, ssh.username, remotePath);
 
@@ -321,14 +559,8 @@ export function buildRsyncCommand(
   rsyncArgs.push('-e', buildSshRemoteShellCommand());
   appendTransferArgs(rsyncArgs, local, remote, direction);
 
-  return {
-    command: 'sshpass',
-    args: ['-e', 'rsync', ...rsyncArgs],
-    env: {
-      ...process.env,
-      SSHPASS: ssh.password,
-    },
-  };
+  const env = buildSshpassEnv(ssh);
+  return wrapSshpassInvocation(['-e', 'rsync', ...rsyncArgs], env);
 }
 
 /**
@@ -342,9 +574,10 @@ export function buildCoreRsyncCommand(
   localCorePath: string,
   direction: DeveloperSyncDirection = 'push',
 ): { command: string; args: string[]; env: NodeJS.ProcessEnv } {
-  const local = localCorePath.endsWith(path.sep)
+  const localNative = localCorePath.endsWith(path.sep)
     ? localCorePath
     : `${localCorePath}${path.sep}`;
+  const local = toSyncLocalPath(localNative);
   const remote = buildSshDestination(
     host,
     ssh.username,
@@ -366,14 +599,8 @@ export function buildCoreRsyncCommand(
   rsyncArgs.push('-e', buildSshRemoteShellCommand());
   appendTransferArgs(rsyncArgs, local, remote, direction);
 
-  return {
-    command: 'sshpass',
-    args: ['-e', 'rsync', ...rsyncArgs],
-    env: {
-      ...process.env,
-      SSHPASS: ssh.password,
-    },
-  };
+  const env = buildSshpassEnv(ssh);
+  return wrapSshpassInvocation(['-e', 'rsync', ...rsyncArgs], env);
 }
 
 function runCommand(
@@ -429,8 +656,10 @@ function runSshpassCommand(
   args: string[],
   env: NodeJS.ProcessEnv,
 ): Promise<{ stdout: string; stderr: string }> {
-  ensureDeveloperSshControlDir();
-  return withDeveloperSshLock(() => runCommand(command, args, env));
+  return withDeveloperSshLock(async () => {
+    await ensureDeveloperSshControlDir();
+    return runCommand(command, args, env);
+  });
 }
 
 export async function rsyncDeveloperApps(options: {

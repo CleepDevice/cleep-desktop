@@ -28,13 +28,16 @@ import {
   computeDeveloperSyncDelay,
   fetchDeveloperDeviceLogTail,
   getDeveloperSyncPlatformSupport,
+  getDeveloperSyncToolsStatus,
   listRemoteDeveloperModules,
+  probeDeveloperSyncTools,
   rsyncDeveloperApps,
   rsyncDeveloperCore,
   type DeveloperDeviceLogTail,
   type DeveloperSyncDelayState,
   type DeveloperSyncDirection,
   type DeveloperSyncPlatformSupport,
+  type DeveloperSyncToolsStatus,
 } from './developer-sync';
 import { handleInvoke, ipcOk, ipcErr, sendToRenderer } from './ipc/ipc-main';
 import { VaultError } from './app-vault.types';
@@ -94,6 +97,8 @@ export type DeveloperStatus = {
   sshConfigured: boolean;
   syncSupported: boolean;
   syncSupport: DeveloperSyncPlatformSupport;
+  /** Probe of rsync/sshpass (WSL on Windows). */
+  syncTools: DeveloperSyncToolsStatus;
   syncStatus: DeveloperSyncState;
   syncError: string;
   lastSyncAt: number | null;
@@ -140,11 +145,29 @@ class AppDeveloper {
 
   public configure(): void {
     this.addIpcs();
+    void this.refreshSyncTools();
   }
 
   public setWindow(window: BrowserWindow): void {
     this.window = window;
-    void this.reconcileWatcher();
+    void this.refreshSyncTools().then(() => this.reconcileWatcher());
+  }
+
+  /**
+   * Probe rsync/sshpass (via WSL on Windows). Force-disable developer mode when
+   * tools are missing so watch/sync cannot run with a stale opt-in.
+   */
+  public async refreshSyncTools(force = false): Promise<DeveloperSyncToolsStatus> {
+    const tools = await probeDeveloperSyncTools({ force });
+    if (tools.probed && !tools.supported && appSettings.get<boolean>('cleep.developer')) {
+      appSettings.set('cleep.developer', false);
+      appLogger.info('Developer mode disabled: sync tools missing', {
+        missing: tools.missing,
+      });
+      await this.stopWatcher();
+    }
+    this.emitStatus();
+    return tools;
   }
 
   /** Vault just unlocked: retry launch upload if sync-on-load is enabled. */
@@ -177,6 +200,7 @@ class AppDeveloper {
     const corePath = sourcesOk ? detectCleepCoreDir(sourcesDir) : null;
     const coreAvailable = Boolean(corePath);
     const syncSupport = getDeveloperSyncPlatformSupport();
+    const syncTools = getDeveloperSyncToolsStatus();
 
     return {
       enabled,
@@ -196,6 +220,7 @@ class AppDeveloper {
       sshConfigured: deviceUuid ? hasDeveloperSshSecret(deviceUuid) : false,
       syncSupported: syncSupport === 'supported',
       syncSupport,
+      syncTools,
       syncStatus: this.syncStatus,
       syncError: this.syncError,
       lastSyncAt: this.lastSyncAt,
@@ -311,7 +336,11 @@ class AppDeveloper {
   }
 
   private addIpcs(): void {
-    handleInvoke('developer-get-status', () => ipcOk(this.getStatus()));
+    handleInvoke('developer-get-status', async () => {
+      // Refresh tools when the UI asks for status (preferences / toolbar).
+      await this.refreshSyncTools();
+      return ipcOk(this.getStatus());
+    });
 
     handleInvoke('developer-list-apps', () => {
       const sourcesDir = String(appSettings.get<string>('cleep.developersources') || '').trim();

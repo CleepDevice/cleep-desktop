@@ -370,13 +370,13 @@
                         </md-button>
                         <div class="toolbar-spacer" ng-if="tab.closable"></div>
                         <div class="toolbar-spacer" ng-if="!tab.closable"></div>
+                        <md-progress-linear
+                            ng-if="cleep.contentTabs.isTabLoading(tab)"
+                            md-mode="indeterminate"
+                            class="md-accent content-tab-loading"
+                        ></md-progress-linear>
                     </div>
                 </div>
-                <md-progress-linear
-                    ng-if="cleep.contentTabs.loading"
-                    md-mode="indeterminate"
-                    class="md-accent"
-                ></md-progress-linear>
             </div>
 
             <div flex class="content-body">

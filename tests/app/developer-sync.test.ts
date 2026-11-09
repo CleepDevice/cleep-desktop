@@ -15,11 +15,18 @@ import {
   getDeveloperSyncPlatformSupport,
   parseDeveloperDeviceLogPayload,
   parseRemoteModulesListing,
+  windowsPathToWslPath,
 } from '../../src/developer-sync';
 
 describe('developer-sync', () => {
-  it('reports windows as unsupported', () => {
+  it('reports platform support as supported or unsupported', () => {
     expect(['supported', 'unsupported']).toContain(getDeveloperSyncPlatformSupport());
+  });
+
+  it('maps Windows paths to WSL mount points', () => {
+    expect(windowsPathToWslPath('C:\\Users\\tang\\sources')).toBe('/mnt/c/Users/tang/sources');
+    expect(windowsPathToWslPath('D:/dev/cleep')).toBe('/mnt/d/dev/cleep');
+    expect(windowsPathToWslPath('/already/unix')).toBe('/already/unix');
   });
 
   it('builds sshpass rsync command for one app', () => {
