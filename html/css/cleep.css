@@ -240,8 +240,9 @@ md-toast.info .md-toast-content {
   line-height: 1.25;
 }
 
-/* Loading bar sits on the toolbar bottom edge (does not push page content) */
-.toolbar-content > md-progress-linear {
+/* Loading bar sits on the toolbar / tab bottom edge (does not push page content) */
+.toolbar-content > md-progress-linear,
+.content-tab > md-progress-linear.content-tab-loading {
   position: absolute;
   left: 0;
   right: 0;
@@ -280,6 +281,7 @@ md-content[ng-controller="cleepController as cleep"] {
 }
 
 .content-tab {
+  position: relative;
   box-sizing: border-box;
   height: 100%;
   /* Max 4 tabs: share the toolbar evenly (1→100%, 2→50%, ... 4→25%). */
@@ -294,6 +296,7 @@ md-content[ng-controller="cleepController as cleep"] {
   color: #fff;
   cursor: default;
   background: transparent;
+  overflow: hidden;
 }
 
 .content-tab:last-child {
@@ -1059,6 +1062,11 @@ device-webview {
   margin: 0 -12px;
   padding: 0 12px;
   min-height: 1.45em;
+}
+
+/* Prefix (time + logger + [file:line]) — lighter purple for dark console bg. */
+.developer-device-log-prefix {
+  color: #ce93d8;
 }
 
 .developer-device-log-line--warning {

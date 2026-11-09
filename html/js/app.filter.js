@@ -276,12 +276,14 @@ angular.module('Cleep').filter('prettyJsonHtml', ['$sce', function($sce) {
 
 /**
  * Colorize Cleep device logs like cleepapp-system's CodeMirror cleeplog mode:
- * level token colors + full-line highlight for WARNING/ERROR (sticky across
- * traceback continuation lines until the next timestamped log header).
+ * purple prefix (time + logger + [file:line]), level token colors, and
+ * full-line highlight for WARNING/ERROR (sticky across traceback lines).
  */
 angular.module('Cleep').filter('deviceLogHtml', ['$sce', function($sce) {
     // Longest-first so WARNING wins over WARN if both somehow appear.
     var LEVELS = ['CRITICAL', 'FATAL', 'ERROR', 'WARNING', 'WARN', 'INFO', 'DEBUG', 'TRACE'];
+    // Same shape as cleepapp-system codemirror-cleeplog.js styleLogInfo.
+    var PREFIX_RE = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}\s+.*?\[.*?\]\s*)/;
 
     function escapeHtml(text) {
         return String(text)
@@ -322,6 +324,17 @@ angular.module('Cleep').filter('deviceLogHtml', ['$sce', function($sce) {
         return null;
     }
 
+    function colorizePrefix(escaped) {
+        var match = escaped.match(PREFIX_RE);
+        if (!match) {
+            return escaped;
+        }
+        return (
+            '<span class="developer-device-log-prefix">' + match[1] + '</span>' +
+            escaped.slice(match[1].length)
+        );
+    }
+
     function colorizeLevelToken(escaped, level) {
         if (!level) {
             return escaped;
@@ -353,7 +366,7 @@ angular.module('Cleep').filter('deviceLogHtml', ['$sce', function($sce) {
 
         var lineLevel = level || (!header ? stickyLevel : null);
         var lineCls = lineLevel ? levelClass(lineLevel) : null;
-        var inner = colorizeLevelToken(escapeHtml(rawLine), level) || '&nbsp;';
+        var inner = colorizeLevelToken(colorizePrefix(escapeHtml(rawLine)), level) || '&nbsp;';
         var classes = 'developer-device-log-line';
         if (lineCls && isHighlightedLevel(lineCls)) {
             classes += ' developer-device-log-line--' + lineCls;

@@ -21,7 +21,7 @@ function($rootScope, $state, devicesService, logger) {
      */
     self.sessions = [];
 
-    /** Global header loader - last loading session / page wins. */
+    /** Page-level loader (homepage news, etc.). Device loading lives on session.loading. */
     self.loading = false;
 
     var PAGE_META = {
@@ -77,13 +77,24 @@ function($rootScope, $state, devicesService, logger) {
         self.tabs = [mainTab].concat(secondary);
     };
 
-    self._refreshLoading = function() {
-        var activeSession = self.getActiveSession();
-        if (activeSession) {
-            self.loading = Boolean(activeSession.loading);
-            return;
+    /**
+     * Per-tab loading chrome (Chrome-like). Device tabs use session.loading;
+     * the main Desktop page tab uses self.loading.
+     */
+    self.isTabLoading = function(tab) {
+        if (!tab) {
+            return false;
         }
-        self.loading = false;
+        if (tab.kind === 'device' && tab.deviceUuid) {
+            var session = self.getSession(tab.deviceUuid);
+            return Boolean(session && session.loading);
+        }
+        return tab.id === self.MAIN_ID && tab.kind === 'page' && Boolean(self.loading);
+    };
+
+    /** Kept for call sites; device loading no longer mirrors into self.loading. */
+    self._refreshLoading = function() {
+        // no-op — see isTabLoading()
     };
 
     self._deviceIcon = function(device) {

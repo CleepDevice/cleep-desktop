@@ -390,13 +390,26 @@ angular
     self.$onInit = function() {
         document.addEventListener('mousedown', onDocumentMouseDownForLogCtx, true);
         self.refreshSyncTargets();
+        var unsubStatus = null;
         if (electron.developer && electron.developer.onStatusChanged) {
-            $scope.$on('$destroy', electron.developer.onStatusChanged(function(_event, status) {
+            // Do NOT pass the IPC unsubscribe directly to $on('$destroy'):
+            // Angular calls listeners with a Scope event, and contextBridge
+            // throws "An object could not be cloned" when that event crosses.
+            unsubStatus = electron.developer.onStatusChanged(function(_event, status) {
                 self.deviceHostname = (status && status.deviceHostname) || '';
                 self.deviceIp = (status && status.deviceIp) || '';
                 self.coreSyncAvailable = Boolean(status && status.coreOk);
-            }));
+            });
         }
+        $scope.$on('$destroy', function() {
+            if (typeof unsubStatus === 'function') {
+                unsubStatus();
+            }
+            if (deviceLogTimer) {
+                $timeout.cancel(deviceLogTimer);
+                deviceLogTimer = null;
+            }
+        });
         var livePref = Promise.resolve(false);
         if (electron.settings && electron.settings.get) {
             livePref = electron.settings.get('cleep.developerdevicelogslive')
@@ -416,11 +429,4 @@ angular
             });
         });
     };
-
-    $scope.$on('$destroy', function() {
-        if (deviceLogTimer) {
-            $timeout.cancel(deviceLogTimer);
-            deviceLogTimer = null;
-        }
-    });
 }]);
