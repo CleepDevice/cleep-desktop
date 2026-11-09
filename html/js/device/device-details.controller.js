@@ -19,9 +19,18 @@ angular
         .map(function(app) { return { app: app, url: remoteaccess[app] }; });
     // Prefer ngrok when several tunnels exist
     var preferred = remoteUrls.find(function(entry) { return entry.app === 'ngrok'; });
-    self.remoteUrlLabel = preferred
+    self.remoteUrl = preferred
         ? preferred.url
-        : (remoteUrls.length ? remoteUrls[0].url : 'local network');
+        : (remoteUrls.length ? remoteUrls[0].url : '');
+    self.remoteUrlLabel = self.remoteUrl || 'local network';
+    self.remoteUrlQr = '';
+    if (self.remoteUrl && window.CleepQr && typeof window.CleepQr.encodeDataUrl === 'function') {
+        try {
+            self.remoteUrlQr = window.CleepQr.encodeDataUrl(self.remoteUrl, 5);
+        } catch (error) {
+            self.remoteUrlQr = '';
+        }
+    }
     self.boardImages = {
         '0002':   'images/raspberry-pi-1-model-b.jpg',
         '0003':   'images/raspberry-pi-1-model-b.jpg',

@@ -1855,6 +1855,29 @@ a.md-button.cl-button-sm {
   max-width: none;
 }
 
+.device-details-remote-url {
+  word-break: break-all;
+}
+
+.device-details-remote-qr {
+  margin: 8px 0 16px;
+  padding: 12px;
+}
+
+.device-details-remote-qr-img {
+  width: 180px;
+  height: 180px;
+  image-rendering: pixelated;
+  background: #fff;
+  border-radius: 4px;
+}
+
+.device-details-remote-qr-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
 .device-details-board {
   padding: 12px 8px 16px;
 }

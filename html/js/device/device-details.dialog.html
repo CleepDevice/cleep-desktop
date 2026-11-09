@@ -42,8 +42,21 @@
                     <span>{{ ctl.device.ip }}</span>
                 </config-basic>
                 <config-basic cl-title="'Remote URL'">
-                    <span>{{ ctl.remoteUrlLabel }}</span>
+                    <span class="device-details-remote-url">{{ ctl.remoteUrlLabel }}</span>
                 </config-basic>
+                <div
+                    class="device-details-remote-qr"
+                    layout="column"
+                    layout-align="center center"
+                    ng-if="ctl.remoteUrlQr"
+                >
+                    <img
+                        ng-src="{{ ctl.remoteUrlQr }}"
+                        alt="Remote URL QR code"
+                        class="device-details-remote-qr-img"
+                    />
+                    <span class="device-details-remote-qr-hint">Scan to open the remote URL</span>
+                </div>
             </config-tab>
 
             <config-tab cl-id="hardware" cl-label="Hardware" cl-icon="chip">

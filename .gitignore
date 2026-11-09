@@ -7,6 +7,7 @@ build/
 packaging/
 node_modules/
 html/js/libs/sentry-renderer.js
+html/js/libs/qr-encode.js
 
 core/*.pyc
 core/libs/*.pyc
