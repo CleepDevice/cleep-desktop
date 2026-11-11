@@ -248,6 +248,11 @@
                     cl-model="ctl.settings.cleep.developer"
                     cl-disabled="ctl.developerToolsMissing"
                 ></config-switch>
+                <config-switch
+                    cl-title="Show Flash Pico page"
+                    cl-subtitle="Keep the Flash Pico entry visible in the toolbar. Enable only if you work on Pico firmwares."
+                    cl-model="ctl.settings.cleep.flashpico"
+                ></config-switch>
 
                 <div ng-if="ctl.settings.cleep.developer" layout="column">
                     <config-section cl-title="Development configuration" cl-icon="cog"></config-section>

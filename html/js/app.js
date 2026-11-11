@@ -694,10 +694,25 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
         toolbarTask.activate();
     };
 
-    // Flash Pico: always in developer mode, otherwise only when firmwares are cached
+    // Opt-in permanent Flash Pico entry (Preferences → Developer), or when firmwares are cached
+    self.flashPicoEnabled = false;
     self.showFlashPicoToolbar = function() {
-        return Boolean(self.developerStatus.enabled || firmwareService.hasCached);
+        return Boolean(self.flashPicoEnabled || firmwareService.hasCached);
     };
+
+    self.refreshFlashPicoSetting = function() {
+        return settings.get('cleep.flashpico')
+            .then(function(enabled) {
+                self.flashPicoEnabled = Boolean(enabled);
+            })
+            .catch(angular.noop);
+    };
+
+    self.refreshFlashPicoSetting();
+
+    $rootScope.$on('cleep-settings-saved', function() {
+        self.refreshFlashPicoSetting();
+    });
 
     $rootScope.$on('firmware-cache-changed', function() {
         // digest so ng-if on toolbar updates after cache changes

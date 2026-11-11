@@ -184,6 +184,10 @@ export class AppSettings {
     if (!settings.hasSync('cleep.developerdevicelogslive')) {
       settings.setSync('cleep.developerdevicelogslive', false);
     }
+    // Permanently show the Flash Pico toolbar entry. Off by default.
+    if (!settings.hasSync('cleep.flashpico')) {
+      settings.setSync('cleep.flashpico', false);
+    }
 
     // rpi-imager section
     if (!settings.hasSync('rpiimager.version')) {
