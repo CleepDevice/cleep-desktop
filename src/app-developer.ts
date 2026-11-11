@@ -41,6 +41,7 @@ import {
 } from './developer-sync';
 import { handleInvoke, ipcOk, ipcErr, sendToRenderer } from './ipc/ipc-main';
 import { VaultError } from './app-vault.types';
+import { addPlatformBreadcrumb, reportPlatformIssue } from './utils/sentry-report';
 
 /** Module name advertised in peer `apps` when cleepapp-developer is installed. */
 export const DEVELOPER_APP_NAME = 'developer';
@@ -771,6 +772,12 @@ class AppDeveloper {
 
     this.syncing = true;
     this.setSyncState('syncing', '');
+    addPlatformBreadcrumb('developer-sync', 'Sync started', {
+      direction,
+      reason,
+      apps: logLabels,
+      hostname: device.hostname || '',
+    });
     this.emitSyncLog({
       level: 'info',
       title: this.syncStartTitle(reason, direction),
@@ -816,6 +823,13 @@ class AppDeveloper {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Developer sync failed';
       appLogger.warn('Developer sync failed', { message, direction });
+      reportPlatformIssue('developer-sync', error, {
+        direction,
+        reason,
+        apps: logLabels,
+        hostname: device.hostname || '',
+        platformSupport: getDeveloperSyncPlatformSupport(),
+      });
       this.setSyncState('failed', message);
       this.emitSyncLog({
         level: 'error',

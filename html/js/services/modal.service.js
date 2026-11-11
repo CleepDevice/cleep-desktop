@@ -8,6 +8,7 @@ angular
 .module('Cleep')
 .service('modalService', ['$mdDialog', '$transitions', function($mdDialog, $routerTransitions) {
     var self = this;
+    self.blockingOpen = false;
 
     /**
      * open modal
@@ -15,9 +16,14 @@ angular
      * @param templateUrl: associated controller template
      * @param data: data to pass to modal controller
      * @param resolve: async modal data (promise)
+     * @param options: optional { blocking: true } — no Esc / route dismiss
      * @service closeModal: inject this service in your controller to close modal
      */
-    self.open = function(controllerName, templateUrl, data, resolve) {
+    self.open = function(controllerName, templateUrl, data, resolve, options) {
+        var blocking = Boolean(options && options.blocking);
+        if (blocking) {
+            self.blockingOpen = true;
+        }
         return $mdDialog.show({
             controller: controllerName,
             controllerAs: 'ctl',
@@ -29,13 +35,21 @@ angular
             templateUrl: templateUrl,
             parent: angular.element(document.body),
             bindToController: true,
-            clickOutsideToClose:false,
+            clickOutsideToClose: false,
+            escapeToClose: !blocking,
             fullscreen: true
+        }).finally(function() {
+            if (blocking) {
+                self.blockingOpen = false;
+            }
         });
     };
 
     // handle router transitions to close modal if user change main page
     $routerTransitions.onStart({}, function() {
+        if (self.blockingOpen) {
+            return false;
+        }
         $mdDialog.cancel();
     });
 

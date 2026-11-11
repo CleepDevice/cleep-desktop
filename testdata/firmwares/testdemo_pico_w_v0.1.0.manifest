@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "testdemo_pico_w_v0.1.0",
+  "name": "TestDemo Pico (UF2)",
+  "app": "testdemo",
+  "firmware_version": "0.1.0",
+  "date": "2026-11-09",
+  "hash": "sha256:8d5a2c8747055d5ac4dd74b4c876f72007cb9e8abd1c50cfc706dce980aa3b75",
+  "targets": [
+    "pico_w",
+    "pico"
+  ],
+  "kind": "native",
+  "requires_bootsel": true,
+  "description": "Synthetic UF2 package for CleepDesktop flash wizard tests (not a real firmware)."
+}

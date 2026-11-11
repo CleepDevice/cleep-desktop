@@ -55,6 +55,7 @@ export async function downloadFile(
   url: string,
   downloadProgressCallback: OnDownloadProgressCallback,
   sha256?: string,
+  auth?: { username: string; password: string },
 ): Promise<string> {
   const headers = { 'user-agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0' };
   const tmpFilename = path.join(app.getPath('temp'), uuidv4() + '.zip');
@@ -68,6 +69,7 @@ export async function downloadFile(
     url,
     method: 'GET',
     headers,
+    auth: auth || undefined,
     responseType: 'stream',
     signal: abortDownloads[url].signal,
   });

@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "id": "testdemo_mpy_pico_w_v0.1.0",
+  "name": "TestDemo Pico (MicroPython)",
+  "app": "testdemo",
+  "firmware_version": "0.1.0",
+  "date": "2026-11-09",
+  "hash": "sha256:16fd78ba82511d80a0a3616bbdf4eaa19173fd8e1604f9ba06dc6189579ec028",
+  "targets": [
+    "pico_w",
+    "pico"
+  ],
+  "kind": "micropython-app",
+  "requires_bootsel": false,
+  "description": "Synthetic MicroPython files/ package for CleepDesktop flash wizard tests.",
+  "sources": {
+    "language": "python",
+    "entry": "files/main.py"
+  }
+}

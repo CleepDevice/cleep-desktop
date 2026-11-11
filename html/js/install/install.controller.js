@@ -34,7 +34,7 @@ function($rootScope, $scope, toast, confirm, logger, updateService, installServi
         } else if (progress.step === 'idle' && installService.installing) {
             self.installProgressTitle = 'Preparing installation...';
         } else if (progress.step === 'idle' && !installService.installing && progress.terminated) {
-            self.installProgressTitle = 'Installation terminated. Insert SD card on your raspberry and power it up.';
+            self.installProgressTitle = 'Installation completed. Insert SD card on your raspberry and power it up.';
         } else if (progress.step === 'canceled') {
             self.installProgressTitle = 'Installation canceled.';
         } else if (progress.step === 'downloading') {

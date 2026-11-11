@@ -4,6 +4,11 @@
  */
 
 import type { IAuthEvent } from '../app-auth';
+import type {
+  FirmwareDownloadRequest,
+  FirmwareEraseRequest,
+  FirmwareFlashRequest,
+} from '../app-firmware';
 import type { InstallData } from '../app-iso';
 import type { LoggerMessage } from '../app-logger';
 import type { NewsCacheIncomingArticle } from '../app-news-cache';
@@ -61,6 +66,26 @@ export function createCleepApi(ipc: IpcPrimitives) {
       getInfos: () => ipc.invoke('cache-get-infos'),
       deleteFile: (filename: string) => ipc.invoke('cache-delete-file', filename),
       purgeFiles: () => ipc.invoke('cache-purge-files'),
+    },
+
+    firmware: {
+      list: () => ipc.invoke('firmware-list'),
+      delete: (hash: string) => ipc.invoke('firmware-delete', hash),
+      unknown: (hashes: string[]) => ipc.invoke('firmware-unknown', hashes),
+      setBlocking: (blocked: boolean) => ipc.invoke('firmware-set-blocking', blocked),
+      download: (request: FirmwareDownloadRequest) => ipc.invoke('firmware-download', request),
+      scanPico: () => ipc.invoke('firmware-scan-pico'),
+      scanSerial: () => ipc.invoke('firmware-scan-serial'),
+      scanTargets: () => ipc.invoke('firmware-scan-targets'),
+      checkPermissions: () => ipc.invoke('firmware-check-permissions'),
+      flashPreview: (request: FirmwareFlashRequest) =>
+        ipc.invoke('firmware-flash-preview', request),
+      flash: (request: FirmwareFlashRequest) => ipc.invoke('firmware-flash', request),
+      erase: (request?: FirmwareEraseRequest) => ipc.invoke('firmware-erase', request || {}),
+      onDownloadProgress: (listener: IpcListener<'firmware-download-progress'>) =>
+        ipc.on('firmware-download-progress', listener),
+      onFlashProgress: (listener: IpcListener<'firmware-flash-progress'>) =>
+        ipc.on('firmware-flash-progress', listener),
     },
 
     news: {

@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "id": "micropython_pico_v1.29.0",
+  "name": "MicroPython Pico (runtime)",
+  "app": "testdemo",
+  "firmware_version": "1.29.0",
+  "date": "2026-08-24",
+  "hash": "sha256:28b513b769c16927ba20251a3b8b87da7b0dc72268161c03e570499e3c66491e",
+  "targets": [
+    "pico",
+    "pico_h"
+  ],
+  "kind": "micropython-runtime",
+  "requires_bootsel": true,
+  "description": "Official MicroPython v1.29.0 runtime for Raspberry Pi Pico (RP2040). Flash via BOOTSEL before pushing micropython-app packages.",
+  "sources": {
+    "language": "python",
+    "entry": "payload.uf2"
+  }
+}

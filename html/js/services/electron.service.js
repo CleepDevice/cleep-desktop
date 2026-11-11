@@ -200,6 +200,27 @@ angular
         purgeFiles: bindInvoke(api.cache.purgeFiles),
     };
 
+    self.firmware = {
+        list: bindInvoke(api.firmware && api.firmware.list),
+        delete: bindInvoke(api.firmware && api.firmware.delete),
+        unknown: bindInvoke(api.firmware && api.firmware.unknown),
+        setBlocking: bindInvoke(api.firmware && api.firmware.setBlocking),
+        download: bindInvoke(api.firmware && api.firmware.download),
+        scanPico: bindInvoke(api.firmware && api.firmware.scanPico),
+        scanSerial: bindInvoke(api.firmware && api.firmware.scanSerial),
+        scanTargets: bindInvoke(api.firmware && api.firmware.scanTargets),
+        checkPermissions: bindInvoke(api.firmware && api.firmware.checkPermissions),
+        flashPreview: bindInvoke(api.firmware && api.firmware.flashPreview),
+        flash: bindInvoke(api.firmware && api.firmware.flash),
+        erase: bindInvoke(api.firmware && api.firmware.erase),
+        onDownloadProgress: bindOnCoalesced(api.firmware && api.firmware.onDownloadProgress, {
+            mode: 'latest',
+        }),
+        onFlashProgress: bindOnCoalesced(api.firmware && api.firmware.onFlashProgress, {
+            mode: 'latest',
+        }),
+    };
+
     self.news = {
         getCache: bindInvoke(api.news && api.news.getCache),
         saveCache: bindInvoke(api.news && api.news.saveCache),

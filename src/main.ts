@@ -9,6 +9,7 @@ import { appLogger } from './app-logger';
 import { preferLinuxLibsecretPasswordStore } from './os-password-store';
 import { appUpdater } from './app-updater';
 import { appFileDownload } from './app-file-download';
+import { appFirmware } from './app-firmware';
 import { appIso } from './app-iso';
 import { appDevices } from './app-devices';
 import { appSettings } from './app-settings';
@@ -155,6 +156,7 @@ app.on('ready', async function () {
     appWebsiteAuth.configure(mainWindow);
     appUpdater.configure(mainWindow);
     appFileDownload.configure(mainWindow);
+    appFirmware.configure(mainWindow);
     appIso.configure(mainWindow);
     appDevices.configure(mainWindow);
   } catch (error) {

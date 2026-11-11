@@ -2,7 +2,30 @@
 
 ## [Unreleased]
 
+### Added
+
+- Pico MicroPython-app flash (USB serial push of ``files/`` via raw REPL)
+- Pico flash wizard (BOOTSEL detect → mismatch warnings → UF2 write for ``native`` / ``micropython-runtime``)
+- Pico firmware cache: blocking download dialog on ``update.module.firmware``, Flash Pico toolbar/page (list/delete; flash wizard next)
+- Implement internal vault to store keys
+- Live `core.remoteaccess.update` handling: force-update peer remote URLs without reconnection
+- Remote devices section in the left panel (open device via public URL)
+- Off-LAN remote URL refresh via provider descriptor (vault secret + error-page / menu action)
+- Desktop-only LAN gateway: vault gateway token, header injection, single device list (icon for gateway access)
+- Unit tests (~93% coverage)
+- Implements hot-reload for developments
+- Add way to choose network interface in case of exotic network
+
 ### Changed
+
+- Devices panel: single list sorted by hostname (drop Unconfigured / Configured sections)
+- Progress-stream lib replaced by internal code (outdated since 2017)
+- Update Electron from 36 to 41
+- Replace eslint by oxlint
+- Replace extract-zip by unzipper (outdated since 2020)
+- Replace python cleepbus by pyre-ts
+- Improve sdcard flash (and remove legacy lib)
+- Improve flash card tool
 - Replace ``node-wifi`` with direct OS wifi scan (``nmcli`` / ``netsh``; macOS current SSID via ``networksetup``)
 - Windows wifi scan: UTF-8 via ``chcp 65001`` + FR/EN ``netsh`` field labels
 - macOS wifi scan: try ``airport -s``, fall back to ``system_profiler SPAirPortDataType``; spinner while scanning
@@ -11,6 +34,7 @@
 - Bump Electron 44.7 → 45.2 and refresh npm deps (Sentry 8.3, electron-builder, vitest, axios, …)
 
 ### Fixed
+
 - Wifi install dialog: hide network dropdown when scan is empty; prefill SSID from current association; clearer note for Win11 Location permission / macOS scan limits
 - Wire Sentry for both Electron main and AngularJS renderer (opt-in crash reports)
 - Apply live ``parameters.auth.update``: refresh device lock icon without reconnect; defer login while the device page stays open
@@ -24,30 +48,6 @@
 - Do not prompt vault unlock at startup when caching gateway/refresh secrets from the bus (queue until unlock / user action)
 - Ngrok free interstitial again after gateway headers (single ``onBeforeSendHeaders``: skip + Auth/Target)
 - Device infos menu crashes when peer has no ``extra`` (disable action; guard filter)
-
-### Added
-- Implement internal vault to store keys
-- Live `core.remoteaccess.update` handling: force-update peer remote URLs without reconnection
-- Remote devices section in the left panel (open device via public URL)
-- Off-LAN remote URL refresh via provider descriptor (vault secret + error-page / menu action)
-- Desktop-only LAN gateway: vault gateway token, header injection, single device list (icon for gateway access)
-
-### Changed
-
-- Devices panel: single list sorted by hostname (drop Unconfigured / Configured sections)
-- Progress-stream lib replaced by internal code (outdated since 2017)
-- Update Electron from 36 to 41
-- Replace eslint by oxlint
-- Replace extract-zip by unzipper (outdated since 2020)
-- Replace python cleepbus by pyre-ts
-- Improve sdcard flash (and remove legacy lib)
-- Improve flash card tool
-
-### Added
-
-- Unit tests (~93% coverage)
-- Implements hot-reload for developments
-- Add way to choose network interface in case of exotic network
 
 ## [0.3.0] - 2024-02-28
 

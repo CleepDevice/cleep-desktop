@@ -11,6 +11,19 @@
 import type { OpenDialogSyncOptions } from 'electron';
 import type { IAuthEvent } from '../app-auth';
 import type { CachedFileInfos } from '../app-cache';
+import type {
+  CachedFirmware,
+  FirmwareDownloadProgress,
+  FirmwareDownloadRequest,
+  FirmwareEraseRequest,
+  FirmwareFlashPreview,
+  FirmwareFlashProgress,
+  FirmwareFlashRequest,
+} from '../app-firmware';
+import type { PicoBootselDevice } from '../pico/bootsel';
+import type { FirmwarePermissionStatus } from '../pico/permissions';
+import type { PicoFlashTarget } from '../pico/targets';
+import type { MicroPythonPort } from '../pico/micropython';
 import type { NewsCacheArticle, NewsCacheIncomingArticle } from '../app-news-cache';
 import type { InstallData } from '../app-iso';
 import type { LoggerMessage } from '../app-logger';
@@ -140,6 +153,24 @@ export type InvokeContract = {
   'cache-delete-file': { request: string; response: IpcResult<boolean> };
   'cache-get-infos': { request: void; response: IpcResult<CacheInfosPayload> };
   'cache-purge-files': { request: void; response: IpcResult<boolean> };
+  'firmware-list': { request: void; response: IpcResult<CachedFirmware[]> };
+  'firmware-delete': { request: string; response: IpcResult<boolean> };
+  'firmware-unknown': { request: string[]; response: IpcResult<string[]> };
+  'firmware-set-blocking': { request: boolean; response: IpcResult<true> };
+  'firmware-download': {
+    request: FirmwareDownloadRequest;
+    response: IpcResult<CachedFirmware[]>;
+  };
+  'firmware-scan-pico': { request: void; response: IpcResult<PicoBootselDevice[]> };
+  'firmware-scan-serial': { request: void; response: IpcResult<MicroPythonPort[]> };
+  'firmware-scan-targets': { request: void; response: IpcResult<PicoFlashTarget[]> };
+  'firmware-check-permissions': { request: void; response: IpcResult<FirmwarePermissionStatus> };
+  'firmware-flash-preview': {
+    request: FirmwareFlashRequest;
+    response: IpcResult<FirmwareFlashPreview>;
+  };
+  'firmware-flash': { request: FirmwareFlashRequest; response: IpcResult<true> };
+  'firmware-erase': { request: FirmwareEraseRequest; response: IpcResult<true> };
   'news-cache-get': {
     request: void;
     response: IpcResult<{ fetchedAt: number; articles: NewsCacheArticle[] } | null>;
@@ -264,6 +295,8 @@ export type ReceiveContract = {
   'devices-updated': { args: [CleepbusPeerInfos[]] };
   'download-file-started': { args: [DownloadStartedPayload] };
   'download-file-status': { args: [DownloadStatusPayload] };
+  'firmware-download-progress': { args: [FirmwareDownloadProgress] };
+  'firmware-flash-progress': { args: [FirmwareFlashProgress] };
   'iso-install-progress': { args: [InstallProgressPayload] };
   'open-modal': { args: [OpenModalPayload] };
   'open-page': { args: [OpenPagePayload] };

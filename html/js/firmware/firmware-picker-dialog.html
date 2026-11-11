@@ -1,0 +1,47 @@
+<md-dialog flex="45">
+
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>Firmware selection</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="ctl.closeModal()">
+                <md-icon md-svg-icon="close"></md-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+
+    <md-dialog-content style="height: 450px; padding: 8px 16px;">
+
+        <div layout="column" layout-align="center center" layout-fill layout-margin ng-if="ctl.loading">
+            <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+            <span>Loading firmwares…</span>
+        </div>
+
+        <div ng-show="!ctl.loading">
+            <config-note
+                ng-if="!ctl.firmwares.length"
+                cl-type="info"
+                cl-icon="information-outline"
+                cl-note="No firmware cached yet. Install a Pico-enabled application on a device to receive one."
+            ></config-note>
+
+            <config-buttons
+                ng-repeat="fw in ctl.firmwares track by fw.hash"
+                cl-icon="{{ fw.icon }}"
+                cl-title="{{ fw.title }}"
+                cl-subtitle="{{ fw.subtitle }}"
+                cl-buttons="fw.rowButtons"
+                cl-limit="2"
+            ></config-buttons>
+        </div>
+
+    </md-dialog-content>
+
+    <md-dialog-actions>
+        <md-button ng-click="ctl.refresh()" class="md-primary md-raised" ng-disabled="ctl.loading">
+            <md-icon md-svg-icon="refresh"></md-icon>
+            Refresh list
+        </md-button>
+    </md-dialog-actions>
+
+</md-dialog>

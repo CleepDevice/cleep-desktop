@@ -105,14 +105,16 @@ export function createAppWindow(splashScreenWindow: BrowserWindow): BrowserWindo
 
     if (!appContext.allowAppClosing) {
       // something does not allow application to quit. Request user to quit or not
+      const reason = appContext.closingBlockReason;
       const btnIndex = dialog.showMessageBoxSync(mainWindow, {
         type: 'warning',
         buttons: ['Quit anyway', 'Stay'],
         defaultId: 1,
         cancelId: 1,
-        title: 'Installation in progress',
-        message: 'Quitting now can permanently damage your SD card.',
+        title: reason?.title || 'Installation in progress',
+        message: reason?.message || 'Quitting now can permanently damage your SD card.',
         detail:
+          reason?.detail ||
           'An SD card installation is still running. Stopping CleepDesktop while the image is being written or validated can leave the card unbootable or unusable. Wait until the operation finishes before quitting.',
       });
 

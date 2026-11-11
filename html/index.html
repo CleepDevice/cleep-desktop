@@ -75,6 +75,19 @@
                     </p>
                 </md-list-item>
 
+                <md-list-item
+                    ng-if="cleep.showFlashPicoToolbar()"
+                    ng-click="cleep.openPage('flashPico')"
+                    ng-mousedown="cleep.onToolbarPageMouseDown($event, 'flashPico')"
+                    title="Flash Pico"
+                >
+                    <md-icon
+                        md-svg-icon="chip"
+                        ng-class="cleep.isToolbarItemSelected('flashPico') ? 'md-accent' : 'white-icon'"
+                    ></md-icon>
+                    <p style="color:white;" ng-if="!cleep.toolbarCollapsed">Flash Pico</p>
+                </md-list-item>
+
                 <md-divider></md-divider>
 
                 <md-list-item ng-click="cleep.openModal('preferencesController', 'js/preferences/preferences-dialog.html')" title="Preferences">
@@ -483,6 +496,7 @@
     <script src="js/services/devices.service.js"></script>
     <script src="js/services/content-tabs.service.js"></script>
     <script src="js/services/download.service.js"></script>
+    <script src="js/services/firmware.service.js"></script>
     <script src="js/services/monitoring.service.js"></script>
     <script src="js/services/developer-sync-log.service.js"></script>
     <script src="js/services/news.service.js"></script>
@@ -503,6 +517,10 @@
     <script src="js/device-error/device-error.controller.js"></script>
     <script src="js/monitoring/monitoring.controller.js"></script>
     <script src="js/developer/developer-sync.controller.js"></script>
+    <script src="js/firmware/firmware.controller.js"></script>
+    <script src="js/firmware/firmware-download.controller.js"></script>
+    <script src="js/firmware/firmware-picker.controller.js"></script>
+    <script src="js/firmware/pico-picker.controller.js"></script>
     <script src="js/about/about.controller.js"></script>
     <script src="js/support/support.controller.js"></script>
     <script src="js/help/help-dialog.controller.js"></script>

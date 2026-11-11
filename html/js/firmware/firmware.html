@@ -1,0 +1,136 @@
+<div layout="column" layout-fill class="app-page">
+
+    <md-content flex class="app-page-content">
+        <div class="app-page-lead" layout="row" layout-align="start center">
+            <div class="app-page-lead-badge" layout="row" layout-align="center center" aria-hidden="true">
+                <md-icon md-svg-icon="chip"></md-icon>
+            </div>
+            <div flex layout="column">
+                <div class="app-page-lead-title">Flash a Raspberry Pi Pico</div>
+                <p class="app-page-lead-text">
+                    Pick a firmware, choose your Pico, then follow the progress below.
+                </p>
+            </div>
+        </div>
+
+        <div class="app-page-panel">
+            <config-section cl-title="Preparation" cl-icon="wrench"></config-section>
+
+            <config-note
+                ng-if="ctl.permissionMessage"
+                cl-type="error"
+                cl-icon="alert-circle"
+                cl-note="{{ ctl.permissionMessage }}"
+            ></config-note>
+
+            <config-button
+                cl-title="Select the firmware you want to flash"
+                cl-subtitle="{{ ctl.firmwareSubtitle() }}"
+                cl-btn-icon="feature-search-outline"
+                cl-btn-style="md-raised md-primary"
+                cl-disabled="ctl.flashing"
+                cl-click="ctl.openFirmwarePicker()"
+            ></config-button>
+
+            <config-button
+                cl-title="Plug your Pico and select it from the list"
+                cl-subtitle="{{ ctl.picoSubtitle() }}"
+                cl-btn-icon="feature-search-outline"
+                cl-btn-style="md-raised md-primary"
+                cl-disabled="ctl.flashing"
+                cl-click="ctl.openPicoPicker()"
+            ></config-button>
+
+            <config-note
+                ng-repeat="message in ctl.mismatchErrors track by $index"
+                cl-type="error"
+                cl-icon="alert-circle"
+                cl-note="{{ message }}"
+            ></config-note>
+            <config-note
+                ng-repeat="message in ctl.mismatchWarnings track by $index"
+                cl-type="warning"
+                cl-icon="alert"
+                cl-note="{{ message }}"
+            ></config-note>
+
+            <config-button
+                cl-title="Click to flash your Pico and follow progress below"
+                cl-btn-label="Flash"
+                cl-btn-icon="flash"
+                cl-btn-style="md-raised md-accent"
+                cl-disabled="!ctl.canFlash()"
+                cl-click="ctl.startFlash()"
+            ></config-button>
+
+            <config-section cl-title="Flash progress" cl-icon="flag"></config-section>
+            <config-progress
+                cl-title="{{ ctl.progressLabel }}"
+                cl-model="ctl.percent"
+                cl-show-percent="true"
+                cl-infinite="ctl.progressInfinite"
+                cl-btn-disabled="true"
+            ></config-progress>
+
+            <div class="pico-bootsel-guide" ng-if="ctl.showBootselGuide()" role="img" aria-label="Hold BOOTSEL, plug USB, then release BOOTSEL">
+                <svg class="pico-bootsel-guide-svg" viewBox="0 0 340 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <!-- USB cable + plug (slides in while button held) -->
+                    <path class="pico-bootsel-cable" d="M8 78 H78" stroke-dasharray="70" stroke-dashoffset="70"></path>
+                    <rect class="pico-bootsel-plug" x="78" y="68" width="22" height="20" rx="3"></rect>
+
+                    <!-- Pico board -->
+                    <rect class="pico-bootsel-board" x="100" y="40" width="150" height="78" rx="8"></rect>
+                    <rect class="pico-bootsel-usb-port" x="96" y="70" width="10" height="18" rx="2"></rect>
+                    <rect class="pico-bootsel-chip" x="155" y="62" width="36" height="28" rx="3"></rect>
+                    <!-- BOOTSEL button -->
+                    <circle class="pico-bootsel-btn" cx="128" cy="78" r="10"></circle>
+                    <text x="128" y="116" text-anchor="middle" fill="#546e7a" font-size="10" font-family="Roboto, Helvetica, Arial, sans-serif">BOOTSEL</text>
+
+                    <!-- Finger pressing BOOTSEL -->
+                    <g class="pico-bootsel-finger">
+                        <ellipse cx="128" cy="52" rx="9" ry="14"></ellipse>
+                        <rect x="122" y="28" width="12" height="22" rx="6"></rect>
+                    </g>
+
+                    <text class="pico-bootsel-hint" x="128" y="28" text-anchor="middle">1. Hold</text>
+                    <text class="pico-bootsel-hint pico-bootsel-hint-2" x="40" y="58" text-anchor="middle">2. Plug</text>
+
+                    <!-- Storage volume appears after release -->
+                    <g class="pico-bootsel-disk" transform="translate(270 55)">
+                        <rect class="pico-bootsel-disk-body" x="0" y="0" width="48" height="40" rx="5"></rect>
+                        <text x="24" y="18" text-anchor="middle" fill="#f57f17" font-size="9" font-family="Roboto, Helvetica, Arial, sans-serif">RPI</text>
+                        <text x="24" y="30" text-anchor="middle" fill="#f57f17" font-size="9" font-family="Roboto, Helvetica, Arial, sans-serif">RP2</text>
+                    </g>
+                </svg>
+                <p class="pico-bootsel-guide-caption">
+                    Hold the white BOOTSEL button, plug the USB cable back in, then release the button.
+                </p>
+            </div>
+
+            <config-note
+                ng-if="ctl.resultType === 'error'"
+                cl-type="error"
+                cl-icon="alert-circle"
+                cl-note="{{ ctl.resultMessage }}"
+            ></config-note>
+            <config-note
+                ng-if="ctl.resultType === 'success'"
+                cl-type="success"
+                cl-icon="check-circle"
+                cl-note="{{ ctl.resultMessage }}"
+            ></config-note>
+
+            <config-section cl-title="Erase board" cl-icon="delete-forever"></config-section>
+            <config-button
+                cl-title="Erase all flash content on the Pico (factory wipe)"
+                cl-subtitle="Requires storage mode (BOOTSEL). You can select a Pico above first, or follow the on-screen guide."
+                cl-btn-label="Erase"
+                cl-btn-icon="delete-forever"
+                cl-btn-style="md-raised md-warn"
+                cl-disabled="ctl.flashing"
+                cl-click="ctl.startErase()"
+            ></config-button>
+        </div>
+    </md-content>
+
+</div>

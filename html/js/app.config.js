@@ -117,6 +117,15 @@
             controllerAs: 'ctl',
             templateUrl: 'js/developer/developer-sync.html'
         })
+        .state('flashPico', {
+            url: '/flash-pico',
+            params: {
+                selectedHash: null,
+            },
+            controller: 'firmwareController',
+            controllerAs: 'ctl',
+            templateUrl: 'js/firmware/firmware.html'
+        })
         .state('devPlayground', {
             url: '/dev/playground',
             controller: 'devPlaygroundController',

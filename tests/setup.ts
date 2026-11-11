@@ -195,6 +195,11 @@ vi.mock('electron-settings', () => {
 
 vi.mock('@sentry/electron/main', () => ({
   init: vi.fn(),
+  captureException: vi.fn(),
+  addBreadcrumb: vi.fn(),
+  withScope: vi.fn((callback: (scope: { setTag: () => void; setContext: () => void }) => void) => {
+    callback({ setTag: vi.fn(), setContext: vi.fn() });
+  }),
 }));
 
 vi.mock('detect-port', () => ({

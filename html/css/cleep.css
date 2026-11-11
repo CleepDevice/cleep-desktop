@@ -1227,6 +1227,234 @@ device-webview {
   }
 }
 
+/* Pico BOOTSEL how-to animation (Flash Pico page) */
+.pico-bootsel-guide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 16px;
+  padding: 14px 16px 16px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(38, 50, 56, 0.06), rgba(38, 50, 56, 0.02));
+  animation: pico-bootsel-guide-in 0.35s ease-out;
+}
+
+.pico-bootsel-guide-svg {
+  width: min(100%, 340px);
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.pico-bootsel-guide-caption {
+  margin: 0;
+  max-width: 340px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #455a64;
+}
+
+.pico-bootsel-board {
+  fill: #1b5e20;
+  stroke: #0d3b12;
+  stroke-width: 2;
+}
+
+.pico-bootsel-chip {
+  fill: #263238;
+}
+
+.pico-bootsel-usb-port {
+  fill: #90a4ae;
+}
+
+.pico-bootsel-btn {
+  fill: #eceff1;
+  stroke: #78909c;
+  stroke-width: 1.5;
+  transform-origin: 52px 78px;
+  animation: pico-bootsel-press 5s ease-in-out infinite;
+}
+
+.pico-bootsel-finger {
+  fill: #ffcc80;
+  stroke: #ef6c00;
+  stroke-width: 1.2;
+  transform-origin: 52px 40px;
+  animation: pico-bootsel-finger 5s ease-in-out infinite;
+}
+
+.pico-bootsel-cable {
+  fill: none;
+  stroke: #37474f;
+  stroke-width: 6;
+  stroke-linecap: round;
+  animation: pico-bootsel-cable 5s ease-in-out infinite;
+}
+
+.pico-bootsel-plug {
+  fill: #546e7a;
+  animation: pico-bootsel-plug 5s ease-in-out infinite;
+}
+
+.pico-bootsel-hint {
+  fill: #1565c0;
+  font-size: 11px;
+  font-family: Roboto, Helvetica, Arial, sans-serif;
+  opacity: 0;
+  animation: pico-bootsel-hints 5s ease-in-out infinite;
+}
+
+.pico-bootsel-hint-2 {
+  animation-delay: 0s;
+}
+
+.pico-bootsel-disk {
+  opacity: 0;
+  animation: pico-bootsel-disk 5s ease-in-out infinite;
+}
+
+.pico-bootsel-disk-body {
+  fill: #fff8e1;
+  stroke: #f9a825;
+  stroke-width: 1.5;
+}
+
+@keyframes pico-bootsel-guide-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 0–20% approach+press, 20–45% hold+plug, 45–60% release, 60–85% disk, 85–100% reset */
+@keyframes pico-bootsel-press {
+  0%,
+  8% {
+    transform: translateY(0) scale(1);
+  }
+  18%,
+  48% {
+    transform: translateY(3px) scale(0.92);
+  }
+  58%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pico-bootsel-finger {
+  0% {
+    transform: translate(0, -28px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  18%,
+  48% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  58% {
+    transform: translate(0, -20px);
+    opacity: 0.4;
+  }
+  70%,
+  100% {
+    transform: translate(0, -28px);
+    opacity: 0;
+  }
+}
+
+@keyframes pico-bootsel-cable {
+  0%,
+  18% {
+    stroke-dashoffset: 70;
+    opacity: 0.25;
+  }
+  35%,
+  85% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes pico-bootsel-plug {
+  0%,
+  18% {
+    transform: translateX(-42px);
+    opacity: 0.2;
+  }
+  35%,
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pico-bootsel-hints {
+  0%,
+  12% {
+    opacity: 0;
+  }
+  18%,
+  42% {
+    opacity: 1;
+  }
+  52%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes pico-bootsel-disk {
+  0%,
+  58% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  68%,
+  88% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pico-bootsel-btn,
+  .pico-bootsel-finger,
+  .pico-bootsel-cable,
+  .pico-bootsel-plug,
+  .pico-bootsel-hint,
+  .pico-bootsel-disk {
+    animation: none !important;
+  }
+  .pico-bootsel-finger,
+  .pico-bootsel-hint,
+  .pico-bootsel-disk {
+    opacity: 1;
+  }
+  .pico-bootsel-cable {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
 /* install page extras */
 .install-powered {
   gap: 8px;

@@ -61,6 +61,7 @@
         "electron-updater": "^6.8.11",
         "mime": "^4.1.2",
         "qr": "^0.7.2",
+        "serialport": "^13.0.0",
         "unzipper": "^0.12.5",
         "uuid": "^14.0.3",
         "zod": "^4.6.7"
@@ -137,6 +138,7 @@
         "electron@45.2.1": true,
         "drivelist@12.0.2": true,
         "esbuild@0.28.2": true,
-        "electron-winstaller@5.4.0": true
+        "electron-winstaller@5.4.0": true,
+        "@serialport/bindings-cpp@13.0.0": true
     }
 }

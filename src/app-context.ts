@@ -8,13 +8,25 @@ import { handleInvoke, ipcOk } from './ipc/ipc-main';
 
 const SENTRY_DSN = 'https://8e703f88899c42c18b8466c44b612472@o97410.ingest.sentry.io/213385';
 
+export type ClosingBlockReason = {
+  title: string;
+  message: string;
+  detail?: string;
+};
+
 class AppContext {
   public allowAppClosing = true;
+  public closingBlockReason: ClosingBlockReason | null = null;
   public closingApplication = false;
   public version: string;
   public changelog: string;
   public crashReportEnabled = false;
   public readonly isDev = !app.isPackaged;
+
+  public setClosingBlocked(blocked: boolean, reason?: ClosingBlockReason | null): void {
+    this.allowAppClosing = !blocked;
+    this.closingBlockReason = blocked ? reason || null : null;
+  }
 
   constructor() {
     this.version = app.getVersion();

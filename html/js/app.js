@@ -4,10 +4,10 @@ Cleep
 .controller('cleepController', ['$scope', '$rootScope', '$state', 'toolbarTaskService', 'modalService',
                                 '$timeout', '$transitions', 'settingsService', 'devicesService',
                                 'updateService', 'installService', 'monitoringService', 'developerSyncLogService',
-                                'downloadService', 'electronService', 'toastService', 'contentTabsService',
+                                'downloadService', 'firmwareService', 'electronService', 'toastService', 'contentTabsService',
 function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $transitions, settings,
         devicesService, updateService, installService, monitoringService, developerSyncLog, downloadService,
-        electron, toast, contentTabs) {
+        firmwareService, electron, toast, contentTabs) {
     var self = this;
     self.toolbarTask = toolbarTask;
     self.contentTabs = contentTabs;
@@ -693,6 +693,15 @@ function($scope, $rootScope, $state, toolbarTask, modalService, $timeout, $trans
     self.onToolbarTaskClick = function() {
         toolbarTask.activate();
     };
+
+    // Flash Pico: always in developer mode, otherwise only when firmwares are cached
+    self.showFlashPicoToolbar = function() {
+        return Boolean(self.developerStatus.enabled || firmwareService.hasCached);
+    };
+
+    $rootScope.$on('firmware-cache-changed', function() {
+        // digest so ng-if on toolbar updates after cache changes
+    });
 
     // application restart (from Updates page / menu)
     $rootScope.$on('restartrequired', () => {

@@ -21,6 +21,7 @@ import { rpiImager } from './flash-tool/rpi-imager';
 import { Drive } from './flash-tool/flashtool.interface';
 import { getFlashWrapperPath, RPI_IMAGER_DIR } from './flash-tool/constants';
 import { buildFirstRunScript, FirstRunPayloadFile } from './iso/first-run-script';
+import { addPlatformBreadcrumb, reportPlatformIssue } from './utils/sentry-report';
 
 export interface WifiData {
   network: string;
@@ -269,7 +270,17 @@ class AppIso {
     this.currentInstall.flashStarted = false;
 
     try {
-      appContext.allowAppClosing = false;
+      appContext.setClosingBlocked(true, {
+        title: 'Installation in progress',
+        message: 'Quitting now can permanently damage your SD card.',
+        detail:
+          'An SD card installation is still running. Stopping CleepDesktop while the image is being written or validated can leave the card unbootable or unusable. Wait until the operation finishes before quitting.',
+      });
+
+      addPlatformBreadcrumb('sd-install', 'Install started', {
+        isoFilename: installData.isoFilename,
+        drivePath: installData.drivePath,
+      });
 
       const cachedFile = this.getCachedFilepath(installData);
       appLogger.debug('Cached file', cachedFile);
@@ -288,10 +299,15 @@ class AppIso {
       await this.writeFirstRunScript(installData);
       this.flashDrive(installData);
     } catch (error) {
-      appContext.allowAppClosing = true;
+      appContext.setClosingBlocked(false);
       this.installRunning = false;
       const message = getError(error as Error);
       appLogger.error(`Iso install failed ${message}`);
+      reportPlatformIssue('sd-install', error, {
+        isoFilename: installData.isoFilename,
+        drivePath: installData.drivePath,
+        step: 'prepare',
+      });
       sendToRenderer(this.window, 'iso-install-progress', {
         percent: 100,
         eta: 0,
@@ -322,7 +338,7 @@ class AppIso {
 
     void this.cleanupFirstRunScript();
     this.installRunning = false;
-    appContext.allowAppClosing = true;
+    appContext.setClosingBlocked(false);
     sendToRenderer(this.window, 'iso-install-progress', {
       percent: 0,
       eta: 0,
@@ -422,7 +438,7 @@ class AppIso {
 
     if (this.currentInstall.canceled) {
       void this.cleanupFirstRunScript(firstRunScriptPath);
-      appContext.allowAppClosing = true;
+      appContext.setClosingBlocked(false);
       return;
     }
 
@@ -442,10 +458,17 @@ class AppIso {
 
     if (failed) {
       appLogger.error('Flash drive failed', { exitCode, error, rawError });
+      reportPlatformIssue('sd-install', new Error(rawError || error || 'SD flash failed'), {
+        exitCode,
+        humanError: error,
+        flashStarted: this.currentInstall.flashStarted,
+      });
+    } else {
+      addPlatformBreadcrumb('sd-install', 'Install completed');
     }
 
     void this.cleanupFirstRunScript(firstRunScriptPath);
-    appContext.allowAppClosing = true;
+    appContext.setClosingBlocked(false);
   }
 
   private flashStdoutCallback(stdout: string) {

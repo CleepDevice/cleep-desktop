@@ -1,0 +1,77 @@
+<md-dialog flex="50" style="max-width: 560px;">
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>New Pico firmware</h2>
+        </div>
+    </md-toolbar>
+
+    <md-dialog-content style="padding: 16px 24px; min-height: 220px;">
+        <p>
+            Device <strong>{{ ctl.hostname }}</strong> installed
+            <strong>{{ ctl.module || 'an application' }}</strong> with
+            {{ ctl.firmwares.length }} firmware{{ ctl.firmwares.length > 1 ? 's' : '' }}.
+        </p>
+
+        <div ng-if="ctl.phase === 'download' || ctl.phase === 'error'" layout="column" layout-margin>
+            <div layout="row" layout-align="start center">
+                <span flex>{{ ctl.progressLabel }}</span>
+                <span>{{ ctl.percent | number:0 }}%</span>
+            </div>
+            <md-progress-linear
+                md-mode="{{ ctl.percent > 0 ? 'determinate' : 'indeterminate' }}"
+                value="{{ ctl.percent }}"
+            ></md-progress-linear>
+            <config-note
+                ng-if="ctl.phase === 'error'"
+                cl-type="error"
+                cl-icon="alert-circle"
+                cl-note="{{ ctl.errorMessage }}"
+            ></config-note>
+        </div>
+
+        <div ng-if="ctl.phase === 'ready'" layout="column">
+            <p>Download complete. Choose a firmware to flash, or cancel to keep them in cache.</p>
+            <md-radio-group ng-model="ctl.selectedHash">
+                <md-radio-button
+                    ng-repeat="fw in ctl.firmwares track by fw.hash"
+                    ng-value="fw.hash"
+                    class="md-primary"
+                >
+                    <strong>{{ fw.name || fw.id }}</strong>
+                    <span> — {{ fw.firmware_version }} ({{ fw.kind }})</span>
+                    <div style="opacity: 0.7; font-size: 12px;">
+                        {{ fw.targets.join(', ') }} · {{ fw.date }}
+                    </div>
+                </md-radio-button>
+            </md-radio-group>
+        </div>
+    </md-dialog-content>
+
+    <md-dialog-actions layout="row">
+        <span flex></span>
+        <md-button
+            ng-if="ctl.phase === 'error'"
+            class="md-raised"
+            ng-click="ctl.retry()"
+            ng-disabled="ctl.busy"
+        >
+            Retry
+        </md-button>
+        <md-button
+            ng-if="ctl.phase === 'ready'"
+            class="md-raised"
+            ng-click="ctl.cancel()"
+            ng-disabled="ctl.busy"
+        >
+            Cancel
+        </md-button>
+        <md-button
+            ng-if="ctl.phase === 'ready'"
+            class="md-raised md-primary"
+            ng-click="ctl.flash()"
+            ng-disabled="ctl.busy || !ctl.selectedHash"
+        >
+            Flash
+        </md-button>
+    </md-dialog-actions>
+</md-dialog>

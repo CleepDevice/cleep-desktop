@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "id": "micropython_pico_w_v1.29.0",
+  "name": "MicroPython Pico W (runtime)",
+  "app": "testdemo",
+  "firmware_version": "1.29.0",
+  "date": "2026-08-24",
+  "hash": "sha256:5be1d64217af1a14fa02346e6dcb1b1e124b27752885686b2229bf1a84ce8d56",
+  "targets": [
+    "pico_w"
+  ],
+  "kind": "micropython-runtime",
+  "requires_bootsel": true,
+  "description": "Official MicroPython v1.29.0 runtime for Raspberry Pi Pico W. Flash via BOOTSEL before pushing micropython-app packages.",
+  "sources": {
+    "language": "python",
+    "entry": "payload.uf2"
+  }
+}

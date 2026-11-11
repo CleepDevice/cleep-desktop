@@ -76,7 +76,14 @@
             <config-note
                 ng-if="ctl.installService.installProgress.error.length > 0"
                 cl-type="error"
+                cl-icon="alert-circle"
                 cl-note="{{ 'Installation failed: ' + ctl.installService.installProgress.error }}"
+            ></config-note>
+            <config-note
+                ng-if="ctl.installService.installProgress.terminated && !ctl.installService.installProgress.error.length && ctl.installService.installProgress.step !== 'canceled'"
+                cl-type="success"
+                cl-icon="check-circle"
+                cl-note="Installation completed. Insert the SD card into your Raspberry Pi and power it up."
             ></config-note>
 
             <config-section cl-title="Having trouble?" cl-icon="bug"></config-section>

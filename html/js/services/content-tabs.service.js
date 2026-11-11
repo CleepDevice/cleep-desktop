@@ -34,6 +34,7 @@ function($rootScope, $state, devicesService, logger) {
         installManually: { title: 'Manual Cleep installation', icon: 'sd' },
         monitoring: { title: 'Messages received from devices', icon: 'message-text' },
         developerSync: { title: 'Developer sync activity', icon: 'text-box-outline' },
+        flashPico: { title: 'Flash Pico', icon: 'chip' },
         deviceAuth: { title: 'Device sign-in', icon: 'cellphone-key' },
         deviceError: { title: 'Connection failed', icon: 'alert-circle' },
         device: { title: 'Device', icon: 'cellphone' },
