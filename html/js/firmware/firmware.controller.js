@@ -39,7 +39,7 @@ function($scope, $stateParams, firmwareService, toast, modalService, electron, l
         if (!self.selectedPico) {
             return 'No Pico selected';
         }
-        return self.selectedPico.title + ' — ' + (self.selectedPico.subtitle || '');
+        return self.selectedPico.title + ' - ' + (self.selectedPico.subtitle || '');
     };
 
     self.canFlash = function() {
@@ -205,7 +205,7 @@ function($scope, $stateParams, firmwareService, toast, modalService, electron, l
         self.flashing = true;
         self.percent = 0;
         self.progressInfinite = true;
-        self.progressLabel = 'Starting…';
+        self.progressLabel = 'Starting...';
         self.clearResult();
         electron.firmware.setBlocking(true).catch(angular.noop);
         self.ensureFlashProgressListener();
@@ -225,7 +225,7 @@ function($scope, $stateParams, firmwareService, toast, modalService, electron, l
         electron.firmware.flash(request)
             .then(function() {
                 self.resultType = 'success';
-                self.resultMessage = self.progressLabel && self.progressLabel !== 'Starting…'
+                self.resultMessage = self.progressLabel && self.progressLabel !== 'Starting...'
                     ? self.progressLabel
                     : 'Flash completed successfully.';
                 self.progressLabel = self.resultMessage;
@@ -264,7 +264,7 @@ function($scope, $stateParams, firmwareService, toast, modalService, electron, l
             self.flashing = true;
             self.percent = 0;
             self.progressInfinite = true;
-            self.progressLabel = 'Preparing erase…';
+            self.progressLabel = 'Preparing erase...';
             self.clearResult();
             electron.firmware.setBlocking(true).catch(angular.noop);
             self.ensureFlashProgressListener();

@@ -13,7 +13,7 @@ function(electron, logger, ipcLifecycle, $rootScope) {
 
     // status:
     // - CONNECTED: when connected to cleepbus
-    // - CONNECTING: starting / waiting for LAN (resume, DHCP) — not a hard failure
+    // - CONNECTING: starting / waiting for LAN (resume, DHCP) - not a hard failure
     // - UPDATING: when cleepbus is installing/updating
     // - ERROR: when a non-transient error occured
     // connected at startup to not display loader

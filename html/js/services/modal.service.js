@@ -16,7 +16,7 @@ angular
      * @param templateUrl: associated controller template
      * @param data: data to pass to modal controller
      * @param resolve: async modal data (promise)
-     * @param options: optional { blocking: true } — no Esc / route dismiss
+     * @param options: optional { blocking: true } - no Esc / route dismiss
      * @service closeModal: inject this service in your controller to close modal
      */
     self.open = function(controllerName, templateUrl, data, resolve, options) {

@@ -390,7 +390,7 @@ angular.module('Cleep').filter('deviceLogHtml', ['$sce', function($sce) {
             sticky = result.sticky;
             out.push(result.html);
         }
-        // Block lines — no joining newlines (avoids double spacing in <pre>).
+        // Block lines - no joining newlines (avoids double spacing in <pre>).
         return $sce.trustAsHtml(out.join(''));
     };
 }]);

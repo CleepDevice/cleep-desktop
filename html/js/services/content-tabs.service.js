@@ -95,7 +95,7 @@ function($rootScope, $state, devicesService, logger) {
 
     /** Kept for call sites; device loading no longer mirrors into self.loading. */
     self._refreshLoading = function() {
-        // no-op — see isTabLoading()
+        // no-op - see isTabLoading()
     };
 
     self._deviceIcon = function(device) {

@@ -26,7 +26,7 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
     self.DEVELOPER_SSH_MASK = '********';
     self.developerSshPassword = '';
     self.developerSshConfigured = false;
-    /** True when rsync/sshpass (or WSL on Windows) are missing — blocks developer mode. */
+    /** True when rsync/sshpass (or WSL on Windows) are missing - blocks developer mode. */
     self.developerToolsMissing = false;
     self.developerToolsMessage = '';
     self.vaultStatus = {
@@ -220,7 +220,7 @@ function($scope, $rootScope, $filter, debounce, toast, settingsService, electron
             ? (tools.message || 'Developer sync tools are missing (rsync / sshpass).')
             : '';
         if (missing && self.settings.cleep && self.settings.cleep.developer) {
-            // Force off — saved via the settings deep watch.
+            // Force off - saved via the settings deep watch.
             self.settings.cleep.developer = false;
         }
     };

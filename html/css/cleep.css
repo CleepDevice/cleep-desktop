@@ -959,7 +959,7 @@ device-webview {
 
 /*
  * Developer sync: lock both panes to the content-shell height so the page itself
- * does not scroll — only the sync feed and device log scroll internally.
+ * does not scroll - only the sync feed and device log scroll internally.
  * Selectors must beat .app-page-content / .app-page-panel (same file, later).
  */
 .app-page.developer-sync-root,
@@ -1064,7 +1064,7 @@ device-webview {
   min-height: 1.45em;
 }
 
-/* Prefix (time + logger + [file:line]) — lighter purple for dark console bg. */
+/* Prefix (time + logger + [file:line]) - lighter purple for dark console bg. */
 .developer-device-log-prefix {
   color: #ce93d8;
 }
@@ -1379,7 +1379,7 @@ device-webview {
   }
 }
 
-/* 0–20% approach+press, 20–45% hold+plug, 45–60% release, 60–85% disk, 85–100% reset */
+/* 0-20% approach+press, 20-45% hold+plug, 45-60% release, 60-85% disk, 85-100% reset */
 @keyframes pico-bootsel-press {
   0%,
   8% {
