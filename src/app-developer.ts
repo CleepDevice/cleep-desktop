@@ -32,6 +32,7 @@ import {
   installDeveloperRequirements,
   listRemoteDeveloperModules,
   probeDeveloperSyncTools,
+  restartDeveloperCleep,
   rsyncDeveloperApps,
   rsyncDeveloperCore,
   type DeveloperDeviceLogTail,
@@ -529,7 +530,15 @@ class AppDeveloper {
         includeTest: options.includeTest,
         onOutput: (chunk) => this.emitPipInstallLog(chunk),
       });
-      this.emitPipInstallLog('\nDependencies installed successfully.\n');
+      this.emitPipInstallLog('\nDependencies installed successfully.\n\n');
+      await restartDeveloperCleep({
+        host: device.ip,
+        ssh,
+        onOutput: (chunk) => this.emitPipInstallLog(chunk),
+      });
+      this.emitPipInstallLog(
+        'Cleep is restarting on the device to load the new dependencies.\n',
+      );
     } finally {
       this.pipInstalling = false;
     }

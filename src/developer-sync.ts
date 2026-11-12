@@ -760,6 +760,45 @@ export async function installDeveloperRequirements(options: {
   );
 }
 
+/**
+ * Restart the Cleep service on the device (same helper as system.restart_cleep).
+ * Detached so the SSH session is not torn down mid-restart.
+ */
+export async function restartDeveloperCleep(options: {
+  host: string;
+  ssh: DeveloperSshSecret;
+  onOutput?: (chunk: string) => void;
+}): Promise<void> {
+  await assertSyncToolsAvailable();
+  const host = String(options.host || '').trim();
+  if (!host) {
+    throw new Error('Development device has no IP address');
+  }
+  const remote = `${options.ssh.username}@${host}`;
+  // Delay + background: systemctl restart can briefly disrupt sessions; avoid hanging SSH.
+  // Do not join the background job with "; " — bash rejects "&;".
+  const remoteCmd =
+    'echo "Restarting Cleep..."; ' +
+    '(sleep 1; /etc/cleep/cleephelper.sh restart) >/tmp/cleep-dev-restart.log 2>&1 & ' +
+    'echo "Cleep restart scheduled."';
+
+  const env = buildSshpassEnv(options.ssh);
+  const wrapped = wrapSshpassInvocation(
+    ['-e', 'ssh', ...buildSshPasswordArgs(), remote, remoteCmd],
+    env,
+  );
+  if (options.onOutput) {
+    await runSshpassCommandStreaming(
+      wrapped.command,
+      wrapped.args,
+      wrapped.env,
+      options.onOutput,
+    );
+    return;
+  }
+  await runSshpassCommand(wrapped.command, wrapped.args, wrapped.env);
+}
+
 export async function rsyncDeveloperApps(options: {
   host: string;
   ssh: DeveloperSshSecret;

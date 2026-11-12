@@ -44,7 +44,7 @@
                 ng-if="ctl.done"
                 ng-class="{'developer-pip-install-status-ok': ctl.success, 'developer-pip-install-status-err': !ctl.success}"
             >
-                <span ng-if="ctl.success">Installation finished successfully.</span>
+                <span ng-if="ctl.success">Installation finished. Cleep is restarting on the device.</span>
                 <span ng-if="!ctl.success">{{ ctl.error || 'Installation failed.' }}</span>
             </div>
         </md-dialog-content>
