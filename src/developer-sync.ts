@@ -12,6 +12,10 @@ const execFileAsync = promisify(execFile);
 export const DEVELOPER_SYNC_REMOTE_MODULES = '/root/cleep-dev/modules';
 /** Remote root for Cleep core (apps stay under modules/). */
 export const DEVELOPER_SYNC_REMOTE_ROOT = '/root/cleep-dev';
+/** Remote requirements file synced with the core tree. */
+export const DEVELOPER_REQUIREMENTS_REMOTE_PATH = `${DEVELOPER_SYNC_REMOTE_ROOT}/requirements.txt`;
+/** Remote test requirements file synced with the core tree. */
+export const DEVELOPER_REQUIREMENTS_TEST_REMOTE_PATH = `${DEVELOPER_SYNC_REMOTE_ROOT}/requirements-test.txt`;
 /** Device Cleep log file tailed for the developer sync page. */
 export const DEVELOPER_DEVICE_LOG_PATH = '/var/log/cleep.log';
 /** Max lines returned by the device log tail. */
@@ -660,6 +664,100 @@ function runSshpassCommand(
     await ensureDeveloperSshControlDir();
     return runCommand(command, args, env);
   });
+}
+
+function runCommandStreaming(
+  command: string,
+  args: string[],
+  env: NodeJS.ProcessEnv,
+  onOutput: (chunk: string) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      env,
+      windowsHide: true,
+    });
+    let tail = '';
+    const append = (chunk: Buffer | string) => {
+      const text = String(chunk);
+      onOutput(text);
+      tail = (tail + text).slice(-4000);
+    };
+    child.stdout?.on('data', append);
+    child.stderr?.on('data', append);
+    child.on('error', (error) => {
+      reject(error);
+    });
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      const detail = (tail || `exit code ${code}`).trim();
+      reject(new Error(detail || `Command failed: ${command}`));
+    });
+  });
+}
+
+function runSshpassCommandStreaming(
+  command: string,
+  args: string[],
+  env: NodeJS.ProcessEnv,
+  onOutput: (chunk: string) => void,
+): Promise<void> {
+  return withDeveloperSshLock(async () => {
+    await ensureDeveloperSshControlDir();
+    return runCommandStreaming(command, args, env, onOutput);
+  });
+}
+
+/**
+ * Install Python dependencies from the synced ``requirements.txt`` on the device.
+ * Optionally also installs ``requirements-test.txt``. Streams stdout/stderr via ``onOutput``.
+ */
+export async function installDeveloperRequirements(options: {
+  host: string;
+  ssh: DeveloperSshSecret;
+  includeTest?: boolean;
+  onOutput: (chunk: string) => void;
+}): Promise<void> {
+  await assertSyncToolsAvailable();
+  const host = String(options.host || '').trim();
+  if (!host) {
+    throw new Error('Development device has no IP address');
+  }
+  const remote = `${options.ssh.username}@${host}`;
+  const reqPath = DEVELOPER_REQUIREMENTS_REMOTE_PATH;
+  const testPath = DEVELOPER_REQUIREMENTS_TEST_REMOTE_PATH;
+  const includeTest = Boolean(options.includeTest);
+  const pipInstall =
+    `PYTHONUNBUFFERED=1 python3 -m pip install --no-cache-dir` +
+    ` --trusted-host pypi.org --trusted-host files.pythonhosted.org --trusted-host pypi.python.org`;
+  const remoteCmdParts = [
+    `test -f ${reqPath} || { echo "requirements.txt not found at ${reqPath} (sync Cleep core first)" >&2; exit 1; }`,
+    `echo "Installing dependencies from ${reqPath}..."`,
+    // Match device preinst: system pip + trusted hosts; unbuffered for live logs.
+    `${pipInstall} -r ${reqPath}`,
+  ];
+  if (includeTest) {
+    remoteCmdParts.push(
+      `test -f ${testPath} || { echo "requirements-test.txt not found at ${testPath} (sync Cleep core first)" >&2; exit 1; }`,
+      `echo "Installing test dependencies from ${testPath}..."`,
+      `${pipInstall} -r ${testPath}`,
+    );
+  }
+
+  const env = buildSshpassEnv(options.ssh);
+  const wrapped = wrapSshpassInvocation(
+    ['-e', 'ssh', ...buildSshPasswordArgs(), remote, remoteCmdParts.join('; ')],
+    env,
+  );
+  await runSshpassCommandStreaming(
+    wrapped.command,
+    wrapped.args,
+    wrapped.env,
+    options.onOutput,
+  );
 }
 
 export async function rsyncDeveloperApps(options: {

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Add way to install Cleep dependencies
 - Pico MicroPython-app flash (USB serial push of ``files/`` via raw REPL)
 - Pico flash wizard (BOOTSEL detect → mismatch warnings → UF2 write for ``native`` / ``micropython-runtime``)
 - Pico firmware cache: blocking download dialog on ``update.module.firmware``, Flash Pico toolbar/page (list/delete; flash wizard next)

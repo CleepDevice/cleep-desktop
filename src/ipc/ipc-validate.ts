@@ -265,6 +265,12 @@ export const INVOKE_REQUEST_SCHEMAS: InvokeSchemaMap = {
       includeCore: z.boolean().optional(),
     })
     .optional(),
+  'developer-install-requirements': z
+    .object({
+      includeTest: z.boolean().optional(),
+      syncCore: z.boolean().optional(),
+    })
+    .optional(),
   'get-changelog': null,
   'get-electron-log-path': null,
   'iso-get-drives': null,

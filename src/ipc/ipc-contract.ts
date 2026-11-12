@@ -220,6 +220,10 @@ export type InvokeContract = {
     request: { moduleNames?: string[]; includeCore?: boolean } | void;
     response: IpcResult<DeveloperStatus>;
   };
+  'developer-install-requirements': {
+    request: { includeTest?: boolean; syncCore?: boolean } | void;
+    response: IpcResult<null>;
+  };
   'get-changelog': { request: void; response: IpcResult<string> };
   'get-electron-log-path': { request: void; response: IpcResult<string> };
   'iso-get-drives': { request: void; response: IpcResult<IsoDrivesPayload> };
@@ -310,6 +314,7 @@ export type ReceiveContract = {
   'vault-unlock-required': { args: [] };
   'developer-status-changed': { args: [DeveloperStatus] };
   'developer-sync-log': { args: [DeveloperSyncLogEntry] };
+  'developer-pip-install-log': { args: [{ chunk: string }] };
   'website-auth-changed': { args: [WebsiteAuthSession] };
   'webview-http-error': {
     args: [webContentsId: number, details: { url: string; statusCode: number }];

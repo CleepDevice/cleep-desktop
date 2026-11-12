@@ -7,7 +7,8 @@ angular
     'developerSyncLogService',
     'electronService',
     'toastService',
-    function($scope, $rootScope, $timeout, developerSyncLogService, electron, toast) {
+    'modalService',
+    function($scope, $rootScope, $timeout, developerSyncLogService, electron, toast, modalService) {
     var self = this;
     var DEVICE_LOG_POLL_MS = 3000;
     var deviceLogTimer = null;
@@ -23,6 +24,7 @@ angular
     self.remoteAppsLoaded = false;
     self.remoteAppsBusy = false;
     self.syncBusy = false;
+    self.pipInstallBusy = false;
     self.CORE_SYNC_TOKEN = '__cleep_core__';
 
     self.deviceLogContent = '';
@@ -72,6 +74,19 @@ angular
 
     self.openDeveloperPreferences = function() {
         $rootScope.$emit('open-preferences', { tab: 'developer' });
+    };
+
+    self.openInstallRequirements = function() {
+        if (self.pipInstallBusy) {
+            return;
+        }
+        self.pipInstallBusy = true;
+        modalService.open(
+            'developerPipInstallDialogController',
+            'js/developer/developer-pip-install-dialog.html'
+        ).finally(function() {
+            self.pipInstallBusy = false;
+        });
     };
 
     self.hasUploadTargets = function() {

@@ -1105,6 +1105,52 @@ device-webview {
   color: #ff8a80;
 }
 
+.developer-pip-install-content {
+  padding: 16px 20px 8px;
+}
+
+.developer-pip-install-hint {
+  margin: 0 0 12px;
+}
+
+.developer-pip-install-content md-checkbox {
+  display: block;
+  margin: 0 0 10px;
+}
+
+.developer-pip-install-log {
+  height: 360px;
+  overflow: auto;
+}
+
+.developer-pip-install-status {
+  margin-top: 12px;
+}
+
+.developer-pip-install-status-ok {
+  color: #2e7d32;
+}
+
+.developer-pip-install-status-err {
+  color: #c62828;
+}
+
+.developer-pip-install-dialog md-dialog-actions.developer-pip-install-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 8px 12px 12px;
+  min-height: 52px;
+}
+
+.developer-pip-install-dialog md-dialog-actions.developer-pip-install-actions .md-button {
+  margin: 0;
+  min-width: 88px;
+  min-height: 36px;
+  line-height: 36px;
+}
+
 @keyframes app-page-lead-in {
   from {
     opacity: 0;

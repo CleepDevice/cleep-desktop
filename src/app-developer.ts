@@ -29,6 +29,7 @@ import {
   fetchDeveloperDeviceLogTail,
   getDeveloperSyncPlatformSupport,
   getDeveloperSyncToolsStatus,
+  installDeveloperRequirements,
   listRemoteDeveloperModules,
   probeDeveloperSyncTools,
   rsyncDeveloperApps,
@@ -130,6 +131,7 @@ class AppDeveloper {
   private watcher: FSWatcher | null = null;
   private quietTimer: NodeJS.Timeout | null = null;
   private syncing = false;
+  private pipInstalling = false;
   private syncQueued = false;
   private syncStatus: DeveloperSyncState = 'idle';
   private syncError = '';
@@ -237,7 +239,8 @@ class AppDeveloper {
     }
 
     const device = appDevices.getDevice(status.deviceUuid);
-    if (!device?.online || !device.ip) {
+    // SSH sync must keep working when cleepbus marks the device offline (Cleep down).
+    if (!device?.ip) {
       await this.stopWatcher();
       return;
     }
@@ -412,6 +415,22 @@ class AppDeveloper {
         return this.failFromError(error, 'Developer pull failed');
       }
     });
+
+    handleInvoke('developer-install-requirements', async (_event, request) => {
+      try {
+        const payload =
+          request && typeof request === 'object'
+            ? (request as { includeTest?: unknown; syncCore?: unknown })
+            : {};
+        await this.installRequirements({
+          includeTest: Boolean(payload.includeTest),
+          syncCore: Boolean(payload.syncCore),
+        });
+        return ipcOk(null);
+      } catch (error) {
+        return this.failFromError(error, 'Unable to install requirements');
+      }
+    });
   }
 
   private parseStringList(request: unknown, key: string): string[] | undefined {
@@ -425,15 +444,24 @@ class AppDeveloper {
     return raw.map((name) => String(name || '').trim()).filter(Boolean);
   }
 
+  /**
+   * Device used for SSH (sync / logs). Requires a known IP; cleepbus online is optional
+   * so a crashed/restarting Cleep can still receive source uploads over SSH.
+   */
+  private requireSshDevice(deviceUuid: string): CleepbusPeerInfos {
+    const device = appDevices.getDevice(deviceUuid);
+    if (!device?.ip) {
+      throw new Error('Development device has no IP address');
+    }
+    return device;
+  }
+
   private async listRemoteApps(): Promise<string[]> {
     const status = this.getStatus();
     if (!status.enabled || !status.deviceOk || !status.sshConfigured || !status.syncSupported) {
       throw new Error('Developer sync is not ready');
     }
-    const device = appDevices.getDevice(status.deviceUuid);
-    if (!device?.online || !device.ip) {
-      throw new Error('Development device is offline');
-    }
+    const device = this.requireSshDevice(status.deviceUuid);
     const ssh = await getDeveloperSshSecret(status.deviceUuid);
     if (!ssh) {
       throw new Error('SSH credentials are not configured');
@@ -446,15 +474,76 @@ class AppDeveloper {
     if (!status.enabled || !status.deviceOk || !status.sshConfigured || !status.syncSupported) {
       throw new Error('Developer sync is not ready');
     }
-    const device = appDevices.getDevice(status.deviceUuid);
-    if (!device?.online || !device.ip) {
-      throw new Error('Development device is offline');
-    }
+    const device = this.requireSshDevice(status.deviceUuid);
     const ssh = await getDeveloperSshSecret(status.deviceUuid);
     if (!ssh) {
       throw new Error('SSH credentials are not configured');
     }
     return fetchDeveloperDeviceLogTail({ host: device.ip, ssh });
+  }
+
+  private async installRequirements(options: {
+    includeTest: boolean;
+    syncCore: boolean;
+  }): Promise<void> {
+    if (this.pipInstalling) {
+      throw new Error('Dependencies installation is already running');
+    }
+    const status = this.getStatus();
+    if (!status.enabled || !status.deviceOk || !status.sshConfigured || !status.syncSupported) {
+      throw new Error('Developer sync is not ready');
+    }
+    const device = this.requireSshDevice(status.deviceUuid);
+    const ssh = await getDeveloperSshSecret(status.deviceUuid);
+    if (!ssh) {
+      throw new Error('SSH credentials are not configured');
+    }
+    if (options.syncCore && (!status.coreOk || !status.corePath)) {
+      throw new Error('Cleep core path is not configured');
+    }
+
+    this.pipInstalling = true;
+    const targets = options.includeTest
+      ? 'requirements.txt + requirements-test.txt'
+      : 'requirements.txt';
+    try {
+      if (options.syncCore && status.corePath) {
+        this.emitPipInstallLog(
+          `Syncing Cleep core sources to ${device.hostname || device.ip}...\n`,
+        );
+        await rsyncDeveloperCore({
+          host: device.ip,
+          ssh,
+          localCorePath: status.corePath,
+          direction: 'push',
+        });
+        this.emitPipInstallLog('Core sources synced.\n\n');
+      }
+
+      this.emitPipInstallLog(
+        `Installing Python dependencies (${targets}) on ${device.hostname || device.ip}...\n`,
+      );
+      await installDeveloperRequirements({
+        host: device.ip,
+        ssh,
+        includeTest: options.includeTest,
+        onOutput: (chunk) => this.emitPipInstallLog(chunk),
+      });
+      this.emitPipInstallLog('\nDependencies installed successfully.\n');
+    } finally {
+      this.pipInstalling = false;
+    }
+  }
+
+  private emitPipInstallLog(chunk: string): void {
+    if (!this.window || this.window.isDestroyed()) {
+      return;
+    }
+    try {
+      sendToRenderer(this.window, 'developer-pip-install-log', { chunk });
+    } catch (error) {
+      appLogger.debug('Unable to emit developer-pip-install-log', { error });
+    }
   }
 
   /** Pull remote modules (and optionally core) into the local sources directory. */
@@ -480,10 +569,7 @@ class AppDeveloper {
       throw new Error('Nothing selected to download');
     }
 
-    const device = appDevices.getDevice(status.deviceUuid);
-    if (!device?.online || !device.ip) {
-      throw new Error('Development device is offline');
-    }
+    const device = this.requireSshDevice(status.deviceUuid);
 
     const apps: DeveloperAppEntry[] = modules.map((moduleName) => {
       const absolutePath = resolveLocalPathForModule(status.sourcesDir, moduleName);
@@ -682,8 +768,9 @@ class AppDeveloper {
     }
 
     const device = appDevices.getDevice(status.deviceUuid);
-    if (!device?.online || !device.ip) {
-      const message = 'Development device is offline';
+    // Do not require cleepbus online: SSH can still reach the Pi when Cleep is down.
+    if (!device?.ip) {
+      const message = 'Development device has no IP address';
       this.setSyncState('failed', message);
       this.emitSyncLog({
         level: 'error',

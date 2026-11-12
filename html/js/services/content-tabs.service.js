@@ -33,7 +33,7 @@ function($rootScope, $state, devicesService, logger) {
         installAuto: { title: 'Cleep installation', icon: 'sd' },
         installManually: { title: 'Manual Cleep installation', icon: 'sd' },
         monitoring: { title: 'Messages received from devices', icon: 'message-text' },
-        developerSync: { title: 'Developer sync activity', icon: 'text-box-outline' },
+        developerSync: { title: 'Developer mode', icon: 'text-box-outline' },
         flashPico: { title: 'Flash Pico', icon: 'chip' },
         deviceAuth: { title: 'Device sign-in', icon: 'cellphone-key' },
         deviceError: { title: 'Connection failed', icon: 'alert-circle' },

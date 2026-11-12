@@ -1,0 +1,70 @@
+<md-dialog flex="70" class="developer-pip-install-dialog">
+    <form>
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Install dependencies</h2>
+                <span flex></span>
+                <md-button
+                    class="md-icon-button"
+                    ng-click="ctl.closeModal()"
+                    ng-disabled="ctl.busy"
+                    title="Close"
+                >
+                    <md-icon md-svg-icon="close"></md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content class="developer-pip-install-content">
+            <p class="developer-pip-install-hint">
+                Install Python packages from
+                <code>/root/cleep-dev/requirements.txt</code>
+                on the development device via SSH.
+            </p>
+            <md-checkbox
+                ng-model="ctl.syncCore"
+                ng-disabled="ctl.busy"
+                aria-label="Sync core sources"
+            >
+                Sync core sources
+            </md-checkbox>
+            <md-checkbox
+                ng-model="ctl.includeTest"
+                ng-disabled="ctl.busy"
+                aria-label="Also install requirements-test.txt"
+            >
+                Also install <code>requirements-test.txt</code>
+            </md-checkbox>
+            <pre
+                class="developer-device-log developer-pip-install-log"
+                id="developer-pip-install-log"
+            >{{ ctl.log || 'Click Install to start.' }}</pre>
+            <div
+                class="developer-pip-install-status"
+                ng-if="ctl.done"
+                ng-class="{'developer-pip-install-status-ok': ctl.success, 'developer-pip-install-status-err': !ctl.success}"
+            >
+                <span ng-if="ctl.success">Installation finished successfully.</span>
+                <span ng-if="!ctl.success">{{ ctl.error || 'Installation failed.' }}</span>
+            </div>
+        </md-dialog-content>
+
+        <md-dialog-actions class="developer-pip-install-actions" layout="row" layout-align="end center">
+            <span flex></span>
+            <md-button
+                class="md-primary"
+                ng-click="ctl.closeModal()"
+                ng-disabled="ctl.busy"
+            >
+                Close
+            </md-button>
+            <md-button
+                class="md-primary md-raised"
+                ng-click="ctl.startInstall()"
+                ng-disabled="ctl.busy"
+            >
+                {{ ctl.busy ? 'Installing…' : 'Install' }}
+            </md-button>
+        </md-dialog-actions>
+    </form>
+</md-dialog>

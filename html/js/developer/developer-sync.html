@@ -6,11 +6,19 @@
                 <md-icon md-svg-icon="text-box-outline"></md-icon>
             </div>
             <div flex layout="column">
-                <div class="app-page-lead-title">Developer sync activity</div>
+                <div class="app-page-lead-title">Developer mode</div>
                 <p class="app-page-lead-text">
                     SSH synchronization events and live device logs for the current CleepDesktop session.
                 </p>
             </div>
+            <md-button
+                class="md-icon-button"
+                ng-click="ctl.openInstallRequirements()"
+                ng-disabled="ctl.pipInstallBusy"
+                title="Install requirements.txt on device"
+            >
+                <md-icon md-svg-icon="{{ ctl.pipInstallBusy ? 'loading' : 'package-down' }}"></md-icon>
+            </md-button>
             <md-button
                 class="md-icon-button"
                 ng-click="ctl.openDeveloperPreferences()"

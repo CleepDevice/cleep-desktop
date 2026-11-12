@@ -105,10 +105,14 @@ export function createCleepApi(ipc: IpcPrimitives) {
       fetchDeviceLogs: () => ipc.invoke('developer-fetch-device-logs'),
       pullNow: (request?: { moduleNames?: string[]; includeCore?: boolean }) =>
         ipc.invoke('developer-pull-now', request || {}),
+      installRequirements: (request?: { includeTest?: boolean; syncCore?: boolean }) =>
+        ipc.invoke('developer-install-requirements', request || {}),
       onStatusChanged: (listener: IpcListener<'developer-status-changed'>) =>
         ipc.on('developer-status-changed', listener),
       onSyncLog: (listener: IpcListener<'developer-sync-log'>) =>
         ipc.on('developer-sync-log', listener),
+      onPipInstallLog: (listener: IpcListener<'developer-pip-install-log'>) =>
+        ipc.on('developer-pip-install-log', listener),
     },
 
     devices: {

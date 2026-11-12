@@ -235,8 +235,10 @@ angular
         listRemoteApps: bindInvoke(api.developer && api.developer.listRemoteApps),
         fetchDeviceLogs: bindInvoke(api.developer && api.developer.fetchDeviceLogs),
         pullNow: bindInvoke(api.developer && api.developer.pullNow), // { moduleNames?, includeCore? }
+        installRequirements: bindInvoke(api.developer && api.developer.installRequirements),
         onStatusChanged: bindOn(api.developer && api.developer.onStatusChanged),
         onSyncLog: bindOn(api.developer && api.developer.onSyncLog),
+        onPipInstallLog: bindOn(api.developer && api.developer.onPipInstallLog),
     };
 
     self.devices = {
