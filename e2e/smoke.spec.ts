@@ -60,7 +60,9 @@ test('navigates to monitoring page', async () => {
 
 test('opens ISO version selection dialog without flashing', async () => {
   await openSidenavItem('Install');
-  const isoRow = page.locator('md-list-item', { hasText: 'No version selected' });
+  // config-button renders a .config-item row (not md-list-item) with subtitle + action button.
+  const isoRow = page.locator('.config-item', { hasText: 'No version selected' });
+  await expect(isoRow).toBeVisible();
   await isoRow.getByRole('button').click();
   const dialog = page.getByRole('dialog').filter({ hasText: 'Version selection' });
   await expect(dialog.getByRole('heading', { name: 'Version selection' })).toBeVisible();
