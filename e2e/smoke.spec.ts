@@ -22,7 +22,7 @@ async function openSidenavItem(title: string): Promise<void> {
 
 test('shows homepage and devices panel', async () => {
   await expect(page.getByRole('heading', { name: 'Cleep devices' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'CleepDesktop', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome to CleepDesktop', exact: true })).toBeVisible();
   await expect(page.getByText('News', { exact: true })).toBeVisible();
 });
 
@@ -71,7 +71,7 @@ test('opens ISO version selection dialog without flashing', async () => {
 
 test('returns to homepage from sidenav', async () => {
   await openSidenavItem('Homepage');
-  await expect(page.getByRole('heading', { name: 'CleepDesktop', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome to CleepDesktop', exact: true })).toBeVisible();
   await expect(page.getByText('News', { exact: true })).toBeVisible();
 });
 

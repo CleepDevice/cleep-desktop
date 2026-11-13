@@ -82,9 +82,11 @@ export class AppSettings {
 
     handleInvoke('settings-set-all', (_event, arg) => {
       this.setAll(arg);
-      void import('./app-developer').then(({ appDeveloper }) => {
-        void appDeveloper.reconcileWatcher();
-      });
+      void import('./app-developer')
+        .then(({ appDeveloper }) => {
+          void appDeveloper.reconcileWatcher();
+        })
+        .catch((): undefined => undefined);
       return ipcOk(true as const);
     });
 
@@ -101,9 +103,11 @@ export class AppSettings {
     onRendererSend('settings-set', (_event, arg) => {
       this.set(arg.key, arg.value);
       if (String(arg.key).startsWith('cleep.developer')) {
-        void import('./app-developer').then(({ appDeveloper }) => {
-          void appDeveloper.reconcileWatcher();
-        });
+        void import('./app-developer')
+          .then(({ appDeveloper }) => {
+            void appDeveloper.reconcileWatcher();
+          })
+          .catch((): undefined => undefined);
       }
     });
 

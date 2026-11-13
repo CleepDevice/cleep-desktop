@@ -40,8 +40,12 @@ export function describeSerialAccessError(serialPath: string, error: unknown): s
   const err = error as NodeJS.ErrnoException | undefined;
   const code = err?.code || '';
   const raw = error instanceof Error ? error.message : String(error || '');
+  // Windows often reports EPERM ("operation not permitted") instead of EACCES.
   const permissionDenied =
-    code === 'EACCES' || /permission denied/i.test(raw) || /cannot open/i.test(raw);
+    code === 'EACCES' ||
+    code === 'EPERM' ||
+    /permission denied|not permitted/i.test(raw) ||
+    /cannot open/i.test(raw);
 
   if (permissionDenied) {
     if (process.platform === 'linux') {

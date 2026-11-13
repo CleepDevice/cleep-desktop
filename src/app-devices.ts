@@ -282,9 +282,11 @@ class AppDevices {
   }
 
   private emitDevicesUpdated(): void {
-    void import('./app-developer').then(({ appDeveloper }) => {
-      void appDeveloper.reconcileWatcher();
-    });
+    void import('./app-developer')
+      .then(({ appDeveloper }) => {
+        void appDeveloper.reconcileWatcher();
+      })
+      .catch((): undefined => undefined);
     if (!this.window || this.window.isDestroyed?.()) {
       return;
     }

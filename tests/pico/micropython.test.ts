@@ -56,6 +56,21 @@ describe('describeSerialAccessError', () => {
     }
   });
 
+  it('treats Windows EPERM as a permission error', () => {
+    const previous = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      const message = describeSerialAccessError('COM3', {
+        code: 'EPERM',
+        message: "EPERM: operation not permitted, access 'COM3'",
+      });
+      expect(message).toContain('Permission denied');
+      expect(message).toContain('COM');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: previous });
+    }
+  });
+
   it('keeps generic message for other errors', () => {
     expect(describeSerialAccessError('/dev/ttyACM0', new Error('No such file'))).toContain(
       'No such file',
@@ -90,6 +105,6 @@ describe('checkSerialPortAccess', () => {
     fs.writeFileSync(file, 'nope\n', { mode: 0o000 });
     const result = await checkSerialPortAccess(file);
     expect(result.ok).toBe(false);
-    expect(result.error).toMatch(/Permission denied|Unable to open|EACCES|permission/i);
+    expect(result.error).toMatch(/Permission denied|Unable to open|EACCES|EPERM|permission|not permitted/i);
   });
 });
