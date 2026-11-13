@@ -87,15 +87,15 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: E2E smoke (Playwright)
-        shell: bash
+      - name: E2E smoke (Playwright, Linux)
+        if: runner.os == 'Linux'
         run: |
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" \
-              npx playwright test
-          else
+          xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" \
             npx playwright test
-          fi
+
+      - name: E2E smoke (Playwright)
+        if: runner.os != 'Linux'
+        run: npx playwright test
 
       - name: Upload Playwright report
         if: failure()

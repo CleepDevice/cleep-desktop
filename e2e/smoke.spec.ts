@@ -28,7 +28,7 @@ test('shows homepage and devices panel', async () => {
 
 test('navigates to Cleep install page', async () => {
   await openSidenavItem('Install');
-  await expect(page.locator('md-toolbar h2', { hasText: 'Cleep installation' })).toBeVisible();
+  await expect(page.locator('.app-page-lead-title', { hasText: 'Flash Cleep onto an SD card' })).toBeVisible();
   await expect(page.getByText('Preparation')).toBeVisible();
   await expect(page.getByText('No version selected')).toBeVisible();
   await expect(page.getByText('No drive selected')).toBeVisible();
@@ -36,11 +36,10 @@ test('navigates to Cleep install page', async () => {
 
 test('install page exposes flash tool branding without requiring hardware', async () => {
   await openSidenavItem('Install');
-  // Network/WiFi options only appear after a CleepOs ISO is selected — assert the always-visible path.
+  // Network/WiFi options only appear after a CleepOs ISO is selected - assert the always-visible path.
   await expect(page.getByText('Select CleepOs version you want to install on your SD card')).toBeVisible();
   await expect(page.getByText(/Plug your SD card|USB card reader/i)).toBeVisible();
-  await expect(page.getByText(/Powered by/i)).toBeVisible();
-  await expect(page.getByText('Raspberry Pi Imager')).toBeVisible();
+  await expect(page.getByText('Powered by Raspberry Pi Imager')).toBeVisible();
 });
 
 test('opens preferences dialog', async () => {
@@ -56,7 +55,7 @@ test('opens preferences dialog', async () => {
 
 test('navigates to monitoring page', async () => {
   await openSidenavItem('Monitoring');
-  await expect(page.locator('md-toolbar h2', { hasText: 'Monitoring' })).toBeVisible();
+  await expect(page.locator('.app-page-lead-title', { hasText: 'Live device feed' })).toBeVisible();
 });
 
 test('opens ISO version selection dialog without flashing', async () => {
