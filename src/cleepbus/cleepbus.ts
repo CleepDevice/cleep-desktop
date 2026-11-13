@@ -1,4 +1,5 @@
 import { hostname, networkInterfaces } from 'os';
+import { powerMonitor } from 'electron';
 import { v4 as uuidv4 } from 'uuid';
 import { appLogger } from '../app-logger';
 import { appSettings } from '../app-settings';
@@ -482,32 +483,23 @@ export class Cleepbus {
       void this.restart();
     }, NETWORK_WATCH_INTERVAL_MS);
 
-    try {
-      // Electron main process only; absent in unit tests.
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const electron = require('electron') as { powerMonitor?: { on: (event: string, cb: () => void) => void; off?: (event: string, cb: () => void) => void } };
-      if (electron.powerMonitor?.on) {
-        this.powerResumeHandler = () => {
-          if (this.forcedStop) {
-            return;
-          }
-          if (this.resumeRestartTimer) {
-            clearTimeout(this.resumeRestartTimer);
-          }
-          this.resumeRestartTimer = setTimeout(() => {
-            this.resumeRestartTimer = null;
-            if (this.forcedStop || this.starting) {
-              return;
-            }
-            appLogger.warn('System resume detected, restarting cleepbus');
-            void this.restart();
-          }, RESUME_RESTART_DELAY_MS);
-        };
-        electron.powerMonitor.on('resume', this.powerResumeHandler);
+    this.powerResumeHandler = () => {
+      if (this.forcedStop) {
+        return;
       }
-    } catch {
-      // non-electron environment
-    }
+      if (this.resumeRestartTimer) {
+        clearTimeout(this.resumeRestartTimer);
+      }
+      this.resumeRestartTimer = setTimeout(() => {
+        this.resumeRestartTimer = null;
+        if (this.forcedStop || this.starting) {
+          return;
+        }
+        appLogger.warn('System resume detected, restarting cleepbus');
+        void this.restart();
+      }, RESUME_RESTART_DELAY_MS);
+    };
+    powerMonitor.on('resume', this.powerResumeHandler);
   }
 
   private stopNetworkWatch(): void {
@@ -520,14 +512,7 @@ export class Cleepbus {
       this.resumeRestartTimer = null;
     }
     if (this.powerResumeHandler) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const electron = require('electron') as { powerMonitor?: { removeListener?: (event: string, cb: () => void) => void; off?: (event: string, cb: () => void) => void } };
-        electron.powerMonitor?.removeListener?.('resume', this.powerResumeHandler);
-        electron.powerMonitor?.off?.('resume', this.powerResumeHandler);
-      } catch {
-        // ignore
-      }
+      powerMonitor.removeListener('resume', this.powerResumeHandler);
       this.powerResumeHandler = null;
     }
   }

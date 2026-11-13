@@ -23,6 +23,7 @@ describe('createCleepApi', () => {
       'developer',
       'devices',
       'download',
+      'firmware',
       'install',
       'logger',
       'news',

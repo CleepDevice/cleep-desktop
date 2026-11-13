@@ -94,6 +94,11 @@ vi.mock('electron', () => {
       showMessageBox: vi.fn(),
       showMessageBoxSync: vi.fn(() => 0),
     },
+    powerMonitor: {
+      on: vi.fn(),
+      off: vi.fn(),
+      removeListener: vi.fn(),
+    },
     Menu: {
       buildFromTemplate: vi.fn((template) => template),
       setApplicationMenu: vi.fn(),
